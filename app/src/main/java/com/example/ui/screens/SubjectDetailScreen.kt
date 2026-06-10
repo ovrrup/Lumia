@@ -98,9 +98,9 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         )
                         Card(
                             modifier = Modifier.fillMaxWidth().animateContentSize(),
-                            shape = MaterialTheme.shapes.large,
-                            colors = CardDefaults.cardColors(containerColor = cardColor),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            shape = MaterialTheme.shapes.extraLarge,
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardColor)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                                 Spacer(modifier = Modifier.width(8.dp))

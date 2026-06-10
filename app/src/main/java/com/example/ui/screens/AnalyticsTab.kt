@@ -56,48 +56,50 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
     val completedAssignments = assignments.count { it.isCompleted }
     val assignmentProgress = if (totalAssignments > 0) completedAssignments.toFloat() / totalAssignments else 0f
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
+    LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 24.dp,
+            end = 24.dp,
+            top = paddingValues.calculateTopPadding() + 16.dp,
+            bottom = paddingValues.calculateBottomPadding() + 32.dp
+        ),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        item(span = { GridItemSpan(2) }) {
+        item {
             Text(
                 text = "Overview",
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
 
-        item(span = { GridItemSpan(1) }) {
-            AnalyticsCard(
-                modifier = Modifier.fillMaxWidth().aspectRatio(1f),
-                title = "Assignments",
-                progress = assignmentProgress,
-                completed = completedAssignments,
-                total = totalAssignments,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-        
-        item(span = { GridItemSpan(1) }) {
-            AnalyticsCard(
-                modifier = Modifier.fillMaxWidth().aspectRatio(1f),
-                title = "Courses Enrolled",
-                progress = if (courses.isEmpty()) 0f else 1f,
-                completed = courses.size,
-                total = courses.size,
-                color = MaterialTheme.colorScheme.secondary
-            )
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                AnalyticsCard(
+                    modifier = Modifier.weight(1f).aspectRatio(1f),
+                    title = "Assignments",
+                    progress = assignmentProgress,
+                    completed = completedAssignments,
+                    total = totalAssignments,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                AnalyticsCard(
+                    modifier = Modifier.weight(1f).aspectRatio(1f),
+                    title = "Courses Enrolled",
+                    progress = if (courses.isEmpty()) 0f else 1f,
+                    completed = courses.size,
+                    total = courses.size,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
         }
 
-        item(span = { GridItemSpan(2) }) {
+        item {
             Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -116,23 +118,22 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
                 Text(
                     text = "Action History",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Black,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
 
         if (actionLogs.isEmpty()) {
-            item(span = { GridItemSpan(2) }) {
+            item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    shape = RoundedCornerShape(24.dp)
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(32.dp)
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(40.dp),
+                        modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -152,31 +153,25 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
                             "No actions yet.",
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            "Your activity will appear here.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                         )
                     }
                 }
             }
         } else {
-            items(actionLogs, span = { GridItemSpan(2) }) { log ->
+            items(actionLogs) { log ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(20.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    shape = RoundedCornerShape(24.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(20.dp),
+                            .padding(24.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
@@ -211,7 +206,8 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
 fun AnalyticsCard(modifier: Modifier = Modifier, title: String, progress: Float, completed: Int, total: Int, color: Color) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.extraLarge,
+        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(

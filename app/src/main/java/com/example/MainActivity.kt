@@ -50,13 +50,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         
-        // Schedule periodic worker
-        val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(4, TimeUnit.HOURS).build()
-        WorkManager.getInstance(applicationContext).enqueueUniquePeriodicWork(
-            "AssignmentMonitor",
-            ExistingPeriodicWorkPolicy.KEEP,
-            workRequest
-        )
+        // WorkManager has been temporarily removed to prevent startup issues
         
         enableEdgeToEdge()
         setContent {

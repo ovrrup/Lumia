@@ -34,6 +34,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _themeColor = MutableStateFlow(prefs.getString("theme_color", "Default") ?: "Default")
     val themeColor = _themeColor.asStateFlow()
 
+    private val _betaFloatingNav = MutableStateFlow(prefs.getBoolean("beta_floating_nav", false))
+    val betaFloatingNav = _betaFloatingNav.asStateFlow()
+
     private val _currentStreak = MutableStateFlow(prefs.getInt("current_streak", 0))
     val currentStreak = _currentStreak.asStateFlow()
 
@@ -82,24 +85,24 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         )
     }
 
-    fun addCourse(title: String, description: String) {
+    fun addCourse(name: String, instructor: String, schedule: String, description: String) {
         viewModelScope.launch {
-            repository.insertCourse(Course(title = title, description = description))
-            logAction("Added course: $title")
+            repository.insertCourse(Course(name = name, instructor = instructor, schedule = schedule, description = description))
+            logAction("Added course: $name")
         }
     }
 
     fun deleteCourse(course: Course) {
         viewModelScope.launch {
             repository.deleteCourse(course)
-            logAction("Deleted course: ${course.title}")
+            logAction("Deleted course: ${course.name}")
         }
     }
 
     fun updateCourse(course: Course) {
         viewModelScope.launch {
             repository.updateCourse(course)
-            logAction("Updated course: ${course.title}")
+            logAction("Updated course: ${course.name}")
         }
     }
 
@@ -242,5 +245,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         _themeColor.value = color
         getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
             .edit().putString("theme_color", color).apply()
+    }
+
+    fun updateBetaFloatingNav(enabled: Boolean) {
+        _betaFloatingNav.value = enabled
+        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
+            .edit().putBoolean("beta_floating_nav", enabled).apply()
     }
 }

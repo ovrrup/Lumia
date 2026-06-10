@@ -58,7 +58,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text(course.title, fontWeight = FontWeight.Bold) },
+                title = { Text(course.name, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -89,11 +89,36 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
+                if (course.instructor.isNotBlank() || course.schedule.isNotBlank() || course.description.isNotBlank()) {
+                    item(span = { GridItemSpan(2) }) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                if (course.instructor.isNotBlank()) {
+                                    Text("Instructor: ${course.instructor}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
+                                if (course.schedule.isNotBlank()) {
+                                    Text("Schedule: ${course.schedule}", style = MaterialTheme.typography.bodyMedium)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
+                                if (course.description.isNotBlank()) {
+                                    Text(course.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Attendance Card
                 item(span = { GridItemSpan(2) }) {
                     Card(
                         modifier = Modifier.fillMaxWidth().animateContentSize(),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
+                        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
@@ -152,7 +177,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         Card(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            shape = RoundedCornerShape(24.dp)
+                            shape = MaterialTheme.shapes.extraLarge,
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                         ) {
                             Column(
                                 modifier = Modifier
@@ -180,12 +206,6 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    "Tap the add button to add one",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
                             }
                         }
                     }
@@ -196,8 +216,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         )
                         Card(
                             modifier = Modifier.fillMaxWidth().animateContentSize(),
-                            shape = RoundedCornerShape(24.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            shape = MaterialTheme.shapes.extraLarge,
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                             colors = CardDefaults.cardColors(containerColor = cardColor),
                         ) {
                             Row(
@@ -249,6 +269,30 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     if (showAddAssignmentDialog) {
         var title by remember { mutableStateOf("") }
         var desc by remember { mutableStateOf("") }
+        var dueDateMillis by remember { mutableStateOf(System.currentTimeMillis() + 86400000L) }
+        var showDatePicker by remember { mutableStateOf(false) }
+
+        if (showDatePicker) {
+            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = dueDateMillis)
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let { dueDateMillis = it }
+                        showDatePicker = false
+                    }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text("Cancel")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
 
         AlertDialog(
             onDismissRequest = { showAddAssignmentDialog = false },
@@ -268,12 +312,20 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(
+                        onClick = { showDatePicker = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+                        Text("Due: ${dateFormat.format(java.util.Date(dueDateMillis))}")
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     if (title.isNotBlank()) {
-                        viewModel.addAssignment(courseId, title, desc, System.currentTimeMillis() + 86400000)
+                        viewModel.addAssignment(courseId, title, desc, dueDateMillis)
                         showAddAssignmentDialog = false
                     }
                 }) { Text("Add") }

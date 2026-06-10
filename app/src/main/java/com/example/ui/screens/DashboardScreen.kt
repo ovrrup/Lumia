@@ -10,18 +10,9 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+
+// ... the rest of the imports ...
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -55,6 +46,11 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -91,31 +87,81 @@ import androidx.compose.material3.DropdownMenuItem
 @Composable
 fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     var selectedTab by remember { mutableStateOf(0) }
+    val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
     
-    Scaffold(
-        bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-            ) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Home") },
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 }
+    androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            bottomBar = {
+                if (!betaFloatingNav) {
+                    NavigationBar(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ) {
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                            label = { Text("Home") },
+                            selected = selectedTab == 0,
+                            onClick = { selectedTab = 0 }
+                        )
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Analytics, contentDescription = "Analytics") },
+                            label = { Text("Analytics") },
+                            selected = selectedTab == 1,
+                            onClick = { selectedTab = 1 }
+                        )
+                    }
+                }
+            }
+        ) { padding ->
+            val extendedPadding = if (betaFloatingNav) {
+                PaddingValues(
+                    start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+                    top = padding.calculateTopPadding(),
+                    end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+                    bottom = padding.calculateBottomPadding() + 112.dp
                 )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Analytics, contentDescription = "Analytics") },
-                    label = { Text("Analytics") },
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 }
-                )
+            } else {
+                padding
+            }
+            if (selectedTab == 0) {
+                HomeTab(navController = navController, viewModel = viewModel, bottomPadding = extendedPadding)
+            } else {
+                AnalyticsTab(viewModel = viewModel, paddingValues = extendedPadding)
             }
         }
-    ) { padding ->
-        if (selectedTab == 0) {
-            HomeTab(navController = navController, viewModel = viewModel, bottomPadding = padding)
-        } else {
-            AnalyticsTab(viewModel = viewModel, paddingValues = padding)
+
+        if (betaFloatingNav) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier
+                    .align(androidx.compose.ui.Alignment.BottomCenter)
+                    .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
+                    .windowInsetsPadding(WindowInsets.navigationBars),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                shadowElevation = 8.dp,
+                tonalElevation = 4.dp
+            ) {
+                NavigationBar(
+                    modifier = Modifier.fillMaxWidth().height(80.dp),
+                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    tonalElevation = 0.dp,
+                    windowInsets = WindowInsets(0, 0, 0, 0)
+                ) {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                        label = { Text("Home") },
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Analytics, contentDescription = "Analytics") },
+                        label = { Text("Analytics") },
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 }
+                    )
+                }
+            }
         }
     }
 }
@@ -151,7 +197,7 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
-        modifier = Modifier.padding(bottomPadding).nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(id = R.string.app_name), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
@@ -169,7 +215,7 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
         },
         floatingActionButton = {
             var fabExpanded by remember { mutableStateOf(false) }
-            Box {
+            Box(modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding())) {
                 DropdownMenu(expanded = fabExpanded, onDismissRequest = { fabExpanded = false }) {
                     DropdownMenuItem(text = { Text("Add Course") }, onClick = { fabExpanded=false; showAddCourseDialog=true })
                     DropdownMenuItem(text = { Text("Add Subject") }, onClick = { fabExpanded=false; showAddSubjectDialog=true })
@@ -184,129 +230,128 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 24.dp,
+                end = 24.dp,
+                top = padding.calculateTopPadding() + 16.dp,
+                bottom = padding.calculateBottomPadding() + bottomPadding.calculateBottomPadding() + 32.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Section removed as requested
-
-                // Streak Bento Card
-                item(span = { GridItemSpan(1) }) {
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Streak Card
                     Card(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .weight(1f)
                             .aspectRatio(1f),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(32.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                     ) {
                         Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
+                            modifier = Modifier.fillMaxSize().padding(24.dp),
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
                             Icon(
                                 imageVector = Icons.Default.LocalFireDepartment,
                                 contentDescription = "Streak",
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier
-                                    .size(48.dp)
+                                    .size(56.dp)
                                     .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f), CircleShape)
-                                    .padding(8.dp)
+                                    .padding(12.dp)
                             )
                             Column {
                                 Text(
                                     "$streak",
                                     style = MaterialTheme.typography.displayMedium,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
                                     "Day Streak",
-                                    style = MaterialTheme.typography.titleSmall,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                 )
                             }
                         }
                     }
-                }
 
-                // Courses Count Bento Card
-                item(span = { GridItemSpan(1) }) {
+                    // Courses Stats
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f),
-                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier.weight(1f).aspectRatio(1f),
+                        shape = RoundedCornerShape(32.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                     ) {
                         Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
+                            modifier = Modifier.fillMaxSize().padding(24.dp),
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.MenuBook,
                                 contentDescription = "Courses",
-                                tint = MaterialTheme.colorScheme.secondary,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier
-                                    .size(48.dp)
+                                    .size(56.dp)
                                     .background(MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f), CircleShape)
-                                    .padding(8.dp)
+                                    .padding(12.dp)
                             )
                             Column {
                                 Text(
                                     "${courses.size}",
                                     style = MaterialTheme.typography.displayMedium,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Text(
-                                    "Enrolled Courses",
-                                    style = MaterialTheme.typography.titleSmall,
+                                    "Enrolled",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                                 )
                             }
                         }
                     }
                 }
+            }
 
-                item(span = { GridItemSpan(2) }) {
-                    Spacer(modifier = Modifier.height(8.dp))
+            item {
+                Text(
+                        "Your Courses",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
                 }
 
                 if (courses.isEmpty()) {
-                    item(span = { GridItemSpan(2) }) {
+                    item {
                         Card(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                            modifier = Modifier.fillMaxWidth().height(240.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            shape = RoundedCornerShape(24.dp)
+                            shape = RoundedCornerShape(32.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(40.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(72.dp)
+                                        .size(80.dp)
                                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.MenuBook,
                                         contentDescription = null,
-                                        modifier = Modifier.size(36.dp),
+                                        modifier = Modifier.size(40.dp),
                                         tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
@@ -316,12 +361,6 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    "Tap the add button to start your journey",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -335,8 +374,8 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                 .fillMaxWidth()
                                 .aspectRatio(1f)
                                 .animateContentSize(),
-                            shape = RoundedCornerShape(24.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            shape = MaterialTheme.shapes.extraLarge,
+                            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         ) {
                             Column(
@@ -352,8 +391,8 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(48.dp)
-                                            .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp)),
+                                            .size(56.dp)
+                                            .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
@@ -386,7 +425,7 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
 
                                 Column {
                                     Text(
-                                        text = course.title,
+                                        text = course.name,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface,
@@ -409,70 +448,65 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                     }
                 }
 
-                item(span = { GridItemSpan(2) }) {
+                item {
                     Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Your Subjects",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
                 }
 
                 if (subjects.isEmpty()) {
-                    item(span = { GridItemSpan(2) }) {
+                    item {
                         Card(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                            modifier = Modifier.fillMaxWidth().height(240.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            shape = RoundedCornerShape(24.dp)
+                            shape = RoundedCornerShape(32.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(40.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(72.dp)
+                                        .size(80.dp)
                                         .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.MenuBook,
                                         contentDescription = null,
-                                        modifier = Modifier.size(36.dp),
+                                        modifier = Modifier.size(40.dp),
                                         tint = MaterialTheme.colorScheme.tertiary
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(24.dp))
                                 Text(
                                     "No subjects yet",
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    "Tap the add button to add subjects",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                     }
                 } else {
-                    items(subjects, key = { it.id }) { subject ->
+                    items(subjects.size) { index ->
+                        val subject = subjects[index]
                         var expanded by remember { mutableStateOf(false) }
                         Card(
                             onClick = { navController.navigate("subjectDetail/${subject.id}") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(1f)
-                                .animateContentSize(),
-                            shape = RoundedCornerShape(24.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(32.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         ) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp),
-                                verticalArrangement = Arrangement.SpaceBetween
+                                modifier = Modifier.fillMaxWidth().padding(24.dp)
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -480,21 +514,18 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                     verticalAlignment = Alignment.Top
                                 ) {
                                     Box(
-                                        modifier = Modifier
-                                            .size(48.dp)
-                                            .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(16.dp)),
+                                        modifier = Modifier.size(64.dp).background(MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(20.dp)),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                            modifier = Modifier.size(24.dp)
+                                        Text(
+                                            text = subject.name.take(1).uppercase(),
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            fontWeight = FontWeight.Black,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
                                         )
                                     }
-                                    
                                     Box {
-                                        IconButton(onClick = { expanded = true }, modifier = Modifier.size(32.dp)) {
+                                        IconButton(onClick = { expanded = true }) {
                                             Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                         DropdownMenu(
@@ -512,38 +543,37 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                         }
                                     }
                                 }
-
-                                Column {
-                                    Text(
-                                        text = subject.name,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "${subject.targetHours} hr target",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Text(
+                                    text = subject.name,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "${subject.targetHours} hr target",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                         }
                     }
                 }
-                item(span = { GridItemSpan(2) }) {
+                item {
                     Spacer(modifier = Modifier.height(80.dp))
                 }
             }
         }
-    }
 
     if (showAddCourseDialog) {
-        var title by remember { mutableStateOf("") }
+        var name by remember { mutableStateOf("") }
+        var instructor by remember { mutableStateOf("") }
+        var schedule by remember { mutableStateOf("") }
         var description by remember { mutableStateOf("") }
 
         AlertDialog(
@@ -552,11 +582,47 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
             text = {
                 Column {
                     OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = { Text("Course Title") },
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Course Name") },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = instructor,
+                        onValueChange = { instructor = it },
+                        label = { Text("Instructor") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    var showTimePicker by remember { mutableStateOf(false) }
+                    val timePickerState = rememberTimePickerState()
+
+                    if (showTimePicker) {
+                        AlertDialog(
+                            onDismissRequest = { showTimePicker = false },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    val hour = timePickerState.hour
+                                    val minute = timePickerState.minute
+                                    val amPm = if (hour >= 12) "PM" else "AM"
+                                    val formatHour = if (hour % 12 == 0) 12 else hour % 12
+                                    schedule = String.format(java.util.Locale.getDefault(), "%02d:%02d %s", formatHour, minute, amPm)
+                                    showTimePicker = false
+                                }) { Text("OK") }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                            },
+                            text = {
+                                TimePicker(state = timePickerState)
+                            }
+                        )
+                    }
+                    
+                    androidx.compose.material3.OutlinedButton(onClick = { showTimePicker = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (schedule.isEmpty()) "Select Schedule Time" else "Schedule: $schedule")
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = description,
@@ -568,8 +634,8 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
             },
             confirmButton = {
                 TextButton(onClick = {
-                    if (title.isNotBlank()) {
-                        viewModel.addCourse(title, description)
+                    if (name.isNotBlank()) {
+                        viewModel.addCourse(name, instructor, schedule, description)
                         showAddCourseDialog = false
                     }
                 }) { Text("Add") }
@@ -600,7 +666,8 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                         value = targetHours,
                         onValueChange = { targetHours = it.filter { char -> char.isDigit() } },
                         label = { Text("Target Hours") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
                     )
                 }
             },

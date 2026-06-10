@@ -102,9 +102,9 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .animateContentSize(),
-                shape = MaterialTheme.shapes.large,
+                shape = MaterialTheme.shapes.extraLarge,
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Column {
                     SettingsGroupMenu(
@@ -166,6 +166,31 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Beta Features Category
+            SettingsCategoryHeading(title = "Beta Features", icon = Icons.Default.Check)
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .animateContentSize(),
+                shape = MaterialTheme.shapes.extraLarge,
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                Column {
+                    val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
+                    SettingsToggleItem(
+                        title = "Floating Action Bar",
+                        subtitle = "Makes the bottom navigation bar float and look chubby",
+                        checked = betaFloatingNav,
+                        onCheckedChange = { viewModel.updateBetaFloatingNav(it) }
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+
             // Data Management Category
             SettingsCategoryHeading(title = "Data Management", icon = Icons.Default.Storage)
 
@@ -174,9 +199,9 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .animateContentSize(),
-                shape = MaterialTheme.shapes.large,
+                shape = MaterialTheme.shapes.extraLarge,
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Column {
                     SettingsActionItem(

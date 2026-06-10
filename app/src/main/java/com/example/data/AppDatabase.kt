@@ -10,7 +10,7 @@ import com.example.model.Subject
 import com.example.model.Topic
 import com.example.model.ActionLog
 
-@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class], version = 2, exportSchema = false)
+@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scholarDao(): ScholarDao
 

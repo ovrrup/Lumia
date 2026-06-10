@@ -86,29 +86,22 @@ fun ScholarTheme(
         else -> darkTheme
     }
 
-    val colorScheme = when {
-        dynamicColor && themeColor == "Default" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        else -> {
-            when (themeColor) {
-                "Ocean" -> if (isDark) OceanDark else OceanLight
-                "Forest" -> if (isDark) ForestDark else ForestLight
-                "Rose" -> if (isDark) RoseDark else RoseLight
-                "Sunset" -> if (isDark) SunsetDark else SunsetLight
-                "Purple" -> if (isDark) PurpleDark else PurpleLight
-                else -> if (isDark) DefaultDark else DefaultLight
-            }
-        }
-    }
+    val colorScheme = if (isDark) OceanDark else OceanLight
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDark
+            var context = view.context
+            while (context is android.content.ContextWrapper && context !is Activity) {
+                context = context.baseContext
+            }
+            if (context is Activity) {
+                val window = context.window
+                window.statusBarColor = android.graphics.Color.TRANSPARENT
+                window.navigationBarColor = android.graphics.Color.TRANSPARENT
+                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDark
+                WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !isDark
+            }
         }
     }
 

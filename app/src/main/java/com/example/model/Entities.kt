@@ -9,7 +9,9 @@ import java.io.Serializable
 @Entity(tableName = "courses")
 data class Course(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val title: String,
+    val name: String,
+    val instructor: String = "",
+    val schedule: String = "",
     val description: String = "",
     val attendedClasses: Int = 0,
     val totalClasses: Int = 0
