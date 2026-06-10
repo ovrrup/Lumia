@@ -37,6 +37,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaFloatingNav = MutableStateFlow(prefs.getBoolean("beta_floating_nav", false))
     val betaFloatingNav = _betaFloatingNav.asStateFlow()
 
+    private val _betaImmersiveMode = MutableStateFlow(prefs.getBoolean("beta_immersive_mode", false))
+    val betaImmersiveMode = _betaImmersiveMode.asStateFlow()
+
+    private val _betaNotchOptimization = MutableStateFlow(prefs.getBoolean("beta_notch_optimization", false))
+    val betaNotchOptimization = _betaNotchOptimization.asStateFlow()
+
     private val _showActionHistory = MutableStateFlow(prefs.getBoolean("show_action_history", true))
     val showActionHistory = _showActionHistory.asStateFlow()
 
@@ -46,6 +52,27 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     init {
         val database = AppDatabase.getDatabase(application)
         repository = ScholarRepository(database.scholarDao())
+        
+        val lastActionDate = prefs.getLong("last_action_date", 0L)
+        if (lastActionDate > 0L) {
+            val now = System.currentTimeMillis()
+            val lastCal = Calendar.getInstance().apply { timeInMillis = lastActionDate }
+            val nowCal = Calendar.getInstance().apply { timeInMillis = now }
+
+            val sameDay = lastCal.get(Calendar.YEAR) == nowCal.get(Calendar.YEAR) &&
+                          lastCal.get(Calendar.DAY_OF_YEAR) == nowCal.get(Calendar.DAY_OF_YEAR)
+                          
+            val yesterdayCal = Calendar.getInstance().apply { 
+                timeInMillis = now
+                add(Calendar.DAY_OF_YEAR, -1)
+            }
+            val isYesterday = lastCal.get(Calendar.YEAR) == yesterdayCal.get(Calendar.YEAR) &&
+                              lastCal.get(Calendar.DAY_OF_YEAR) == yesterdayCal.get(Calendar.DAY_OF_YEAR)
+                              
+            if (!sameDay && !isYesterday) {
+                updateStreak(0)
+            }
+        }
     }
 
     val courses: StateFlow<List<Course>> = repository.allCourses.stateIn(
@@ -228,15 +255,28 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val lastActionDate = prefs.getLong("last_action_date", 0L)
         val now = System.currentTimeMillis()
         
-        val msPerDay = 1000 * 60 * 60 * 24L
-        val offsetNow = java.util.TimeZone.getDefault().getOffset(now)
-        val dayNow = (now + offsetNow) / msPerDay
-        
-        val dayLast = if (lastActionDate == 0L) 0 else (lastActionDate + java.util.TimeZone.getDefault().getOffset(lastActionDate)) / msPerDay
+        if (lastActionDate == 0L) {
+            updateStreak(1)
+            prefs.edit().putLong("last_action_date", now).apply()
+            return
+        }
 
-        if (dayNow == dayLast + 1L) {
+        val lastCal = Calendar.getInstance().apply { timeInMillis = lastActionDate }
+        val nowCal = Calendar.getInstance().apply { timeInMillis = now }
+
+        val sameDay = lastCal.get(Calendar.YEAR) == nowCal.get(Calendar.YEAR) &&
+                      lastCal.get(Calendar.DAY_OF_YEAR) == nowCal.get(Calendar.DAY_OF_YEAR)
+                      
+        val yesterdayCal = Calendar.getInstance().apply { 
+            timeInMillis = now
+            add(Calendar.DAY_OF_YEAR, -1)
+        }
+        val isYesterday = lastCal.get(Calendar.YEAR) == yesterdayCal.get(Calendar.YEAR) &&
+                          lastCal.get(Calendar.DAY_OF_YEAR) == yesterdayCal.get(Calendar.DAY_OF_YEAR)
+
+        if (isYesterday) {
             updateStreak(_currentStreak.value + 1)
-        } else if (dayNow > dayLast + 1L || lastActionDate == 0L) {
+        } else if (!sameDay) {
             updateStreak(1)
         }
         
@@ -294,6 +334,18 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         _betaFloatingNav.value = enabled
         getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
             .edit().putBoolean("beta_floating_nav", enabled).apply()
+    }
+
+    fun updateBetaImmersiveMode(enabled: Boolean) {
+        _betaImmersiveMode.value = enabled
+        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
+            .edit().putBoolean("beta_immersive_mode", enabled).apply()
+    }
+
+    fun updateBetaNotchOptimization(enabled: Boolean) {
+        _betaNotchOptimization.value = enabled
+        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
+            .edit().putBoolean("beta_notch_optimization", enabled).apply()
     }
 
     fun updateShowActionHistory(enabled: Boolean) {

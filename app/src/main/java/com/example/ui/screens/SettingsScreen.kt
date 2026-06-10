@@ -106,7 +106,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .padding(horizontal = 16.dp)
                     .animateContentSize(),
                 shape = MaterialTheme.shapes.extraLarge,
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             ) {
                 Column {
@@ -178,7 +178,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .padding(horizontal = 16.dp)
                     .animateContentSize(),
                 shape = MaterialTheme.shapes.extraLarge,
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             ) {
                 Column {
@@ -188,6 +188,22 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                         subtitle = "Makes the bottom navigation bar float and look chubby",
                         checked = betaFloatingNav,
                         onCheckedChange = { viewModel.updateBetaFloatingNav(it) }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    val betaNotchOptimization by viewModel.betaNotchOptimization.collectAsStateWithLifecycle()
+                    SettingsToggleItem(
+                        title = "Notch & Punch Hole Optimization",
+                        subtitle = "Apply specialized padding to avoid display cutouts, notches, and punch hole cameras.",
+                        checked = betaNotchOptimization,
+                        onCheckedChange = { viewModel.updateBetaNotchOptimization(it) }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
+                    SettingsToggleItem(
+                        title = "Full Screen Punch Hole (Immersive)",
+                        subtitle = "Draw behind the punch hole camera, safely dodging UI elements.",
+                        checked = betaImmersiveMode,
+                        onCheckedChange = { viewModel.updateBetaImmersiveMode(it) }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
@@ -211,7 +227,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .padding(horizontal = 16.dp)
                     .animateContentSize(),
                 shape = MaterialTheme.shapes.extraLarge,
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             ) {
                 Column {

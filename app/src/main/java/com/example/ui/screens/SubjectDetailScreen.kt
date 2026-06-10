@@ -104,7 +104,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 120.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 120.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
@@ -115,7 +115,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         Card(
                             modifier = Modifier.fillMaxWidth().animateContentSize(),
                             shape = RoundedCornerShape(24.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                             colors = CardDefaults.cardColors(containerColor = cardColor)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(24.dp)) {

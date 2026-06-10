@@ -14,6 +14,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.displayCutoutPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.material3.MaterialTheme
@@ -49,14 +55,41 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
+            val betaNotchOptimization by viewModel.betaNotchOptimization.collectAsStateWithLifecycle()
+            val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
+
+            androidx.compose.runtime.LaunchedEffect(betaImmersiveMode) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    val window = (this@MainActivity).window
+                    window.attributes = window.attributes.apply {
+                        layoutInDisplayCutoutMode = if (betaImmersiveMode) {
+                            android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                        } else {
+                            android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+                        }
+                    }
+                }
+            }
 
             ScholarTheme(themeMode = themeMode, themeColor = themeColor) {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Surface(
+                    modifier = Modifier.fillMaxSize().then(
+                        if (betaNotchOptimization && !betaImmersiveMode) Modifier.displayCutoutPadding() else Modifier
+                    ), 
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     val navController = rememberNavController()
 
                     NavHost(
                         navController = navController, 
                         startDestination = "dashboard",
+                        modifier = Modifier.then(
+                            if (betaImmersiveMode) Modifier.windowInsetsPadding(
+                                androidx.compose.foundation.layout.WindowInsets.safeDrawing.only(
+                                    androidx.compose.foundation.layout.WindowInsetsSides.Horizontal
+                                )
+                            ) else Modifier
+                        ),
                         enterTransition = {
                             androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
                                 androidx.compose.animation.slideInHorizontally(
@@ -91,6 +124,18 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 viewModel = viewModel
                             )
+                        }
+                        composable("toolbox") {
+                            com.example.ui.screens.ToolboxScreen(navController = navController)
+                        }
+                        composable("pomodoro") {
+                            com.example.ui.screens.PomodoroScreen(navController = navController)
+                        }
+                        composable("cgpa") {
+                            com.example.ui.screens.CgpaCalculatorScreen(navController = navController)
+                        }
+                        composable("notes") {
+                            com.example.ui.screens.QuickNotesScreen(navController = navController)
                         }
                         composable(
                             "courseDetail/{id}",

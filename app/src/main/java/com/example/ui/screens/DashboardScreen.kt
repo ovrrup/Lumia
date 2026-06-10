@@ -33,6 +33,11 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.ManageSearch
+import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -236,12 +241,12 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
-                start = 24.dp,
-                end = 24.dp,
+                start = 16.dp,
+                end = 16.dp,
                 top = padding.calculateTopPadding() + 16.dp,
-                bottom = padding.calculateBottomPadding() + bottomPadding.calculateBottomPadding() + 32.dp
+                bottom = bottomPadding.calculateBottomPadding() + 32.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -249,13 +254,13 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                     Card(
                         modifier = Modifier
                             .weight(1f)
-                            .aspectRatio(1f),
+                            .height(160.dp),
                         shape = RoundedCornerShape(32.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                     ) {
                         Column(
-                            modifier = Modifier.fillMaxSize().padding(24.dp),
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
                             Icon(
@@ -263,14 +268,14 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                 contentDescription = "Streak",
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier
-                                    .size(56.dp)
+                                    .size(48.dp)
                                     .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f), CircleShape)
-                                    .padding(12.dp)
+                                    .padding(8.dp)
                             )
                             Column {
                                 Text(
                                     "$streak",
-                                    style = MaterialTheme.typography.displayMedium,
+                                    style = MaterialTheme.typography.displaySmall,
                                     fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
@@ -286,13 +291,13 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
 
                     // Courses Stats
                     Card(
-                        modifier = Modifier.weight(1f).aspectRatio(1f),
+                        modifier = Modifier.weight(1f).height(160.dp),
                         shape = RoundedCornerShape(32.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                     ) {
                         Column(
-                            modifier = Modifier.fillMaxSize().padding(24.dp),
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
                             Icon(
@@ -300,14 +305,14 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                 contentDescription = "Courses",
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier
-                                    .size(56.dp)
+                                    .size(48.dp)
                                     .background(MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f), CircleShape)
-                                    .padding(12.dp)
+                                    .padding(8.dp)
                             )
                             Column {
                                 Text(
                                     "${courses.size}",
-                                    style = MaterialTheme.typography.displayMedium,
+                                    style = MaterialTheme.typography.displaySmall,
                                     fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
@@ -319,6 +324,76 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                 )
                             }
                         }
+                    }
+                }
+            }
+
+            item {
+                Text(
+                    "Beta Features",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "Motivation",
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f), CircleShape).padding(6.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        val quotes = listOf(
+                            "Success is the sum of small efforts.",
+                            "The expert in everything was once a beginner.",
+                            "Don’t stop until you’re proud.",
+                            "Focus on your goals, not your obstacles."
+                        )
+                        val quote = remember { quotes.random() }
+                        Text(
+                            text = "\"$quote\"",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                        )
+                    }
+                }
+            }
+
+            item {
+                Card(
+                    onClick = { navController.navigate("toolbox") },
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Toolbox", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text("Pomodoro • CGPA • Notes", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                        }
+                        Icon(
+                            imageVector = Icons.Default.ManageSearch,
+                            contentDescription = "Toolbox",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f), CircleShape).padding(8.dp)
+                        )
                     }
                 }
             }
@@ -377,7 +452,7 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                 .fillMaxWidth()
                                 .animateContentSize(),
                             shape = MaterialTheme.shapes.extraLarge,
-                            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         ) {
                             Column(
@@ -406,7 +481,7 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                     }
                                     
                                     Box {
-                                        IconButton(onClick = { expanded = true }, modifier = Modifier.size(32.dp)) {
+                                        IconButton(onClick = { expanded = true }) {
                                             Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                         DropdownMenu(
@@ -505,8 +580,7 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                         }
                     }
                 } else {
-                    items(subjects.size) { index ->
-                        val subject = subjects[index]
+                    items(subjects, key = { it.id }) { subject ->
                         var expanded by remember { mutableStateOf(false) }
                         Card(
                             onClick = { navController.navigate("subjectDetail/${subject.id}") },
@@ -614,9 +688,22 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     var showTimePicker by remember { mutableStateOf(false) }
-                    val timePickerState = rememberTimePickerState()
-
+                    
                     if (showTimePicker) {
+                        val initialHour = remember {
+                            try {
+                                var parsedHour = schedule.substringBefore(":").toInt()
+                                if (schedule.contains("PM", ignoreCase = true) && parsedHour < 12) parsedHour += 12
+                                if (schedule.contains("AM", ignoreCase = true) && parsedHour == 12) parsedHour = 0
+                                parsedHour
+                            } catch (e: Exception) { 12 }
+                        }
+                        val initialMinute = remember {
+                            try {
+                                schedule.substringAfter(":").substringBefore(" ").toInt()
+                            } catch (e: Exception) { 0 }
+                        }
+                        val timePickerState = rememberTimePickerState(initialHour = initialHour, initialMinute = initialMinute)
                         AlertDialog(
                             onDismissRequest = { showTimePicker = false },
                             confirmButton = {
@@ -712,7 +799,20 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
         var showTimePicker by remember { mutableStateOf(false) }
 
         if (showTimePicker) {
-            val timePickerState = rememberTimePickerState()
+            val initialHour = remember {
+                try {
+                    var parsedHour = schedule.substringBefore(":").toInt()
+                    if (schedule.contains("PM", ignoreCase = true) && parsedHour < 12) parsedHour += 12
+                    if (schedule.contains("AM", ignoreCase = true) && parsedHour == 12) parsedHour = 0
+                    parsedHour
+                } catch (e: Exception) { 12 }
+            }
+            val initialMinute = remember {
+                try {
+                    schedule.substringAfter(":").substringBefore(" ").toInt()
+                } catch (e: Exception) { 0 }
+            }
+            val timePickerState = rememberTimePickerState(initialHour = initialHour, initialMinute = initialMinute)
             AlertDialog(
                 onDismissRequest = { showTimePicker = false },
                 confirmButton = {
@@ -828,3 +928,5 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
         )
     }
 }
+
+

@@ -4,6 +4,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,6 +19,8 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -88,8 +91,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             LazyColumn(
-                contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 120.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 if (course.instructor.isNotBlank() || course.schedule.isNotBlank() || course.description.isNotBlank()) {
@@ -122,6 +125,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     val attendanceRecords by viewModel.getAttendanceForCourse(courseId).collectAsStateWithLifecycle()
                     var selectedDate by remember { mutableStateOf(System.currentTimeMillis()) }
                     var showAttendanceDialog by remember { mutableStateOf(false) }
+                    var isMonthlyView by remember { mutableStateOf(false) }
+                    var displayMonthOffset by remember { mutableIntStateOf(0) }
 
                     Card(
                         modifier = Modifier.fillMaxWidth().animateContentSize(),
@@ -132,58 +137,160 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         Column(modifier = Modifier.padding(24.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Text("Attendance Tracker", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                                IconButton(onClick = { isMonthlyView = !isMonthlyView; displayMonthOffset = 0 }) {
+                                    Icon(
+                                        imageVector = if (isMonthlyView) Icons.Default.ViewModule else Icons.Default.DateRange,
+                                        contentDescription = "Toggle View",
+                                        tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
                             }
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Mini Calendar (Last 7 days)
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            if (isMonthlyView) {
                                 val calendar = java.util.Calendar.getInstance()
                                 calendar.timeInMillis = System.currentTimeMillis()
+                                calendar.add(java.util.Calendar.MONTH, displayMonthOffset)
+                                calendar.set(java.util.Calendar.DAY_OF_MONTH, 1)
                                 calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
                                 calendar.set(java.util.Calendar.MINUTE, 0)
                                 calendar.set(java.util.Calendar.SECOND, 0)
                                 calendar.set(java.util.Calendar.MILLISECOND, 0)
-                                val todayMillis = calendar.timeInMillis
+                                val monthStartMillis = calendar.timeInMillis
+                                val startDayOfWeek = calendar.get(java.util.Calendar.DAY_OF_WEEK) - 1 // 0 for Sunday
+                                val daysInMonth = calendar.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
+                                val monthName = java.text.SimpleDateFormat("MMMM yyyy", java.util.Locale.getDefault()).format(calendar.time)
                                 
-                                for (i in 6 downTo 0) {
-                                    val dateMillis = todayMillis - (i * 86400000L)
-                                    val dateCal = java.util.Calendar.getInstance().apply { timeInMillis = dateMillis }
-                                    val dayOfWeek = java.text.SimpleDateFormat("E", java.util.Locale.getDefault()).format(dateCal.time)
-                                    val dayOfMonth = java.text.SimpleDateFormat("d", java.util.Locale.getDefault()).format(dateCal.time)
-                                    
-                                    val record = attendanceRecords.find { it.dateMillis == dateMillis }
-                                    val statusColor = when (record?.status) {
-                                        "Present" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
-                                        "Absent" -> androidx.compose.ui.graphics.Color(0xFFF44336)
-                                        "Late" -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-                                        "Cancelled" -> androidx.compose.ui.graphics.Color.Gray
-                                        else -> MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    IconButton(onClick = { displayMonthOffset-- }) {
+                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Prev", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                     }
+                                    Text(monthName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                                    IconButton(onClick = { displayMonthOffset++ }) {
+                                        Icon(Icons.Default.ChevronRight, contentDescription = "Next", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                val daysOfWeek = listOf("S", "M", "T", "W", "T", "F", "S")
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    daysOfWeek.forEach { day ->
+                                        Text(day, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f), modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                val totalCells = kotlin.math.ceil((daysInMonth + startDayOfWeek) / 7.0).toInt() * 7
+                                var renderDay = 1
+                                for (row in 0 until (totalCells/7)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        for (col in 0 until 7) {
+                                            if (row == 0 && col < startDayOfWeek || renderDay > daysInMonth) {
+                                                Spacer(modifier = Modifier.weight(1f).aspectRatio(1f))
+                                            } else {
+                                                val dateCal = java.util.Calendar.getInstance().apply { 
+                                                    timeInMillis = monthStartMillis 
+                                                    set(java.util.Calendar.DAY_OF_MONTH, renderDay)
+                                                }
+                                                val dateMillis = dateCal.timeInMillis
+                                                renderDay++
+                                                
+                                                val record = attendanceRecords.find { it.dateMillis == dateMillis }
+                                                val statusColor = when (record?.status) {
+                                                    "Present" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                                                    "Absent" -> androidx.compose.ui.graphics.Color(0xFFF44336)
+                                                    "Late" -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                                                    "Cancelled" -> androidx.compose.ui.graphics.Color.Gray
+                                                    else -> androidx.compose.ui.graphics.Color.Transparent
+                                                }
 
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .clickable {
-                                                selectedDate = dateMillis
-                                                showAttendanceDialog = true
+                                                val todayCal = java.util.Calendar.getInstance()
+                                                val isToday = todayCal.get(java.util.Calendar.YEAR) == dateCal.get(java.util.Calendar.YEAR) &&
+                                                              todayCal.get(java.util.Calendar.DAY_OF_YEAR) == dateCal.get(java.util.Calendar.DAY_OF_YEAR)
+                                                
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .aspectRatio(1f)
+                                                        .padding(2.dp)
+                                                        .clip(CircleShape)
+                                                        .background(statusColor)
+                                                        .then(if (isToday) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape) else Modifier)
+                                                        .clickable {
+                                                            selectedDate = dateMillis
+                                                            showAttendanceDialog = true
+                                                        },
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        "${renderDay - 1}",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        fontWeight = if (isToday) FontWeight.Black else FontWeight.Normal,
+                                                        color = if (record != null) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onTertiaryContainer
+                                                    )
+                                                }
                                             }
-                                            .padding(4.dp)
-                                    ) {
-                                        Text(dayOfWeek.take(1), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Box(
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Mini Calendar (Last 7 days)
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    val calendar = java.util.Calendar.getInstance()
+                                    calendar.timeInMillis = System.currentTimeMillis()
+                                    calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                                    calendar.set(java.util.Calendar.MINUTE, 0)
+                                    calendar.set(java.util.Calendar.SECOND, 0)
+                                    calendar.set(java.util.Calendar.MILLISECOND, 0)
+                                    val todayMillis = calendar.timeInMillis
+                                    
+                                    for (i in 6 downTo 0) {
+                                        val dateCal = java.util.Calendar.getInstance().apply {
+                                            timeInMillis = todayMillis
+                                            add(java.util.Calendar.DAY_OF_YEAR, -i)
+                                        }
+                                        val dateMillis = dateCal.timeInMillis
+                                        val dayOfWeek = java.text.SimpleDateFormat("E", java.util.Locale.getDefault()).format(dateCal.time)
+                                        val dayOfMonth = java.text.SimpleDateFormat("d", java.util.Locale.getDefault()).format(dateCal.time)
+                                        
+                                        val record = attendanceRecords.find { it.dateMillis == dateMillis }
+                                        val statusColor = when (record?.status) {
+                                            "Present" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                                            "Absent" -> androidx.compose.ui.graphics.Color(0xFFF44336)
+                                            "Late" -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                                            "Cancelled" -> androidx.compose.ui.graphics.Color.Gray
+                                            else -> MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f)
+                                        }
+
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
                                             modifier = Modifier
-                                                .size(36.dp)
-                                                .background(statusColor, CircleShape),
-                                            contentAlignment = Alignment.Center
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    selectedDate = dateMillis
+                                                    showAttendanceDialog = true
+                                                }
+                                                .padding(4.dp)
                                         ) {
-                                            Text(
-                                                dayOfMonth,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (record != null) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onTertiaryContainer
-                                            )
+                                            Text(dayOfWeek.take(1), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(36.dp)
+                                                    .background(statusColor, CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    dayOfMonth,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (record != null) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onTertiaryContainer
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -309,7 +416,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         Card(
                             modifier = Modifier.fillMaxWidth().animateContentSize(),
                             shape = RoundedCornerShape(24.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                             colors = CardDefaults.cardColors(containerColor = cardColor),
                         ) {
                             Row(
