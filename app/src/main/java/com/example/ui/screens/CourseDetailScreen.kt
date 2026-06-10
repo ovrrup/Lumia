@@ -16,6 +16,7 @@ import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Warning
@@ -47,6 +48,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     val course = courses.find { it.id == courseId }
     val assignments by viewModel.getAssignmentsForCourse(courseId).collectAsStateWithLifecycle()
     var showAddAssignmentDialog by remember { mutableStateOf(false) }
+    var assignmentToEdit by remember { mutableStateOf<com.example.model.PracticeAssignment?>(null) }
 
     if (course == null) {
         LaunchedEffect(Unit) {
@@ -117,6 +119,10 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
                 // Attendance Card
                 item {
+                    val attendanceRecords by viewModel.getAttendanceForCourse(courseId).collectAsStateWithLifecycle()
+                    var selectedDate by remember { mutableStateOf(System.currentTimeMillis()) }
+                    var showAttendanceDialog by remember { mutableStateOf(false) }
+
                     Card(
                         modifier = Modifier.fillMaxWidth().animateContentSize(),
                         shape = RoundedCornerShape(32.dp),
@@ -125,41 +131,126 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("Attendance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                                val attendanceWarning = if (course.totalClasses > 0 && (course.attendedClasses.toFloat() / course.totalClasses) < 0.75f) true else false
-                                if (attendanceWarning) {
-                                    Icon(Icons.Default.Warning, contentDescription = "Low Attendance", tint = MaterialTheme.colorScheme.error)
-                                }
+                                Text("Attendance Tracker", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
                             }
-                            Spacer(modifier = Modifier.height(24.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Attended", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        IconButton(onClick = { if (course.attendedClasses > 0) viewModel.updateCourse(course.copy(attendedClasses = course.attendedClasses - 1)) }) {
-                                            Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = MaterialTheme.colorScheme.onTertiaryContainer)
-                                        }
-                                        Text("${course.attendedClasses}", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                                        IconButton(onClick = { if (course.attendedClasses < course.totalClasses) viewModel.updateCourse(course.copy(attendedClasses = course.attendedClasses + 1)) }) {
-                                            Icon(Icons.Default.Add, contentDescription = "Increase", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Mini Calendar (Last 7 days)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                val calendar = java.util.Calendar.getInstance()
+                                calendar.timeInMillis = System.currentTimeMillis()
+                                calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                                calendar.set(java.util.Calendar.MINUTE, 0)
+                                calendar.set(java.util.Calendar.SECOND, 0)
+                                calendar.set(java.util.Calendar.MILLISECOND, 0)
+                                val todayMillis = calendar.timeInMillis
+                                
+                                for (i in 6 downTo 0) {
+                                    val dateMillis = todayMillis - (i * 86400000L)
+                                    val dateCal = java.util.Calendar.getInstance().apply { timeInMillis = dateMillis }
+                                    val dayOfWeek = java.text.SimpleDateFormat("E", java.util.Locale.getDefault()).format(dateCal.time)
+                                    val dayOfMonth = java.text.SimpleDateFormat("d", java.util.Locale.getDefault()).format(dateCal.time)
+                                    
+                                    val record = attendanceRecords.find { it.dateMillis == dateMillis }
+                                    val statusColor = when (record?.status) {
+                                        "Present" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                                        "Absent" -> androidx.compose.ui.graphics.Color(0xFFF44336)
+                                        "Late" -> androidx.compose.ui.graphics.Color(0xFFFF9800)
+                                        "Cancelled" -> androidx.compose.ui.graphics.Color.Gray
+                                        else -> MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f)
+                                    }
+
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                selectedDate = dateMillis
+                                                showAttendanceDialog = true
+                                            }
+                                            .padding(4.dp)
+                                    ) {
+                                        Text(dayOfWeek.take(1), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .background(statusColor, CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                dayOfMonth,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (record != null) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
                                         }
                                     }
                                 }
-                                Text("/", style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.3f))
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Total Classes", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        IconButton(onClick = { if (course.totalClasses > course.attendedClasses) viewModel.updateCourse(course.copy(totalClasses = course.totalClasses - 1)) }) {
-                                            Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = MaterialTheme.colorScheme.onTertiaryContainer)
-                                        }
-                                        Text("${course.totalClasses}", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                                        IconButton(onClick = { viewModel.updateCourse(course.copy(totalClasses = course.totalClasses + 1)) }) {
-                                            Icon(Icons.Default.Add, contentDescription = "Increase", tint = MaterialTheme.colorScheme.onTertiaryContainer)
-                                        }
-                                    }
-                                }
                             }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            val presentCount = attendanceRecords.count { it.status == "Present" || it.status == "Late" }
+                            val totalCount = attendanceRecords.size
+                            Text(
+                                "Attended: $presentCount / $totalCount marked classes",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f)
+                            )
                         }
+                    }
+
+                    if (showAttendanceDialog) {
+                        val record = attendanceRecords.find { it.dateMillis == selectedDate }
+                        val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+                        AlertDialog(
+                            onDismissRequest = { showAttendanceDialog = false },
+                            title = { Text("Mark Attendance - ${dateFormat.format(java.util.Date(selectedDate))}") },
+                            text = {
+                                Column {
+                                    val options = listOf("Present", "Absent", "Late", "Cancelled")
+                                    options.forEach { option ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    if (record != null) {
+                                                        viewModel.updateAttendanceRecord(record.copy(status = option))
+                                                    } else {
+                                                        viewModel.addAttendanceRecord(courseId, selectedDate, option)
+                                                    }
+                                                    showAttendanceDialog = false
+                                                }
+                                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            RadioButton(
+                                                selected = record?.status == option,
+                                                onClick = null
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(option, style = MaterialTheme.typography.bodyLarge)
+                                        }
+                                    }
+                                    if (record != null) {
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        TextButton(
+                                            onClick = {
+                                                viewModel.deleteAttendanceRecord(record)
+                                                showAttendanceDialog = false
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text("Clear Record", color = MaterialTheme.colorScheme.error)
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(onClick = { showAttendanceDialog = false }) {
+                                    Text("Close")
+                                }
+                            }
+                        )
                     }
                 }
 
@@ -253,8 +344,13 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                         )
                                     }
                                 }
-                                IconButton(onClick = { viewModel.deleteAssignment(assignment) }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                                Row {
+                                    IconButton(onClick = { assignmentToEdit = assignment }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
+                                    }
+                                    IconButton(onClick = { viewModel.deleteAssignment(assignment) }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                                    }
                                 }
                             }
                         }
@@ -330,6 +426,82 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             },
             dismissButton = {
                 TextButton(onClick = { showAddAssignmentDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (assignmentToEdit != null) {
+        var title by remember { mutableStateOf(assignmentToEdit!!.title) }
+        var desc by remember { mutableStateOf(assignmentToEdit!!.description) }
+        var dueDateMillis by remember { mutableStateOf(assignmentToEdit!!.dueDateMillis) }
+        var showDatePicker by remember { mutableStateOf(false) }
+
+        if (showDatePicker) {
+            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = dueDateMillis)
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let { dueDateMillis = it }
+                        showDatePicker = false
+                    }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text("Cancel")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { assignmentToEdit = null },
+            title = { Text("Edit Assignment") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Title") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = desc,
+                        onValueChange = { desc = it },
+                        label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(
+                        onClick = { showDatePicker = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+                        Text("Due: ${dateFormat.format(java.util.Date(dueDateMillis))}")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (title.isNotBlank()) {
+                        viewModel.updateAssignmentDetails(
+                            assignmentToEdit!!.copy(
+                                title = title,
+                                description = desc,
+                                dueDateMillis = dueDateMillis
+                            )
+                        )
+                        assignmentToEdit = null
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { assignmentToEdit = null }) { Text("Cancel") }
             }
         )
     }

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.TabRow
@@ -177,6 +178,8 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
 
     var showAddCourseDialog by remember { mutableStateOf(false) }
     var showAddSubjectDialog by remember { mutableStateOf(false) }
+    var courseToEdit by remember { mutableStateOf<com.example.model.Course?>(null) }
+    var subjectToEdit by remember { mutableStateOf<com.example.model.Subject?>(null) }
 
     // Notifications Permission
     val requestPermissionLauncher = rememberLauncherForActivityResult(
@@ -411,6 +414,14 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                             onDismissRequest = { expanded = false }
                                         ) {
                                             DropdownMenuItem(
+                                                text = { Text("Edit") },
+                                                onClick = {
+                                                    expanded = false
+                                                    courseToEdit = course
+                                                },
+                                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                                            )
+                                            DropdownMenuItem(
                                                 text = { Text("Delete") },
                                                 onClick = {
                                                     expanded = false
@@ -531,6 +542,14 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                                             expanded = expanded,
                                             onDismissRequest = { expanded = false }
                                         ) {
+                                            DropdownMenuItem(
+                                                text = { Text("Edit") },
+                                                onClick = {
+                                                    expanded = false
+                                                    subjectToEdit = subject
+                                                },
+                                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                                            )
                                             DropdownMenuItem(
                                                 text = { Text("Delete") },
                                                 onClick = {
@@ -681,6 +700,130 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
             },
             dismissButton = {
                 TextButton(onClick = { showAddSubjectDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (courseToEdit != null) {
+        var name by remember { mutableStateOf(courseToEdit!!.name) }
+        var instructor by remember { mutableStateOf(courseToEdit!!.instructor) }
+        var schedule by remember { mutableStateOf(courseToEdit!!.schedule) }
+        var description by remember { mutableStateOf(courseToEdit!!.description) }
+        var showTimePicker by remember { mutableStateOf(false) }
+
+        if (showTimePicker) {
+            val timePickerState = rememberTimePickerState()
+            AlertDialog(
+                onDismissRequest = { showTimePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val hour = timePickerState.hour
+                        val minute = timePickerState.minute
+                        val amPm = if (hour >= 12) "PM" else "AM"
+                        val formatHour = if (hour % 12 == 0) 12 else hour % 12
+                        schedule = String.format(java.util.Locale.getDefault(), "%02d:%02d %s", formatHour, minute, amPm)
+                        showTimePicker = false
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                },
+                text = {
+                    TimePicker(state = timePickerState)
+                }
+            )
+        }
+
+        AlertDialog(
+            onDismissRequest = { courseToEdit = null },
+            title = { Text("Edit Course") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Course Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = instructor,
+                        onValueChange = { instructor = it },
+                        label = { Text("Instructor") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    androidx.compose.material3.OutlinedButton(onClick = { showTimePicker = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (schedule.isEmpty()) "Select Schedule Time" else "Schedule: $schedule")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 3
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (name.isNotBlank()) {
+                        viewModel.updateCourse(courseToEdit!!.copy(
+                            name = name,
+                            instructor = instructor,
+                            schedule = schedule,
+                            description = description
+                        ))
+                        courseToEdit = null
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { courseToEdit = null }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (subjectToEdit != null) {
+        var name by remember { mutableStateOf(subjectToEdit!!.name) }
+        var targetHours by remember { mutableStateOf(subjectToEdit!!.targetHours.toString()) }
+
+        AlertDialog(
+            onDismissRequest = { subjectToEdit = null },
+            title = { Text("Edit Subject") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Subject Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = targetHours,
+                        onValueChange = { targetHours = it.filter { char -> char.isDigit() } },
+                        label = { Text("Target Hours") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (name.isNotBlank()) {
+                        val hours = targetHours.toIntOrNull() ?: subjectToEdit!!.targetHours
+                        viewModel.updateSubject(subjectToEdit!!.copy(
+                            name = name,
+                            targetHours = hours
+                        ))
+                        subjectToEdit = null
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { subjectToEdit = null }) { Text("Cancel") }
             }
         )
     }

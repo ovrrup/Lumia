@@ -35,6 +35,9 @@ interface ScholarDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubject(subject: Subject): Long
 
+    @Update
+    suspend fun updateSubject(subject: Subject)
+
     @Delete
     suspend fun deleteSubject(subject: Subject)
 
@@ -66,6 +69,21 @@ interface ScholarDao {
 
     @Delete
     suspend fun deleteAssignment(assignment: PracticeAssignment)
+
+    @Query("SELECT * FROM attendance_records WHERE courseId = :courseId ORDER BY dateMillis DESC")
+    fun getAttendanceForCourse(courseId: Int): Flow<List<com.example.model.AttendanceRecord>>
+    
+    @Query("SELECT * FROM attendance_records ORDER BY dateMillis DESC")
+    fun getAllAttendanceRecords(): Flow<List<com.example.model.AttendanceRecord>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAttendanceRecord(record: com.example.model.AttendanceRecord)
+
+    @Update
+    suspend fun updateAttendanceRecord(record: com.example.model.AttendanceRecord)
+
+    @Delete
+    suspend fun deleteAttendanceRecord(record: com.example.model.AttendanceRecord)
     
     @Query("SELECT * FROM action_logs ORDER BY timestampMillis DESC")
     fun getAllActionLogs(): Flow<List<ActionLog>>

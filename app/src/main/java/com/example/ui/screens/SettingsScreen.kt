@@ -12,6 +12,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -90,7 +92,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
         Column(
             modifier = Modifier
                 .padding(padding)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -186,6 +189,14 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                         checked = betaFloatingNav,
                         onCheckedChange = { viewModel.updateBetaFloatingNav(it) }
                     )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
+                    SettingsToggleItem(
+                        title = "Show Action History",
+                        subtitle = "Display action history on the Analytics tab",
+                        checked = showActionHistory,
+                        onCheckedChange = { viewModel.updateShowActionHistory(it) }
+                    )
                 }
             }
             
@@ -220,6 +231,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

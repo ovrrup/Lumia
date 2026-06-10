@@ -27,6 +27,7 @@ class ScholarRepository(private val dao: ScholarDao) {
     suspend fun deleteCourse(course: Course) = dao.deleteCourse(course)
 
     suspend fun insertSubject(subject: Subject) = dao.insertSubject(subject)
+    suspend fun updateSubject(subject: Subject) = dao.updateSubject(subject)
     suspend fun deleteSubject(subject: Subject) = dao.deleteSubject(subject)
 
     suspend fun insertTopic(topic: Topic) = dao.insertTopic(topic)
@@ -36,6 +37,12 @@ class ScholarRepository(private val dao: ScholarDao) {
     suspend fun insertAssignment(assignment: PracticeAssignment) = dao.insertAssignment(assignment)
     suspend fun updateAssignment(assignment: PracticeAssignment) = dao.updateAssignment(assignment)
     suspend fun deleteAssignment(assignment: PracticeAssignment) = dao.deleteAssignment(assignment)
+    
+    fun getAttendanceForCourse(courseId: Int) = dao.getAttendanceForCourse(courseId)
+    val allAttendanceRecords = dao.getAllAttendanceRecords()
+    suspend fun insertAttendanceRecord(record: com.example.model.AttendanceRecord) = dao.insertAttendanceRecord(record)
+    suspend fun updateAttendanceRecord(record: com.example.model.AttendanceRecord) = dao.updateAttendanceRecord(record)
+    suspend fun deleteAttendanceRecord(record: com.example.model.AttendanceRecord) = dao.deleteAttendanceRecord(record)
     
     suspend fun insertActionLog(log: ActionLog) = dao.insertActionLog(log)
     suspend fun clearActionLogs() = dao.clearActionLogs()

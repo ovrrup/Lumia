@@ -37,6 +37,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaFloatingNav = MutableStateFlow(prefs.getBoolean("beta_floating_nav", false))
     val betaFloatingNav = _betaFloatingNav.asStateFlow()
 
+    private val _showActionHistory = MutableStateFlow(prefs.getBoolean("show_action_history", true))
+    val showActionHistory = _showActionHistory.asStateFlow()
+
     private val _currentStreak = MutableStateFlow(prefs.getInt("current_streak", 0))
     val currentStreak = _currentStreak.asStateFlow()
 
@@ -85,6 +88,32 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         )
     }
 
+    fun getAttendanceForCourse(courseId: Int): StateFlow<List<com.example.model.AttendanceRecord>> {
+        return repository.getAttendanceForCourse(courseId).stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+    }
+
+    fun addAttendanceRecord(courseId: Int, dateMillis: Long, status: String) {
+        viewModelScope.launch {
+            repository.insertAttendanceRecord(com.example.model.AttendanceRecord(courseId = courseId, dateMillis = dateMillis, status = status))
+        }
+    }
+
+    fun updateAttendanceRecord(record: com.example.model.AttendanceRecord) {
+        viewModelScope.launch {
+            repository.updateAttendanceRecord(record)
+        }
+    }
+
+    fun deleteAttendanceRecord(record: com.example.model.AttendanceRecord) {
+        viewModelScope.launch {
+            repository.deleteAttendanceRecord(record)
+        }
+    }
+
     fun addCourse(name: String, instructor: String, schedule: String, description: String) {
         viewModelScope.launch {
             repository.insertCourse(Course(name = name, instructor = instructor, schedule = schedule, description = description))
@@ -117,6 +146,13 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.deleteSubject(subject)
             logAction("Deleted subject: ${subject.name}")
+        }
+    }
+
+    fun updateSubject(subject: Subject) {
+        viewModelScope.launch {
+            repository.updateSubject(subject)
+            logAction("Updated subject: ${subject.name}")
         }
     }
 
@@ -168,6 +204,13 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun deleteAssignment(assignment: PracticeAssignment) {
         viewModelScope.launch {
             repository.deleteAssignment(assignment)
+        }
+    }
+
+    fun updateAssignmentDetails(assignment: PracticeAssignment) {
+        viewModelScope.launch {
+            repository.updateAssignment(assignment)
+            logAction("Updated assignment: ${assignment.title}")
         }
     }
 
@@ -251,5 +294,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         _betaFloatingNav.value = enabled
         getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
             .edit().putBoolean("beta_floating_nav", enabled).apply()
+    }
+
+    fun updateShowActionHistory(enabled: Boolean) {
+        _showActionHistory.value = enabled
+        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
+            .edit().putBoolean("show_action_history", enabled).apply()
     }
 }

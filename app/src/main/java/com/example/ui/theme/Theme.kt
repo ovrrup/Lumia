@@ -86,7 +86,14 @@ fun ScholarTheme(
         else -> darkTheme
     }
 
-    val colorScheme = if (isDark) OceanDark else OceanLight
+    val colorScheme = when (themeColor) {
+        "Ocean" -> if (isDark) OceanDark else OceanLight
+        "Forest" -> if (isDark) ForestDark else ForestLight
+        "Rose" -> if (isDark) RoseDark else RoseLight
+        "Sunset" -> if (isDark) SunsetDark else SunsetLight
+        "Purple" -> if (isDark) PurpleDark else PurpleLight
+        else -> if (isDark) DefaultDark else DefaultLight
+    }
 
     val view = LocalView.current
     if (!view.isInEditMode) {

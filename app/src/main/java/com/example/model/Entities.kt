@@ -50,6 +50,18 @@ data class PracticeAssignment(
     val isCompleted: Boolean = false
 ) : Serializable
 
+@Entity(
+    tableName = "attendance_records",
+    foreignKeys = [ForeignKey(entity = Course::class, parentColumns = ["id"], childColumns = ["courseId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("courseId")]
+)
+data class AttendanceRecord(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val courseId: Int,
+    val dateMillis: Long, // Start of the day in millis
+    val status: String // e.g., "Present", "Absent", "Cancelled", "Late", "Holiday"
+) : Serializable
+
 @Entity(tableName = "action_logs")
 data class ActionLog(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
