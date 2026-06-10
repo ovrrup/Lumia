@@ -1,0 +1,6 @@
+{
+  "name": "Tard",
+  "description": "Student tracker for courses, subjects, and assignments with offline storage and binary import/export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
