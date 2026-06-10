@@ -49,7 +49,10 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     var showAddAssignmentDialog by remember { mutableStateOf(false) }
 
     if (course == null) {
-        return // Handle not found
+        LaunchedEffect(Unit) {
+            navController.popBackStack()
+        }
+        return
     }
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
@@ -82,28 +85,27 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+            LazyColumn(
+                contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 if (course.instructor.isNotBlank() || course.schedule.isNotBlank() || course.description.isNotBlank()) {
-                    item(span = { GridItemSpan(2) }) {
+                    item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            shape = RoundedCornerShape(32.dp)
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(modifier = Modifier.padding(24.dp)) {
                                 if (course.instructor.isNotBlank()) {
-                                    Text("Instructor: ${course.instructor}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("Instructor: ${course.instructor}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                    Spacer(modifier = Modifier.height(8.dp))
                                 }
                                 if (course.schedule.isNotBlank()) {
-                                    Text("Schedule: ${course.schedule}", style = MaterialTheme.typography.bodyMedium)
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("Schedule: ${course.schedule}", style = MaterialTheme.typography.bodyLarge)
+                                    Spacer(modifier = Modifier.height(8.dp))
                                 }
                                 if (course.description.isNotBlank()) {
                                     Text(course.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -114,45 +116,45 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 }
 
                 // Attendance Card
-                item(span = { GridItemSpan(2) }) {
+                item {
                     Card(
                         modifier = Modifier.fillMaxWidth().animateContentSize(),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                        shape = RoundedCornerShape(32.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("Attendance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                                Text("Attendance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
                                 val attendanceWarning = if (course.totalClasses > 0 && (course.attendedClasses.toFloat() / course.totalClasses) < 0.75f) true else false
                                 if (attendanceWarning) {
                                     Icon(Icons.Default.Warning, contentDescription = "Low Attendance", tint = MaterialTheme.colorScheme.error)
                                 }
                             }
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Attended", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
+                                    Text("Attended", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         IconButton(onClick = { if (course.attendedClasses > 0) viewModel.updateCourse(course.copy(attendedClasses = course.attendedClasses - 1)) }) {
-                                            Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                                            Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                         }
-                                        Text("${course.attendedClasses}", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-                                        IconButton(onClick = { viewModel.updateCourse(course.copy(attendedClasses = course.attendedClasses + 1)) }) {
-                                            Icon(Icons.Default.Add, contentDescription = "Increase")
+                                        Text("${course.attendedClasses}", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                                        IconButton(onClick = { if (course.attendedClasses < course.totalClasses) viewModel.updateCourse(course.copy(attendedClasses = course.attendedClasses + 1)) }) {
+                                            Icon(Icons.Default.Add, contentDescription = "Increase", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                         }
                                     }
                                 }
-                                Text("/", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.3f))
+                                Text("/", style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.3f))
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Total Classes", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
+                                    Text("Total Classes", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        IconButton(onClick = { if (course.totalClasses > 0) viewModel.updateCourse(course.copy(totalClasses = course.totalClasses - 1)) }) {
-                                            Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                                        IconButton(onClick = { if (course.totalClasses > course.attendedClasses) viewModel.updateCourse(course.copy(totalClasses = course.totalClasses - 1)) }) {
+                                            Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                         }
-                                        Text("${course.totalClasses}", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                                        Text("${course.totalClasses}", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
                                         IconButton(onClick = { viewModel.updateCourse(course.copy(totalClasses = course.totalClasses + 1)) }) {
-                                            Icon(Icons.Default.Add, contentDescription = "Increase")
+                                            Icon(Icons.Default.Add, contentDescription = "Increase", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                         }
                                     }
                                 }
@@ -161,48 +163,47 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                 }
 
-                item(span = { GridItemSpan(2) }) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         "Assignments",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }
 
                 if (assignments.isEmpty()) {
-                    item(span = { GridItemSpan(2) }) {
+                    item {
                         Card(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                            modifier = Modifier.fillMaxWidth().height(200.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            shape = MaterialTheme.shapes.extraLarge,
-                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                            shape = RoundedCornerShape(32.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(40.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(72.dp)
+                                        .size(80.dp)
                                         .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.LibraryBooks,
                                         contentDescription = null,
-                                        modifier = Modifier.size(36.dp),
+                                        modifier = Modifier.size(40.dp),
                                         tint = MaterialTheme.colorScheme.secondary
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(24.dp))
                                 Text(
                                     "No assignments yet",
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -210,27 +211,27 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         }
                     }
                 } else {
-                    items(assignments, key = { it.id }, span = { GridItemSpan(2) }) { assignment ->
+                    items(assignments, key = { it.id }) { assignment ->
                         val cardColor by androidx.compose.animation.animateColorAsState(
                             if (assignment.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
                         )
                         Card(
                             modifier = Modifier.fillMaxWidth().animateContentSize(),
-                            shape = MaterialTheme.shapes.extraLarge,
-                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                             colors = CardDefaults.cardColors(containerColor = cardColor),
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
+                                    .padding(24.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Checkbox(
                                     checked = assignment.isCompleted,
                                     onCheckedChange = { viewModel.toggleAssignmentCompleted(assignment) }
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(16.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         assignment.title,
@@ -245,7 +246,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             assignment.description,
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 2,
                                             overflow = TextOverflow.Ellipsis
@@ -258,9 +259,6 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             }
                         }
                     }
-                }
-                item(span = { GridItemSpan(2) }) {
-                    Spacer(modifier = Modifier.height(80.dp))
                 }
             }
         }

@@ -372,7 +372,6 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                             onClick = { navController.navigate("courseDetail/${course.id}") },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .aspectRatio(1f)
                                 .animateContentSize(),
                             shape = MaterialTheme.shapes.extraLarge,
                             elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
