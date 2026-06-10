@@ -7,7 +7,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -54,17 +53,17 @@ fun createDarkScheme(
     surfaceTint = primary
 )
 
-val BlueLight = createLightScheme(Color(0xFF0085FF), Color(0xFF006ACC), Color(0xFF004F99), Color(0xFF003566), Color(0xFF004F99), Color(0xFF006ACC))
-val BlueDark = createDarkScheme(Color(0xFF168FFF), Color(0xFF44A5FF), Color(0xFF73BBFF), Color(0xFFA1D2FF), Color(0xFF73BBFF), Color(0xFF44A5FF))
+val BlueLight = createLightScheme(Color(0xFF0085FF), Color(0xFFD0E4FF), Color(0xFF004F99), Color(0xFFD2E4FF), Color(0xFF004F99), Color(0xFFD2E4FF))
+val BlueDark = createDarkScheme(Color(0xFF8CBFFF), Color(0xFF004F99), Color(0xFFA1CADF), Color(0xFF004F99), Color(0xFFA1CADF), Color(0xFF004F99))
 
-val GreenLight = createLightScheme(Color(0xFF00BA34), Color(0xFF009429), Color(0xFF006F1F), Color(0xFF004A14), Color(0xFF006F1F), Color(0xFF009429))
-val GreenDark = createDarkScheme(Color(0xFF17C849), Color(0xFF45D36D), Color(0xFF73DE91), Color(0xFFA2E9B6), Color(0xFF73DE91), Color(0xFF45D36D))
+val GreenLight = createLightScheme(Color(0xFF00BA34), Color(0xFF8FFFA9), Color(0xFF006F1F), Color(0xFF91FDB2), Color(0xFF006F1F), Color(0xFF91FDB2))
+val GreenDark = createDarkScheme(Color(0xFF56E074), Color(0xFF006F1F), Color(0xFF8CE09A), Color(0xFF006F1F), Color(0xFF8CE09A), Color(0xFF006F1F))
 
-val OrangeLight = createLightScheme(Color(0xFFF98600), Color(0xFFC76B00), Color(0xFF955000), Color(0xFF633500), Color(0xFF955000), Color(0xFFC76B00))
-val OrangeDark = createDarkScheme(Color(0xFFFF9F2D), Color(0xFFFFB257), Color(0xFFFFC581), Color(0xFFFFD8AB), Color(0xFFFFC581), Color(0xFFFFB257))
+val OrangeLight = createLightScheme(Color(0xFFF98600), Color(0xFFFFDAB6), Color(0xFF955000), Color(0xFFFFDCBE), Color(0xFF955000), Color(0xFFFFDCBE))
+val OrangeDark = createDarkScheme(Color(0xFFFFB482), Color(0xFF955000), Color(0xFFFFBE90), Color(0xFF955000), Color(0xFFFFBE90), Color(0xFF955000))
 
-val RedLight = createLightScheme(Color(0xFFE92C2C), Color(0xFFBA2323), Color(0xFF8B1A1A), Color(0xFF5D1111), Color(0xFF8B1A1A), Color(0xFFBA2323))
-val RedDark = createDarkScheme(Color(0xFFF74141), Color(0xFFF86767), Color(0xFFFA8D8D), Color(0xFFFBB3B3), Color(0xFFFA8D8D), Color(0xFFF86767))
+val RedLight = createLightScheme(Color(0xFFE92C2C), Color(0xFFFFDAD6), Color(0xFF8B1A1A), Color(0xFFFFDBDD), Color(0xFF8B1A1A), Color(0xFFFFDBDD))
+val RedDark = createDarkScheme(Color(0xFFFFB4A9), Color(0xFF8B1A1A), Color(0xFFFFB3B8), Color(0xFF8B1A1A), Color(0xFFFFB3B8), Color(0xFF8B1A1A))
 
 @Composable
 fun ScholarTheme(
@@ -81,12 +80,18 @@ fun ScholarTheme(
         else -> darkTheme
     }
 
-    var colorScheme = when (themeColor) {
-        "Blue" -> if (isDark) BlueDark else BlueLight
-        "Green" -> if (isDark) GreenDark else GreenLight
-        "Orange" -> if (isDark) OrangeDark else OrangeLight
-        "Red" -> if (isDark) RedDark else RedLight
-        else -> if (isDark) BlueDark else BlueLight
+    val context = LocalContext.current
+    var colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> run {
+            if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        else -> when (themeColor) {
+            "Blue" -> if (isDark) BlueDark else BlueLight
+            "Green" -> if (isDark) GreenDark else GreenLight
+            "Orange" -> if (isDark) OrangeDark else OrangeLight
+            "Red" -> if (isDark) RedDark else RedLight
+            else -> if (isDark) BlueDark else BlueLight
+        }
     }
 
     if (isDark && pureBlackMode) {
@@ -100,12 +105,12 @@ fun ScholarTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            var context = view.context
-            while (context is android.content.ContextWrapper && context !is Activity) {
-                context = context.baseContext
+            var contextActivity = view.context
+            while (contextActivity is android.content.ContextWrapper && contextActivity !is Activity) {
+                contextActivity = contextActivity.baseContext
             }
-            if (context is Activity) {
-                val window = context.window
+            if (contextActivity is Activity) {
+                val window = contextActivity.window
                 window.statusBarColor = android.graphics.Color.TRANSPARENT
                 window.navigationBarColor = android.graphics.Color.TRANSPARENT
                 WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDark

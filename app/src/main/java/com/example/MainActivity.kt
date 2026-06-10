@@ -92,32 +92,36 @@ class MainActivity : ComponentActivity() {
                             ) else Modifier
                         ),
                         enterTransition = {
-                            androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
-                                androidx.compose.animation.slideInHorizontally(
-                                    initialOffsetX = { fullWidth -> fullWidth / 8 },
-                                    animationSpec = androidx.compose.animation.core.tween(300)
-                                )
+                            androidx.compose.animation.fadeIn(
+                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+                            ) + androidx.compose.animation.scaleIn(
+                                initialScale = 0.95f,
+                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+                            )
                         },
                         exitTransition = {
-                            androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
-                                androidx.compose.animation.slideOutHorizontally(
-                                    targetOffsetX = { fullWidth -> -fullWidth / 8 },
-                                    animationSpec = androidx.compose.animation.core.tween(300)
-                                )
+                            androidx.compose.animation.fadeOut(
+                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                            ) + androidx.compose.animation.scaleOut(
+                                targetScale = 1.05f,
+                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                            )
                         },
                         popEnterTransition = {
-                            androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
-                                androidx.compose.animation.slideInHorizontally(
-                                    initialOffsetX = { fullWidth -> -fullWidth / 8 },
-                                    animationSpec = androidx.compose.animation.core.tween(300)
-                                )
+                            androidx.compose.animation.fadeIn(
+                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+                            ) + androidx.compose.animation.scaleIn(
+                                initialScale = 1.05f,
+                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+                            )
                         },
                         popExitTransition = {
-                            androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
-                                androidx.compose.animation.slideOutHorizontally(
-                                    targetOffsetX = { fullWidth -> fullWidth / 8 },
-                                    animationSpec = androidx.compose.animation.core.tween(300)
-                                )
+                            androidx.compose.animation.fadeOut(
+                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                            ) + androidx.compose.animation.scaleOut(
+                                targetScale = 0.95f,
+                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                            )
                         }
                     ) {
                         composable("dashboard") {
