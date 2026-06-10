@@ -103,24 +103,33 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
 
         item {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                WeeklyStudyLineChart(
-                    modifier = Modifier.fillMaxWidth().height(220.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant
+                AssignmentsStatusDonutChart(
+                    modifier = Modifier.fillMaxWidth().height(240.dp),
+                    total = totalAssignments,
+                    completed = completedAssignments,
+                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                    primaryColor = MaterialTheme.colorScheme.primary,
+                    secondaryColor = MaterialTheme.colorScheme.tertiary
                 )
                 
-                CourseDistributionPieChart(
-                    modifier = Modifier.fillMaxWidth().height(240.dp),
-                    coursesCount = courses.size,
-                    completedAssignments = completedAssignments,
-                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.tertiary,
-                        MaterialTheme.colorScheme.secondary,
-                        MaterialTheme.colorScheme.error
+                if (courses.isNotEmpty() && assignments.isNotEmpty()) {
+                    AssignmentsPerCourseBarChart(
+                        modifier = Modifier.fillMaxWidth().height(240.dp),
+                        courses = courses,
+                        assignments = assignments,
+                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                        barColor = MaterialTheme.colorScheme.primary
                     )
-                )
+                }
+
+                if (actionLogs.isNotEmpty()) {
+                    ActivityLineChart(
+                        modifier = Modifier.fillMaxWidth().height(220.dp),
+                        actionLogs = actionLogs,
+                        color = MaterialTheme.colorScheme.primary,
+                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                }
             }
         }
 
@@ -231,7 +240,91 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
 }
 
 @Composable
-fun WeeklyStudyLineChart(modifier: Modifier = Modifier, color: Color, backgroundColor: Color) {
+fun AssignmentsStatusDonutChart(
+    modifier: Modifier = Modifier,
+    total: Int,
+    completed: Int,
+    backgroundColor: Color,
+    primaryColor: Color,
+    secondaryColor: Color
+) {
+    Card(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.extraLarge,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(modifier = Modifier.weight(1f).aspectRatio(1f), contentAlignment = Alignment.Center) {
+                Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    val pending = maxOf(0, total - completed)
+                    val actualData = if (total > 0) listOf(completed.toFloat(), pending.toFloat()) else listOf(1f)
+                    val colorsList = if (total > 0) listOf(primaryColor, secondaryColor) else listOf(Color.LightGray)
+                    
+                    val totalData = actualData.sum()
+                    var startAngle = -90f
+                    
+                    actualData.forEachIndexed { index, value ->
+                        val sweepAngle = (value / totalData) * 360f
+                        drawArc(
+                            color = colorsList[index],
+                            startAngle = startAngle,
+                            sweepAngle = sweepAngle,
+                            useCenter = false,
+                            style = Stroke(width = 24.dp.toPx(), cap = StrokeCap.Butt)
+                        )
+                        startAngle += sweepAngle
+                    }
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "$completed / $total",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            
+            Column(
+                modifier = Modifier.weight(1f).padding(start = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    "Assignments",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                val labels = listOf("Completed", "Pending")
+                val itemColors = listOf(primaryColor, secondaryColor)
+                labels.forEachIndexed { index, label ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(12.dp).background(itemColors[index], CircleShape))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AssignmentsPerCourseBarChart(
+    modifier: Modifier = Modifier,
+    courses: List<com.example.model.Course>,
+    assignments: List<com.example.model.PracticeAssignment>,
+    backgroundColor: Color,
+    barColor: Color
+) {
     Card(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge,
@@ -240,15 +333,79 @@ fun WeeklyStudyLineChart(modifier: Modifier = Modifier, color: Color, background
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Text(
-                "Study Hours Trend",
+                "Assignments per Course",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(16.dp))
             Canvas(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-                val dataPoints = listOf(2f, 4.5f, 3f, 6f, 5.5f, 8f, 7f)
-                val maxPoint = dataPoints.maxOrNull() ?: 10f
+                // Count assignments per course
+                val assignmentsCountMap = assignments.groupBy { it.courseId }.mapValues { it.value.size }
+                // Sort courses by assignment count and take top 5
+                val topCourses = courses
+                    .map { Pair(it.name, assignmentsCountMap[it.id] ?: 0) }
+                    .filter { it.second > 0 }
+                    .sortedByDescending { it.second }
+                    .take(5)
+                
+                if (topCourses.isEmpty()) return@Canvas
+
+                val maxCount = topCourses.maxOf { it.second }.toFloat()
+                val barWidth = size.width / (topCourses.size * 2)
+                val spacing = size.width / topCourses.size
+
+                topCourses.forEachIndexed { index, (courseName, count) ->
+                    val x = index * spacing + barWidth / 2
+                    val barHeight = (count / maxCount) * size.height
+                    val yTop = size.height - barHeight
+
+                    drawLine(
+                        color = barColor,
+                        start = androidx.compose.ui.geometry.Offset(x, size.height),
+                        end = androidx.compose.ui.geometry.Offset(x, yTop),
+                        strokeWidth = barWidth,
+                        cap = StrokeCap.Round
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ActivityLineChart(modifier: Modifier = Modifier, actionLogs: List<com.example.model.ActionLog>, color: Color, backgroundColor: Color) {
+    Card(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.extraLarge,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+    ) {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Text(
+                "Activity Past 7 Days",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Canvas(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+                // Determine past 7 days activity
+                val calendar = java.util.Calendar.getInstance()
+                val now = calendar.timeInMillis
+                
+                // Group by days ago (0 to 6)
+                val counts = IntArray(7) { 0 }
+                actionLogs.forEach { log ->
+                    val diffMillis = now - log.timestampMillis
+                    val diffDays = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
+                    if (diffDays in 0..6) {
+                        counts[6 - diffDays]++ 
+                    }
+                }
+                
+                val dataPoints = counts.map { it.toFloat() }
+                val maxPoint = dataPoints.maxOrNull()?.takeIf { it > 0 } ?: 10f
                 val spacing = size.width / (dataPoints.size - 1)
                 
                 val path = androidx.compose.ui.graphics.Path()
@@ -281,79 +438,6 @@ fun WeeklyStudyLineChart(modifier: Modifier = Modifier, color: Color, background
                         radius = 4.dp.toPx(),
                         center = androidx.compose.ui.geometry.Offset(x, y)
                     )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CourseDistributionPieChart(
-    modifier: Modifier = Modifier,
-    coursesCount: Int,
-    completedAssignments: Int,
-    backgroundColor: Color,
-    colors: List<Color>
-) {
-    Card(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(modifier = Modifier.weight(1f).aspectRatio(1f), contentAlignment = Alignment.Center) {
-                Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                    val fallbackData = listOf(30f, 20f, 25f, 25f)
-                    val actualData = if (coursesCount > 0) listOf(coursesCount * 10f, completedAssignments * 15f + 10f, 30f) else fallbackData
-                    
-                    val total = actualData.sum()
-                    var startAngle = -90f
-                    
-                    actualData.forEachIndexed { index, value ->
-                        val sweepAngle = (value / total) * 360f
-                        drawArc(
-                            color = colors[index % colors.size],
-                            startAngle = startAngle,
-                            sweepAngle = sweepAngle,
-                            useCenter = false,
-                            style = Stroke(width = 24.dp.toPx(), cap = StrokeCap.Butt)
-                        )
-                        startAngle += sweepAngle
-                    }
-                }
-                Text(
-                    "Activity",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
-            Column(
-                modifier = Modifier.weight(1f).padding(start = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    "Breakdown",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                val labels = listOf("Assignments", "Coursework", "Self Study", "Exams")
-                labels.take(3).forEachIndexed { index, label ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(12.dp).background(colors[index % colors.size], CircleShape))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
         }
