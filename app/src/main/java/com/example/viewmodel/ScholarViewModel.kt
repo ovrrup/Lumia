@@ -37,6 +37,18 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaFloatingNav = MutableStateFlow(prefs.getBoolean("beta_floating_nav", false))
     val betaFloatingNav = _betaFloatingNav.asStateFlow()
 
+    private val _betaPomodoro = MutableStateFlow(prefs.getBoolean("beta_pomodoro", false))
+    val betaPomodoro = _betaPomodoro.asStateFlow()
+
+    private val _betaCgpa = MutableStateFlow(prefs.getBoolean("beta_cgpa", false))
+    val betaCgpa = _betaCgpa.asStateFlow()
+
+    private val _betaNotes = MutableStateFlow(prefs.getBoolean("beta_notes", false))
+    val betaNotes = _betaNotes.asStateFlow()
+
+    private val _betaMotivation = MutableStateFlow(prefs.getBoolean("beta_motivation", false))
+    val betaMotivation = _betaMotivation.asStateFlow()
+
     private val _betaImmersiveMode = MutableStateFlow(prefs.getBoolean("beta_immersive_mode", false))
     val betaImmersiveMode = _betaImmersiveMode.asStateFlow()
 
@@ -336,6 +348,30 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             .edit().putBoolean("beta_floating_nav", enabled).apply()
     }
 
+    fun updateBetaPomodoro(enabled: Boolean) {
+        _betaPomodoro.value = enabled
+        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
+            .edit().putBoolean("beta_pomodoro", enabled).apply()
+    }
+
+    fun updateBetaCgpa(enabled: Boolean) {
+        _betaCgpa.value = enabled
+        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
+            .edit().putBoolean("beta_cgpa", enabled).apply()
+    }
+
+    fun updateBetaNotes(enabled: Boolean) {
+        _betaNotes.value = enabled
+        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
+            .edit().putBoolean("beta_notes", enabled).apply()
+    }
+
+    fun updateBetaMotivation(enabled: Boolean) {
+        _betaMotivation.value = enabled
+        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
+            .edit().putBoolean("beta_motivation", enabled).apply()
+    }
+
     fun updateBetaImmersiveMode(enabled: Boolean) {
         _betaImmersiveMode.value = enabled
         getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
@@ -352,5 +388,13 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         _showActionHistory.value = enabled
         getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
             .edit().putBoolean("show_action_history", enabled).apply()
+    }
+
+    fun clearAllData() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.clearAllData()
+            repository.clearActionLogs()
+            repository.insertActionLog(ActionLog(actionText = "Cleared all application data"))
+        }
     }
 }

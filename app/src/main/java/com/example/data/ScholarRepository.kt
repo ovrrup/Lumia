@@ -46,6 +46,7 @@ class ScholarRepository(private val dao: ScholarDao) {
     
     suspend fun insertActionLog(log: ActionLog) = dao.insertActionLog(log)
     suspend fun clearActionLogs() = dao.clearActionLogs()
+    suspend fun clearAllData() = dao.clearAll()
 
     // Export
     suspend fun exportDataToStream(outputStream: OutputStream) {

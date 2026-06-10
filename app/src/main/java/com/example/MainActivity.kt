@@ -126,7 +126,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("toolbox") {
-                            com.example.ui.screens.ToolboxScreen(navController = navController)
+                            com.example.ui.screens.ToolboxScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
                         }
                         composable("pomodoro") {
                             com.example.ui.screens.PomodoroScreen(navController = navController)
@@ -153,6 +156,24 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("settings") {
                             SettingsScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable("settings/appearance") {
+                            com.example.ui.screens.AppearanceScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable("settings/beta") {
+                            com.example.ui.screens.BetaFeaturesScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable("settings/data") {
+                            com.example.ui.screens.DataManagementScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )

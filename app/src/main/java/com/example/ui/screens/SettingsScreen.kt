@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Storage
@@ -45,12 +46,236 @@ import com.example.viewmodel.ScholarViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
-    val status by viewModel.importExportStatus.collectAsStateWithLifecycle()
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Settings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsActionItem(
+                title = "Appearance",
+                subtitle = "Themes, colors, and layout modifiers",
+                icon = Icons.Default.Palette,
+                onClick = { navController.navigate("settings/appearance") }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+            SettingsActionItem(
+                title = "Beta Features",
+                subtitle = "Experimental optimizations and tweaks",
+                icon = Icons.Default.Check,
+                onClick = { navController.navigate("settings/beta") }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+            SettingsActionItem(
+                title = "Data Management",
+                subtitle = "Export, import, and reset data",
+                icon = Icons.Default.Storage,
+                onClick = { navController.navigate("settings/data") }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
-    // Launchers
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Appearance", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            SettingsGroupMenu(
+                title = "Theme Mode",
+                subtitle = "Select $themeMode",
+                icon = Icons.Default.DarkMode
+            ) { }
+            
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                ThemeOptionButton("System", themeMode == "System") { viewModel.updateThemeMode("System") }
+                ThemeOptionButton("Light", themeMode == "Light") { viewModel.updateThemeMode("Light") }
+                ThemeOptionButton("Dark", themeMode == "Dark") { viewModel.updateThemeMode("Dark") }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            
+            Text(
+                text = "Theme Palette",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+            )
+
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                val palettes = listOf(
+                    "Default" to androidx.compose.ui.graphics.Color(0xFF897CC2),
+                    "Ocean" to androidx.compose.ui.graphics.Color(0xFF4CB0E4),
+                    "Forest" to androidx.compose.ui.graphics.Color(0xFF5AB676),
+                    "Rose" to androidx.compose.ui.graphics.Color(0xFFEC6591),
+                    "Sunset" to androidx.compose.ui.graphics.Color(0xFFE67D42),
+                    "Purple" to androidx.compose.ui.graphics.Color(0xFF8E71CB)
+                )
+                items(palettes) { (name, color) ->
+                    ThemeColorPickerItem(
+                        name = name,
+                        color = color,
+                        isSelected = themeColor == name,
+                        onClick = { viewModel.updateThemeColor(name) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel) {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Beta Features", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+        ) {
+            val betaPomodoro by viewModel.betaPomodoro.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "Pomodoro Timer",
+                subtitle = "Enable the Pomodoro timer tool",
+                checked = betaPomodoro,
+                onCheckedChange = { viewModel.updateBetaPomodoro(it) }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            val betaCgpa by viewModel.betaCgpa.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "CGPA Calculator",
+                subtitle = "Enable the CGPA calculator tool",
+                checked = betaCgpa,
+                onCheckedChange = { viewModel.updateBetaCgpa(it) }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "Quick Notes",
+                subtitle = "Enable the quick notes tool",
+                checked = betaNotes,
+                onCheckedChange = { viewModel.updateBetaNotes(it) }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            val betaMotivation by viewModel.betaMotivation.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "Motivation Panel",
+                subtitle = "Enable the motivation quotes panel on the dashboard",
+                checked = betaMotivation,
+                onCheckedChange = { viewModel.updateBetaMotivation(it) }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "Floating Action Bar",
+                subtitle = "Makes the bottom navigation bar float and look chubby",
+                checked = betaFloatingNav,
+                onCheckedChange = { viewModel.updateBetaFloatingNav(it) }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            val betaNotchOptimization by viewModel.betaNotchOptimization.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "Notch & Punch Hole Optimization",
+                subtitle = "Apply specialized padding to avoid display cutouts, notches, and punch hole cameras.",
+                checked = betaNotchOptimization,
+                onCheckedChange = { viewModel.updateBetaNotchOptimization(it) }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "Full Screen Punch Hole (Immersive)",
+                subtitle = "Draw behind the punch hole camera, safely dodging UI elements.",
+                checked = betaImmersiveMode,
+                onCheckedChange = { viewModel.updateBetaImmersiveMode(it) }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "Show Action History",
+                subtitle = "Display action history on the Analytics tab",
+                checked = showActionHistory,
+                onCheckedChange = { viewModel.updateShowActionHistory(it) }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DataManagementScreen(navController: NavController, viewModel: ScholarViewModel) {
+    val status by viewModel.importExportStatus.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var showResetDialog by remember { mutableStateOf(false) }
+
     val createDocumentLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri: Uri? ->
@@ -77,7 +302,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                title = { Text("Data Management", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
@@ -96,159 +321,53 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 .verticalScroll(rememberScrollState()),
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Appearance Category
-            SettingsCategoryHeading(title = "Appearance", icon = Icons.Default.Palette)
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .animateContentSize(),
-                shape = MaterialTheme.shapes.extraLarge,
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            ) {
-                Column {
-                    SettingsGroupMenu(
-                        title = "Theme Mode",
-                        subtitle = "Select $themeMode",
-                        icon = Icons.Default.DarkMode
-                    ) {
-                        // Options row below handles selection
-                    }
-                    
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        ThemeOptionButton("System", themeMode == "System") { viewModel.updateThemeMode("System") }
-                        ThemeOptionButton("Light", themeMode == "Light") { viewModel.updateThemeMode("Light") }
-                        ThemeOptionButton("Dark", themeMode == "Dark") { viewModel.updateThemeMode("Dark") }
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    
-                    Text(
-                        text = "Theme Palette",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
-                    )
-
-                    LazyRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        val palettes = listOf(
-                            "Default" to androidx.compose.ui.graphics.Color(0xFF897CC2),
-                            "Ocean" to androidx.compose.ui.graphics.Color(0xFF4CB0E4),
-                            "Forest" to androidx.compose.ui.graphics.Color(0xFF5AB676),
-                            "Rose" to androidx.compose.ui.graphics.Color(0xFFEC6591),
-                            "Sunset" to androidx.compose.ui.graphics.Color(0xFFE67D42),
-                            "Purple" to androidx.compose.ui.graphics.Color(0xFF8E71CB)
-                        )
-                        items(palettes) { (name, color) ->
-                            ThemeColorPickerItem(
-                                name = name,
-                                color = color,
-                                isSelected = themeColor == name,
-                                onClick = { viewModel.updateThemeColor(name) }
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Beta Features Category
-            SettingsCategoryHeading(title = "Beta Features", icon = Icons.Default.Check)
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .animateContentSize(),
-                shape = MaterialTheme.shapes.extraLarge,
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            ) {
-                Column {
-                    val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
-                    SettingsToggleItem(
-                        title = "Floating Action Bar",
-                        subtitle = "Makes the bottom navigation bar float and look chubby",
-                        checked = betaFloatingNav,
-                        onCheckedChange = { viewModel.updateBetaFloatingNav(it) }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    val betaNotchOptimization by viewModel.betaNotchOptimization.collectAsStateWithLifecycle()
-                    SettingsToggleItem(
-                        title = "Notch & Punch Hole Optimization",
-                        subtitle = "Apply specialized padding to avoid display cutouts, notches, and punch hole cameras.",
-                        checked = betaNotchOptimization,
-                        onCheckedChange = { viewModel.updateBetaNotchOptimization(it) }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
-                    SettingsToggleItem(
-                        title = "Full Screen Punch Hole (Immersive)",
-                        subtitle = "Draw behind the punch hole camera, safely dodging UI elements.",
-                        checked = betaImmersiveMode,
-                        onCheckedChange = { viewModel.updateBetaImmersiveMode(it) }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
-                    SettingsToggleItem(
-                        title = "Show Action History",
-                        subtitle = "Display action history on the Analytics tab",
-                        checked = showActionHistory,
-                        onCheckedChange = { viewModel.updateShowActionHistory(it) }
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Data Management Category
-            SettingsCategoryHeading(title = "Data Management", icon = Icons.Default.Storage)
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .animateContentSize(),
-                shape = MaterialTheme.shapes.extraLarge,
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            ) {
-                Column {
-                    SettingsActionItem(
-                        title = "Export Data",
-                        subtitle = "Back up courses, subjects, assignments securely",
-                        icon = Icons.Default.Upload,
-                        onClick = { createDocumentLauncher.launch("scholar_backup.bin") }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    SettingsActionItem(
-                        title = "Import Data",
-                        subtitle = "Restore backup. Warning: Overwrites current data",
-                        icon = Icons.Default.Download,
-                        isDestructive = true,
-                        onClick = { openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*")) }
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(32.dp))
+            SettingsActionItem(
+                title = "Export Data",
+                subtitle = "Back up courses, subjects, assignments securely",
+                icon = Icons.Default.Upload,
+                onClick = { createDocumentLauncher.launch("scholar_backup.bin") }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            SettingsActionItem(
+                title = "Import Data",
+                subtitle = "Restore backup. Warning: Overwrites current data",
+                icon = Icons.Default.Download,
+                isDestructive = true,
+                onClick = { openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*")) }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            SettingsActionItem(
+                title = "Erase All Data",
+                subtitle = "Permanently delete all courses, subjects, assignments, and logs",
+                icon = Icons.Default.DeleteForever,
+                isDestructive = true,
+                onClick = { showResetDialog = true }
+            )
         }
+    }
+
+    if (showResetDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("Erase All Data?") },
+            text = { Text("This action cannot be undone. All your progress, courses, subjects, and settings will be permanently removed.", color = MaterialTheme.colorScheme.error) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.clearAllData()
+                        showResetDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Erase Data", fontWeight = FontWeight.Black)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

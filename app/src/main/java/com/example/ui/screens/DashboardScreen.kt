@@ -35,8 +35,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.ManageSearch
-import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.automirrored.filled.ManageSearch
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -179,6 +179,10 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
     val streak by viewModel.currentStreak.collectAsStateWithLifecycle()
+    val betaMotivation by viewModel.betaMotivation.collectAsStateWithLifecycle()
+    val betaPomodoro by viewModel.betaPomodoro.collectAsStateWithLifecycle()
+    val betaCgpa by viewModel.betaCgpa.collectAsStateWithLifecycle()
+    val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var showAddCourseDialog by remember { mutableStateOf(false) }
@@ -328,72 +332,84 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                 }
             }
 
-            item {
-                Text(
-                    "Beta Features",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
+            if (betaMotivation || betaPomodoro || betaCgpa || betaNotes) {
+                item {
+                    Text(
+                        "Student Tools",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
 
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Motivation",
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                            modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f), CircleShape).padding(6.dp)
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        val quotes = listOf(
-                            "Success is the sum of small efforts.",
-                            "The expert in everything was once a beginner.",
-                            "Don’t stop until you’re proud.",
-                            "Focus on your goals, not your obstacles."
-                        )
-                        val quote = remember { quotes.random() }
-                        Text(
-                            text = "\"$quote\"",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                        )
+                if (betaMotivation) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Star,
+                                    contentDescription = "Motivation",
+                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f), CircleShape).padding(6.dp)
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                val quotes = listOf(
+                                    "Success is the sum of small efforts.",
+                                    "The expert in everything was once a beginner.",
+                                    "Don’t stop until you’re proud.",
+                                    "Focus on your goals, not your obstacles."
+                                )
+                                val quote = remember { quotes.random() }
+                                Text(
+                                    text = "\"$quote\"",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                )
+                            }
+                        }
                     }
                 }
-            }
 
-            item {
-                Card(
-                    onClick = { navController.navigate("toolbox") },
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("Toolbox", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                            Text("Pomodoro • CGPA • Notes", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                if (betaPomodoro || betaCgpa || betaNotes) {
+                    item {
+                        Card(
+                            onClick = { navController.navigate("toolbox") },
+                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    val activeTools = listOfNotNull(
+                                        "Pomodoro".takeIf { betaPomodoro },
+                                        "CGPA".takeIf { betaCgpa },
+                                        "Notes".takeIf { betaNotes }
+                                    ).joinToString(" • ")
+                                    
+                                    Text("Toolbox", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Text(activeTools, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                                }
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ManageSearch,
+                                    contentDescription = "Toolbox",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f), CircleShape).padding(8.dp)
+                                )
+                            }
                         }
-                        Icon(
-                            imageVector = Icons.Default.ManageSearch,
-                            contentDescription = "Toolbox",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f), CircleShape).padding(8.dp)
-                        )
                     }
                 }
             }
