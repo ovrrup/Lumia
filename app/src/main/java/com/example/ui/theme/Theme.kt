@@ -70,6 +70,7 @@ val RedDark = createDarkScheme(Color(0xFFF74141), Color(0xFFF86767), Color(0xFFF
 fun ScholarTheme(
     themeMode: String = "System",
     themeColor: String = "Default",
+    pureBlackMode: Boolean = false,
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
@@ -80,12 +81,20 @@ fun ScholarTheme(
         else -> darkTheme
     }
 
-    val colorScheme = when (themeColor) {
+    var colorScheme = when (themeColor) {
         "Blue" -> if (isDark) BlueDark else BlueLight
         "Green" -> if (isDark) GreenDark else GreenLight
         "Orange" -> if (isDark) OrangeDark else OrangeLight
         "Red" -> if (isDark) RedDark else RedLight
         else -> if (isDark) BlueDark else BlueLight
+    }
+
+    if (isDark && pureBlackMode) {
+        colorScheme = colorScheme.copy(
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceVariant = Color(0xFF1E1E1E)
+        )
     }
 
     val view = LocalView.current

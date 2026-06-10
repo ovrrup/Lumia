@@ -88,6 +88,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.border
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,8 +96,14 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     var selectedTab by remember { mutableStateOf(0) }
     val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
     
+    // We need FAB state to show menu
+    var fabExpanded by remember { mutableStateOf(false) }
+    var showAddCourseDialog by remember { mutableStateOf(false) }
+    var showAddSubjectDialog by remember { mutableStateOf(false) }
+
     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            containerColor = androidx.compose.ui.graphics.Color.Transparent,
             bottomBar = {
                 if (!betaFloatingNav) {
                     NavigationBar(
@@ -129,7 +136,13 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 padding
             }
             if (selectedTab == 0) {
-                HomeTab(navController = navController, viewModel = viewModel, bottomPadding = extendedPadding)
+                HomeTab(
+                    navController = navController, 
+                    viewModel = viewModel, 
+                    bottomPadding = extendedPadding,
+                    onAddCourseClick = { showAddCourseDialog = true },
+                    onAddSubjectClick = { showAddSubjectDialog = true }
+                )
             } else {
                 AnalyticsTab(viewModel = viewModel, paddingValues = extendedPadding)
             }
@@ -170,11 +183,146 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
         }
     }
+
+    if (showAddCourseDialog) {
+        var name by remember { mutableStateOf("") }
+        var instructor by remember { mutableStateOf("") }
+        var schedule by remember { mutableStateOf("") }
+        var description by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { showAddCourseDialog = false },
+            title = { Text("Add New Course") },
+            text = {
+                Column {
+                    androidx.compose.material3.OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Course Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    androidx.compose.material3.OutlinedTextField(
+                        value = instructor,
+                        onValueChange = { instructor = it },
+                        label = { Text("Instructor") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    var showTimePicker by remember { mutableStateOf(false) }
+                    
+                    if (showTimePicker) {
+                        val initialHour = remember {
+                            try {
+                                var parsedHour = schedule.substringBefore(":").toInt()
+                                if (schedule.contains("PM", ignoreCase = true) && parsedHour < 12) parsedHour += 12
+                                if (schedule.contains("AM", ignoreCase = true) && parsedHour == 12) parsedHour = 0
+                                parsedHour
+                            } catch (e: Exception) { 12 }
+                        }
+                        val initialMinute = remember {
+                            try {
+                                schedule.substringAfter(":").substringBefore(" ").toInt()
+                            } catch (e: Exception) { 0 }
+                        }
+                        val timePickerState = androidx.compose.material3.rememberTimePickerState(initialHour = initialHour, initialMinute = initialMinute)
+                        AlertDialog(
+                            onDismissRequest = { showTimePicker = false },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    val hour = timePickerState.hour
+                                    val minute = timePickerState.minute
+                                    val amPm = if (hour >= 12) "PM" else "AM"
+                                    val formatHour = if (hour % 12 == 0) 12 else hour % 12
+                                    schedule = String.format(java.util.Locale.getDefault(), "%02d:%02d %s", formatHour, minute, amPm)
+                                    showTimePicker = false
+                                }) { Text("OK") }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                            },
+                            text = {
+                                androidx.compose.material3.TimePicker(state = timePickerState)
+                            }
+                        )
+                    }
+                    
+                    androidx.compose.material3.OutlinedButton(onClick = { showTimePicker = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (schedule.isEmpty()) "Select Schedule Time" else "Schedule: $schedule")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    androidx.compose.material3.OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Description (Optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (name.isNotBlank()) {
+                        viewModel.addCourse(name, instructor, schedule, description)
+                        showAddCourseDialog = false
+                    }
+                }) { Text("Add") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddCourseDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showAddSubjectDialog) {
+        var name by remember { mutableStateOf("") }
+        var targetHours by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { showAddSubjectDialog = false },
+            title = { Text("Add New Subject") },
+            text = {
+                Column {
+                    androidx.compose.material3.OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Subject Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    androidx.compose.material3.OutlinedTextField(
+                        value = targetHours,
+                        onValueChange = { targetHours = it.filter { char -> char.isDigit() } },
+                        label = { Text("Target Hours") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Done)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (name.isNotBlank()) {
+                        val hours = targetHours.toIntOrNull() ?: 0
+                        viewModel.addSubject(name, hours)
+                        showAddSubjectDialog = false
+                    }
+                }) { Text("Add") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddSubjectDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPadding: PaddingValues) {
+fun HomeTab(
+    navController: NavController, 
+    viewModel: ScholarViewModel, 
+    bottomPadding: PaddingValues, 
+    onAddCourseClick: () -> Unit, 
+    onAddSubjectClick: () -> Unit
+) {
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
@@ -185,8 +333,6 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
     val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    var showAddCourseDialog by remember { mutableStateOf(false) }
-    var showAddSubjectDialog by remember { mutableStateOf(false) }
     var courseToEdit by remember { mutableStateOf<com.example.model.Course?>(null) }
     var subjectToEdit by remember { mutableStateOf<com.example.model.Subject?>(null) }
 
@@ -209,6 +355,7 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CenterAlignedTopAppBar(
@@ -220,8 +367,8 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                 },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha=0.5f),
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp).copy(alpha=0.5f)
                 )
             )
         },
@@ -229,8 +376,8 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
             var fabExpanded by remember { mutableStateOf(false) }
             Box(modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding())) {
                 DropdownMenu(expanded = fabExpanded, onDismissRequest = { fabExpanded = false }) {
-                    DropdownMenuItem(text = { Text("Add Course") }, onClick = { fabExpanded=false; showAddCourseDialog=true })
-                    DropdownMenuItem(text = { Text("Add Subject") }, onClick = { fabExpanded=false; showAddSubjectDialog=true })
+                    DropdownMenuItem(text = { Text("Add Course") }, onClick = { fabExpanded=false; onAddCourseClick() })
+                    DropdownMenuItem(text = { Text("Add Subject") }, onClick = { fabExpanded=false; onAddSubjectClick() })
                 }
                 androidx.compose.material3.FloatingActionButton(
                     onClick = { fabExpanded = true },
@@ -678,135 +825,6 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                 }
             }
         }
-
-    if (showAddCourseDialog) {
-        var name by remember { mutableStateOf("") }
-        var instructor by remember { mutableStateOf("") }
-        var schedule by remember { mutableStateOf("") }
-        var description by remember { mutableStateOf("") }
-
-        AlertDialog(
-            onDismissRequest = { showAddCourseDialog = false },
-            title = { Text("Add New Course") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Course Name") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = instructor,
-                        onValueChange = { instructor = it },
-                        label = { Text("Instructor") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    var showTimePicker by remember { mutableStateOf(false) }
-                    
-                    if (showTimePicker) {
-                        val initialHour = remember {
-                            try {
-                                var parsedHour = schedule.substringBefore(":").toInt()
-                                if (schedule.contains("PM", ignoreCase = true) && parsedHour < 12) parsedHour += 12
-                                if (schedule.contains("AM", ignoreCase = true) && parsedHour == 12) parsedHour = 0
-                                parsedHour
-                            } catch (e: Exception) { 12 }
-                        }
-                        val initialMinute = remember {
-                            try {
-                                schedule.substringAfter(":").substringBefore(" ").toInt()
-                            } catch (e: Exception) { 0 }
-                        }
-                        val timePickerState = rememberTimePickerState(initialHour = initialHour, initialMinute = initialMinute)
-                        AlertDialog(
-                            onDismissRequest = { showTimePicker = false },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    val hour = timePickerState.hour
-                                    val minute = timePickerState.minute
-                                    val amPm = if (hour >= 12) "PM" else "AM"
-                                    val formatHour = if (hour % 12 == 0) 12 else hour % 12
-                                    schedule = String.format(java.util.Locale.getDefault(), "%02d:%02d %s", formatHour, minute, amPm)
-                                    showTimePicker = false
-                                }) { Text("OK") }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
-                            },
-                            text = {
-                                TimePicker(state = timePickerState)
-                            }
-                        )
-                    }
-                    
-                    androidx.compose.material3.OutlinedButton(onClick = { showTimePicker = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(if (schedule.isEmpty()) "Select Schedule Time" else "Schedule: $schedule")
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        label = { Text("Description (Optional)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (name.isNotBlank()) {
-                        viewModel.addCourse(name, instructor, schedule, description)
-                        showAddCourseDialog = false
-                    }
-                }) { Text("Add") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddCourseDialog = false }) { Text("Cancel") }
-            }
-        )
-    }
-
-    if (showAddSubjectDialog) {
-        var name by remember { mutableStateOf("") }
-        var targetHours by remember { mutableStateOf("") }
-
-        AlertDialog(
-            onDismissRequest = { showAddSubjectDialog = false },
-            title = { Text("Add New Subject") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Subject Name") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = targetHours,
-                        onValueChange = { targetHours = it.filter { char -> char.isDigit() } },
-                        label = { Text("Target Hours") },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (name.isNotBlank()) {
-                        val hours = targetHours.toIntOrNull() ?: 0
-                        viewModel.addSubject(name, hours)
-                        showAddSubjectDialog = false
-                    }
-                }) { Text("Add") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddSubjectDialog = false }) { Text("Cancel") }
-            }
-        )
-    }
 
     if (courseToEdit != null) {
         var name by remember { mutableStateOf(courseToEdit!!.name) }

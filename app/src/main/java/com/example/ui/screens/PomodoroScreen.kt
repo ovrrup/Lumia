@@ -1,5 +1,9 @@
 package com.example.ui.screens
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +22,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.NotificationCompat
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 import androidx.compose.foundation.Canvas
@@ -29,6 +35,7 @@ fun PomodoroScreen(navController: NavController) {
     var timeLeft by remember { mutableStateOf(25 * 60) }
     var isRunning by remember { mutableStateOf(false) }
     var mode by remember { mutableStateOf(PomodoroMode.WORK) }
+    val context = LocalContext.current
     
     val totalTime = when (mode) {
         PomodoroMode.WORK -> 25 * 60
@@ -41,8 +48,40 @@ fun PomodoroScreen(navController: NavController) {
             delay(1000L)
             timeLeft--
         }
-        if (timeLeft == 0) {
+        if (isRunning && timeLeft == 0) {
             isRunning = false
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel("pomodoro_channel", "Pomodoro Timer", NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = "Notifications for when your pomodoro timer is finished"
+                    enableLights(true)
+                    lightColor = android.graphics.Color.RED
+                    enableVibration(true)
+                    vibrationPattern = longArrayOf(0, 500, 500, 500)
+                }
+                notificationManager.createNotificationChannel(channel)
+            }
+            
+            val title = when (mode) {
+                PomodoroMode.WORK -> "Work Session Complete!"
+                PomodoroMode.SHORT_BREAK -> "Short Break Over"
+                PomodoroMode.LONG_BREAK -> "Long Break Over"
+            }
+            val text = when (mode) {
+                PomodoroMode.WORK -> "Great job! Time to take a break."
+                PomodoroMode.SHORT_BREAK, PomodoroMode.LONG_BREAK -> "Break is over! Ready to get back to work?"
+            }
+            
+            val notification = NotificationCompat.Builder(context, "pomodoro_channel")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setColor(android.graphics.Color.parseColor("#E91E63"))
+                .setAutoCancel(true)
+                .build()
+                
+            notificationManager.notify(2001, notification)
         }
     }
 

@@ -34,6 +34,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _themeColor = MutableStateFlow(prefs.getString("theme_color", "Blue") ?: "Blue")
     val themeColor = _themeColor.asStateFlow()
 
+    private val _pureBlackMode = MutableStateFlow(prefs.getBoolean("pure_black_mode", false))
+    val pureBlackMode = _pureBlackMode.asStateFlow()
+
     private val _betaFloatingNav = MutableStateFlow(prefs.getBoolean("beta_floating_nav", false))
     val betaFloatingNav = _betaFloatingNav.asStateFlow()
 
@@ -334,6 +337,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         _themeMode.value = mode
         getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
             .edit().putString("theme_mode", mode).apply()
+    }
+
+    fun updatePureBlackMode(enabled: Boolean) {
+        _pureBlackMode.value = enabled
+        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
+            .edit().putBoolean("pure_black_mode", enabled).apply()
     }
 
     fun updateThemeColor(color: String) {

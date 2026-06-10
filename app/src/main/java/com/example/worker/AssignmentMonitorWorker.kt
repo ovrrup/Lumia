@@ -12,6 +12,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.MainActivity
 import com.example.data.AppDatabase
+import com.example.model.PracticeAssignment
 import java.util.concurrent.TimeUnit
 
 class AssignmentMonitorWorker(
@@ -35,7 +36,7 @@ class AssignmentMonitorWorker(
             }
             
             if (approachingAssignments.isNotEmpty()) {
-                showNotification(approachingAssignments.size)
+                showNotification(approachingAssignments)
             }
             
             return Result.success()
@@ -45,11 +46,20 @@ class AssignmentMonitorWorker(
         }
     }
     
-    private fun showNotification(count: Int) {
+    private fun showNotification(assignments: List<PracticeAssignment>) {
+        val count = assignments.size
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel("scholar_monitor_channel", "ScholarSync Monitor", NotificationManager.IMPORTANCE_DEFAULT)
+            val channel = NotificationChannel(
+                "scholar_monitor_channel", 
+                "ScholarSync Monitor", 
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Daily digest of upcoming deadlines"
+                enableLights(true)
+                lightColor = android.graphics.Color.MAGENTA
+            }
             notificationManager.createNotificationChannel(channel)
         }
         
@@ -66,13 +76,28 @@ class AssignmentMonitorWorker(
         val title = if (count == 1) "1 Assignment Approaching Deadline" else "$count Assignments Approaching Deadlines"
         val desc = "You have $count practice assignment(s) due within the next 24 hours."
         
+        val inboxStyle = NotificationCompat.InboxStyle()
+            .setBigContentTitle(title)
+            .setSummaryText("Daily Summary")
+        
+        assignments.take(5).forEach { assignment ->
+            inboxStyle.addLine(assignment.title)
+        }
+        if (count > 5) {
+            inboxStyle.addLine("...and ${count - 5} more")
+        }
+
         val notification = NotificationCompat.Builder(context, "scholar_monitor_channel")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setContentTitle(title)
             .setContentText(desc)
+            .setStyle(inboxStyle)
+            .setColor(android.graphics.Color.parseColor("#FF9800"))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
+            .setGroup("assignments_group")
+            .setGroupSummary(true)
             .build()
             
         // Use a fixed ID so it just updates the existing notification if it's still there

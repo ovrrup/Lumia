@@ -55,6 +55,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
+            val pureBlackMode by viewModel.pureBlackMode.collectAsStateWithLifecycle()
             val betaNotchOptimization by viewModel.betaNotchOptimization.collectAsStateWithLifecycle()
             val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
 
@@ -71,7 +72,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            ScholarTheme(themeMode = themeMode, themeColor = themeColor) {
+            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize().then(
                         if (betaNotchOptimization && !betaImmersiveMode) Modifier.displayCutoutPadding() else Modifier

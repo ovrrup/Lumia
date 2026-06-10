@@ -143,6 +143,16 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             
+            val pureBlackMode by viewModel.pureBlackMode.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "Pure Black Mode",
+                subtitle = "Apply pure black background in dark mode",
+                checked = pureBlackMode,
+                onCheckedChange = { viewModel.updatePureBlackMode(it) }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            
             Text(
                 text = "Theme Palette",
                 style = MaterialTheme.typography.titleMedium,
@@ -177,8 +187,64 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+data class BetaFeatureDialogData(
+    val title: String,
+    val description: String,
+    val onConfirm: () -> Unit
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel) {
+    var pendingFeature by remember { mutableStateOf<BetaFeatureDialogData?>(null) }
+
+    val handleToggle = { isChecked: Boolean, title: String, subtitle: String, updateAction: (Boolean) -> Unit ->
+        if (isChecked) {
+            pendingFeature = BetaFeatureDialogData(title, subtitle) {
+                updateAction(true)
+            }
+        } else {
+            updateAction(false)
+        }
+    }
+
+    if (pendingFeature != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { pendingFeature = null },
+            title = { Text("Beta Feature: ${pendingFeature!!.title}") },
+            text = {
+                Column {
+                    Text(
+                        "Disclaimer: You are about to enable a Beta feature. Beta features are experimental, currently in active development, and may not behave as expected. They are provided 'as is' and could potentially cause graphical glitches, app instability, or data inconsistencies.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "About this feature:",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        pendingFeature!!.description,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { 
+                    pendingFeature!!.onConfirm()
+                    pendingFeature = null 
+                }) { Text("Enable") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { pendingFeature = null }) { Text("Cancel") }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -205,7 +271,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = "Pomodoro Timer",
                 subtitle = "Enable the Pomodoro timer tool",
                 checked = betaPomodoro,
-                onCheckedChange = { viewModel.updateBetaPomodoro(it) }
+                onCheckedChange = { handleToggle(it, "Pomodoro Timer", "Enable the Pomodoro timer tool") { isChecked -> viewModel.updateBetaPomodoro(isChecked) } }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             val betaCgpa by viewModel.betaCgpa.collectAsStateWithLifecycle()
@@ -213,7 +279,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = "CGPA Calculator",
                 subtitle = "Enable the CGPA calculator tool",
                 checked = betaCgpa,
-                onCheckedChange = { viewModel.updateBetaCgpa(it) }
+                onCheckedChange = { handleToggle(it, "CGPA Calculator", "Enable the CGPA calculator tool") { isChecked -> viewModel.updateBetaCgpa(isChecked) } }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
@@ -221,7 +287,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = "Quick Notes",
                 subtitle = "Enable the quick notes tool",
                 checked = betaNotes,
-                onCheckedChange = { viewModel.updateBetaNotes(it) }
+                onCheckedChange = { handleToggle(it, "Quick Notes", "Enable the quick notes tool") { isChecked -> viewModel.updateBetaNotes(isChecked) } }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             val betaMotivation by viewModel.betaMotivation.collectAsStateWithLifecycle()
@@ -229,7 +295,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = "Motivation Panel",
                 subtitle = "Enable the motivation quotes panel on the dashboard",
                 checked = betaMotivation,
-                onCheckedChange = { viewModel.updateBetaMotivation(it) }
+                onCheckedChange = { handleToggle(it, "Motivation Panel", "Enable the motivation quotes panel on the dashboard") { isChecked -> viewModel.updateBetaMotivation(isChecked) } }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
@@ -237,7 +303,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = "Floating Action Bar",
                 subtitle = "Makes the bottom navigation bar float and look chubby",
                 checked = betaFloatingNav,
-                onCheckedChange = { viewModel.updateBetaFloatingNav(it) }
+                onCheckedChange = { handleToggle(it, "Floating Action Bar", "Makes the bottom navigation bar float and look chubby") { isChecked -> viewModel.updateBetaFloatingNav(isChecked) } }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             val betaNotchOptimization by viewModel.betaNotchOptimization.collectAsStateWithLifecycle()
@@ -245,7 +311,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = "Notch & Punch Hole Optimization",
                 subtitle = "Apply specialized padding to avoid display cutouts, notches, and punch hole cameras.",
                 checked = betaNotchOptimization,
-                onCheckedChange = { viewModel.updateBetaNotchOptimization(it) }
+                onCheckedChange = { handleToggle(it, "Notch & Punch Hole Optimization", "Apply specialized padding to avoid display cutouts, notches, and punch hole cameras.") { isChecked -> viewModel.updateBetaNotchOptimization(isChecked) } }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
@@ -253,7 +319,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = "Full Screen Punch Hole (Immersive)",
                 subtitle = "Draw behind the punch hole camera, safely dodging UI elements.",
                 checked = betaImmersiveMode,
-                onCheckedChange = { viewModel.updateBetaImmersiveMode(it) }
+                onCheckedChange = { handleToggle(it, "Full Screen Punch Hole (Immersive)", "Draw behind the punch hole camera, safely dodging UI elements.") { isChecked -> viewModel.updateBetaImmersiveMode(isChecked) } }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
@@ -261,7 +327,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = "Show Action History",
                 subtitle = "Display action history on the Analytics tab",
                 checked = showActionHistory,
-                onCheckedChange = { viewModel.updateShowActionHistory(it) }
+                onCheckedChange = { handleToggle(it, "Show Action History", "Display action history on the Analytics tab") { isChecked -> viewModel.updateShowActionHistory(isChecked) } }
             )
         }
     }
