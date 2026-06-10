@@ -339,6 +339,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     val status by viewModel.importExportStatus.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showResetDialog by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -389,7 +390,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 title = "Export Data",
                 subtitle = "Back up courses, subjects, assignments securely",
                 icon = Icons.Default.Upload,
-                onClick = { createDocumentLauncher.launch("scholar_backup.bin") }
+                onClick = { showExportDialog = true }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             SettingsActionItem(
@@ -408,6 +409,25 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 onClick = { showResetDialog = true }
             )
         }
+    }
+
+    if (showExportDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showExportDialog = false },
+            title = { Text("Export Data") },
+            text = { Text("Are you sure you want to export a binary backup of all your data?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExportDialog = false
+                        createDocumentLauncher.launch("scholar_backup.bin")
+                    }
+                ) { Text("Export") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExportDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 
     if (showResetDialog) {
