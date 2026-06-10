@@ -61,35 +61,38 @@ fun ToolboxScreen(navController: NavController, viewModel: ScholarViewModel) {
                 modifier = Modifier.fillMaxSize().padding(paddingValues)
             ) {
                 if (betaPomodoro) {
-                    item {
+                    item(key = "pomodoro") {
                         ToolboxItem(
                             icon = Icons.Default.AccessTime,
                             title = "Pomodoro Timer",
                             color = MaterialTheme.colorScheme.tertiaryContainer,
                             onColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                            onClick = { navController.navigate("pomodoro") }
+                            onClick = { navController.navigate("pomodoro") },
+                            modifier = Modifier.animateItem()
                         )
                     }
                 }
                 if (betaCgpa) {
-                    item {
+                    item(key = "cgpa") {
                         ToolboxItem(
                             icon = Icons.Default.Calculate,
                             title = "CGPA Calc",
                             color = MaterialTheme.colorScheme.primaryContainer,
                             onColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            onClick = { navController.navigate("cgpa") }
+                            onClick = { navController.navigate("cgpa") },
+                            modifier = Modifier.animateItem()
                         )
                     }
                 }
                 if (betaNotes) {
-                    item {
+                    item(key = "notes") {
                         ToolboxItem(
                             icon = Icons.AutoMirrored.Filled.Notes,
                             title = "Quick Notes",
                             color = MaterialTheme.colorScheme.secondaryContainer,
                             onColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            onClick = { navController.navigate("notes") }
+                            onClick = { navController.navigate("notes") },
+                            modifier = Modifier.animateItem()
                         )
                     }
                 }

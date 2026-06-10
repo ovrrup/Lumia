@@ -158,12 +158,10 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 val palettes = listOf(
-                    "Default" to androidx.compose.ui.graphics.Color(0xFF897CC2),
-                    "Ocean" to androidx.compose.ui.graphics.Color(0xFF4CB0E4),
-                    "Forest" to androidx.compose.ui.graphics.Color(0xFF5AB676),
-                    "Rose" to androidx.compose.ui.graphics.Color(0xFFEC6591),
-                    "Sunset" to androidx.compose.ui.graphics.Color(0xFFE67D42),
-                    "Purple" to androidx.compose.ui.graphics.Color(0xFF8E71CB)
+                    "Blue" to androidx.compose.ui.graphics.Color(0xFF0085FF),
+                    "Green" to androidx.compose.ui.graphics.Color(0xFF00BA34),
+                    "Orange" to androidx.compose.ui.graphics.Color(0xFFF98600),
+                    "Red" to androidx.compose.ui.graphics.Color(0xFFE92C2C)
                 )
                 items(palettes) { (name, color) ->
                     ThemeColorPickerItem(

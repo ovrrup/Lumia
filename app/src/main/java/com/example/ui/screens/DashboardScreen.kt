@@ -333,19 +333,19 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
             }
 
             if (betaMotivation || betaPomodoro || betaCgpa || betaNotes) {
-                item {
+                item(key = "student_tools_title") {
                     Text(
                         "Student Tools",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier.animateItem().padding(vertical = 8.dp)
                     )
                 }
 
                 if (betaMotivation) {
-                    item {
+                    item(key = "beta_motivation") {
                         Card(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            modifier = Modifier.animateItem().fillMaxWidth().padding(bottom = 8.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
                             shape = RoundedCornerShape(24.dp)
                         ) {
@@ -380,10 +380,10 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                 }
 
                 if (betaPomodoro || betaCgpa || betaNotes) {
-                    item {
+                    item(key = "toolbox_card") {
                         Card(
                             onClick = { navController.navigate("toolbox") },
-                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                            modifier = Modifier.animateItem().fillMaxWidth().height(100.dp),
                             shape = RoundedCornerShape(24.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                         ) {
@@ -414,19 +414,19 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                 }
             }
 
-            item {
+            item(key = "your_courses_title") {
                 Text(
                         "Your Courses",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier.animateItem().padding(vertical = 8.dp)
                     )
                 }
 
                 if (courses.isEmpty()) {
-                    item {
+                    item(key = "courses_empty") {
                         Card(
-                            modifier = Modifier.fillMaxWidth().height(240.dp),
+                            modifier = Modifier.animateItem().fillMaxWidth().height(240.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                             shape = RoundedCornerShape(32.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -465,6 +465,7 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                         Card(
                             onClick = { navController.navigate("courseDetail/${course.id}") },
                             modifier = Modifier
+                                .animateItem()
                                 .fillMaxWidth()
                                 .animateContentSize(),
                             shape = MaterialTheme.shapes.extraLarge,
@@ -549,20 +550,20 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                     }
                 }
 
-                item {
+                item(key = "your_subjects_title") {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         "Your Subjects",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier.animateItem().padding(vertical = 8.dp)
                     )
                 }
 
                 if (subjects.isEmpty()) {
-                    item {
+                    item(key = "subjects_empty") {
                         Card(
-                            modifier = Modifier.fillMaxWidth().height(240.dp),
+                            modifier = Modifier.animateItem().fillMaxWidth().height(240.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                             shape = RoundedCornerShape(32.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -600,7 +601,7 @@ fun HomeTab(navController: NavController, viewModel: ScholarViewModel, bottomPad
                         var expanded by remember { mutableStateOf(false) }
                         Card(
                             onClick = { navController.navigate("subjectDetail/${subject.id}") },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.animateItem().fillMaxWidth(),
                             shape = RoundedCornerShape(32.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),

@@ -113,7 +113,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
                         )
                         Card(
-                            modifier = Modifier.fillMaxWidth().animateContentSize(),
+                            modifier = Modifier.animateItem().fillMaxWidth().animateContentSize(),
                             shape = RoundedCornerShape(24.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                             colors = CardDefaults.cardColors(containerColor = cardColor)

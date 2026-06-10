@@ -31,7 +31,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _themeMode = MutableStateFlow(prefs.getString("theme_mode", "System") ?: "System")
     val themeMode = _themeMode.asStateFlow()
 
-    private val _themeColor = MutableStateFlow(prefs.getString("theme_color", "Default") ?: "Default")
+    private val _themeColor = MutableStateFlow(prefs.getString("theme_color", "Blue") ?: "Blue")
     val themeColor = _themeColor.asStateFlow()
 
     private val _betaFloatingNav = MutableStateFlow(prefs.getBoolean("beta_floating_nav", false))

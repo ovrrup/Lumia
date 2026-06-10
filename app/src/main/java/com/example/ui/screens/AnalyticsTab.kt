@@ -198,7 +198,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
         } else {
             items(actionLogs, key = { it.id }) { log ->
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.animateItem().fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(24.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
