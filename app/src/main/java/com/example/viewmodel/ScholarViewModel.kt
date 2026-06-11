@@ -64,6 +64,27 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaDynamicBackground = MutableStateFlow(prefs.getBoolean("beta_dynamic_background", false))
     val betaDynamicBackground = _betaDynamicBackground.asStateFlow()
 
+    private val _dynamicAppIcon = MutableStateFlow(prefs.getBoolean("dynamic_app_icon", false))
+    val dynamicAppIcon = _dynamicAppIcon.asStateFlow()
+
+    fun updateDynamicAppIcon(enabled: Boolean) {
+        _dynamicAppIcon.value = enabled
+        prefs.edit().putBoolean("dynamic_app_icon", enabled).apply()
+        
+        val pm = getApplication<Application>().packageManager
+        val packageName = getApplication<Application>().packageName
+        val defaultAlias = android.content.ComponentName(packageName, "com.example.DefaultAlias")
+        val dynamicAlias = android.content.ComponentName(packageName, "com.example.DynamicAlias")
+
+        if (enabled) {
+            pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+            pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+        } else {
+            pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+            pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+        }
+    }
+
     private val _betaBetterTexts = MutableStateFlow(prefs.getBoolean("beta_better_texts", false))
     val betaBetterTexts = _betaBetterTexts.asStateFlow()
 

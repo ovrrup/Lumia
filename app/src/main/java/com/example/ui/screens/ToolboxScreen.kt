@@ -7,10 +7,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.Calculate
+import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,7 +39,7 @@ fun ToolboxScreen(navController: NavController, viewModel: ScholarViewModel) {
                 title = { Text("Toolbox", fontWeight = FontWeight.Black) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -65,7 +65,7 @@ fun ToolboxScreen(navController: NavController, viewModel: ScholarViewModel) {
                 if (betaPomodoro) {
                     item(key = "pomodoro") {
                         ToolboxItem(
-                            icon = Icons.Default.AccessTime,
+                            icon = Icons.Rounded.AccessTime,
                             title = "Pomodoro Timer",
                             color = MaterialTheme.colorScheme.tertiaryContainer,
                             onColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -77,7 +77,7 @@ fun ToolboxScreen(navController: NavController, viewModel: ScholarViewModel) {
                 if (betaCgpa) {
                     item(key = "cgpa") {
                         ToolboxItem(
-                            icon = Icons.Default.Calculate,
+                            icon = Icons.Rounded.Calculate,
                             title = "CGPA Calc",
                             color = MaterialTheme.colorScheme.primaryContainer,
                             onColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -89,7 +89,7 @@ fun ToolboxScreen(navController: NavController, viewModel: ScholarViewModel) {
                 if (betaNotes) {
                     item(key = "notes") {
                         ToolboxItem(
-                            icon = Icons.AutoMirrored.Filled.Notes,
+                            icon = Icons.AutoMirrored.Rounded.Notes,
                             title = "Quick Notes",
                             color = MaterialTheme.colorScheme.secondaryContainer,
                             onColor = MaterialTheme.colorScheme.onSecondaryContainer,

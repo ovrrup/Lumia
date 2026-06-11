@@ -12,17 +12,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.LibraryBooks
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.ViewModule
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.ViewModule
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.*
@@ -42,7 +42,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.MoreVert
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,7 +71,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 title = { Text(course.name, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -87,7 +87,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Assignment")
+                Icon(Icons.Rounded.Add, contentDescription = "Add Assignment")
             }
         }
     ) { padding ->
@@ -137,7 +137,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 Text("Attendance Tracker", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
                                 IconButton(onClick = { isMonthlyView = !isMonthlyView; displayMonthOffset = 0 }) {
                                     Icon(
-                                        imageVector = if (isMonthlyView) Icons.Default.ViewModule else Icons.Default.DateRange,
+                                        imageVector = if (isMonthlyView) Icons.Rounded.ViewModule else Icons.Rounded.DateRange,
                                         contentDescription = "Toggle View",
                                         tint = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
@@ -165,11 +165,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     IconButton(onClick = { displayMonthOffset-- }) {
-                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Prev", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Prev", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                     }
                                     Text(monthName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
                                     IconButton(onClick = { displayMonthOffset++ }) {
-                                        Icon(Icons.Default.ChevronRight, contentDescription = "Next", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                                        Icon(Icons.Rounded.ChevronRight, contentDescription = "Next", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -309,7 +309,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 if (effectiveTotal > 0 && attendancePct < 75) {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Icon(
-                                        Icons.Default.Warning,
+                                        Icons.Rounded.Warning,
                                         contentDescription = "Low Attendance",
                                         tint = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.size(16.dp)
@@ -403,7 +403,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.LibraryBooks,
+                                        imageVector = Icons.AutoMirrored.Rounded.LibraryBooks,
                                         contentDescription = null,
                                         modifier = Modifier.size(40.dp),
                                         tint = MaterialTheme.colorScheme.secondary
@@ -462,10 +462,10 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 }
                                 Row {
                                     IconButton(onClick = { assignmentToEdit = assignment }) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
+                                        Icon(Icons.Rounded.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
                                     }
                                     IconButton(onClick = { viewModel.deleteAssignment(assignment) }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                                        Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                                     }
                                 }
                             }

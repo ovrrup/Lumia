@@ -22,16 +22,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.scale
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.DeleteForever
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,7 +55,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 title = { Text("Settings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -75,7 +75,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             SettingsActionItem(
                 title = "Appearance",
                 subtitle = "Themes, colors, and layout modifiers",
-                icon = Icons.Default.Palette,
+                icon = Icons.Rounded.Palette,
                 onClick = { navController.navigate("settings/appearance") }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -83,7 +83,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             SettingsActionItem(
                 title = "Beta Features",
                 subtitle = "Experimental optimizations and tweaks",
-                icon = Icons.Default.Check,
+                icon = Icons.Rounded.Check,
                 onClick = { navController.navigate("settings/beta") }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -91,7 +91,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             SettingsActionItem(
                 title = "Safety Features",
                 subtitle = "Settings protection and smart recommendations",
-                icon = Icons.Default.Lock,
+                icon = Icons.Rounded.Lock,
                 onClick = { navController.navigate("settings/safety") }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -99,7 +99,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             SettingsActionItem(
                 title = "Data Management",
                 subtitle = "Export, import, and reset data",
-                icon = Icons.Default.Storage,
+                icon = Icons.Rounded.Storage,
                 onClick = { navController.navigate("settings/data") }
             )
         }
@@ -124,7 +124,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 title = { Text("Appearance", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -144,7 +144,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             SettingsGroupMenu(
                 title = "Theme Mode",
                 subtitle = "Select $themeMode",
-                icon = Icons.Default.DarkMode
+                icon = Icons.Rounded.DarkMode
             ) { }
             
             Row(
@@ -175,6 +175,14 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 subtitle = "Enable modern frosted glass UI components",
                 checked = betaGlassUi,
                 onCheckedChange = { viewModel.updateBetaGlassUi(it) }
+            )
+
+            val dynamicAppIcon by viewModel.dynamicAppIcon.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "Dynamic App Icon",
+                subtitle = "Monochrome icon that adapts to your wallpaper (requires Android 13+ and a compatible launcher with 'Themed Icons' enabled)",
+                checked = dynamicAppIcon,
+                onCheckedChange = { viewModel.updateDynamicAppIcon(it) }
             )
 
             SettingsToggleItem(
@@ -309,7 +317,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = { Text("Beta Features", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -430,7 +438,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 title = { Text("Data Management", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -449,14 +457,14 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             SettingsActionItem(
                 title = "Export Data",
                 subtitle = "Back up courses, subjects, assignments securely",
-                icon = Icons.Default.Upload,
+                icon = Icons.Rounded.Upload,
                 onClick = { showExportDialog = true }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             SettingsActionItem(
                 title = "Import Data",
                 subtitle = "Restore backup. Warning: Overwrites current data",
-                icon = Icons.Default.Download,
+                icon = Icons.Rounded.Download,
                 isDestructive = true,
                 onClick = { openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*")) }
             )
@@ -464,7 +472,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             SettingsActionItem(
                 title = "Erase All Data",
                 subtitle = "Permanently delete all courses, subjects, assignments, and logs",
-                icon = Icons.Default.DeleteForever,
+                icon = Icons.Rounded.DeleteForever,
                 isDestructive = true,
                 onClick = { showResetDialog = true }
             )
@@ -618,7 +626,7 @@ fun ThemeColorPickerItem(name: String, color: androidx.compose.ui.graphics.Color
         ) {
             if (isSelected) {
                 Icon(
-                    imageVector = Icons.Default.Check,
+                    imageVector = Icons.Rounded.Check,
                     contentDescription = null,
                     tint = androidx.compose.ui.graphics.Color.White,
                     modifier = Modifier.size(24.dp)
@@ -686,7 +694,7 @@ fun SettingsActionItem(title: String, subtitle: String, icon: androidx.compose.u
             Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Icon(
-            imageVector = Icons.Default.ChevronRight,
+            imageVector = Icons.Rounded.ChevronRight,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -708,7 +716,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 title = { Text("Safety Features", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -723,7 +731,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
         ) {
-            SettingsCategoryHeading(title = "Safety Pin", icon = Icons.Default.Lock)
+            SettingsCategoryHeading(title = "Safety Pin", icon = Icons.Rounded.Lock)
             
             SettingsToggleItem(
                 title = "Enable Safety Pin",

@@ -49,8 +49,8 @@ import com.example.worker.AssignmentMonitorWorker
 import java.util.concurrent.TimeUnit
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material.icons.rounded.Info
 
 class MainActivity : ComponentActivity() {
     private val viewModel: ScholarViewModel by viewModels()
@@ -109,7 +109,7 @@ class MainActivity : ComponentActivity() {
                         androidx.compose.material3.AlertDialog(
                             icon = {
                                 androidx.compose.material3.Icon(
-                                    imageVector = if (data.isConflict) Icons.Default.Warning else Icons.Default.Info,
+                                    imageVector = if (data.isConflict) Icons.Rounded.Warning else Icons.Rounded.Info,
                                     contentDescription = null,
                                     tint = if (data.isConflict) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                                 )

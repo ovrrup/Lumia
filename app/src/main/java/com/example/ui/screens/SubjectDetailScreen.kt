@@ -11,13 +11,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Alarm
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.LibraryAddCheck
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Assignment
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Alarm
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.LibraryAddCheck
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.surfaceColorAtElevation
@@ -63,7 +63,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 title = { Text(subject.name, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -79,7 +79,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Topic")
+                Icon(Icons.Rounded.Add, contentDescription = "Add Topic")
             }
         }
     ) { padding ->
@@ -94,7 +94,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.LibraryAddCheck,
+                                imageVector = Icons.Rounded.LibraryAddCheck,
                                 contentDescription = null,
                                 modifier = Modifier.size(40.dp),
                                 tint = MaterialTheme.colorScheme.secondary
@@ -133,7 +133,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                     textDecoration = if (topic.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
                                 )
                                 IconButton(onClick = { viewModel.deleteTopic(topic) }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                                    Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }

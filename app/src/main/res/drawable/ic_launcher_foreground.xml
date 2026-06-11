@@ -4,44 +4,17 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <group
-        android:pivotX="54"
-        android:pivotY="54"
-        android:scaleX="0.85"
-        android:scaleY="0.85">
-        
-        <!-- Middle Block -->
-        <path
-            android:fillColor="#000000"
-            android:pathData="M44,35 h20 v45 h-20 z"/>
-        <path
-            android:fillColor="#FF0000"
-            android:pathData="M51,43 h6 v32 h-6 z"/>
 
-        <!-- Top Block -->
-        <group
-            android:pivotX="54"
-            android:pivotY="28"
-            android:rotation="8">
-            <path
-                android:fillColor="#000000"
-                android:pathData="M20,16 h68 v24 h-68 z"/>
-            <path
-                android:fillColor="#00BFFF"
-                android:pathData="M26,25 h56 v5 h-56 z"/>
-        </group>
+    <path
+        android:fillColor="#0D47A1"
+        android:pathData="M 54 18 A 36 36 0 1 0 54 90 A 36 36 0 1 0 54 18 Z" />
 
-        <!-- Bottom Block -->
-        <group
-            android:pivotX="54"
-            android:pivotY="82"
-            android:rotation="15">
-            <path
-                android:fillColor="#000000"
-                android:pathData="M38,72 h32 v20 h-32 z"/>
-            <path
-                android:fillColor="#BCAAD4"
-                android:pathData="M44,80 h20 v5 h-20 z"/>
-        </group>
-    </group>
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M 54 28 A 26 26 0 1 0 54 80 A 26 26 0 1 0 54 28 Z" />
+
+    <path
+        android:fillColor="#90CAF9"
+        android:pathData="M 54 38 A 16 16 0 1 0 54 70 A 16 16 0 1 0 54 38 Z" />
+
 </vector>

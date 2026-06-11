@@ -53,17 +53,17 @@ fun createDarkScheme(
     surfaceTint = primary
 )
 
-val BlueLight = createLightScheme(Color(0xFF0085FF), Color(0xFFD0E4FF), Color(0xFF004F99), Color(0xFFD2E4FF), Color(0xFF004F99), Color(0xFFD2E4FF))
-val BlueDark = createDarkScheme(Color(0xFF8CBFFF), Color(0xFF004F99), Color(0xFFA1CADF), Color(0xFF004F99), Color(0xFFA1CADF), Color(0xFF004F99))
+val BlueLight = createLightScheme(Color(0xFF0085FF), Color(0xFF004F99), Color(0xFF0A68C2), Color(0xFF004F99), Color(0xFF0A68C2), Color(0xFF004F99))
+val BlueDark = createDarkScheme(Color(0xFF8CBFFF), Color(0xFFD0E4FF), Color(0xFFA1CADF), Color(0xFFD0E4FF), Color(0xFFA1CADF), Color(0xFFD0E4FF))
 
-val GreenLight = createLightScheme(Color(0xFF00BA34), Color(0xFF8FFFA9), Color(0xFF006F1F), Color(0xFF91FDB2), Color(0xFF006F1F), Color(0xFF91FDB2))
-val GreenDark = createDarkScheme(Color(0xFF56E074), Color(0xFF006F1F), Color(0xFF8CE09A), Color(0xFF006F1F), Color(0xFF8CE09A), Color(0xFF006F1F))
+val GreenLight = createLightScheme(Color(0xFF00BA34), Color(0xFF006F1F), Color(0xFF0B9631), Color(0xFF006F1F), Color(0xFF0B9631), Color(0xFF006F1F))
+val GreenDark = createDarkScheme(Color(0xFF56E074), Color(0xFF8FFFA9), Color(0xFF8CE09A), Color(0xFF8FFFA9), Color(0xFF8CE09A), Color(0xFF8FFFA9))
 
-val OrangeLight = createLightScheme(Color(0xFFF98600), Color(0xFFFFDAB6), Color(0xFF955000), Color(0xFFFFDCBE), Color(0xFF955000), Color(0xFFFFDCBE))
-val OrangeDark = createDarkScheme(Color(0xFFFFB482), Color(0xFF955000), Color(0xFFFFBE90), Color(0xFF955000), Color(0xFFFFBE90), Color(0xFF955000))
+val OrangeLight = createLightScheme(Color(0xFFF98600), Color(0xFF955000), Color(0xFFCC7206), Color(0xFF955000), Color(0xFFCC7206), Color(0xFF955000))
+val OrangeDark = createDarkScheme(Color(0xFFFFB482), Color(0xFFFFDAB6), Color(0xFFFFBE90), Color(0xFFFFDAB6), Color(0xFFFFBE90), Color(0xFFFFDAB6))
 
-val RedLight = createLightScheme(Color(0xFFE92C2C), Color(0xFFFFDAD6), Color(0xFF8B1A1A), Color(0xFFFFDBDD), Color(0xFF8B1A1A), Color(0xFFFFDBDD))
-val RedDark = createDarkScheme(Color(0xFFFFB4A9), Color(0xFF8B1A1A), Color(0xFFFFB3B8), Color(0xFF8B1A1A), Color(0xFFFFB3B8), Color(0xFF8B1A1A))
+val RedLight = createLightScheme(Color(0xFFE92C2C), Color(0xFF8B1A1A), Color(0xFFC02F2F), Color(0xFF8B1A1A), Color(0xFFC02F2F), Color(0xFF8B1A1A))
+val RedDark = createDarkScheme(Color(0xFFFFB4A9), Color(0xFFFFDAD6), Color(0xFFFFB3B8), Color(0xFFFFDAD6), Color(0xFFFFB3B8), Color(0xFFFFDAD6))
 
 fun Color.mix(other: Color, weight: Float): Color {
     return Color(
@@ -98,7 +98,29 @@ fun ScholarTheme(
     val context = LocalContext.current
     var colorScheme = when {
         themeColor == "Dynamic" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> run {
-            if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            val lightDynamic = dynamicLightColorScheme(context)
+            val darkDynamic = dynamicDarkColorScheme(context)
+            if (isDark) {
+                // User requirement: Light shades for components in Dark Mode
+                darkDynamic.copy(
+                    primaryContainer = lightDynamic.primaryContainer,
+                    secondaryContainer = lightDynamic.secondaryContainer,
+                    tertiaryContainer = lightDynamic.tertiaryContainer,
+                    onPrimaryContainer = lightDynamic.onPrimaryContainer,
+                    onSecondaryContainer = lightDynamic.onSecondaryContainer,
+                    onTertiaryContainer = lightDynamic.onTertiaryContainer
+                )
+            } else {
+                // User requirement: Dark shades for components in Light Mode
+                lightDynamic.copy(
+                    primaryContainer = darkDynamic.primaryContainer,
+                    secondaryContainer = darkDynamic.secondaryContainer,
+                    tertiaryContainer = darkDynamic.tertiaryContainer,
+                    onPrimaryContainer = darkDynamic.onPrimaryContainer,
+                    onSecondaryContainer = darkDynamic.onSecondaryContainer,
+                    onTertiaryContainer = darkDynamic.onTertiaryContainer
+                )
+            }
         }
         else -> when (themeColor) {
             "Blue" -> if (isDark) BlueDark else BlueLight
@@ -117,9 +139,9 @@ fun ScholarTheme(
         )
     }
 
-    // Apply rule: Lighter shades for background/components in dark mode, darker shades in light mode.
-    // We achieve this by mixing with a proportion of White (Dark Mode) or Black (Light Mode).
-    val shadeMixColor = if (isDark) Color.White else Color.Black
+    // Apply rule: Light shades (primary light variant in dark mode) for background/components in dark mode, darker shades in light mode.
+    // We achieve this by mixing with a proportion of the primary color natively available, since M3 primary is light in dark mode and dark in light mode!
+    val shadeMixColor = colorScheme.primary
     
     colorScheme = colorScheme.copy(
         background = if (isDark && pureBlackMode) Color.Black else colorScheme.background.mix(shadeMixColor, 0.95f),

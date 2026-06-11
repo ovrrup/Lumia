@@ -18,26 +18,26 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.Analytics
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TaskAlt
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.automirrored.filled.ManageSearch
-import androidx.compose.material.icons.automirrored.filled.Notes
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.Calculate
+import androidx.compose.material.icons.automirrored.rounded.ManageSearch
+import androidx.compose.material.icons.automirrored.rounded.Notes
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -87,7 +87,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.border
@@ -110,13 +110,13 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         containerColor = MaterialTheme.colorScheme.surface,
                     ) {
                         NavigationBarItem(
-                            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                            icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
                             label = { Text("Home") },
                             selected = selectedTab == 0,
                             onClick = { selectedTab = 0 }
                         )
                         NavigationBarItem(
-                            icon = { Icon(Icons.Default.Analytics, contentDescription = "Analytics") },
+                            icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
                             label = { Text("Analytics") },
                             selected = selectedTab == 1,
                             onClick = { selectedTab = 1 }
@@ -168,13 +168,13 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     windowInsets = WindowInsets(0, 0, 0, 0)
                 ) {
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                        icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
                         label = { Text("Home") },
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 }
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.Analytics, contentDescription = "Analytics") },
+                        icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
                         label = { Text("Analytics") },
                         selected = selectedTab == 1,
                         onClick = { selectedTab = 1 }
@@ -362,7 +362,7 @@ fun HomeTab(
                 title = { Text(stringResource(id = R.string.app_name), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                 actions = {
                     IconButton(onClick = { navController.navigate("settings") }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -384,7 +384,7 @@ fun HomeTab(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add")
+                    Icon(Icons.Rounded.Add, contentDescription = "Add")
                 }
             }
         }
@@ -413,7 +413,7 @@ fun HomeTab(
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
                             Icon(
-                                imageVector = Icons.Default.LocalFireDepartment,
+                                imageVector = Icons.Rounded.LocalFireDepartment,
                                 contentDescription = "Streak",
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier
@@ -450,7 +450,7 @@ fun HomeTab(
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                                imageVector = Icons.AutoMirrored.Rounded.MenuBook,
                                 contentDescription = "Courses",
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier
@@ -498,7 +498,7 @@ fun HomeTab(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Star,
+                                    imageVector = Icons.Rounded.Star,
                                     contentDescription = "Motivation",
                                     tint = MaterialTheme.colorScheme.onTertiaryContainer,
                                     modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f), CircleShape).padding(6.dp)
@@ -546,7 +546,7 @@ fun HomeTab(
                                     Text(activeTools, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
                                 }
                                 Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ManageSearch,
+                                    imageVector = Icons.AutoMirrored.Rounded.ManageSearch,
                                     contentDescription = "Toolbox",
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f), CircleShape).padding(8.dp)
@@ -584,7 +584,7 @@ fun HomeTab(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                                        imageVector = Icons.AutoMirrored.Rounded.MenuBook,
                                         contentDescription = null,
                                         modifier = Modifier.size(40.dp),
                                         tint = MaterialTheme.colorScheme.primary
@@ -629,7 +629,7 @@ fun HomeTab(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                                            imageVector = Icons.AutoMirrored.Rounded.MenuBook,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                             modifier = Modifier.size(24.dp)
@@ -638,7 +638,7 @@ fun HomeTab(
                                     
                                     Box {
                                         IconButton(onClick = { expanded = true }) {
-                                            Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Icon(Icons.Rounded.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                         DropdownMenu(
                                             expanded = expanded,
@@ -650,7 +650,7 @@ fun HomeTab(
                                                     expanded = false
                                                     courseToEdit = course
                                                 },
-                                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                                                leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
                                             )
                                             DropdownMenuItem(
                                                 text = { Text("Delete") },
@@ -658,7 +658,7 @@ fun HomeTab(
                                                     expanded = false
                                                     viewModel.deleteCourse(course)
                                                 },
-                                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                                leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
                                             )
                                         }
                                     }
@@ -717,7 +717,7 @@ fun HomeTab(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                                        imageVector = Icons.AutoMirrored.Rounded.MenuBook,
                                         contentDescription = null,
                                         modifier = Modifier.size(40.dp),
                                         tint = MaterialTheme.colorScheme.tertiary
@@ -762,7 +762,7 @@ fun HomeTab(
                                     }
                                     Box {
                                         IconButton(onClick = { expanded = true }) {
-                                            Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Icon(Icons.Rounded.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                         DropdownMenu(
                                             expanded = expanded,
@@ -774,7 +774,7 @@ fun HomeTab(
                                                     expanded = false
                                                     subjectToEdit = subject
                                                 },
-                                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                                                leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
                                             )
                                             DropdownMenuItem(
                                                 text = { Text("Delete") },
@@ -782,7 +782,7 @@ fun HomeTab(
                                                     expanded = false
                                                     viewModel.deleteSubject(subject)
                                                 },
-                                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                                leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
                                             )
                                         }
                                     }
