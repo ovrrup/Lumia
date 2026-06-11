@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,12 +46,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.viewmodel.ScholarViewModel
 import java.util.Date
-
+import androidx.compose.material3.IconButtonDefaults
+import java.util.Calendar
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.runtime.remember
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +65,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val actionLogs by viewModel.actionLogs.collectAsStateWithLifecycle()
+    val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
 
     val totalAssignments = assignments.size
     val completedAssignments = assignments.count { it.isCompleted }
@@ -104,7 +112,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 AssignmentsStatusDonutChart(
-                    modifier = Modifier.fillMaxWidth().height(240.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     total = totalAssignments,
                     completed = completedAssignments,
                     backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -114,7 +122,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
                 
                 if (courses.isNotEmpty() && assignments.isNotEmpty()) {
                     AssignmentsPerCourseBarChart(
-                        modifier = Modifier.fillMaxWidth().height(240.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         courses = courses,
                         assignments = assignments,
                         backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -122,14 +130,12 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
                     )
                 }
 
-                if (actionLogs.isNotEmpty()) {
-                    ActivityLineChart(
-                        modifier = Modifier.fillMaxWidth().height(220.dp),
-                        actionLogs = actionLogs,
-                        color = MaterialTheme.colorScheme.primary,
-                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                }
+                PomodoroHeatmapChart(
+                    modifier = Modifier.fillMaxWidth(),
+                    sessions = pomodoroSessions,
+                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                    primaryColor = MaterialTheme.colorScheme.primary
+                )
             }
         }
 
@@ -254,60 +260,80 @@ fun AssignmentsStatusDonutChart(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(modifier = Modifier.weight(1f).aspectRatio(1f), contentAlignment = Alignment.Center) {
-                Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                    val pending = maxOf(0, total - completed)
-                    val actualData = if (total > 0) listOf(completed.toFloat(), pending.toFloat()) else listOf(1f)
-                    val colorsList = if (total > 0) listOf(primaryColor, secondaryColor) else listOf(Color.LightGray)
+            Text(
+                "Assignments Status",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            Box(modifier = Modifier.size(200.dp), contentAlignment = Alignment.Center) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val strokeW = 24.dp.toPx()
                     
-                    val totalData = actualData.sum()
-                    var startAngle = -90f
+                    // Background Ring
+                    drawArc(
+                        color = secondaryColor.copy(alpha = 0.3f),
+                        startAngle = 0f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = androidx.compose.ui.geometry.Offset(strokeW / 2, strokeW / 2),
+                        size = androidx.compose.ui.geometry.Size(size.width - strokeW, size.height - strokeW),
+                        style = Stroke(width = strokeW, cap = StrokeCap.Round)
+                    )
                     
-                    actualData.forEachIndexed { index, value ->
-                        val sweepAngle = (value / totalData) * 360f
+                    // Foreground Ring
+                    val progressAngle = if (total > 0) (completed.toFloat() / total.toFloat()) * 360f else 0f
+                    if (progressAngle > 0) {
                         drawArc(
-                            color = colorsList[index],
-                            startAngle = startAngle,
-                            sweepAngle = sweepAngle,
+                            color = primaryColor,
+                            startAngle = -90f,
+                            sweepAngle = progressAngle,
                             useCenter = false,
-                            style = Stroke(width = 24.dp.toPx(), cap = StrokeCap.Butt)
+                            topLeft = androidx.compose.ui.geometry.Offset(strokeW / 2, strokeW / 2),
+                            size = androidx.compose.ui.geometry.Size(size.width - strokeW, size.height - strokeW),
+                            style = Stroke(width = strokeW, cap = StrokeCap.Round)
                         )
-                        startAngle += sweepAngle
                     }
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "$completed / $total",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        text = "$completed / $total",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Completed",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
             
-            Column(
-                modifier = Modifier.weight(1f).padding(start = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            val itemColors = listOf(primaryColor, secondaryColor.copy(alpha = 0.3f))
+            val labels = listOf("Completed", "Pending")
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text(
-                    "Assignments",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                val labels = listOf("Completed", "Pending")
-                val itemColors = listOf(primaryColor, secondaryColor)
                 labels.forEachIndexed { index, label ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(12.dp).background(itemColors[index], CircleShape))
+                        Box(modifier = Modifier.size(14.dp).background(itemColors[index], CircleShape))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = label,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -331,42 +357,74 @@ fun AssignmentsPerCourseBarChart(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
             Text(
                 "Assignments per Course",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Canvas(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-                // Count assignments per course
-                val assignmentsCountMap = assignments.groupBy { it.courseId }.mapValues { it.value.size }
-                // Sort courses by assignment count and take top 5
-                val topCourses = courses
-                    .map { Pair(it.name, assignmentsCountMap[it.id] ?: 0) }
-                    .filter { it.second > 0 }
-                    .sortedByDescending { it.second }
-                    .take(5)
-                
-                if (topCourses.isEmpty()) return@Canvas
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            val assignmentsCountMap = assignments.groupBy { it.courseId }.mapValues { it.value.size }
+            val topCourses = courses
+                .map { Pair(it.name, assignmentsCountMap[it.id] ?: 0) }
+                .filter { it.second > 0 }
+                .sortedByDescending { it.second }
+                .take(5)
+            
+            if (topCourses.isEmpty()) {
+                Text(
+                    "No data available.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                return@Column
+            }
 
-                val maxCount = topCourses.maxOf { it.second }.toFloat()
-                val barWidth = size.width / (topCourses.size * 2)
-                val spacing = size.width / topCourses.size
+            val maxCount = topCourses.maxOf { it.second }.toFloat()
 
-                topCourses.forEachIndexed { index, (courseName, count) ->
-                    val x = index * spacing + barWidth / 2
-                    val barHeight = (count / maxCount) * size.height
-                    val yTop = size.height - barHeight
-
-                    drawLine(
-                        color = barColor,
-                        start = androidx.compose.ui.geometry.Offset(x, size.height),
-                        end = androidx.compose.ui.geometry.Offset(x, yTop),
-                        strokeWidth = barWidth,
-                        cap = StrokeCap.Round
-                    )
+            // Draw horizontal bars
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                topCourses.forEach { (courseName, count) ->
+                    val fraction = if (maxCount > 0) count / maxCount else 0f
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = courseName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f).padding(end = 16.dp)
+                            )
+                            Text(
+                                text = count.toString(),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(16.dp)
+                                .background(barColor.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(fraction)
+                                    .height(16.dp)
+                                    .background(barColor, RoundedCornerShape(8.dp))
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -374,71 +432,155 @@ fun AssignmentsPerCourseBarChart(
 }
 
 @Composable
-fun ActivityLineChart(modifier: Modifier = Modifier, actionLogs: List<com.example.model.ActionLog>, color: Color, backgroundColor: Color) {
+fun PomodoroHeatmapChart(
+    modifier: Modifier = Modifier,
+    sessions: List<com.example.model.PomodoroSession>,
+    backgroundColor: Color,
+    primaryColor: Color
+) {
+    var calendarForMonth by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(Calendar.getInstance()) }
+    
+    val currentYear = calendarForMonth.get(Calendar.YEAR)
+    val currentMonth = calendarForMonth.get(Calendar.MONTH)
+    
+    val monthName = DateFormat.format("MMMM yyyy", calendarForMonth.time).toString()
+
+    // Aggregate sessions for the selected month
+    val daysInMonth = calendarForMonth.getActualMaximum(Calendar.DAY_OF_MONTH)
+    
+    val dailyDurations = IntArray(daysInMonth + 1) { 0 }
+    
+    sessions.forEach { session ->
+        val sessionCal = Calendar.getInstance().apply { timeInMillis = session.dateMillis }
+        if (sessionCal.get(Calendar.YEAR) == currentYear && sessionCal.get(Calendar.MONTH) == currentMonth) {
+            val day = sessionCal.get(Calendar.DAY_OF_MONTH)
+            dailyDurations[day] += session.durationMinutes
+        }
+    }
+    
+    val maxDuration = dailyDurations.maxOrNull()?.takeIf { it > 0 } ?: 60 // fallback to 60 as max base
+
     Card(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Text(
-                "Activity Past 7 Days",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Canvas(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-                // Determine past 7 days activity
-                val calendar = java.util.Calendar.getInstance()
-                val now = calendar.timeInMillis
-                
-                // Group by days ago (0 to 6)
-                val counts = IntArray(7) { 0 }
-                actionLogs.forEach { log ->
-                    val diffMillis = now - log.timestampMillis
-                    val diffDays = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
-                    if (diffDays in 0..6) {
-                        counts[6 - diffDays]++ 
-                    }
-                }
-                
-                val dataPoints = counts.map { it.toFloat() }
-                val maxPoint = dataPoints.maxOrNull()?.takeIf { it > 0 } ?: 10f
-                val spacing = size.width / (dataPoints.size - 1)
-                
-                val path = androidx.compose.ui.graphics.Path()
-                dataPoints.forEachIndexed { index, value ->
-                    val x = index * spacing
-                    val y = size.height - (value / maxPoint) * size.height
-                    if (index == 0) {
-                        path.moveTo(x, y)
-                    } else {
-                        path.lineTo(x, y)
-                    }
-                }
-                
-                drawPath(
-                    path = path,
-                    color = color,
-                    style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+        Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Study Calendar",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
-                dataPoints.forEachIndexed { index, value ->
-                    val x = index * spacing
-                    val y = size.height - (value / maxPoint) * size.height
-                    drawCircle(
-                        color = backgroundColor,
-                        radius = 6.dp.toPx(),
-                        center = androidx.compose.ui.geometry.Offset(x, y)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = { 
+                            val prevCal = calendarForMonth.clone() as Calendar
+                            prevCal.add(Calendar.MONTH, -1)
+                            calendarForMonth = prevCal
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Text("<", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                    Text(
+                        text = monthName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     )
-                    drawCircle(
-                        color = color,
-                        radius = 4.dp.toPx(),
-                        center = androidx.compose.ui.geometry.Offset(x, y)
+                    IconButton(
+                        onClick = { 
+                            val nextCal = calendarForMonth.clone() as Calendar
+                            nextCal.add(Calendar.MONTH, 1)
+                            calendarForMonth = nextCal
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Text(">", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            val calFirstDay = calendarForMonth.clone() as Calendar
+            calFirstDay.set(Calendar.DAY_OF_MONTH, 1)
+            val firstDayOfWeek = calFirstDay.get(Calendar.DAY_OF_WEEK) - 1 // 0 (Sunday) to 6 (Saturday)
+            
+            // Labels for Days
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                listOf("S", "M", "T", "W", "T", "F", "S").forEach { label ->
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.6f),
+                        modifier = Modifier.weight(1f),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Grid
+            val totalCells = daysInMonth + firstDayOfWeek
+            val rows = (totalCells + 6) / 7
+            
+            for (row in 0 until rows) {
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    for (col in 0 until 7) {
+                        val cellIndex = row * 7 + col
+                        val day = cellIndex - firstDayOfWeek + 1
+                        
+                        if (day in 1..daysInMonth) {
+                            val duration = dailyDurations[day]
+                            val intensity = if (duration == 0) 0.1f else {
+                                0.3f + 0.7f * (duration.toFloat() / maxDuration.toFloat()).coerceAtMost(1f)
+                            }
+                            
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                                    .padding(4.dp)
+                                    .background(
+                                        if (duration == 0) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f) 
+                                        else primaryColor.copy(alpha = intensity),
+                                        shape = RoundedCornerShape(4.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {}
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f).aspectRatio(1f).padding(4.dp))
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Less", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.width(4.dp))
+                Box(modifier = Modifier.size(10.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f), RoundedCornerShape(2.dp)))
+                Spacer(modifier = Modifier.width(2.dp))
+                Box(modifier = Modifier.size(10.dp).background(primaryColor.copy(alpha = 0.4f), RoundedCornerShape(2.dp)))
+                Spacer(modifier = Modifier.width(2.dp))
+                Box(modifier = Modifier.size(10.dp).background(primaryColor.copy(alpha = 0.7f), RoundedCornerShape(2.dp)))
+                Spacer(modifier = Modifier.width(2.dp))
+                Box(modifier = Modifier.size(10.dp).background(primaryColor, RoundedCornerShape(2.dp)))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("More", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

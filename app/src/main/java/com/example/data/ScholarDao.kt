@@ -94,6 +94,12 @@ interface ScholarDao {
     @Query("DELETE FROM action_logs")
     suspend fun clearActionLogs()
     
+    @Query("SELECT * FROM pomodoro_sessions ORDER BY dateMillis DESC")
+    fun getAllPomodoroSessions(): Flow<List<com.example.model.PomodoroSession>>
+
+    @Insert
+    suspend fun insertPomodoroSession(session: com.example.model.PomodoroSession)
+
     // For Backup / Restore
     @Query("SELECT * FROM courses")
     suspend fun exportAllCourses(): List<Course>

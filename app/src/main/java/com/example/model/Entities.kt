@@ -69,6 +69,13 @@ data class ActionLog(
     val timestampMillis: Long = System.currentTimeMillis()
 ) : Serializable
 
+@Entity(tableName = "pomodoro_sessions")
+data class PomodoroSession(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val dateMillis: Long, // timestamp
+    val durationMinutes: Int
+) : Serializable
+
 // For Export/Import
 data class ScholarBackup(
     val courses: List<Course>,

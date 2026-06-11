@@ -31,7 +31,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PomodoroScreen(navController: NavController) {
+fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmodel.ScholarViewModel) {
     var timeLeft by remember { mutableStateOf(25 * 60) }
     var isRunning by remember { mutableStateOf(false) }
     var mode by remember { mutableStateOf(PomodoroMode.WORK) }
@@ -50,6 +50,11 @@ fun PomodoroScreen(navController: NavController) {
         }
         if (isRunning && timeLeft == 0) {
             isRunning = false
+            
+            if (mode == PomodoroMode.WORK) {
+                viewModel.addPomodoroSession(25)
+            }
+            
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel("pomodoro_channel", "Pomodoro Timer", NotificationManager.IMPORTANCE_HIGH).apply {

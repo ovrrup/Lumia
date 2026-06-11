@@ -18,6 +18,7 @@ class ScholarRepository(private val dao: ScholarDao) {
     val allSubjects: Flow<List<Subject>> = dao.getAllSubjects()
     val allAssignments: Flow<List<PracticeAssignment>> = dao.getAllAssignments()
     val allActionLogs: Flow<List<ActionLog>> = dao.getAllActionLogs()
+    val allPomodoroSessions: Flow<List<com.example.model.PomodoroSession>> = dao.getAllPomodoroSessions()
 
     fun getTopicsForSubject(subjectId: Int) = dao.getTopicsForSubject(subjectId)
     fun getAssignmentsForCourse(courseId: Int) = dao.getAssignmentsForCourse(courseId)
@@ -46,6 +47,7 @@ class ScholarRepository(private val dao: ScholarDao) {
     
     suspend fun insertActionLog(log: ActionLog) = dao.insertActionLog(log)
     suspend fun clearActionLogs() = dao.clearActionLogs()
+    suspend fun insertPomodoroSession(session: com.example.model.PomodoroSession) = dao.insertPomodoroSession(session)
     suspend fun clearAllData() = dao.clearAll()
 
     // Export

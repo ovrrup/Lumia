@@ -108,6 +108,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         initialValue = emptyList()
     )
 
+    val pomodoroSessions: StateFlow<List<com.example.model.PomodoroSession>> = repository.allPomodoroSessions.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     val subjects: StateFlow<List<Subject>> = repository.allSubjects.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -141,6 +147,13 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun addAttendanceRecord(courseId: Int, dateMillis: Long, status: String) {
         viewModelScope.launch {
             repository.insertAttendanceRecord(com.example.model.AttendanceRecord(courseId = courseId, dateMillis = dateMillis, status = status))
+        }
+    }
+
+    fun addPomodoroSession(durationMinutes: Int) {
+        viewModelScope.launch {
+            repository.insertPomodoroSession(com.example.model.PomodoroSession(dateMillis = System.currentTimeMillis(), durationMinutes = durationMinutes))
+            logAction("Completed Pomodoro Session ($durationMinutes min)")
         }
     }
 

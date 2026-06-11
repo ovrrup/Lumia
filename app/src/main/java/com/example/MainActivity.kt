@@ -137,7 +137,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("pomodoro") {
-                            com.example.ui.screens.PomodoroScreen(navController = navController)
+                            com.example.ui.screens.PomodoroScreen(navController = navController, viewModel = viewModel)
                         }
                         composable("cgpa") {
                             com.example.ui.screens.CgpaCalculatorScreen(navController = navController)
