@@ -67,7 +67,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaBetterTexts = MutableStateFlow(prefs.getBoolean("beta_better_texts", false))
     val betaBetterTexts = _betaBetterTexts.asStateFlow()
 
-    private val _betaBetterTextsPalette = MutableStateFlow(prefs.getBoolean("beta_better_texts_palette", true))
+    private val _betaBetterTextsPalette = MutableStateFlow(prefs.getBoolean("beta_better_texts_palette", false))
     val betaBetterTextsPalette = _betaBetterTextsPalette.asStateFlow()
 
     private val _safetyPinEnabled = MutableStateFlow(prefs.getBoolean("safety_pin_enabled", true))
@@ -359,8 +359,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun exportData(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val settings = prefs.all.mapValues { it.value.toString() }
                 getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
-                    repository.exportDataToStream(os)
+                    repository.exportDataToStream(os, settings)
                 }
                 _importExportStatus.value = "Data exported successfully (Binary format)"
             } catch (e: Exception) {
@@ -372,8 +373,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun importData(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                var importedSettings: Map<String, String>? = null
                 getApplication<Application>().contentResolver.openInputStream(uri)?.use { ins ->
-                    repository.importDataFromStream(ins)
+                    importedSettings = repository.importDataFromStream(ins)
+                }
+                if (importedSettings != null) {
+                    kotlinx.coroutines.withContext(Dispatchers.Main) { applySettingsMap(importedSettings!!) }
                 }
                 _importExportStatus.value = "Data imported successfully"
             } catch (e: Exception) {
@@ -719,6 +724,76 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             repository.clearAllData()
             repository.clearActionLogs()
             repository.insertActionLog(ActionLog(actionText = "Cleared all application data"))
+            kotlinx.coroutines.withContext(Dispatchers.Main) { resetSettingsToDefault() }
         }
+    }
+
+    private fun resetSettingsToDefault() {
+        val editor = prefs.edit()
+        editor.clear()
+        editor.apply()
+        
+        _themeMode.value = "System"
+        _themeColor.value = "Blue"
+        _pureBlackMode.value = false
+        _betaFloatingNav.value = false
+        _betaPomodoro.value = false
+        _betaCgpa.value = false
+        _betaNotes.value = false
+        _betaMotivation.value = false
+        _betaImmersiveMode.value = false
+        _betaNotchOptimization.value = false
+        _betaGlassUi.value = false
+        _betaDynamicBackground.value = false
+        _betaBetterTexts.value = false
+        _betaBetterTextsPalette.value = false
+        _safetyPinEnabled.value = true
+        _safetyPinConflictWarning.value = true
+        _safetyPinRecommendations.value = true
+        _showActionHistory.value = true
+    }
+
+    private fun applySettingsMap(settings: Map<String, String>) {
+        val editor = prefs.edit()
+        settings.forEach { (key, value) ->
+            when (value) {
+                "true", "false" -> editor.putBoolean(key, value.toBoolean())
+                else -> {
+                    val intValue = value.toIntOrNull()
+                    if (intValue != null) {
+                        editor.putInt(key, intValue)
+                    } else {
+                        val longValue = value.toLongOrNull()
+                        if (longValue != null) {
+                            editor.putLong(key, longValue)
+                        } else {
+                            editor.putString(key, value)
+                        }
+                    }
+                }
+            }
+        }
+        editor.apply()
+        
+        _themeMode.value = prefs.getString("theme_mode", "System") ?: "System"
+        _themeColor.value = prefs.getString("theme_color", "Blue") ?: "Blue"
+        _pureBlackMode.value = prefs.getBoolean("pure_black_mode", false)
+        _betaFloatingNav.value = prefs.getBoolean("beta_floating_nav", false)
+        _betaPomodoro.value = prefs.getBoolean("beta_pomodoro", false)
+        _betaCgpa.value = prefs.getBoolean("beta_cgpa", false)
+        _betaNotes.value = prefs.getBoolean("beta_notes", false)
+        _betaMotivation.value = prefs.getBoolean("beta_motivation", false)
+        _betaImmersiveMode.value = prefs.getBoolean("beta_immersive_mode", false)
+        _betaNotchOptimization.value = prefs.getBoolean("beta_notch_optimization", false)
+        _betaGlassUi.value = prefs.getBoolean("beta_glass_ui", false)
+        _betaDynamicBackground.value = prefs.getBoolean("beta_dynamic_background", false)
+        _betaBetterTexts.value = prefs.getBoolean("beta_better_texts", false)
+        _betaBetterTextsPalette.value = prefs.getBoolean("beta_better_texts_palette", false)
+        _safetyPinEnabled.value = prefs.getBoolean("safety_pin_enabled", true)
+        _safetyPinConflictWarning.value = prefs.getBoolean("safety_pin_conflict_warning", true)
+        _safetyPinRecommendations.value = prefs.getBoolean("safety_pin_recommendations", true)
+        _showActionHistory.value = prefs.getBoolean("show_action_history", true)
+        
+        _currentStreak.value = prefs.getInt("current_streak", 0)
     }
 }

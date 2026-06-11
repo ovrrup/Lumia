@@ -61,18 +61,19 @@ class ScholarRepository(private val dao: ScholarDao) {
     private val backupAdapter = moshi.adapter(ScholarBackup::class.java)
 
     // Export
-    suspend fun exportDataToStream(outputStream: OutputStream) {
+    suspend fun exportDataToStream(outputStream: OutputStream, settings: Map<String, String>? = null) {
         val backup = ScholarBackup(
             courses = dao.exportAllCourses(),
             subjects = dao.exportAllSubjects(),
             topics = dao.exportAllTopics(),
-            assignments = dao.exportAllAssignments()
+            assignments = dao.exportAllAssignments(),
+            settings = settings
         )
         outputStream.writer().use { it.write(backupAdapter.toJson(backup)) }
     }
 
     // Import
-    suspend fun importDataFromStream(inputStream: InputStream) {
+    suspend fun importDataFromStream(inputStream: InputStream): Map<String, String>? {
         val json = inputStream.reader().readText()
         val backup = backupAdapter.fromJson(json) ?: throw IllegalArgumentException("Invalid backup file")
         dao.clearCourses()
@@ -83,5 +84,6 @@ class ScholarRepository(private val dao: ScholarDao) {
         backup.subjects.forEach { dao.insertSubject(it.copy(id = 0)) }
         backup.topics.forEach { dao.insertTopic(it.copy(id = 0)) }
         backup.assignments.forEach { dao.insertAssignment(it.copy(id = 0)) }
+        return backup.settings
     }
 }
