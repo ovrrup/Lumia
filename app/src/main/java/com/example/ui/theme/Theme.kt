@@ -109,29 +109,25 @@ fun ScholarTheme(
         }
     }
 
+    if (isDark && pureBlackMode) {
+        colorScheme = colorScheme.copy(
+            background = Color.Black,
+            surface = Color(0xCC000000),
+            surfaceVariant = Color(0xFF1E1E1E)
+        )
+    }
+
     // Apply rule: Lighter shades for background/components in dark mode, darker shades in light mode.
     // We achieve this by mixing with a proportion of White (Dark Mode) or Black (Light Mode).
     val shadeMixColor = if (isDark) Color.White else Color.Black
-    val alphaFactor = if (glassMode) 0.85f else 1f
-    fun Color.applyGlass() = this.copy(alpha = this.alpha * alphaFactor)
-    
-    val pbm = isDark && pureBlackMode
-    val bgTarget = if (pbm) Color.Black else colorScheme.background
     
     colorScheme = colorScheme.copy(
-        background = bgTarget.mix(shadeMixColor, if (pbm) 1f else 0.85f),
-        surface = colorScheme.surface.mix(shadeMixColor, if(pbm) 0.90f else 0.75f).applyGlass(),
-        surfaceVariant = colorScheme.surfaceVariant.mix(shadeMixColor, if(pbm) 0.85f else 0.70f).applyGlass(),
-        surfaceContainerLowest = colorScheme.surfaceContainerLowest.mix(shadeMixColor, if(pbm) 0.95f else 0.80f).applyGlass(),
-        surfaceContainerLow = colorScheme.surfaceContainerLow.mix(shadeMixColor, if(pbm) 0.90f else 0.75f).applyGlass(),
-        surfaceContainer = colorScheme.surfaceContainer.mix(shadeMixColor, if(pbm) 0.85f else 0.70f).applyGlass(),
-        surfaceContainerHigh = colorScheme.surfaceContainerHigh.mix(shadeMixColor, if(pbm) 0.80f else 0.65f).applyGlass(),
-        surfaceContainerHighest = colorScheme.surfaceContainerHighest.mix(shadeMixColor, if(pbm) 0.75f else 0.60f).applyGlass(),
-        surfaceBright = colorScheme.surfaceBright.mix(shadeMixColor, if(pbm) 0.70f else 0.85f).applyGlass(),
-        surfaceDim = colorScheme.surfaceDim.mix(shadeMixColor, if(pbm) 0.85f else 0.70f).applyGlass(),
-        primaryContainer = colorScheme.primaryContainer.mix(shadeMixColor, 0.70f).applyGlass(),
-        secondaryContainer = colorScheme.secondaryContainer.mix(shadeMixColor, 0.70f).applyGlass(),
-        tertiaryContainer = colorScheme.tertiaryContainer.mix(shadeMixColor, 0.70f).applyGlass()
+        background = if (isDark && pureBlackMode) Color.Black else colorScheme.background.mix(shadeMixColor, 0.95f),
+        surface = if (isDark && pureBlackMode) Color(0xCC000000) else colorScheme.surface.mix(shadeMixColor, 0.93f),
+        surfaceVariant = colorScheme.surfaceVariant.mix(shadeMixColor, 0.85f),
+        primaryContainer = colorScheme.primaryContainer.mix(shadeMixColor, 0.85f),
+        secondaryContainer = colorScheme.secondaryContainer.mix(shadeMixColor, 0.85f),
+        tertiaryContainer = colorScheme.tertiaryContainer.mix(shadeMixColor, 0.85f)
     )
 
     if (betterTexts) {

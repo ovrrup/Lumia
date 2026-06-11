@@ -69,20 +69,20 @@ fun Modifier.liquidGlass(
 
 fun Modifier.glassCard(shape: Shape = RoundedCornerShape(24.dp)): Modifier = composed {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
-    liquidGlass(shape = shape, tintAlpha = if (isDark) 0.15f else 0.20f, blurRadius = 50f, isDark = isDark, tintColor = if (isDark) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black)
+    liquidGlass(shape = shape, tintAlpha = if (isDark) 0.08f else 0.15f, blurRadius = 50f, isDark = isDark, tintColor = if (isDark) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White)
 }
 
 fun Modifier.glassHero(shape: Shape = RoundedCornerShape(24.dp)): Modifier = composed {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
-    liquidGlass(shape = shape, tintAlpha = if (isDark) 0.20f else 0.25f, blurRadius = 70f, isDark = isDark, tintColor = if (isDark) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black)
+    liquidGlass(shape = shape, tintAlpha = if (isDark) 0.12f else 0.3f, blurRadius = 70f, isDark = isDark, tintColor = if (isDark) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White)
 }
 
 fun Modifier.glassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = composed {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
-    liquidGlass(shape = shape, tintAlpha = if (isDark) 0.15f else 0.18f, blurRadius = 30f, isDark = isDark, tintColor = if (isDark) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black)
+    liquidGlass(shape = shape, tintAlpha = if (isDark) 0.05f else 0.1f, blurRadius = 30f, isDark = isDark, tintColor = if (isDark) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White)
 }
 
 fun Modifier.glassPill(shape: Shape = RoundedCornerShape(50.dp)): Modifier = composed {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
-    liquidGlass(shape = shape, tintAlpha = if (isDark) 0.18f else 0.22f, blurRadius = 25f, isDark = isDark, tintColor = if (isDark) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black)
+    liquidGlass(shape = shape, tintAlpha = if (isDark) 0.1f else 0.2f, blurRadius = 25f, isDark = isDark, tintColor = if (isDark) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White)
 }
