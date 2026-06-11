@@ -46,7 +46,9 @@ import com.example.viewmodel.ScholarViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Settings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
@@ -56,7 +58,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
                 )
             )
         }
@@ -105,7 +107,9 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
     val betaBetterTexts by viewModel.betaBetterTexts.collectAsStateWithLifecycle()
     val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
 
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Appearance", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
@@ -115,7 +119,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
                 )
             )
         }
@@ -288,7 +292,9 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
         )
     }
 
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Beta Features", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
@@ -298,7 +304,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
                 )
             )
         }
@@ -407,7 +413,9 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
         }
     }
 
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Data Management", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
@@ -417,7 +425,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
                 )
             )
         }

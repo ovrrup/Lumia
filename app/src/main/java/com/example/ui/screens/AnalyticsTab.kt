@@ -75,15 +75,17 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     Scaffold(
+        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Analytics", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                    containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                 )
             )
         }
@@ -167,10 +169,8 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
 
             if (actionLogs.isEmpty()) {
             item {
-                Card(
+                com.example.ui.components.GlassCard(
                     modifier = Modifier.fillMaxWidth().height(200.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                     shape = RoundedCornerShape(32.dp)
                 ) {
                     Column(
@@ -203,11 +203,9 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
             }
         } else {
             items(actionLogs, key = { it.id }) { log ->
-                Card(
+                com.example.ui.components.GlassCard(
                     modifier = Modifier.animateItem().fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(24.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    shape = RoundedCornerShape(24.dp)
                 ) {
                     Row(
                         modifier = Modifier
@@ -254,11 +252,9 @@ fun AssignmentsStatusDonutChart(
     primaryColor: Color,
     secondaryColor: Color
 ) {
-    Card(
+    com.example.ui.components.GlassCard(
         modifier = modifier,
-        shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(24.dp),
@@ -351,11 +347,9 @@ fun AssignmentsPerCourseBarChart(
     backgroundColor: Color,
     barColor: Color
 ) {
-    Card(
+    com.example.ui.components.GlassCard(
         modifier = modifier,
-        shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
             Text(
@@ -460,11 +454,9 @@ fun PomodoroHeatmapChart(
     
     val maxDuration = dailyDurations.maxOrNull()?.takeIf { it > 0 } ?: 60 // fallback to 60 as max base
 
-    Card(
+    com.example.ui.components.GlassCard(
         modifier = modifier,
-        shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
             Row(

@@ -41,7 +41,9 @@ fun CgpaCalculatorScreen(navController: NavController) {
         gpaResult = if (totalCredits > 0) totalPoints / totalCredits else 0.0
     }
 
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     Scaffold(
+        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("GPA/CGPA Calculator", fontWeight = FontWeight.Bold) },
@@ -68,11 +70,10 @@ fun CgpaCalculatorScreen(navController: NavController) {
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
-            Card(
+            com.example.ui.components.GlassHeroCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 shape = RoundedCornerShape(24.dp)
             ) {
                 Column(

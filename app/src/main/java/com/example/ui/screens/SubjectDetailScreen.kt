@@ -54,7 +54,9 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
@@ -66,8 +68,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                 )
             )
         },
@@ -112,11 +114,9 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         val cardColor by androidx.compose.animation.animateColorAsState(
                             if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
                         )
-                        Card(
+                        com.example.ui.components.GlassCard(
                             modifier = Modifier.animateItem().fillMaxWidth().animateContentSize(),
-                            shape = RoundedCornerShape(24.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                            colors = CardDefaults.cardColors(containerColor = cardColor)
+                            shape = RoundedCornerShape(24.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(24.dp)) {
                                 Checkbox(

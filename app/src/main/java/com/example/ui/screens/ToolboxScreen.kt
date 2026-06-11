@@ -31,7 +31,9 @@ fun ToolboxScreen(navController: NavController, viewModel: ScholarViewModel) {
     val betaCgpa by viewModel.betaCgpa.collectAsStateWithLifecycle()
     val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
 
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     Scaffold(
+        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Toolbox", fontWeight = FontWeight.Black) },
@@ -111,11 +113,10 @@ fun ToolboxItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    com.example.ui.components.GlassCard(
         onClick = onClick,
         modifier = modifier.aspectRatio(1f),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = color)
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),

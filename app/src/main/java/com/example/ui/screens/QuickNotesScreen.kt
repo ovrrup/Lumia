@@ -52,7 +52,9 @@ fun QuickNotesScreen(navController: NavController) {
     var showAddDialog by remember { mutableStateOf(false) }
     var newNoteText by remember { mutableStateOf("") }
 
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Quick Notes", fontWeight = FontWeight.Bold) },
@@ -86,10 +88,9 @@ fun QuickNotesScreen(navController: NavController) {
                 }
             }
             itemsIndexed(notesList) { index, note ->
-                Card(
+                com.example.ui.components.GlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),

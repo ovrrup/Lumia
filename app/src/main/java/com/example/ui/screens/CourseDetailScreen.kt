@@ -62,7 +62,9 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
@@ -74,8 +76,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                 )
             )
         },
@@ -97,10 +99,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             ) {
                 if (course.instructor.isNotBlank() || course.schedule.isNotBlank() || course.description.isNotBlank()) {
                     item {
-                        Card(
+                        com.example.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                             shape = RoundedCornerShape(32.dp)
                         ) {
                             Column(modifier = Modifier.padding(24.dp)) {
@@ -128,11 +128,9 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     var isMonthlyView by remember { mutableStateOf(false) }
                     var displayMonthOffset by remember { mutableIntStateOf(0) }
 
-                    Card(
+                    com.example.ui.components.GlassCard(
                         modifier = Modifier.fillMaxWidth().animateContentSize(),
-                        shape = RoundedCornerShape(32.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+                        shape = RoundedCornerShape(32.dp)
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -389,11 +387,9 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
                 if (assignments.isEmpty()) {
                     item {
-                        Card(
+                        com.example.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth().height(200.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            shape = RoundedCornerShape(32.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                            shape = RoundedCornerShape(32.dp)
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxSize(),
@@ -428,11 +424,9 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         val cardColor by androidx.compose.animation.animateColorAsState(
                             if (assignment.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
                         )
-                        Card(
+                        com.example.ui.components.GlassCard(
                             modifier = Modifier.animateItem().fillMaxWidth().animateContentSize(),
-                            shape = RoundedCornerShape(24.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                            colors = CardDefaults.cardColors(containerColor = cardColor),
+                            shape = RoundedCornerShape(24.dp)
                         ) {
                             Row(
                                 modifier = Modifier

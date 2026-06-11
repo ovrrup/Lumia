@@ -90,7 +90,9 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
         }
     }
 
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     Scaffold(
+        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Pomodoro Timer", fontWeight = FontWeight.Bold) },
