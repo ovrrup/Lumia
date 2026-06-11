@@ -197,6 +197,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                                     set(java.util.Calendar.DAY_OF_MONTH, renderDay)
                                                 }
                                                 val dateMillis = dateCal.timeInMillis
+                                                val displayDay = renderDay
                                                 renderDay++
                                                 
                                                 val record = attendanceRecords.find { it.dateMillis == dateMillis }
@@ -227,7 +228,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                                     contentAlignment = Alignment.Center
                                                 ) {
                                                     Text(
-                                                        "${renderDay - 1}",
+                                                        "$displayDay",
                                                         style = MaterialTheme.typography.bodySmall,
                                                         fontWeight = if (isToday) FontWeight.Black else FontWeight.Normal,
                                                         color = if (record != null) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onTertiaryContainer
@@ -296,13 +297,27 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 }
                             }
                             Spacer(modifier = Modifier.height(16.dp))
+                            val cancelled = attendanceRecords.count { it.status == "Cancelled" || it.status == "Holiday" }
+                            val effectiveTotal = attendanceRecords.size - cancelled
                             val presentCount = attendanceRecords.count { it.status == "Present" || it.status == "Late" }
-                            val totalCount = attendanceRecords.size
-                            Text(
-                                "Attended: $presentCount / $totalCount marked classes",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f)
-                            )
+                            val attendancePct = if (effectiveTotal > 0) (presentCount * 100) / effectiveTotal else 0
+                            
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "Attendance: $presentCount / $effectiveTotal classes ($attendancePct%)",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f)
+                                )
+                                if (effectiveTotal > 0 && attendancePct < 75) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(
+                                        Icons.Default.Warning,
+                                        contentDescription = "Low Attendance",
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
                         }
                     }
 

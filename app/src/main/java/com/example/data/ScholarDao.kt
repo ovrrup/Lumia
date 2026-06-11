@@ -62,7 +62,7 @@ interface ScholarDao {
     fun getAllAssignments(): Flow<List<PracticeAssignment>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAssignment(assignment: PracticeAssignment)
+    suspend fun insertAssignment(assignment: PracticeAssignment): Long
 
     @Update
     suspend fun updateAssignment(assignment: PracticeAssignment)
@@ -113,6 +113,10 @@ interface ScholarDao {
     @Query("SELECT * FROM assignments")
     suspend fun exportAllAssignments(): List<PracticeAssignment>
     
-    @Query("DELETE FROM courses")
-    suspend fun clearAll()
+    @Query("DELETE FROM courses") suspend fun clearCourses()
+    @Query("DELETE FROM subjects") suspend fun clearSubjects()
+    @Query("DELETE FROM topics") suspend fun clearTopics()
+    @Query("DELETE FROM assignments") suspend fun clearAssignments()
+    @Query("DELETE FROM attendance_records") suspend fun clearAttendance()
+    @Query("DELETE FROM pomodoro_sessions") suspend fun clearPomodoro()
 }

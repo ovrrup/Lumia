@@ -35,7 +35,7 @@ class ScholarRepository(private val dao: ScholarDao) {
     suspend fun updateTopic(topic: Topic) = dao.updateTopic(topic)
     suspend fun deleteTopic(topic: Topic) = dao.deleteTopic(topic)
 
-    suspend fun insertAssignment(assignment: PracticeAssignment) = dao.insertAssignment(assignment)
+    suspend fun insertAssignment(assignment: PracticeAssignment): Long = dao.insertAssignment(assignment)
     suspend fun updateAssignment(assignment: PracticeAssignment) = dao.updateAssignment(assignment)
     suspend fun deleteAssignment(assignment: PracticeAssignment) = dao.deleteAssignment(assignment)
     
@@ -48,7 +48,17 @@ class ScholarRepository(private val dao: ScholarDao) {
     suspend fun insertActionLog(log: ActionLog) = dao.insertActionLog(log)
     suspend fun clearActionLogs() = dao.clearActionLogs()
     suspend fun insertPomodoroSession(session: com.example.model.PomodoroSession) = dao.insertPomodoroSession(session)
-    suspend fun clearAllData() = dao.clearAll()
+    suspend fun clearAllData() {
+        dao.clearCourses()
+        dao.clearSubjects()
+        dao.clearTopics()
+        dao.clearAssignments()
+        dao.clearAttendance()
+        dao.clearPomodoro()
+    }
+
+    private val moshi = com.squareup.moshi.Moshi.Builder().addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()
+    private val backupAdapter = moshi.adapter(ScholarBackup::class.java)
 
     // Export
     suspend fun exportDataToStream(outputStream: OutputStream) {
@@ -58,23 +68,20 @@ class ScholarRepository(private val dao: ScholarDao) {
             topics = dao.exportAllTopics(),
             assignments = dao.exportAllAssignments()
         )
-        ObjectOutputStream(outputStream).use {
-            it.writeObject(backup)
-        }
+        outputStream.writer().use { it.write(backupAdapter.toJson(backup)) }
     }
 
     // Import
     suspend fun importDataFromStream(inputStream: InputStream) {
-        ObjectInputStream(inputStream).use { ois ->
-            val backup = ois.readObject() as? ScholarBackup
-            if (backup != null) {
-                // Clear existing and replace
-                dao.clearAll()
-                backup.courses.forEach { dao.insertCourse(it) }
-                backup.subjects.forEach { dao.insertSubject(it) }
-                backup.topics.forEach { dao.insertTopic(it) }
-                backup.assignments.forEach { dao.insertAssignment(it) }
-            }
-        }
+        val json = inputStream.reader().readText()
+        val backup = backupAdapter.fromJson(json) ?: throw IllegalArgumentException("Invalid backup file")
+        dao.clearCourses()
+        dao.clearSubjects()
+        dao.clearTopics()
+        dao.clearAssignments()
+        backup.courses.forEach { dao.insertCourse(it.copy(id = 0)) }
+        backup.subjects.forEach { dao.insertSubject(it.copy(id = 0)) }
+        backup.topics.forEach { dao.insertTopic(it.copy(id = 0)) }
+        backup.assignments.forEach { dao.insertAssignment(it.copy(id = 0)) }
     }
 }

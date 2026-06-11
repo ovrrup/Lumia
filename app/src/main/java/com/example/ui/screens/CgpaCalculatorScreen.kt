@@ -20,13 +20,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
-data class CourseGrade(var credits: String = "", var grade: String = "")
+data class CourseGrade(val id: Int, var credits: String = "", var grade: String = "")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CgpaCalculatorScreen(navController: NavController) {
-    val courseGrades = remember { mutableStateListOf(CourseGrade(), CourseGrade(), CourseGrade()) }
-    var gpaResult by remember { mutableStateOf(0.0) }
+    var nextId by remember { mutableIntStateOf(3) }
+    val courseGrades = remember { mutableStateListOf(CourseGrade(0), CourseGrade(1), CourseGrade(2)) }
+    var gpaResult by remember { mutableDoubleStateOf(0.0) }
 
     fun calculateGPA() {
         var totalCredits = 0.0
@@ -53,7 +54,10 @@ fun CgpaCalculatorScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { courseGrades.add(CourseGrade()) }) {
+            FloatingActionButton(onClick = { 
+                courseGrades.add(CourseGrade(nextId))
+                nextId++
+            }) {
                 Icon(Icons.Default.Add, "Add Course")
             }
         }
@@ -90,7 +94,7 @@ fun CgpaCalculatorScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
-                itemsIndexed(courseGrades) { index, cg ->
+                itemsIndexed(courseGrades, key = { _, item -> item.id }) { index, cg ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),

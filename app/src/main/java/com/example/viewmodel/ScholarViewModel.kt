@@ -68,24 +68,20 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val database = AppDatabase.getDatabase(application)
         repository = ScholarRepository(database.scholarDao())
         
-        val lastActionDate = prefs.getLong("last_action_date", 0L)
-        if (lastActionDate > 0L) {
-            val now = System.currentTimeMillis()
-            val lastCal = Calendar.getInstance().apply { timeInMillis = lastActionDate }
-            val nowCal = Calendar.getInstance().apply { timeInMillis = now }
-
-            val sameDay = lastCal.get(Calendar.YEAR) == nowCal.get(Calendar.YEAR) &&
-                          lastCal.get(Calendar.DAY_OF_YEAR) == nowCal.get(Calendar.DAY_OF_YEAR)
-                          
-            val yesterdayCal = Calendar.getInstance().apply { 
-                timeInMillis = now
-                add(Calendar.DAY_OF_YEAR, -1)
-            }
-            val isYesterday = lastCal.get(Calendar.YEAR) == yesterdayCal.get(Calendar.YEAR) &&
-                              lastCal.get(Calendar.DAY_OF_YEAR) == yesterdayCal.get(Calendar.DAY_OF_YEAR)
-                              
-            if (!sameDay && !isYesterday) {
-                updateStreak(0)
+        val lastActionDate = prefs.getString("last_action_date_str", "") ?: ""
+        if (lastActionDate.isNotEmpty()) {
+            val today = todayDateString()
+            if (lastActionDate != today) {
+                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                try {
+                    val lastDate = sdf.parse(lastActionDate)
+                    if (lastDate != null) {
+                        val diff = (sdf.parse(today)!!.time - lastDate.time) / 86400000L
+                        if (diff > 1L) {
+                            updateStreak(0)
+                        }
+                    }
+                } catch(e: Exception) {}
             }
         }
     }
@@ -120,12 +116,16 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         initialValue = emptyList()
     )
 
+    private val topicFlowCache = HashMap<Int, StateFlow<List<Topic>>>()
+    
     fun getTopicsForSubject(subjectId: Int): StateFlow<List<Topic>> {
-        return repository.getTopicsForSubject(subjectId).stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        return topicFlowCache.getOrPut(subjectId) {
+            repository.getTopicsForSubject(subjectId).stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+        }
     }
 
     fun getAssignmentsForCourse(courseId: Int): StateFlow<List<PracticeAssignment>> {
@@ -136,17 +136,28 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         )
     }
 
+    private val attendanceFlowCache = HashMap<Int, StateFlow<List<com.example.model.AttendanceRecord>>>()
+
     fun getAttendanceForCourse(courseId: Int): StateFlow<List<com.example.model.AttendanceRecord>> {
-        return repository.getAttendanceForCourse(courseId).stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        return attendanceFlowCache.getOrPut(courseId) {
+            repository.getAttendanceForCourse(courseId).stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+        }
     }
 
     fun addAttendanceRecord(courseId: Int, dateMillis: Long, status: String) {
         viewModelScope.launch {
-            repository.insertAttendanceRecord(com.example.model.AttendanceRecord(courseId = courseId, dateMillis = dateMillis, status = status))
+            val normalized = java.util.Calendar.getInstance().apply {
+                timeInMillis = dateMillis
+                set(java.util.Calendar.HOUR_OF_DAY, 0)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            repository.insertAttendanceRecord(com.example.model.AttendanceRecord(courseId = courseId, dateMillis = normalized, status = status))
         }
     }
 
@@ -237,11 +248,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun addAssignment(courseId: Int, title: String, desc: String, dueDate: Long) {
         viewModelScope.launch {
-            repository.insertAssignment(PracticeAssignment(courseId = courseId, title = title, description = desc, dueDateMillis = dueDate))
-            // Schedule the reminder using the application context
+            val newId = repository.insertAssignment(PracticeAssignment(courseId = courseId, title = title, description = desc, dueDateMillis = dueDate)).toInt()
             val context = getApplication<Application>().applicationContext
-            // For simplicity in this demo, hashcode is used as an ID. In production use the inserted assigned ID.
-            com.example.util.ReminderScheduler.scheduleReminder(context, (courseId + title.hashCode()), title, desc, dueDate)
+            com.example.util.ReminderScheduler.scheduleReminder(context, newId, title, desc, dueDate)
             logAction("Added assignment: $title")
         }
     }
@@ -279,36 +288,31 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private fun todayDateString(): String =
+        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+            .format(java.util.Date())
+
     private fun checkAndUpdateStreak() {
-        val lastActionDate = prefs.getLong("last_action_date", 0L)
-        val now = System.currentTimeMillis()
-        
-        if (lastActionDate == 0L) {
+        val lastActionDate = prefs.getString("last_action_date_str", "") ?: ""
+        val today = todayDateString()
+
+        if (lastActionDate.isEmpty()) {
             updateStreak(1)
-            prefs.edit().putLong("last_action_date", now).apply()
+            prefs.edit().putString("last_action_date_str", today).apply()
             return
         }
 
-        val lastCal = Calendar.getInstance().apply { timeInMillis = lastActionDate }
-        val nowCal = Calendar.getInstance().apply { timeInMillis = now }
+        if (lastActionDate == today) return  // already counted today
 
-        val sameDay = lastCal.get(Calendar.YEAR) == nowCal.get(Calendar.YEAR) &&
-                      lastCal.get(Calendar.DAY_OF_YEAR) == nowCal.get(Calendar.DAY_OF_YEAR)
-                      
-        val yesterdayCal = Calendar.getInstance().apply { 
-            timeInMillis = now
-            add(Calendar.DAY_OF_YEAR, -1)
-        }
-        val isYesterday = lastCal.get(Calendar.YEAR) == yesterdayCal.get(Calendar.YEAR) &&
-                          lastCal.get(Calendar.DAY_OF_YEAR) == yesterdayCal.get(Calendar.DAY_OF_YEAR)
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val lastDate = sdf.parse(lastActionDate) ?: return
+        val diff = (sdf.parse(today)!!.time - lastDate.time) / 86400000L
 
-        if (isYesterday) {
-            updateStreak(_currentStreak.value + 1)
-        } else if (!sameDay) {
-            updateStreak(1)
+        when {
+            diff == 1L -> updateStreak(_currentStreak.value + 1)
+            diff > 1L  -> updateStreak(1)  // streak broken
         }
-        
-        prefs.edit().putLong("last_action_date", now).apply()
+        prefs.edit().putString("last_action_date_str", today).apply()
     }
 
     private fun updateStreak(streak: Int) {
@@ -348,68 +352,57 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun updateThemeMode(mode: String) {
         _themeMode.value = mode
-        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
-            .edit().putString("theme_mode", mode).apply()
+        prefs.edit().putString("theme_mode", mode).apply()
     }
 
     fun updatePureBlackMode(enabled: Boolean) {
         _pureBlackMode.value = enabled
-        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("pure_black_mode", enabled).apply()
+        prefs.edit().putBoolean("pure_black_mode", enabled).apply()
     }
 
     fun updateThemeColor(color: String) {
         _themeColor.value = color
-        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
-            .edit().putString("theme_color", color).apply()
+        prefs.edit().putString("theme_color", color).apply()
     }
 
     fun updateBetaFloatingNav(enabled: Boolean) {
         _betaFloatingNav.value = enabled
-        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("beta_floating_nav", enabled).apply()
+        prefs.edit().putBoolean("beta_floating_nav", enabled).apply()
     }
 
     fun updateBetaPomodoro(enabled: Boolean) {
         _betaPomodoro.value = enabled
-        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("beta_pomodoro", enabled).apply()
+        prefs.edit().putBoolean("beta_pomodoro", enabled).apply()
     }
 
     fun updateBetaCgpa(enabled: Boolean) {
         _betaCgpa.value = enabled
-        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("beta_cgpa", enabled).apply()
+        prefs.edit().putBoolean("beta_cgpa", enabled).apply()
     }
 
     fun updateBetaNotes(enabled: Boolean) {
         _betaNotes.value = enabled
-        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("beta_notes", enabled).apply()
+        prefs.edit().putBoolean("beta_notes", enabled).apply()
     }
 
     fun updateBetaMotivation(enabled: Boolean) {
         _betaMotivation.value = enabled
-        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("beta_motivation", enabled).apply()
+        prefs.edit().putBoolean("beta_motivation", enabled).apply()
     }
 
     fun updateBetaImmersiveMode(enabled: Boolean) {
         _betaImmersiveMode.value = enabled
-        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("beta_immersive_mode", enabled).apply()
+        prefs.edit().putBoolean("beta_immersive_mode", enabled).apply()
     }
 
     fun updateBetaNotchOptimization(enabled: Boolean) {
         _betaNotchOptimization.value = enabled
-        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("beta_notch_optimization", enabled).apply()
+        prefs.edit().putBoolean("beta_notch_optimization", enabled).apply()
     }
 
     fun updateShowActionHistory(enabled: Boolean) {
         _showActionHistory.value = enabled
-        getApplication<Application>().getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("show_action_history", enabled).apply()
+        prefs.edit().putBoolean("show_action_history", enabled).apply()
     }
 
     fun clearAllData() {

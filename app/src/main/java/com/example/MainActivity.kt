@@ -10,6 +10,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
@@ -49,7 +54,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // WorkManager has been temporarily removed to prevent startup issues
+        try {
+            val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(1, TimeUnit.DAYS)
+                .setInitialDelay(1, TimeUnit.HOURS)
+                .build()
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "assignment_monitor",
+                ExistingPeriodicWorkPolicy.KEEP,
+                workRequest
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "WorkManager failed to start", e)
+        }
         
         enableEdgeToEdge()
         setContent {
@@ -81,16 +97,48 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    NavHost(
-                        navController = navController, 
-                        startDestination = "dashboard",
-                        modifier = Modifier.then(
-                            if (betaImmersiveMode) Modifier.windowInsetsPadding(
-                                androidx.compose.foundation.layout.WindowInsets.safeDrawing.only(
-                                    androidx.compose.foundation.layout.WindowInsetsSides.Horizontal
+                    // Full-screen ambient gradient — sits behind ALL composables
+                    androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
+                        // Animated ambient background
+                        val infiniteTransition = rememberInfiniteTransition()
+                        val offset by infiniteTransition.animateFloat(
+                            initialValue = 0f, targetValue = 1f,
+                            animationSpec = infiniteRepeatable(tween(8000), RepeatMode.Reverse),
+                            label = "bg_anim"
+                        )
+                        val colorScheme = MaterialTheme.colorScheme
+                        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                            val colors = listOf(
+                                colorScheme.primaryContainer,
+                                colorScheme.secondaryContainer,
+                                colorScheme.tertiaryContainer
+                            )
+                            drawRect(
+                                brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                                    colors = listOf(colors[0].copy(alpha=0.6f), androidx.compose.ui.graphics.Color.Transparent),
+                                    center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * (0.2f + offset * 0.15f)),
+                                    radius = size.width * 0.8f
                                 )
-                            ) else Modifier
-                        ),
+                            )
+                            drawRect(
+                                brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                                    colors = listOf(colors[1].copy(alpha=0.5f), androidx.compose.ui.graphics.Color.Transparent),
+                                    center = androidx.compose.ui.geometry.Offset(size.width * 0.8f, size.height * (0.6f - offset * 0.1f)),
+                                    radius = size.width * 0.7f
+                                )
+                            )
+                        }
+
+                        NavHost(
+                            navController = navController, 
+                            startDestination = "dashboard",
+                            modifier = Modifier.then(
+                                if (betaImmersiveMode) Modifier.windowInsetsPadding(
+                                    androidx.compose.foundation.layout.WindowInsets.safeDrawing.only(
+                                        androidx.compose.foundation.layout.WindowInsetsSides.Horizontal
+                                    )
+                                ) else Modifier
+                            ),
                         enterTransition = {
                             androidx.compose.animation.fadeIn(
                                 animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
@@ -184,6 +232,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                    } // End of Box
                 }
             }
         }

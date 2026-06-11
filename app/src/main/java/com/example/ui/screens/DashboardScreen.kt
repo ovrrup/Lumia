@@ -96,8 +96,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     var selectedTab by remember { mutableStateOf(0) }
     val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
     
-    // We need FAB state to show menu
-    var fabExpanded by remember { mutableStateOf(false) }
     var showAddCourseDialog by remember { mutableStateOf(false) }
     var showAddSubjectDialog by remember { mutableStateOf(false) }
 

@@ -27,13 +27,20 @@ fun QuickNotesScreen(navController: NavController) {
     val notesList = remember { mutableStateListOf<String>() }
 
     LaunchedEffect(Unit) {
-        val savedNotes = sharedPrefs.getString("notes_json", "[]") ?: "[]"
-        try {
-            val jsonArray = JSONArray(savedNotes)
-            for (i in 0 until jsonArray.length()) {
-                notesList.add(jsonArray.getString(i))
-            }
-        } catch (e: Exception) { e.printStackTrace() }
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val savedNotes = sharedPrefs.getString("notes_json", "[]") ?: "[]"
+            try {
+                val jsonArray = JSONArray(savedNotes)
+                val loadedNotes = mutableListOf<String>()
+                for (i in 0 until jsonArray.length()) {
+                    loadedNotes.add(jsonArray.getString(i))
+                }
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    notesList.clear()
+                    notesList.addAll(loadedNotes)
+                }
+            } catch (e: Exception) { e.printStackTrace() }
+        }
     }
 
     fun saveNotes() {

@@ -15,7 +15,7 @@ fun createLightScheme(
     primary: Color, primaryContainer: Color,
     secondary: Color, secondaryContainer: Color,
     tertiary: Color, tertiaryContainer: Color,
-    bg: Color = Color(0xFFFCFCFC)
+    bg: Color = Color(0xF5FAFAFA)
 ) = lightColorScheme(
     primary = primary, onPrimary = Color.White,
     primaryContainer = primaryContainer, onPrimaryContainer = Color.White,
@@ -36,7 +36,7 @@ fun createDarkScheme(
     primary: Color, primaryContainer: Color,
     secondary: Color, secondaryContainer: Color,
     tertiary: Color, tertiaryContainer: Color,
-    bg: Color = Color(0xFF121212)
+    bg: Color = Color(0xDD0F0F0F)
 ) = darkColorScheme(
     primary = primary, onPrimary = Color(0xFF1A1C1A),
     primaryContainer = primaryContainer, onPrimaryContainer = Color(0xFF1A1C1A),
@@ -64,6 +64,8 @@ val OrangeDark = createDarkScheme(Color(0xFFFFB482), Color(0xFF955000), Color(0x
 
 val RedLight = createLightScheme(Color(0xFFE92C2C), Color(0xFFFFDAD6), Color(0xFF8B1A1A), Color(0xFFFFDBDD), Color(0xFF8B1A1A), Color(0xFFFFDBDD))
 val RedDark = createDarkScheme(Color(0xFFFFB4A9), Color(0xFF8B1A1A), Color(0xFFFFB3B8), Color(0xFF8B1A1A), Color(0xFFFFB3B8), Color(0xFF8B1A1A))
+
+val LocalGlassTint = androidx.compose.runtime.compositionLocalOf { Color.White }
 
 @Composable
 fun ScholarTheme(
@@ -97,7 +99,7 @@ fun ScholarTheme(
     if (isDark && pureBlackMode) {
         colorScheme = colorScheme.copy(
             background = Color.Black,
-            surface = Color.Black,
+            surface = Color(0xCC000000),
             surfaceVariant = Color(0xFF1E1E1E)
         )
     }
@@ -119,10 +121,12 @@ fun ScholarTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        shapes = Shapes,
-        content = content
-    )
+    androidx.compose.runtime.CompositionLocalProvider(LocalGlassTint provides colorScheme.primary) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            shapes = Shapes,
+            content = content
+        )
+    }
 }
