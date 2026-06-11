@@ -410,11 +410,75 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putInt("current_streak", streak).apply()
     }
 
+    private fun gatherSettings(): Map<String, String> {
+        val map = mutableMapOf<String, String>()
+        prefs.all.forEach { (key, value) ->
+            map[key] = value.toString()
+        }
+        return map
+    }
+
+    private fun loadSettings(settings: Map<String, String>?) {
+        if (settings == null) return
+        val editor = prefs.edit()
+        settings.forEach { (key, value) ->
+            when (key) {
+                "theme_mode" -> { editor.putString(key, value); _themeMode.value = value }
+                "theme_color" -> { editor.putString(key, value); _themeColor.value = value }
+                "custom_primary", "custom_primary_container", "custom_background", "custom_surface", "custom_text" -> {
+                    editor.putString(key, value)
+                    when (key) {
+                        "custom_primary" -> _customPrimary.value = value
+                        "custom_primary_container" -> _customPrimaryContainer.value = value
+                        "custom_background" -> _customBackground.value = value
+                        "custom_surface" -> _customSurface.value = value
+                        "custom_text" -> _customText.value = value
+                    }
+                }
+                "last_action_date_str" -> {
+                    editor.putString(key, value)
+                }
+                "current_streak" -> {
+                    val intVal = value.toIntOrNull() ?: 0
+                    editor.putInt(key, intVal)
+                    _currentStreak.value = intVal
+                }
+                else -> {
+                    val boolVal = value.toBooleanStrictOrNull() ?: return@forEach
+                    editor.putBoolean(key, boolVal)
+                    when(key) {
+                        "pure_black_mode" -> _pureBlackMode.value = boolVal
+                        "beta_floating_nav" -> _betaFloatingNav.value = boolVal
+                        "beta_pomodoro" -> _betaPomodoro.value = boolVal
+                        "beta_cgpa" -> _betaCgpa.value = boolVal
+                        "beta_notes" -> _betaNotes.value = boolVal
+                        "beta_motivation" -> _betaMotivation.value = boolVal
+                        "beta_immersive_mode" -> _betaImmersiveMode.value = boolVal
+                        "beta_notch_optimization" -> _betaNotchOptimization.value = boolVal
+                        "beta_glass_ui" -> _betaGlassUi.value = boolVal
+                        "beta_enhanced_header" -> _betaEnhancedHeader.value = boolVal
+                        "beta_minimalist_mode" -> _betaMinimalistMode.value = boolVal
+                        "beta_dynamic_background" -> _betaDynamicBackground.value = boolVal
+                        "dynamic_app_icon" -> _dynamicAppIcon.value = boolVal
+                        "beta_better_texts" -> _betaBetterTexts.value = boolVal
+                        "beta_better_texts_palette" -> _betaBetterTextsPalette.value = boolVal
+                        "safety_pin_enabled" -> _safetyPinEnabled.value = boolVal
+                        "safety_pin_conflict_warning" -> _safetyPinConflictWarning.value = boolVal
+                        "safety_pin_recommendations" -> _safetyPinRecommendations.value = boolVal
+                        "show_action_history" -> _showActionHistory.value = boolVal
+                    }
+                }
+            }
+        }
+        editor.apply()
+    }
+
     fun exportData(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val settings = gatherSettings()
                 getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
-                    repository.exportDataToStream(os)
+                    repository.exportDataToStream(os, settings)
                 }
                 _importExportStatus.value = "Data exported successfully (Binary format)"
             } catch (e: Exception) {
@@ -426,9 +490,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun importData(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                var settings: Map<String, String>? = null
                 getApplication<Application>().contentResolver.openInputStream(uri)?.use { ins ->
-                    repository.importDataFromStream(ins)
+                    settings = repository.importDataFromStream(ins)
                 }
+                loadSettings(settings)
                 _importExportStatus.value = "Data imported successfully"
             } catch (e: Exception) {
                 _importExportStatus.value = "Import failed: Invalid file or wrong format"
@@ -846,7 +912,38 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             repository.clearAllData()
             repository.clearActionLogs()
-            repository.insertActionLog(ActionLog(actionText = "Cleared all application data"))
+
+            prefs.edit().clear().apply()
+
+            _themeMode.value = "System"
+            _themeColor.value = "Ocean"
+            _customPrimary.value = "#3197D6"
+            _customPrimaryContainer.value = "#DAF1FF"
+            _customBackground.value = "#FAFAFA"
+            _customSurface.value = "#FFFFFF"
+            _customText.value = "#1A1C1A"
+            _pureBlackMode.value = false
+            _betaFloatingNav.value = false
+            _betaPomodoro.value = false
+            _betaCgpa.value = false
+            _betaNotes.value = false
+            _betaMotivation.value = false
+            _betaImmersiveMode.value = false
+            _betaNotchOptimization.value = false
+            _betaGlassUi.value = false
+            _betaEnhancedHeader.value = false
+            _betaMinimalistMode.value = false
+            _betaDynamicBackground.value = false
+            _dynamicAppIcon.value = false
+            _betaBetterTexts.value = false
+            _betaBetterTextsPalette.value = true
+            _safetyPinEnabled.value = true
+            _safetyPinConflictWarning.value = true
+            _safetyPinRecommendations.value = true
+            _showActionHistory.value = true
+            _currentStreak.value = 0
+
+            repository.insertActionLog(ActionLog(actionText = "Cleared all application data and settings"))
         }
     }
 }

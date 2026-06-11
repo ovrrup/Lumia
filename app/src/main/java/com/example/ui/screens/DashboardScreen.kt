@@ -91,6 +91,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.border
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -136,16 +137,21 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             } else {
                 padding
             }
-            if (selectedTab == 0) {
-                HomeTab(
-                    navController = navController, 
-                    viewModel = viewModel, 
-                    bottomPadding = extendedPadding,
-                    onAddCourseClick = { showAddCourseDialog = true },
-                    onAddSubjectClick = { showAddSubjectDialog = true }
-                )
-            } else {
-                AnalyticsTab(viewModel = viewModel, paddingValues = extendedPadding)
+            androidx.compose.animation.AnimatedContent(
+                targetState = selectedTab,
+                label = "TabTransition"
+            ) { targetTab ->
+                if (targetTab == 0) {
+                    HomeTab(
+                        navController = navController, 
+                        viewModel = viewModel, 
+                        bottomPadding = extendedPadding,
+                        onAddCourseClick = { showAddCourseDialog = true },
+                        onAddSubjectClick = { showAddSubjectDialog = true }
+                    )
+                } else {
+                    AnalyticsTab(viewModel = viewModel, paddingValues = extendedPadding)
+                }
             }
         }
 
@@ -403,7 +409,8 @@ fun HomeTab(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ) {
-                    Icon(Icons.Rounded.Add, contentDescription = "Add")
+                    val rotation by androidx.compose.animation.core.animateFloatAsState(targetValue = if (fabExpanded) 45f else 0f)
+                    Icon(Icons.Rounded.Add, contentDescription = "Add", modifier = Modifier.graphicsLayer { rotationZ = rotation })
                 }
             }
         }
@@ -587,35 +594,42 @@ fun HomeTab(
 
                 if (courses.isEmpty()) {
                     item(key = "courses_empty") {
-                        GlassCard(
-                            modifier = Modifier.animateItem().fillMaxWidth().height(240.dp),
-                            shape = RoundedCornerShape(32.dp)
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = true,
+                            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
+                            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically(),
+                            modifier = Modifier.animateItem()
                         ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                            GlassCard(
+                                modifier = Modifier.fillMaxWidth().height(240.dp),
+                                shape = RoundedCornerShape(32.dp)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(80.dp)
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
-                                    contentAlignment = Alignment.Center
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.MenuBook,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(40.dp),
-                                        tint = MaterialTheme.colorScheme.primary
+                                    Box(
+                                        modifier = Modifier
+                                            .size(80.dp)
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Rounded.MenuBook,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(40.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(24.dp))
+                                    Text(
+                                        "No courses yet",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Text(
-                                    "No courses yet",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
                             }
                         }
                     }
@@ -720,35 +734,42 @@ fun HomeTab(
 
                 if (subjects.isEmpty()) {
                     item(key = "subjects_empty") {
-                        GlassCard(
-                            modifier = Modifier.animateItem().fillMaxWidth().height(240.dp),
-                            shape = RoundedCornerShape(32.dp)
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = true,
+                            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
+                            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically(),
+                            modifier = Modifier.animateItem()
                         ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                            GlassCard(
+                                modifier = Modifier.fillMaxWidth().height(240.dp),
+                                shape = RoundedCornerShape(32.dp)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(80.dp)
-                                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f), CircleShape),
-                                    contentAlignment = Alignment.Center
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.MenuBook,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(40.dp),
-                                        tint = MaterialTheme.colorScheme.tertiary
+                                    Box(
+                                        modifier = Modifier
+                                            .size(80.dp)
+                                            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Rounded.MenuBook,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(40.dp),
+                                            tint = MaterialTheme.colorScheme.tertiary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(24.dp))
+                                    Text(
+                                        "No subjects yet",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Text(
-                                    "No subjects yet",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
                             }
                         }
                     }

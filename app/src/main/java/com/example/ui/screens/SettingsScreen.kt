@@ -119,7 +119,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
             SettingsActionItem(
                 title = "Data Management",
-                subtitle = "Export, import, and reset data",
+                subtitle = "Manage backups, configurations, and data",
                 icon = Icons.Rounded.Storage,
                 onClick = { navController.navigate("settings/data") }
             )
@@ -523,22 +523,22 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             Spacer(modifier = Modifier.height(16.dp))
             SettingsActionItem(
                 title = "Export Data",
-                subtitle = "Back up courses, subjects, assignments securely",
+                subtitle = "Back up settings, customisations, courses and assignments securely",
                 icon = Icons.Rounded.Upload,
                 onClick = { showExportDialog = true }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             SettingsActionItem(
                 title = "Import Data",
-                subtitle = "Restore backup. Warning: Overwrites current data",
+                subtitle = "Restore backup. Warning: Overwrites current data and settings",
                 icon = Icons.Rounded.Download,
                 isDestructive = true,
                 onClick = { openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*")) }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             SettingsActionItem(
-                title = "Erase All Data",
-                subtitle = "Permanently delete all courses, subjects, assignments, and logs",
+                title = "Erase All Data & Settings",
+                subtitle = "Permanently delete all customisations, courses, subjects, assignments, and logs",
                 icon = Icons.Rounded.DeleteForever,
                 isDestructive = true,
                 onClick = { showResetDialog = true }
@@ -549,8 +549,8 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     if (showExportDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showExportDialog = false },
-            title = { Text("Export Data") },
-            text = { Text("Are you sure you want to export a binary backup of all your data?") },
+            title = { Text("Export Data & Settings") },
+            text = { Text("Are you sure you want to export a binary backup of all your data and settings?") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -568,8 +568,8 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     if (showResetDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("Erase All Data?") },
-            text = { Text("This action cannot be undone. All your progress, courses, subjects, and settings will be permanently removed.", color = MaterialTheme.colorScheme.error) },
+            title = { Text("Erase All Data & Settings?") },
+            text = { Text("This action cannot be undone. All your progress, custom themes, subjects, and settings will be permanently removed.", color = MaterialTheme.colorScheme.error) },
             confirmButton = {
                 TextButton(
                     onClick = {

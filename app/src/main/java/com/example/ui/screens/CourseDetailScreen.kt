@@ -43,6 +43,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.rounded.MoreVert
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -106,7 +107,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Add Assignment")
+                val rotation by androidx.compose.animation.core.animateFloatAsState(targetValue = if (showAddAssignmentDialog) 45f else 0f)
+                Icon(Icons.Rounded.Add, contentDescription = "Add Assignment", modifier = Modifier.graphicsLayer { rotationZ = rotation })
             }
         }
     ) { padding ->
@@ -405,36 +407,43 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 }
 
                 if (assignments.isEmpty()) {
-                    item {
-                        com.example.ui.components.GlassCard(
-                            modifier = Modifier.fillMaxWidth().height(200.dp),
-                            shape = RoundedCornerShape(32.dp)
+                    item(key = "assignments_empty") {
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = true,
+                            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
+                            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
+                            modifier = Modifier.animateItem()
                         ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                            com.example.ui.components.GlassCard(
+                                modifier = Modifier.fillMaxWidth().height(200.dp),
+                                shape = RoundedCornerShape(32.dp)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(80.dp)
-                                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f), CircleShape),
-                                    contentAlignment = Alignment.Center
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.LibraryBooks,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(40.dp),
-                                        tint = MaterialTheme.colorScheme.secondary
+                                    Box(
+                                        modifier = Modifier
+                                            .size(80.dp)
+                                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Rounded.LibraryBooks,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(40.dp),
+                                            tint = MaterialTheme.colorScheme.secondary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(24.dp))
+                                    Text(
+                                        "No assignments yet",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Text(
-                                    "No assignments yet",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
                             }
                         }
                     }
@@ -445,7 +454,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         )
                         com.example.ui.components.GlassCard(
                             modifier = Modifier.animateItem().fillMaxWidth().animateContentSize(),
-                            shape = RoundedCornerShape(24.dp)
+                            shape = RoundedCornerShape(24.dp),
+                            containerColor = cardColor
                         ) {
                             Row(
                                 modifier = Modifier
@@ -502,9 +512,28 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         var showDatePicker by remember { mutableStateOf(false) }
 
         if (showDatePicker) {
+            val datePickerColors = DatePickerDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                titleContentColor = MaterialTheme.colorScheme.onSurface,
+                headlineContentColor = MaterialTheme.colorScheme.onSurface,
+                weekdayContentColor = MaterialTheme.colorScheme.onSurface,
+                subheadContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                yearContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                currentYearContentColor = MaterialTheme.colorScheme.primary,
+                selectedYearContentColor = MaterialTheme.colorScheme.onPrimary,
+                selectedYearContainerColor = MaterialTheme.colorScheme.primary,
+                dayContentColor = MaterialTheme.colorScheme.onSurface,
+                selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
+                selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                todayContentColor = MaterialTheme.colorScheme.primary,
+                todayDateBorderColor = MaterialTheme.colorScheme.primary
+            )
             val datePickerState = rememberDatePickerState(initialSelectedDateMillis = dueDateMillis)
             DatePickerDialog(
                 onDismissRequest = { showDatePicker = false },
+                colors = DatePickerDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
                 confirmButton = {
                     TextButton(onClick = {
                         datePickerState.selectedDateMillis?.let { dueDateMillis = it }
@@ -519,7 +548,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                 }
             ) {
-                DatePicker(state = datePickerState)
+                DatePicker(
+                    state = datePickerState,
+                    colors = datePickerColors,
+                    showModeToggle = false
+                )
             }
         }
 
@@ -572,9 +605,28 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         var showDatePicker by remember { mutableStateOf(false) }
 
         if (showDatePicker) {
+            val datePickerColors = DatePickerDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                titleContentColor = MaterialTheme.colorScheme.onSurface,
+                headlineContentColor = MaterialTheme.colorScheme.onSurface,
+                weekdayContentColor = MaterialTheme.colorScheme.onSurface,
+                subheadContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                yearContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                currentYearContentColor = MaterialTheme.colorScheme.primary,
+                selectedYearContentColor = MaterialTheme.colorScheme.onPrimary,
+                selectedYearContainerColor = MaterialTheme.colorScheme.primary,
+                dayContentColor = MaterialTheme.colorScheme.onSurface,
+                selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
+                selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                todayContentColor = MaterialTheme.colorScheme.primary,
+                todayDateBorderColor = MaterialTheme.colorScheme.primary
+            )
             val datePickerState = rememberDatePickerState(initialSelectedDateMillis = dueDateMillis)
             DatePickerDialog(
                 onDismissRequest = { showDatePicker = false },
+                colors = DatePickerDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
                 confirmButton = {
                     TextButton(onClick = {
                         datePickerState.selectedDateMillis?.let { dueDateMillis = it }
@@ -589,7 +641,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                 }
             ) {
-                DatePicker(state = datePickerState)
+                DatePicker(
+                    state = datePickerState,
+                    colors = datePickerColors,
+                    showModeToggle = false
+                )
             }
         }
 

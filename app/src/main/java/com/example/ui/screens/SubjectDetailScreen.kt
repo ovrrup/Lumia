@@ -35,6 +35,7 @@ import androidx.navigation.NavController
 import com.example.viewmodel.ScholarViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.graphics.graphicsLayer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,12 +99,17 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Add Topic")
+                val rotation by androidx.compose.animation.core.animateFloatAsState(targetValue = if (showAddTopic) 45f else 0f)
+                Icon(Icons.Rounded.Add, contentDescription = "Add Topic", modifier = Modifier.graphicsLayer { rotationZ = rotation })
             }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            if (topics.isEmpty()) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = topics.isEmpty(),
+                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
+                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut()
+            ) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
@@ -123,7 +129,12 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         Text("No topics yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-            } else {
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = topics.isNotEmpty(),
+                enter = androidx.compose.animation.fadeIn(),
+                exit = androidx.compose.animation.fadeOut()
+            ) {
                 LazyColumn(
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 120.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -135,7 +146,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         )
                         com.example.ui.components.GlassCard(
                             modifier = Modifier.animateItem().fillMaxWidth().animateContentSize(),
-                            shape = RoundedCornerShape(24.dp)
+                            shape = RoundedCornerShape(24.dp),
+                            containerColor = cardColor
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(24.dp)) {
                                 Checkbox(

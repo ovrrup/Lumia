@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.clip
 import com.example.ui.theme.glassCard
+import androidx.compose.foundation.background
 import com.example.ui.theme.glassHero
 import com.example.ui.theme.LocalGlassMode
 
@@ -19,6 +20,7 @@ import com.example.ui.theme.LocalGlassMode
 fun GlassCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(24.dp),
+    containerColor: Color? = null,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -30,6 +32,8 @@ fun GlassCard(
                 .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
         ) {
             Box(modifier = Modifier.matchParentSize().glassCard(shape))
+            val tint = containerColor?.copy(alpha = 0.3f) ?: Color.Transparent
+            Box(modifier = Modifier.matchParentSize().background(tint))
             content()
         }
     } else {
@@ -37,8 +41,8 @@ fun GlassCard(
             Surface(
                 modifier = modifier,
                 shape = shape,
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = 2.dp,
+                color = containerColor ?: MaterialTheme.colorScheme.surfaceContainer,
+                tonalElevation = if (containerColor == null) 2.dp else 0.dp,
                 onClick = onClick
             ) {
                 Box(content = content)
@@ -47,8 +51,8 @@ fun GlassCard(
             Surface(
                 modifier = modifier,
                 shape = shape,
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = 2.dp
+                color = containerColor ?: MaterialTheme.colorScheme.surfaceContainer,
+                tonalElevation = if (containerColor == null) 2.dp else 0.dp
             ) {
                 Box(content = content)
             }
