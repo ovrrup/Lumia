@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Tard"
+rootProject.name = "Lumia"
 
 include(":app")
