@@ -34,10 +34,10 @@ jobs:
       run: gradle assembleDebug
 
     - name: Rename APK
-      run: mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Tard.apk
+      run: mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Lumia.apk
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Tard
-        path: app/build/outputs/apk/debug/Tard.apk
+        name: Lumia
+        path: app/build/outputs/apk/debug/Lumia.apk

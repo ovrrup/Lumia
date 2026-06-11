@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import com.example.ui.theme.liquidGlass
 import android.app.DatePickerDialog
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
@@ -55,23 +56,41 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeTopAppBar(
-                title = { Text(subject.name, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+            androidx.compose.foundation.layout.Box {
+                if (betaEnhancedHeader) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .liquidGlass(
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+                                tintAlpha = if (isDark) 0.15f else 0.4f,
+                                blurRadius = 60f,
+                                isDark = isDark,
+                                tintColor = MaterialTheme.colorScheme.surface
+                            )
+                    )
+                }
+                LargeTopAppBar(
+                    title = { Text(subject.name, fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    scrollBehavior = scrollBehavior,
+                    colors = TopAppBarDefaults.largeTopAppBarColors(
+                        containerColor = if (betaEnhancedHeader) androidx.compose.ui.graphics.Color.Transparent else if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = if (betaEnhancedHeader) androidx.compose.ui.graphics.Color.Transparent else if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                    )
                 )
-            )
+            }
         },
         floatingActionButton = {
             androidx.compose.material3.FloatingActionButton(

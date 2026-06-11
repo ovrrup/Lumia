@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import com.example.ui.theme.liquidGlass
 import android.text.format.DateFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -77,18 +78,36 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
     Scaffold(
         containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Analytics", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+            androidx.compose.foundation.layout.Box {
+                if (betaEnhancedHeader) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .liquidGlass(
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+                                tintAlpha = if (isDark) 0.15f else 0.4f,
+                                blurRadius = 60f,
+                                isDark = isDark,
+                                tintColor = MaterialTheme.colorScheme.surface
+                            )
+                    )
+                }
+                CenterAlignedTopAppBar(
+                    title = { Text("Analytics", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                    scrollBehavior = scrollBehavior,
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = if (betaEnhancedHeader) Color.Transparent else if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = if (betaEnhancedHeader) Color.Transparent else if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                    )
                 )
-            )
+            }
         }
     ) { innerPadding ->
         val topP = innerPadding.calculateTopPadding() + 16.dp

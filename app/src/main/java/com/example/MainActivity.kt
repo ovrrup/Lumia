@@ -83,6 +83,12 @@ class MainActivity : ComponentActivity() {
             val betaBetterTexts by viewModel.betaBetterTexts.collectAsStateWithLifecycle()
             val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
 
+            val customPrimary by viewModel.customPrimary.collectAsStateWithLifecycle()
+            val customPrimaryContainer by viewModel.customPrimaryContainer.collectAsStateWithLifecycle()
+            val customBackground by viewModel.customBackground.collectAsStateWithLifecycle()
+            val customSurface by viewModel.customSurface.collectAsStateWithLifecycle()
+            val customText by viewModel.customText.collectAsStateWithLifecycle()
+
             androidx.compose.runtime.LaunchedEffect(betaImmersiveMode) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     val window = (this@MainActivity).window
@@ -96,7 +102,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode, glassMode = betaGlassUi, betterTexts = betaBetterTexts, betterTextsPalette = betaBetterTextsPalette) {
+            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode, glassMode = betaGlassUi, betterTexts = betaBetterTexts, betterTextsPalette = betaBetterTextsPalette, customPrimary = customPrimary, customPrimaryContainer = customPrimaryContainer, customBackground = customBackground, customSurface = customSurface, customText = customText) {
                 Surface(
                     modifier = Modifier.fillMaxSize().then(
                         if (betaNotchOptimization && !betaImmersiveMode) Modifier.displayCutoutPadding() else Modifier
@@ -252,6 +258,12 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("settings/appearance") {
                             com.example.ui.screens.AppearanceScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable("settings/advanced_theme") {
+                            com.example.ui.screens.AdvancedThemeScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )

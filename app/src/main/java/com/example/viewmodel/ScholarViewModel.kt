@@ -26,13 +26,39 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     private val repository: ScholarRepository
     
-    private val prefs = application.getSharedPreferences("tard_prefs", Context.MODE_PRIVATE)
+    private val prefs = application.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
 
     private val _themeMode = MutableStateFlow(prefs.getString("theme_mode", "System") ?: "System")
     val themeMode = _themeMode.asStateFlow()
 
-    private val _themeColor = MutableStateFlow(prefs.getString("theme_color", "Blue") ?: "Blue")
+    private val _themeColor = MutableStateFlow(prefs.getString("theme_color", "Ocean") ?: "Ocean")
     val themeColor = _themeColor.asStateFlow()
+
+    private val _customPrimary = MutableStateFlow(prefs.getString("custom_primary", "#3197D6") ?: "#3197D6")
+    val customPrimary = _customPrimary.asStateFlow()
+
+    private val _customPrimaryContainer = MutableStateFlow(prefs.getString("custom_primary_container", "#DAF1FF") ?: "#DAF1FF")
+    val customPrimaryContainer = _customPrimaryContainer.asStateFlow()
+
+    private val _customBackground = MutableStateFlow(prefs.getString("custom_background", "#FAFAFA") ?: "#FAFAFA")
+    val customBackground = _customBackground.asStateFlow()
+
+    private val _customSurface = MutableStateFlow(prefs.getString("custom_surface", "#FFFFFF") ?: "#FFFFFF")
+    val customSurface = _customSurface.asStateFlow()
+
+    private val _customText = MutableStateFlow(prefs.getString("custom_text", "#1A1C1A") ?: "#1A1C1A")
+    val customText = _customText.asStateFlow()
+
+    fun updateCustomColor(key: String, hex: String) {
+        when(key) {
+           "primary" -> _customPrimary.value = hex
+           "primary_container" -> _customPrimaryContainer.value = hex
+           "background" -> _customBackground.value = hex
+           "surface" -> _customSurface.value = hex
+           "text" -> _customText.value = hex
+        }
+        prefs.edit().putString("custom_$key", hex).apply()
+    }
 
     private val _pureBlackMode = MutableStateFlow(prefs.getBoolean("pure_black_mode", false))
     val pureBlackMode = _pureBlackMode.asStateFlow()
@@ -61,6 +87,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaGlassUi = MutableStateFlow(prefs.getBoolean("beta_glass_ui", false))
     val betaGlassUi = _betaGlassUi.asStateFlow()
 
+    private val _betaEnhancedHeader = MutableStateFlow(prefs.getBoolean("beta_enhanced_header", false))
+    val betaEnhancedHeader = _betaEnhancedHeader.asStateFlow()
+
+    private val _betaMinimalistMode = MutableStateFlow(prefs.getBoolean("beta_minimalist_mode", false))
+    val betaMinimalistMode = _betaMinimalistMode.asStateFlow()
+
     private val _betaDynamicBackground = MutableStateFlow(prefs.getBoolean("beta_dynamic_background", false))
     val betaDynamicBackground = _betaDynamicBackground.asStateFlow()
 
@@ -77,12 +109,13 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val dynamicAlias = android.content.ComponentName(packageName, "com.example.DynamicAlias")
 
         if (enabled) {
-            pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
             pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+            pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
         } else {
-            pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
             pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+            pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
         }
+        android.widget.Toast.makeText(getApplication(), "Icon changing... Launcher may take a moment to reflect changes or might require a home screen refresh.", android.widget.Toast.LENGTH_LONG).show()
     }
 
     private val _betaBetterTexts = MutableStateFlow(prefs.getBoolean("beta_better_texts", false))
@@ -440,18 +473,21 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
 
         if (mode == "Dark" && safetyPinEnabled.value && safetyPinRecommendations.value && !_pureBlackMode.value) {
-            _themeMode.value = mode
-            prefs.edit().putString("theme_mode", mode).apply()
-            
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Optimization Recommendation",
                 description = "For the deepest contrast and battery savings on OLED screens, it is recommended to enable 'Pure Black Mode' with the Dark theme. Would you like to enable it?",
                 isConflict = false,
                 onConfirm = {
                     _safetyPinDialogData.value = null
+                    _themeMode.value = mode
+                    prefs.edit().putString("theme_mode", mode).apply()
                     updatePureBlackMode(true)
                 },
-                onIgnore = { _safetyPinDialogData.value = null }
+                onIgnore = {
+                    _safetyPinDialogData.value = null
+                    _themeMode.value = mode
+                    prefs.edit().putString("theme_mode", mode).apply()
+                }
             )
             return
         }
@@ -464,12 +500,14 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val conflictsWithDynamicBg = _betaDynamicBackground.value
         val conflictsWithGlassUi = _betaGlassUi.value
         val conflictsWithPalette = _betaBetterTextsPalette.value
+        val conflictsWithEnhancedHeader = _betaEnhancedHeader.value
 
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (conflictsWithDynamicBg || conflictsWithGlassUi || conflictsWithPalette)) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (conflictsWithDynamicBg || conflictsWithGlassUi || conflictsWithPalette || conflictsWithEnhancedHeader)) {
             val opposingFeatures = mutableListOf<String>()
             if (conflictsWithDynamicBg) opposingFeatures.add("'Dynamic Lighting Background'")
             if (conflictsWithGlassUi) opposingFeatures.add("'Glass UI'")
             if (conflictsWithPalette) opposingFeatures.add("'Use Palette Shades for Text'")
+            if (conflictsWithEnhancedHeader) opposingFeatures.add("'Enhanced Header'")
             
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Feature Conflict Detected",
@@ -482,6 +520,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     if (conflictsWithDynamicBg) updateBetaDynamicBackground(false)
                     if (conflictsWithGlassUi) updateBetaGlassUi(false)
                     if (conflictsWithPalette) updateBetaBetterTextsPalette(false)
+                    if (conflictsWithEnhancedHeader) updateBetaEnhancedHeader(false)
                 },
                 onIgnore = { _safetyPinDialogData.value = null }
             )
@@ -489,18 +528,21 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
 
         if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && _themeMode.value != "Dark") {
-            _pureBlackMode.value = true
-            prefs.edit().putBoolean("pure_black_mode", true).apply()
-            
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Optimization Recommendation",
                 description = "For the optimal experience of 'Pure Black Mode', it is highly recommended to switch your system theme to 'Dark'. The current setting limits the effectiveness of the pure black backgrounds.",
                 isConflict = false,
                 onConfirm = {
                     _safetyPinDialogData.value = null
+                    _pureBlackMode.value = true
+                    prefs.edit().putBoolean("pure_black_mode", true).apply()
                     updateThemeMode("Dark")
                 },
-                onIgnore = { _safetyPinDialogData.value = null }
+                onIgnore = {
+                    _safetyPinDialogData.value = null
+                    _pureBlackMode.value = true
+                    prefs.edit().putBoolean("pure_black_mode", true).apply()
+                }
             )
             return
         }
@@ -515,18 +557,21 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun updateBetaFloatingNav(enabled: Boolean) {
         if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaImmersiveMode.value) {
-            _betaFloatingNav.value = true
-            prefs.edit().putBoolean("beta_floating_nav", true).apply()
-            
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Optimization Recommendation",
                 description = "For the best visual experience of 'Floating Action Bar', it is highly recommended to activate 'Full Screen Punch Hole (Immersive)'. This allows the bar to float beautifully over the background without being enclosed by the system navigation area. Would you like to enable it?",
                 isConflict = false,
                 onConfirm = {
                     _safetyPinDialogData.value = null
+                    _betaFloatingNav.value = true
+                    prefs.edit().putBoolean("beta_floating_nav", true).apply()
                     updateBetaImmersiveMode(true)
                 },
-                onIgnore = { _safetyPinDialogData.value = null }
+                onIgnore = {
+                    _safetyPinDialogData.value = null
+                    _betaFloatingNav.value = true
+                    prefs.edit().putBoolean("beta_floating_nav", true).apply()
+                 }
             )
             return
         }
@@ -555,61 +600,72 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun updateBetaImmersiveMode(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _betaNotchOptimization.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Feature Conflict Detected",
-                description = "The activation of 'Full Screen Punch Hole (Immersive)' directly opposes the functionality of 'Notch & Punch Hole Optimization'. Proceeding will automatically deactivate the opposing setting to maintain system stability and optimal user experience.",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaImmersiveMode.value = true
-                    prefs.edit().putBoolean("beta_immersive_mode", true).apply()
-                    updateBetaNotchOptimization(false)
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
-
         if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaFloatingNav.value) {
-            _betaImmersiveMode.value = true
-            prefs.edit().putBoolean("beta_immersive_mode", true).apply()
-            
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Optimization Recommendation",
                 description = "For optimal ergonomics in Immersive Mode, it is highly recommended to activate 'Floating Action Bar', as standard bottom bars may interfere with the system gesture navigation area at the bottom. Would you like to enable it?",
                 isConflict = false,
                 onConfirm = {
                     _safetyPinDialogData.value = null
+                    _betaImmersiveMode.value = true
+                    prefs.edit().putBoolean("beta_immersive_mode", true).apply()
+        
+                    _betaNotchOptimization.value = false
+                    prefs.edit().putBoolean("beta_notch_optimization", false).apply()
                     updateBetaFloatingNav(true)
                 },
-                onIgnore = { _safetyPinDialogData.value = null }
+                onIgnore = {
+                    _safetyPinDialogData.value = null
+                    _betaImmersiveMode.value = true
+                    prefs.edit().putBoolean("beta_immersive_mode", true).apply()
+        
+                    _betaNotchOptimization.value = false
+                    prefs.edit().putBoolean("beta_notch_optimization", false).apply()
+                }
             )
             return
         }
 
         _betaImmersiveMode.value = enabled
         prefs.edit().putBoolean("beta_immersive_mode", enabled).apply()
+        
+        _betaNotchOptimization.value = !enabled
+        prefs.edit().putBoolean("beta_notch_optimization", !enabled).apply()
     }
 
-    fun updateBetaNotchOptimization(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _betaImmersiveMode.value) {
+    fun updateBetaMinimalistMode(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaGlassUi.value || _betaDynamicBackground.value || _betaEnhancedHeader.value || _betaFloatingNav.value || _betaBetterTexts.value || !_betaImmersiveMode.value)) {
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Feature Conflict Detected",
-                description = "The activation of 'Notch & Punch Hole Optimization' directly opposes the functionality of 'Full Screen Punch Hole (Immersive)'. Proceeding will automatically deactivate the opposing setting to maintain optimal user experience.",
+                description = "Activating 'Minimalist Mode' will force-disable 'Glass UI', 'Dynamic Lighting', 'Enhanced Header', 'Floating Action Bar', and 'Better Texts', locking them to reduce visual clutter. Additionally, 'Immersive Mode' will be turned ON. Proceed?",
                 isConflict = true,
                 onConfirm = {
                     _safetyPinDialogData.value = null
-                    _betaNotchOptimization.value = true
-                    prefs.edit().putBoolean("beta_notch_optimization", true).apply()
-                    updateBetaImmersiveMode(false)
+                    _betaMinimalistMode.value = true
+                    prefs.edit().putBoolean("beta_minimalist_mode", true).apply()
+                    if (_betaGlassUi.value) updateBetaGlassUi(false)
+                    if (_betaDynamicBackground.value) updateBetaDynamicBackground(false)
+                    if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
+                    if (_betaFloatingNav.value) updateBetaFloatingNav(false)
+                    if (_betaBetterTexts.value) updateBetaBetterTexts(false)
+                    if (!_betaImmersiveMode.value) updateBetaImmersiveMode(true)
                 },
                 onIgnore = { _safetyPinDialogData.value = null }
             )
             return
         }
-        _betaNotchOptimization.value = enabled
-        prefs.edit().putBoolean("beta_notch_optimization", enabled).apply()
+        
+        _betaMinimalistMode.value = enabled
+        prefs.edit().putBoolean("beta_minimalist_mode", enabled).apply()
+        
+        if (enabled && !_safetyPinEnabled.value) {
+            if (_betaGlassUi.value) updateBetaGlassUi(false)
+            if (_betaDynamicBackground.value) updateBetaDynamicBackground(false)
+            if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
+            if (_betaFloatingNav.value) updateBetaFloatingNav(false)
+            if (_betaBetterTexts.value) updateBetaBetterTexts(false)
+            if (!_betaImmersiveMode.value) updateBetaImmersiveMode(true)
+        }
     }
 
     fun updateBetaGlassUi(enabled: Boolean) {
@@ -629,26 +685,71 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             return
         }
 
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && (!_betaDynamicBackground.value || !_betaFloatingNav.value || !_betaBetterTexts.value)) {
-            _betaGlassUi.value = true
-            prefs.edit().putBoolean("beta_glass_ui", true).apply()
-            
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && (!_betaDynamicBackground.value || !_betaFloatingNav.value || !_betaBetterTexts.value || !_betaEnhancedHeader.value)) {
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Optimization Recommendation",
-                description = "For an enhanced visual experience, it is highly recommended to activate 'Dynamic Lighting Background', 'Floating Action Bar', and 'Better Texts' alongside 'Glass UI'. Would you like to apply these complementary settings?",
+                description = "For an enhanced visual experience, it is highly recommended to activate 'Dynamic Lighting Background', 'Floating Action Bar', 'Better Texts', and 'Enhanced Header' alongside 'Glass UI'. Would you like to apply these complementary settings?",
                 isConflict = false,
                 onConfirm = {
                     _safetyPinDialogData.value = null
+                    _betaGlassUi.value = true
+                    prefs.edit().putBoolean("beta_glass_ui", true).apply()
                     updateBetaDynamicBackground(true)
                     updateBetaFloatingNav(true)
                     updateBetaBetterTexts(true)
+                    updateBetaEnhancedHeader(true)
                 },
-                onIgnore = { _safetyPinDialogData.value = null }
+                onIgnore = { 
+                    _safetyPinDialogData.value = null
+                    _betaGlassUi.value = true
+                    prefs.edit().putBoolean("beta_glass_ui", true).apply()
+                }
             )
             return
         }
         _betaGlassUi.value = enabled
         prefs.edit().putBoolean("beta_glass_ui", enabled).apply()
+    }
+
+    fun updateBetaEnhancedHeader(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Enhanced Header' directly opposes the functionality of 'Pure Black Mode'. Enhanced Header requires background colors to create frosted translucency. Proceeding will automatically deactivate 'Pure Black Mode'.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaEnhancedHeader.value = true
+                    prefs.edit().putBoolean("beta_enhanced_header", true).apply()
+                    updatePureBlackMode(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaGlassUi.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For the best visual fidelity when using 'Enhanced Header', it is highly recommended to activate 'Glass UI'. This combination creates a stunning translucent effect. Would you like to enable it?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaEnhancedHeader.value = true
+                    prefs.edit().putBoolean("beta_enhanced_header", true).apply()
+                    updateBetaGlassUi(true)
+                },
+                onIgnore = { 
+                    _safetyPinDialogData.value = null
+                    _betaEnhancedHeader.value = true
+                    prefs.edit().putBoolean("beta_enhanced_header", true).apply()
+                }
+            )
+            return
+        }
+
+        _betaEnhancedHeader.value = enabled
+        prefs.edit().putBoolean("beta_enhanced_header", enabled).apply()
     }
 
     fun updateBetaDynamicBackground(enabled: Boolean) {
@@ -669,18 +770,21 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
         
         if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaGlassUi.value) {
-            _betaDynamicBackground.value = true
-            prefs.edit().putBoolean("beta_dynamic_background", true).apply()
-            
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Optimization Recommendation",
                 description = "For the best visual fidelity when using 'Dynamic Lighting Background', it is highly recommended to activate 'Glass UI'. This combination creates a stunning translucent depth effect. Would you like to enable it?",
                 isConflict = false,
                 onConfirm = {
                     _safetyPinDialogData.value = null
+                    _betaDynamicBackground.value = true
+                    prefs.edit().putBoolean("beta_dynamic_background", true).apply()
                     updateBetaGlassUi(true)
                 },
-                onIgnore = { _safetyPinDialogData.value = null }
+                onIgnore = { 
+                    _safetyPinDialogData.value = null
+                    _betaDynamicBackground.value = true
+                    prefs.edit().putBoolean("beta_dynamic_background", true).apply()
+                }
             )
             return
         }
@@ -691,18 +795,21 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun updateBetaBetterTexts(enabled: Boolean) {
         if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaBetterTextsPalette.value) {
-            _betaBetterTexts.value = true
-            prefs.edit().putBoolean("beta_better_texts", true).apply()
-            
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Optimization Recommendation",
                 description = "To fully experience 'Better Texts', it is recommended to also enable 'Use Palette Shades for Text'. This provides a softer, more cohesive look matching your selected theme color. Would you like to enable it?",
                 isConflict = false,
                 onConfirm = {
                     _safetyPinDialogData.value = null
+                    _betaBetterTexts.value = true
+                    prefs.edit().putBoolean("beta_better_texts", true).apply()
                     updateBetaBetterTextsPalette(true)
                 },
-                onIgnore = { _safetyPinDialogData.value = null }
+                onIgnore = {
+                    _safetyPinDialogData.value = null
+                    _betaBetterTexts.value = true
+                    prefs.edit().putBoolean("beta_better_texts", true).apply()
+                 }
             )
             return
         }

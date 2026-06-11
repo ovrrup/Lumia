@@ -26,6 +26,9 @@
             android:name=".DefaultAlias"
             android:enabled="true"
             android:exported="true"
+            android:label="@string/app_name"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -37,6 +40,7 @@
             android:name=".DynamicAlias"
             android:enabled="false"
             android:exported="true"
+            android:label="@string/app_name"
             android:icon="@mipmap/ic_launcher_dynamic"
             android:roundIcon="@mipmap/ic_launcher_dynamic_round"
             android:targetActivity=".MainActivity">

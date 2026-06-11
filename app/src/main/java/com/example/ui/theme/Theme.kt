@@ -15,7 +15,9 @@ fun createLightScheme(
     primary: Color, primaryContainer: Color,
     secondary: Color, secondaryContainer: Color,
     tertiary: Color, tertiaryContainer: Color,
-    bg: Color = Color(0xFFFAFAFA)
+    bg: Color = Color(0xFFFAFAFA),
+    surface: Color = Color(0xFFFFFFFF),
+    onSurfaceText: Color = Color(0xFF1A1C1A)
 ) = lightColorScheme(
     primary = primary, onPrimary = Color.White,
     primaryContainer = primaryContainer, onPrimaryContainer = Color.White,
@@ -23,8 +25,8 @@ fun createLightScheme(
     secondaryContainer = secondaryContainer, onSecondaryContainer = Color.White,
     tertiary = tertiary, onTertiary = Color.White,
     tertiaryContainer = tertiaryContainer, onTertiaryContainer = Color.White,
-    background = bg, onBackground = Color(0xFF1A1C1A),
-    surface = bg, onSurface = Color(0xFF1A1C1A),
+    background = bg, onBackground = onSurfaceText,
+    surface = surface, onSurface = onSurfaceText,
     surfaceVariant = Color(0xFFEAEAEA), onSurfaceVariant = Color(0xFF49454F),
     outline = Color(0xFF79747E), outlineVariant = Color(0xFFCAC4D0),
     error = Color(0xFFBA1A1A), onError = Color.White,
@@ -36,7 +38,9 @@ fun createDarkScheme(
     primary: Color, primaryContainer: Color,
     secondary: Color, secondaryContainer: Color,
     tertiary: Color, tertiaryContainer: Color,
-    bg: Color = Color(0xFF101010)
+    bg: Color = Color(0xFF101010),
+    surface: Color = Color(0xFF1A1A1A),
+    onSurfaceText: Color = Color(0xFFE2E2E2)
 ) = darkColorScheme(
     primary = primary, onPrimary = Color(0xFF1A1C1A),
     primaryContainer = primaryContainer, onPrimaryContainer = Color(0xFF1A1C1A),
@@ -44,8 +48,8 @@ fun createDarkScheme(
     secondaryContainer = secondaryContainer, onSecondaryContainer = Color(0xFF1A1C1A),
     tertiary = tertiary, onTertiary = Color(0xFF1A1C1A),
     tertiaryContainer = tertiaryContainer, onTertiaryContainer = Color(0xFF1A1C1A),
-    background = bg, onBackground = Color(0xFFE2E2E2),
-    surface = bg, onSurface = Color(0xFFE2E2E2),
+    background = bg, onBackground = onSurfaceText,
+    surface = surface, onSurface = onSurfaceText,
     surfaceVariant = Color(0xFF2E2E2E), onSurfaceVariant = Color(0xFFC4C7C5),
     outline = Color(0xFF8E918F), outlineVariant = Color(0xFF444746),
     error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
@@ -53,17 +57,23 @@ fun createDarkScheme(
     surfaceTint = primary
 )
 
-val BlueLight = createLightScheme(Color(0xFF0085FF), Color(0xFF004F99), Color(0xFF0A68C2), Color(0xFF004F99), Color(0xFF0A68C2), Color(0xFF004F99))
-val BlueDark = createDarkScheme(Color(0xFF8CBFFF), Color(0xFFD0E4FF), Color(0xFFA1CADF), Color(0xFFD0E4FF), Color(0xFFA1CADF), Color(0xFFD0E4FF))
+val OceanLight = createLightScheme(primary = Color(0xFF0061A4), primaryContainer = Color(0xFFD1E4FF), secondary = Color(0xFF535F70), secondaryContainer = Color(0xFFD7E3F7), tertiary = Color(0xFF6B5778), tertiaryContainer = Color(0xFFF2DAFF))
+val OceanDark = createDarkScheme(primary = Color(0xFF9ECAFF), primaryContainer = Color(0xFF00497D), secondary = Color(0xFFBBC7DB), secondaryContainer = Color(0xFF3B4858), tertiary = Color(0xFFD6BEE4), tertiaryContainer = Color(0xFF523F5F))
 
-val GreenLight = createLightScheme(Color(0xFF00BA34), Color(0xFF006F1F), Color(0xFF0B9631), Color(0xFF006F1F), Color(0xFF0B9631), Color(0xFF006F1F))
-val GreenDark = createDarkScheme(Color(0xFF56E074), Color(0xFF8FFFA9), Color(0xFF8CE09A), Color(0xFF8FFFA9), Color(0xFF8CE09A), Color(0xFF8FFFA9))
+val EmeraldLight = createLightScheme(primary = Color(0xFF006D36), primaryContainer = Color(0xFF95F9B7), secondary = Color(0xFF506353), secondaryContainer = Color(0xFFD2E8D3), tertiary = Color(0xFF3A656F), tertiaryContainer = Color(0xFFBDEAF6))
+val EmeraldDark = createDarkScheme(primary = Color(0xFF79DC9C), primaryContainer = Color(0xFF005227), secondary = Color(0xFFB6CCB8), secondaryContainer = Color(0xFF384B3C), tertiary = Color(0xFFA1CED9), tertiaryContainer = Color(0xFF204D56))
 
-val OrangeLight = createLightScheme(Color(0xFFF98600), Color(0xFF955000), Color(0xFFCC7206), Color(0xFF955000), Color(0xFFCC7206), Color(0xFF955000))
-val OrangeDark = createDarkScheme(Color(0xFFFFB482), Color(0xFFFFDAB6), Color(0xFFFFBE90), Color(0xFFFFDAB6), Color(0xFFFFBE90), Color(0xFFFFDAB6))
+val GoldLight = createLightScheme(primary = Color(0xFF7D5700), primaryContainer = Color(0xFFFFDE9C), secondary = Color(0xFF6C5D3F), secondaryContainer = Color(0xFFF5E0BB), tertiary = Color(0xFF4B6546), tertiaryContainer = Color(0xFFBCDEB2))
+val GoldDark = createDarkScheme(primary = Color(0xFFFABD00), primaryContainer = Color(0xFF5E4000), secondary = Color(0xFFD8C4A0), secondaryContainer = Color(0xFF53452A), tertiary = Color(0xFFB1CEA8), tertiaryContainer = Color(0xFF344D30))
 
-val RedLight = createLightScheme(Color(0xFFE92C2C), Color(0xFF8B1A1A), Color(0xFFC02F2F), Color(0xFF8B1A1A), Color(0xFFC02F2F), Color(0xFF8B1A1A))
-val RedDark = createDarkScheme(Color(0xFFFFB4A9), Color(0xFFFFDAD6), Color(0xFFFFB3B8), Color(0xFFFFDAD6), Color(0xFFFFB3B8), Color(0xFFFFDAD6))
+val RoseLight = createLightScheme(primary = Color(0xFFBF0031), primaryContainer = Color(0xFFFFDAD9), secondary = Color(0xFF775656), secondaryContainer = Color(0xFFFFDAD9), tertiary = Color(0xFF755A2F), tertiaryContainer = Color(0xFFFFDDAF))
+val RoseDark = createDarkScheme(primary = Color(0xFFFFB3B4), primaryContainer = Color(0xFF8E0021), secondary = Color(0xFFE7BDBE), secondaryContainer = Color(0xFF5D3F3F), tertiary = Color(0xFFE5C18D), tertiaryContainer = Color(0xFF5C421A))
+
+val SageLight = createLightScheme(primary = Color(0xFF3B6939), primaryContainer = Color(0xFFBCF0B4), secondary = Color(0xFF53634F), secondaryContainer = Color(0xFFD6E8CE), tertiary = Color(0xFF38656A), tertiaryContainer = Color(0xFFBCEBF0), bg = Color(0xFFF8FAF0))
+val SageDark = createDarkScheme(primary = Color(0xFFA1D39A), primaryContainer = Color(0xFF225024), secondary = Color(0xFFBACCB3), secondaryContainer = Color(0xFF3C4B38), tertiary = Color(0xFFA0CFD4), tertiaryContainer = Color(0xFF1F4D52), bg = Color(0xFF10140F))
+
+val TwilightLight = createLightScheme(primary = Color(0xFF5B53A8), primaryContainer = Color(0xFFE3DFFF), secondary = Color(0xFF5D5D72), secondaryContainer = Color(0xFFE3E0F9), tertiary = Color(0xFF795369), tertiaryContainer = Color(0xFFFFD8EC), bg = Color(0xFFFEFBFF))
+val TwilightDark = createDarkScheme(primary = Color(0xFFC4C0FF), primaryContainer = Color(0xFF433B8E), secondary = Color(0xFFC7C4DC), secondaryContainer = Color(0xFF454559), tertiary = Color(0xFFEBB9D6), tertiaryContainer = Color(0xFF5F3C51), bg = Color(0xFF1B1B1F))
 
 fun Color.mix(other: Color, weight: Float): Color {
     return Color(
@@ -81,6 +91,11 @@ val LocalGlassMode = androidx.compose.runtime.compositionLocalOf { false }
 fun ScholarTheme(
     themeMode: String = "System",
     themeColor: String = "Default",
+    customPrimary: String = "",
+    customPrimaryContainer: String = "",
+    customBackground: String = "",
+    customSurface: String = "",
+    customText: String = "",
     pureBlackMode: Boolean = false,
     glassMode: Boolean = false,
     betterTexts: Boolean = false,
@@ -123,11 +138,35 @@ fun ScholarTheme(
             }
         }
         else -> when (themeColor) {
-            "Blue" -> if (isDark) BlueDark else BlueLight
-            "Green" -> if (isDark) GreenDark else GreenLight
-            "Orange" -> if (isDark) OrangeDark else OrangeLight
-            "Red" -> if (isDark) RedDark else RedLight
-            else -> if (isDark) BlueDark else BlueLight
+            "Ocean" -> if (isDark) OceanDark else OceanLight
+            "Emerald" -> if (isDark) EmeraldDark else EmeraldLight
+            "Gold" -> if (isDark) GoldDark else GoldLight
+            "Rose" -> if (isDark) RoseDark else RoseLight
+            "Sage" -> if (isDark) SageDark else SageLight
+            "Twilight" -> if (isDark) TwilightDark else TwilightLight
+            "Custom" -> {
+                val p = try { Color(android.graphics.Color.parseColor(customPrimary)) } catch(e:Exception) { Color(0xFF3197D6) }
+                val pc = try { Color(android.graphics.Color.parseColor(customPrimaryContainer)) } catch(e:Exception) { Color(0xFFDAF1FF) }
+                val bg = try { Color(android.graphics.Color.parseColor(customBackground)) } catch(e:Exception) { if (isDark) Color(0xFF101010) else Color(0xFFFAFAFA) }
+                val sf = try { Color(android.graphics.Color.parseColor(customSurface)) } catch(e:Exception) { if (isDark) Color(0xFF1A1A1A) else Color(0xFFFFFFFF) }
+                val txt = try { Color(android.graphics.Color.parseColor(customText)) } catch(e:Exception) { if (isDark) Color(0xFFE2E2E2) else Color(0xFF1A1C1A) }
+                
+                // Adjust Custom Primary based on theme mode requirement
+                val pLum = p.red * 0.299f + p.green * 0.587f + p.blue * 0.114f
+                val pDark = if (pLum < 0.5f) p.mix(Color.White, 0.65f) else p
+                val pLight = if (pLum > 0.5f) p.mix(Color.Black, 0.65f) else p
+                
+                val pcLum = pc.red * 0.299f + pc.green * 0.587f + pc.blue * 0.114f
+                val pcDark = if (pcLum > 0.3f) pc.mix(Color.Black, 0.5f) else pc
+                val pcLight = if (pcLum < 0.7f) pc.mix(Color.White, 0.5f) else pc
+
+                if (isDark) {
+                     createDarkScheme(primary = pDark, primaryContainer = pcDark, secondary = pDark, secondaryContainer = pcDark, tertiary = pDark, tertiaryContainer = pcDark, bg = bg, surface = sf, onSurfaceText = txt)
+                } else {
+                     createLightScheme(primary = pLight, primaryContainer = pcLight, secondary = pLight, secondaryContainer = pcLight, tertiary = pLight, tertiaryContainer = pcLight, bg = bg, surface = sf, onSurfaceText = txt)
+                }
+            }
+            else -> if (isDark) OceanDark else OceanLight
         }
     }
 

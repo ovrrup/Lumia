@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import com.example.ui.theme.liquidGlass
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -32,11 +33,13 @@ import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Upload
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,20 +51,38 @@ import com.example.viewmodel.ScholarViewModel
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+            androidx.compose.foundation.layout.Box {
+                if (betaEnhancedHeader) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .liquidGlass(
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+                                tintAlpha = if (isDark) 0.15f else 0.4f,
+                                blurRadius = 60f,
+                                isDark = isDark,
+                                tintColor = MaterialTheme.colorScheme.surface
+                            )
+                    )
+                }
+                CenterAlignedTopAppBar(
+                    title = { Text("Settings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = if (betaEnhancedHeader) androidx.compose.ui.graphics.Color.Transparent else if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                    )
                 )
-            )
+            }
         }
     ) { padding ->
         Column(
@@ -165,7 +186,17 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 title = "Pure Black Mode",
                 subtitle = "Apply pure black background in dark mode",
                 checked = pureBlackMode,
+                enabled = themeMode != "Light",
+                unavailableReason = "Requires System/Dark mode.",
                 onCheckedChange = { viewModel.updatePureBlackMode(it) }
+            )
+
+            val betaMinimalistMode by viewModel.betaMinimalistMode.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "Minimalist Mode",
+                subtitle = "Force-off and lock visual flair for focus",
+                checked = betaMinimalistMode,
+                onCheckedChange = { viewModel.updateBetaMinimalistMode(it) }
             )
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
@@ -174,7 +205,19 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 title = "Glass UI",
                 subtitle = "Enable modern frosted glass UI components",
                 checked = betaGlassUi,
+                enabled = !betaMinimalistMode,
+                unavailableReason = "Locked by Minimalist Mode.",
                 onCheckedChange = { viewModel.updateBetaGlassUi(it) }
+            )
+
+            val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
+            SettingsToggleItem(
+                title = "Enhanced Header",
+                subtitle = "Apply a polished translucent look to the top navigation bar",
+                checked = betaEnhancedHeader,
+                enabled = !betaMinimalistMode,
+                unavailableReason = "Locked by Minimalist Mode.",
+                onCheckedChange = { viewModel.updateBetaEnhancedHeader(it) }
             )
 
             val dynamicAppIcon by viewModel.dynamicAppIcon.collectAsStateWithLifecycle()
@@ -189,6 +232,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 title = "Dynamic Lighting Background",
                 subtitle = "Soft, vibrant animated gradient background",
                 checked = betaDynamicBackground,
+                enabled = !betaMinimalistMode,
+                unavailableReason = "Locked by Minimalist Mode.",
                 onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
             )
 
@@ -198,18 +243,20 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 title = "Better Texts",
                 subtitle = "Enhance text readability and aesthetics",
                 checked = betaBetterTexts,
+                enabled = !betaMinimalistMode,
+                unavailableReason = "Locked by Minimalist Mode.",
                 onCheckedChange = { viewModel.updateBetaBetterTexts(it) }
             )
             
-            androidx.compose.animation.AnimatedVisibility(visible = betaBetterTexts) {
-                Column(modifier = Modifier.padding(start = 32.dp)) {
-                    SettingsToggleItem(
-                        title = "Use Palette Shades for Text",
-                        subtitle = "Uses theme palette shades for text instead of strict black or white",
-                        checked = betaBetterTextsPalette,
-                        onCheckedChange = { viewModel.updateBetaBetterTextsPalette(it) }
-                    )
-                }
+            Column(modifier = Modifier.padding(start = 32.dp)) {
+                SettingsToggleItem(
+                    title = "Use Palette Shades for Text",
+                    subtitle = "Uses theme palette shades for text instead of strict black or white",
+                    checked = betaBetterTextsPalette,
+                    enabled = betaBetterTexts && !betaMinimalistMode,
+                    unavailableReason = if (betaMinimalistMode) "Locked by Minimalist Mode." else "Requires 'Better Texts' to be enabled.",
+                    onCheckedChange = { viewModel.updateBetaBetterTextsPalette(it) }
+                )
             }
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
@@ -229,10 +276,13 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 val palettes = mutableListOf(
-                    "Blue" to androidx.compose.ui.graphics.Color(0xFF0085FF),
-                    "Green" to androidx.compose.ui.graphics.Color(0xFF00BA34),
-                    "Orange" to androidx.compose.ui.graphics.Color(0xFFF98600),
-                    "Red" to androidx.compose.ui.graphics.Color(0xFFE92C2C)
+                    "Ocean" to androidx.compose.ui.graphics.Color(0xFF3197D6),
+                    "Emerald" to androidx.compose.ui.graphics.Color(0xFF4BC27D),
+                    "Gold" to androidx.compose.ui.graphics.Color(0xFFFFC646),
+                    "Rose" to androidx.compose.ui.graphics.Color(0xFFE52F28),
+                    "Sage" to androidx.compose.ui.graphics.Color(0xFFACBDAA),
+                    "Twilight" to androidx.compose.ui.graphics.Color(0xFF958CE8),
+                    "Custom" to androidx.compose.ui.graphics.Color(0xFF999999)
                 )
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                     palettes.add(0, "Dynamic" to androidx.compose.ui.graphics.Color(0xFF909090))
@@ -245,6 +295,16 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         onClick = { viewModel.updateThemeColor(name) }
                     )
                 }
+            }
+
+            if (themeColor == "Custom") {
+                Spacer(modifier = Modifier.height(16.dp))
+                SettingsActionItem(
+                    title = "Advanced Theme Colors",
+                    subtitle = "Customize the specific hex shades for the custom theme",
+                    icon = Icons.Rounded.Edit,
+                    onClick = { navController.navigate("settings/advanced_theme") }
+                )
             }
         }
     }
@@ -364,11 +424,14 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 onCheckedChange = { handleToggle(it, "Motivation Panel", "Enable the motivation quotes panel on the dashboard") { isChecked -> viewModel.updateBetaMotivation(isChecked) } }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            val betaMinimalistMode by viewModel.betaMinimalistMode.collectAsStateWithLifecycle()
             val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
             SettingsToggleItem(
                 title = "Floating Action Bar",
                 subtitle = "Makes the bottom navigation bar float and look chubby",
                 checked = betaFloatingNav,
+                enabled = !betaMinimalistMode,
+                unavailableReason = "Locked by Minimalist Mode.",
                 onCheckedChange = { handleToggle(it, "Floating Action Bar", "Makes the bottom navigation bar float and look chubby") { isChecked -> viewModel.updateBetaFloatingNav(isChecked) } }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -377,7 +440,9 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = "Notch & Punch Hole Optimization",
                 subtitle = "Apply specialized padding to avoid display cutouts, notches, and punch hole cameras.",
                 checked = betaNotchOptimization,
-                onCheckedChange = { handleToggle(it, "Notch & Punch Hole Optimization", "Apply specialized padding to avoid display cutouts, notches, and punch hole cameras.") { isChecked -> viewModel.updateBetaNotchOptimization(isChecked) } }
+                enabled = false,
+                unavailableReason = "Managed inversely by Immersive Mode.",
+                onCheckedChange = { /* managed by immersive mode */ }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
@@ -385,6 +450,8 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = "Full Screen Punch Hole (Immersive)",
                 subtitle = "Draw behind the punch hole camera, safely dodging UI elements.",
                 checked = betaImmersiveMode,
+                enabled = !betaMinimalistMode,
+                unavailableReason = "Locked ON by Minimalist Mode.",
                 onCheckedChange = { handleToggle(it, "Full Screen Punch Hole (Immersive)", "Draw behind the punch hole camera, safely dodging UI elements.") { isChecked -> viewModel.updateBetaImmersiveMode(isChecked) } }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -644,21 +711,38 @@ fun ThemeColorPickerItem(name: String, color: androidx.compose.ui.graphics.Color
 }
 
 @Composable
-fun SettingsToggleItem(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun SettingsToggleItem(
+    title: String, 
+    subtitle: String, 
+    checked: Boolean, 
+    enabled: Boolean = true,
+    unavailableReason: String? = null,
+    onCheckedChange: (Boolean) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
+            .clickable(enabled = enabled) { onCheckedChange(!checked) }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+        Column(modifier = Modifier.weight(1f).padding(end = 16.dp).alpha(if (enabled) 1f else 0.5f)) {
             Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
             Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (!enabled && unavailableReason != null) {
+                Text(
+                    text = unavailableReason,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 4.dp),
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
         Switch(
             checked = checked,
+            enabled = enabled,
             onCheckedChange = onCheckedChange
         )
     }
@@ -709,20 +793,38 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
     val safetyPinRecommendations by viewModel.safetyPinRecommendations.collectAsStateWithLifecycle()
 
     val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Safety Features", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+            androidx.compose.foundation.layout.Box {
+                if (betaEnhancedHeader) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .liquidGlass(
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+                                tintAlpha = if (isDark) 0.15f else 0.4f,
+                                blurRadius = 60f,
+                                isDark = isDark,
+                                tintColor = MaterialTheme.colorScheme.surface
+                            )
+                    )
+                }
+                CenterAlignedTopAppBar(
+                    title = { Text("Safety Features", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = if (betaEnhancedHeader) androidx.compose.ui.graphics.Color.Transparent else if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                    )
                 )
-            )
+            }
         }
     ) { padding ->
         Column(
@@ -758,5 +860,119 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewModel) {
+    val customPrimary by viewModel.customPrimary.collectAsStateWithLifecycle()
+    val customPrimaryContainer by viewModel.customPrimaryContainer.collectAsStateWithLifecycle()
+    val customBackground by viewModel.customBackground.collectAsStateWithLifecycle()
+    val customSurface by viewModel.customSurface.collectAsStateWithLifecycle()
+    val customText by viewModel.customText.collectAsStateWithLifecycle()
+
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
+    Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        topBar = {
+            androidx.compose.foundation.layout.Box {
+                if (betaEnhancedHeader) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .liquidGlass(
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+                                tintAlpha = if (isDark) 0.15f else 0.4f,
+                                blurRadius = 60f,
+                                isDark = isDark,
+                                tintColor = MaterialTheme.colorScheme.surface
+                            )
+                    )
+                }
+                CenterAlignedTopAppBar(
+                    title = { Text("Advanced Theme", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = if (betaEnhancedHeader) androidx.compose.ui.graphics.Color.Transparent else if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = if (betaEnhancedHeader) androidx.compose.ui.graphics.Color.Transparent else if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface
+                    )
+                )
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+        ) {
+            SettingsCategoryHeading(title = "Configure Hex Colors", icon = Icons.Rounded.Edit)
+            
+            HexColorInputItem("Primary Shade", customPrimary) { viewModel.updateCustomColor("primary", it) }
+            HexColorInputItem("Secondary/Header Shade", customPrimaryContainer) { viewModel.updateCustomColor("primary_container", it) }
+            HexColorInputItem("Background Shade", customBackground) { viewModel.updateCustomColor("background", it) }
+            HexColorInputItem("Surface/Panel Shade", customSurface) { viewModel.updateCustomColor("surface", it) }
+            HexColorInputItem("Text Shade", customText) { viewModel.updateCustomColor("text", it) }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+fun HexColorInputItem(label: String, value: String, onValueChange: (String) -> Unit) {
+    var textValue by remember(value) { mutableStateOf(value) }
+    var isError by remember { mutableStateOf(false) }
+    val colorPreview = try {
+        androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(textValue))
+    } catch(e: Exception) {
+        isError = true
+        androidx.compose.ui.graphics.Color.Transparent
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = label, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            OutlinedTextField(
+                value = textValue,
+                onValueChange = { 
+                    textValue = it
+                    val formatted = if (it.isNotEmpty() && !it.startsWith("#")) "#$it" else it
+                    try {
+                        if (formatted.length == 7 || formatted.length == 9) {
+                            android.graphics.Color.parseColor(formatted)
+                            isError = false
+                            onValueChange(formatted)
+                        } else {
+                            isError = true
+                        }
+                    } catch(e: Exception) {
+                        isError = true
+                    }
+                },
+                singleLine = true,
+                isError = isError,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, end = 16.dp)
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(colorPreview, shape = RoundedCornerShape(8.dp))
+                .border(2.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+        )
     }
 }
