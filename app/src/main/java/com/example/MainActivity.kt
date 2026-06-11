@@ -76,6 +76,8 @@ class MainActivity : ComponentActivity() {
             val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
             val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
             val betaDynamicBackground by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
+            val betaBetterTexts by viewModel.betaBetterTexts.collectAsStateWithLifecycle()
+            val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
 
             androidx.compose.runtime.LaunchedEffect(betaImmersiveMode) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -90,7 +92,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode, glassMode = betaGlassUi) {
+            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode, glassMode = betaGlassUi, betterTexts = betaBetterTexts, betterTextsPalette = betaBetterTextsPalette) {
                 Surface(
                     modifier = Modifier.fillMaxSize().then(
                         if (betaNotchOptimization && !betaImmersiveMode) Modifier.displayCutoutPadding() else Modifier

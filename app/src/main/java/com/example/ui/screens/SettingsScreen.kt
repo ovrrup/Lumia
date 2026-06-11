@@ -102,6 +102,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
     val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
     val betaDynamicBackground by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
+    val betaBetterTexts by viewModel.betaBetterTexts.collectAsStateWithLifecycle()
+    val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -168,6 +170,26 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 checked = betaDynamicBackground,
                 onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
             )
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            
+            SettingsToggleItem(
+                title = "Better Texts",
+                subtitle = "Enhance text readability and aesthetics",
+                checked = betaBetterTexts,
+                onCheckedChange = { viewModel.updateBetaBetterTexts(it) }
+            )
+            
+            androidx.compose.animation.AnimatedVisibility(visible = betaBetterTexts) {
+                Column(modifier = Modifier.padding(start = 32.dp)) {
+                    SettingsToggleItem(
+                        title = "Use Palette Shades for Text",
+                        subtitle = "Uses theme palette shades for text instead of strict black or white",
+                        checked = betaBetterTextsPalette,
+                        onCheckedChange = { viewModel.updateBetaBetterTextsPalette(it) }
+                    )
+                }
+            }
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             

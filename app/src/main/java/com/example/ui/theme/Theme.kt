@@ -65,6 +65,15 @@ val OrangeDark = createDarkScheme(Color(0xFFFFB482), Color(0xFF955000), Color(0x
 val RedLight = createLightScheme(Color(0xFFE92C2C), Color(0xFFFFDAD6), Color(0xFF8B1A1A), Color(0xFFFFDBDD), Color(0xFF8B1A1A), Color(0xFFFFDBDD))
 val RedDark = createDarkScheme(Color(0xFFFFB4A9), Color(0xFF8B1A1A), Color(0xFFFFB3B8), Color(0xFF8B1A1A), Color(0xFFFFB3B8), Color(0xFF8B1A1A))
 
+fun Color.mix(other: Color, weight: Float): Color {
+    return Color(
+        red = this.red * weight + other.red * (1f - weight),
+        green = this.green * weight + other.green * (1f - weight),
+        blue = this.blue * weight + other.blue * (1f - weight),
+        alpha = this.alpha * weight + other.alpha * (1f - weight)
+    )
+}
+
 val LocalGlassTint = androidx.compose.runtime.compositionLocalOf { Color.White }
 val LocalGlassMode = androidx.compose.runtime.compositionLocalOf { false }
 
@@ -74,6 +83,8 @@ fun ScholarTheme(
     themeColor: String = "Default",
     pureBlackMode: Boolean = false,
     glassMode: Boolean = false,
+    betterTexts: Boolean = false,
+    betterTextsPalette: Boolean = true,
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
@@ -104,6 +115,55 @@ fun ScholarTheme(
             surface = Color(0xCC000000),
             surfaceVariant = Color(0xFF1E1E1E)
         )
+    }
+
+    if (betterTexts) {
+        val tint = colorScheme.primary
+        if (betterTextsPalette) {
+            if (isDark) {
+                // Use lighter shades of palette for text
+                colorScheme = colorScheme.copy(
+                    onSurface = tint.mix(Color.White, 0.4f),
+                    onBackground = tint.mix(Color.White, 0.4f),
+                    onSurfaceVariant = tint.mix(Color.White, 0.2f).copy(alpha = 0.8f),
+                    onPrimaryContainer = tint.mix(Color.White, 0.5f),
+                    onSecondaryContainer = colorScheme.secondary.mix(Color.White, 0.5f),
+                    onTertiaryContainer = colorScheme.tertiary.mix(Color.White, 0.5f)
+                )
+            } else {
+                // Use darker shades of palette for text
+                colorScheme = colorScheme.copy(
+                    onSurface = tint.mix(Color.Black, 0.4f),
+                    onBackground = tint.mix(Color.Black, 0.4f),
+                    onSurfaceVariant = tint.mix(Color.Black, 0.2f).copy(alpha = 0.8f),
+                    onPrimaryContainer = tint.mix(Color.Black, 0.5f),
+                    onSecondaryContainer = colorScheme.secondary.mix(Color.Black, 0.5f),
+                    onTertiaryContainer = colorScheme.tertiary.mix(Color.Black, 0.5f)
+                )
+            }
+        } else {
+            if (isDark) {
+                // Use white colour
+                colorScheme = colorScheme.copy(
+                    onSurface = Color.White,
+                    onBackground = Color.White,
+                    onSurfaceVariant = Color.White.copy(alpha = 0.7f),
+                    onPrimaryContainer = Color.White,
+                    onSecondaryContainer = Color.White,
+                    onTertiaryContainer = Color.White
+                )
+            } else {
+                // Use black colour
+                colorScheme = colorScheme.copy(
+                    onSurface = Color.Black,
+                    onBackground = Color.Black,
+                    onSurfaceVariant = Color.Black.copy(alpha = 0.7f),
+                    onPrimaryContainer = Color.Black,
+                    onSecondaryContainer = Color.Black,
+                    onTertiaryContainer = Color.Black
+                )
+            }
+        }
     }
 
     val view = LocalView.current

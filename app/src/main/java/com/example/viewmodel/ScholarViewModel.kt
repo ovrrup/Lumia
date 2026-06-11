@@ -64,6 +64,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaDynamicBackground = MutableStateFlow(prefs.getBoolean("beta_dynamic_background", false))
     val betaDynamicBackground = _betaDynamicBackground.asStateFlow()
 
+    private val _betaBetterTexts = MutableStateFlow(prefs.getBoolean("beta_better_texts", false))
+    val betaBetterTexts = _betaBetterTexts.asStateFlow()
+
+    private val _betaBetterTextsPalette = MutableStateFlow(prefs.getBoolean("beta_better_texts_palette", true))
+    val betaBetterTextsPalette = _betaBetterTextsPalette.asStateFlow()
+
     private val _showActionHistory = MutableStateFlow(prefs.getBoolean("show_action_history", true))
     val showActionHistory = _showActionHistory.asStateFlow()
 
@@ -414,6 +420,16 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateBetaDynamicBackground(enabled: Boolean) {
         _betaDynamicBackground.value = enabled
         prefs.edit().putBoolean("beta_dynamic_background", enabled).apply()
+    }
+
+    fun updateBetaBetterTexts(enabled: Boolean) {
+        _betaBetterTexts.value = enabled
+        prefs.edit().putBoolean("beta_better_texts", enabled).apply()
+    }
+
+    fun updateBetaBetterTextsPalette(enabled: Boolean) {
+        _betaBetterTextsPalette.value = enabled
+        prefs.edit().putBoolean("beta_better_texts_palette", enabled).apply()
     }
 
     fun updateShowActionHistory(enabled: Boolean) {
