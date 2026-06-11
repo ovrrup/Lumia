@@ -74,6 +74,8 @@ class MainActivity : ComponentActivity() {
             val pureBlackMode by viewModel.pureBlackMode.collectAsStateWithLifecycle()
             val betaNotchOptimization by viewModel.betaNotchOptimization.collectAsStateWithLifecycle()
             val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
+            val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
+            val betaDynamicBackground by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
 
             androidx.compose.runtime.LaunchedEffect(betaImmersiveMode) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -88,7 +90,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode) {
+            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode, glassMode = betaGlassUi) {
                 Surface(
                     modifier = Modifier.fillMaxSize().then(
                         if (betaNotchOptimization && !betaImmersiveMode) Modifier.displayCutoutPadding() else Modifier
@@ -99,34 +101,36 @@ class MainActivity : ComponentActivity() {
 
                     // Full-screen ambient gradient — sits behind ALL composables
                     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
-                        // Animated ambient background
-                        val infiniteTransition = rememberInfiniteTransition()
-                        val offset by infiniteTransition.animateFloat(
-                            initialValue = 0f, targetValue = 1f,
-                            animationSpec = infiniteRepeatable(tween(8000), RepeatMode.Reverse),
-                            label = "bg_anim"
-                        )
-                        val colorScheme = MaterialTheme.colorScheme
-                        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                            val colors = listOf(
-                                colorScheme.primaryContainer,
-                                colorScheme.secondaryContainer,
-                                colorScheme.tertiaryContainer
+                        if (betaDynamicBackground) {
+                            // Animated ambient background
+                            val infiniteTransition = rememberInfiniteTransition()
+                            val offset by infiniteTransition.animateFloat(
+                                initialValue = 0f, targetValue = 1f,
+                                animationSpec = infiniteRepeatable(tween(8000), RepeatMode.Reverse),
+                                label = "bg_anim"
                             )
-                            drawRect(
-                                brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                                    colors = listOf(colors[0].copy(alpha=0.6f), androidx.compose.ui.graphics.Color.Transparent),
-                                    center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * (0.2f + offset * 0.15f)),
-                                    radius = size.width * 0.8f
+                            val colorScheme = MaterialTheme.colorScheme
+                            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                                val colors = listOf(
+                                    colorScheme.primaryContainer,
+                                    colorScheme.secondaryContainer,
+                                    colorScheme.tertiaryContainer
                                 )
-                            )
-                            drawRect(
-                                brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                                    colors = listOf(colors[1].copy(alpha=0.5f), androidx.compose.ui.graphics.Color.Transparent),
-                                    center = androidx.compose.ui.geometry.Offset(size.width * 0.8f, size.height * (0.6f - offset * 0.1f)),
-                                    radius = size.width * 0.7f
+                                drawRect(
+                                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                                        colors = listOf(colors[0].copy(alpha=if (betaGlassUi) 0.6f else 0.35f), androidx.compose.ui.graphics.Color.Transparent),
+                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * (0.2f + offset * 0.15f)),
+                                        radius = size.width * 0.9f
+                                    )
                                 )
-                            )
+                                drawRect(
+                                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                                        colors = listOf(colors[2].copy(alpha=if (betaGlassUi) 0.6f else 0.25f), androidx.compose.ui.graphics.Color.Transparent),
+                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.8f, size.height * (0.6f - offset * 0.1f)),
+                                        radius = size.width * 0.85f
+                                    )
+                                )
+                            }
                         }
 
                         NavHost(

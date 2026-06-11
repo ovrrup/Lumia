@@ -58,6 +58,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaNotchOptimization = MutableStateFlow(prefs.getBoolean("beta_notch_optimization", false))
     val betaNotchOptimization = _betaNotchOptimization.asStateFlow()
 
+    private val _betaGlassUi = MutableStateFlow(prefs.getBoolean("beta_glass_ui", false))
+    val betaGlassUi = _betaGlassUi.asStateFlow()
+
+    private val _betaDynamicBackground = MutableStateFlow(prefs.getBoolean("beta_dynamic_background", false))
+    val betaDynamicBackground = _betaDynamicBackground.asStateFlow()
+
     private val _showActionHistory = MutableStateFlow(prefs.getBoolean("show_action_history", true))
     val showActionHistory = _showActionHistory.asStateFlow()
 
@@ -398,6 +404,16 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateBetaNotchOptimization(enabled: Boolean) {
         _betaNotchOptimization.value = enabled
         prefs.edit().putBoolean("beta_notch_optimization", enabled).apply()
+    }
+
+    fun updateBetaGlassUi(enabled: Boolean) {
+        _betaGlassUi.value = enabled
+        prefs.edit().putBoolean("beta_glass_ui", enabled).apply()
+    }
+
+    fun updateBetaDynamicBackground(enabled: Boolean) {
+        _betaDynamicBackground.value = enabled
+        prefs.edit().putBoolean("beta_dynamic_background", enabled).apply()
     }
 
     fun updateShowActionHistory(enabled: Boolean) {

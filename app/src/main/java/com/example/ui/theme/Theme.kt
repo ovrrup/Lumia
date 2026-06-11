@@ -15,7 +15,7 @@ fun createLightScheme(
     primary: Color, primaryContainer: Color,
     secondary: Color, secondaryContainer: Color,
     tertiary: Color, tertiaryContainer: Color,
-    bg: Color = Color(0xF5FAFAFA)
+    bg: Color = Color(0xFFFAFAFA)
 ) = lightColorScheme(
     primary = primary, onPrimary = Color.White,
     primaryContainer = primaryContainer, onPrimaryContainer = Color.White,
@@ -36,7 +36,7 @@ fun createDarkScheme(
     primary: Color, primaryContainer: Color,
     secondary: Color, secondaryContainer: Color,
     tertiary: Color, tertiaryContainer: Color,
-    bg: Color = Color(0xDD0F0F0F)
+    bg: Color = Color(0xFF101010)
 ) = darkColorScheme(
     primary = primary, onPrimary = Color(0xFF1A1C1A),
     primaryContainer = primaryContainer, onPrimaryContainer = Color(0xFF1A1C1A),
@@ -66,12 +66,14 @@ val RedLight = createLightScheme(Color(0xFFE92C2C), Color(0xFFFFDAD6), Color(0xF
 val RedDark = createDarkScheme(Color(0xFFFFB4A9), Color(0xFF8B1A1A), Color(0xFFFFB3B8), Color(0xFF8B1A1A), Color(0xFFFFB3B8), Color(0xFF8B1A1A))
 
 val LocalGlassTint = androidx.compose.runtime.compositionLocalOf { Color.White }
+val LocalGlassMode = androidx.compose.runtime.compositionLocalOf { false }
 
 @Composable
 fun ScholarTheme(
     themeMode: String = "System",
     themeColor: String = "Default",
     pureBlackMode: Boolean = false,
+    glassMode: Boolean = false,
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
@@ -84,7 +86,7 @@ fun ScholarTheme(
 
     val context = LocalContext.current
     var colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> run {
+        themeColor == "Dynamic" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> run {
             if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
         else -> when (themeColor) {
@@ -121,7 +123,10 @@ fun ScholarTheme(
         }
     }
 
-    androidx.compose.runtime.CompositionLocalProvider(LocalGlassTint provides colorScheme.primary) {
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalGlassTint provides colorScheme.primary,
+        LocalGlassMode provides glassMode
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,

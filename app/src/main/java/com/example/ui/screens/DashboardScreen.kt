@@ -80,6 +80,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.R
 import com.example.viewmodel.ScholarViewModel
+import com.example.ui.components.GlassCard
+import com.example.ui.components.GlassHeroCard
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -400,13 +402,11 @@ fun HomeTab(
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     // Streak Card
-                    Card(
+                    GlassHeroCard(
                         modifier = Modifier
                             .weight(1f)
                             .height(160.dp),
-                        shape = RoundedCornerShape(32.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        shape = RoundedCornerShape(32.dp)
                     ) {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -439,11 +439,11 @@ fun HomeTab(
                     }
 
                     // Courses Stats
-                    Card(
-                        modifier = Modifier.weight(1f).height(160.dp),
-                        shape = RoundedCornerShape(32.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                    GlassHeroCard(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(160.dp),
+                        shape = RoundedCornerShape(32.dp)
                     ) {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -489,9 +489,8 @@ fun HomeTab(
 
                 if (betaMotivation) {
                     item(key = "beta_motivation") {
-                        Card(
+                        GlassCard(
                             modifier = Modifier.animateItem().fillMaxWidth().padding(bottom = 8.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
                             shape = RoundedCornerShape(24.dp)
                         ) {
                             Row(
@@ -526,11 +525,10 @@ fun HomeTab(
 
                 if (betaPomodoro || betaCgpa || betaNotes) {
                     item(key = "toolbox_card") {
-                        Card(
+                        GlassCard(
                             onClick = { navController.navigate("toolbox") },
                             modifier = Modifier.animateItem().fillMaxWidth().height(100.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                            shape = RoundedCornerShape(24.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
@@ -570,11 +568,9 @@ fun HomeTab(
 
                 if (courses.isEmpty()) {
                     item(key = "courses_empty") {
-                        Card(
+                        GlassCard(
                             modifier = Modifier.animateItem().fillMaxWidth().height(240.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            shape = RoundedCornerShape(32.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                            shape = RoundedCornerShape(32.dp)
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxSize(),
@@ -607,15 +603,13 @@ fun HomeTab(
                 } else {
                     items(courses, key = { it.id }) { course ->
                         var expanded by remember { mutableStateOf(false) }
-                        Card(
+                        GlassCard(
                             onClick = { navController.navigate("courseDetail/${course.id}") },
                             modifier = Modifier
                                 .animateItem()
                                 .fillMaxWidth()
                                 .animateContentSize(),
                             shape = MaterialTheme.shapes.extraLarge,
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         ) {
                             Column(
                                 modifier = Modifier
@@ -707,11 +701,9 @@ fun HomeTab(
 
                 if (subjects.isEmpty()) {
                     item(key = "subjects_empty") {
-                        Card(
+                        GlassCard(
                             modifier = Modifier.animateItem().fillMaxWidth().height(240.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            shape = RoundedCornerShape(32.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                            shape = RoundedCornerShape(32.dp)
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxSize(),
@@ -744,12 +736,10 @@ fun HomeTab(
                 } else {
                     items(subjects, key = { it.id }) { subject ->
                         var expanded by remember { mutableStateOf(false) }
-                        Card(
+                        GlassCard(
                             onClick = { navController.navigate("subjectDetail/${subject.id}") },
                             modifier = Modifier.animateItem().fillMaxWidth(),
-                            shape = RoundedCornerShape(32.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            shape = RoundedCornerShape(32.dp)
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxWidth().padding(24.dp)

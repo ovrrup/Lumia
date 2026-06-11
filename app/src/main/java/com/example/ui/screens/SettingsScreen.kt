@@ -100,6 +100,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
+    val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
+    val betaDynamicBackground by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -152,6 +154,22 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             )
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+            SettingsToggleItem(
+                title = "Glass UI",
+                subtitle = "Enable modern frosted glass UI components",
+                checked = betaGlassUi,
+                onCheckedChange = { viewModel.updateBetaGlassUi(it) }
+            )
+
+            SettingsToggleItem(
+                title = "Dynamic Lighting Background",
+                subtitle = "Soft, vibrant animated gradient background",
+                checked = betaDynamicBackground,
+                onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             
             Text(
                 text = "Theme Palette",
@@ -167,12 +185,15 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                val palettes = listOf(
+                val palettes = mutableListOf(
                     "Blue" to androidx.compose.ui.graphics.Color(0xFF0085FF),
                     "Green" to androidx.compose.ui.graphics.Color(0xFF00BA34),
                     "Orange" to androidx.compose.ui.graphics.Color(0xFFF98600),
                     "Red" to androidx.compose.ui.graphics.Color(0xFFE92C2C)
                 )
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    palettes.add(0, "Dynamic" to androidx.compose.ui.graphics.Color(0xFF909090))
+                }
                 items(palettes) { (name, color) ->
                     ThemeColorPickerItem(
                         name = name,

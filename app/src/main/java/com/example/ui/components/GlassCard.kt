@@ -1,0 +1,98 @@
+package com.example.ui.components
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+import com.example.ui.theme.glassCard
+import com.example.ui.theme.glassHero
+import com.example.ui.theme.LocalGlassMode
+
+@Composable
+fun GlassCard(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(24.dp),
+    onClick: (() -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val isGlass = LocalGlassMode.current
+    if (isGlass) {
+        Box(
+            modifier = modifier
+                .clip(shape)
+                .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+        ) {
+            Box(modifier = Modifier.matchParentSize().glassCard(shape))
+            content()
+        }
+    } else {
+        if (onClick != null) {
+            Surface(
+                modifier = modifier,
+                shape = shape,
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                tonalElevation = 2.dp,
+                onClick = onClick
+            ) {
+                Box(content = content)
+            }
+        } else {
+            Surface(
+                modifier = modifier,
+                shape = shape,
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                tonalElevation = 2.dp
+            ) {
+                Box(content = content)
+            }
+        }
+    }
+}
+
+@Composable
+fun GlassHeroCard(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(32.dp),
+    onClick: (() -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val isGlass = LocalGlassMode.current
+    if (isGlass) {
+        Box(
+            modifier = modifier
+                .clip(shape)
+                .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+        ) {
+            Box(modifier = Modifier.matchParentSize().glassHero(shape))
+            content()
+        }
+    } else {
+        if (onClick != null) {
+            Surface(
+                modifier = modifier,
+                shape = shape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                tonalElevation = 0.dp,
+                onClick = onClick
+            ) {
+                Box(content = content)
+            }
+        } else {
+            Surface(
+                modifier = modifier,
+                shape = shape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                tonalElevation = 0.dp
+            ) {
+                Box(content = content)
+            }
+        }
+    }
+}
