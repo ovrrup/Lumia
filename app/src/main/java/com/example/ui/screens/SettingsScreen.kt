@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
@@ -84,6 +85,14 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 subtitle = "Experimental optimizations and tweaks",
                 icon = Icons.Default.Check,
                 onClick = { navController.navigate("settings/beta") }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+            SettingsActionItem(
+                title = "Safety Features",
+                subtitle = "Settings protection and smart recommendations",
+                icon = Icons.Default.Lock,
+                onClick = { navController.navigate("settings/safety") }
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
@@ -681,5 +690,65 @@ fun SettingsActionItem(title: String, subtitle: String, icon: androidx.compose.u
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewModel) {
+    val safetyPinEnabled by viewModel.safetyPinEnabled.collectAsStateWithLifecycle()
+    val safetyPinConflictWarning by viewModel.safetyPinConflictWarning.collectAsStateWithLifecycle()
+    val safetyPinRecommendations by viewModel.safetyPinRecommendations.collectAsStateWithLifecycle()
+
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Safety Features", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+        ) {
+            SettingsCategoryHeading(title = "Safety Pin", icon = Icons.Default.Lock)
+            
+            SettingsToggleItem(
+                title = "Enable Safety Pin",
+                subtitle = "Master switch to monitor and manage settings conflicts and recommendations",
+                checked = safetyPinEnabled,
+                onCheckedChange = { viewModel.updateSafetyPinEnabled(it) }
+            )
+
+            androidx.compose.animation.AnimatedVisibility(visible = safetyPinEnabled) {
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    SettingsToggleItem(
+                        title = "Conflict Warning",
+                        subtitle = "Alert me when a newly activated setting structurally opposes another setting",
+                        checked = safetyPinConflictWarning,
+                        onCheckedChange = { viewModel.updateSafetyPinConflictWarning(it) }
+                    )
+                    
+                    SettingsToggleItem(
+                        title = "Smart Recommendations",
+                        subtitle = "Suggest complementary settings when enabling core aesthetic features",
+                        checked = safetyPinRecommendations,
+                        onCheckedChange = { viewModel.updateSafetyPinRecommendations(it) }
+                    )
+                }
+            }
+        }
     }
 }

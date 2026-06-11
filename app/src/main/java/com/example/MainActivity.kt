@@ -48,6 +48,10 @@ import com.example.viewmodel.ScholarViewModel
 import com.example.worker.AssignmentMonitorWorker
 import java.util.concurrent.TimeUnit
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Info
+
 class MainActivity : ComponentActivity() {
     private val viewModel: ScholarViewModel by viewModels()
 
@@ -99,6 +103,33 @@ class MainActivity : ComponentActivity() {
                     ), 
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    val safetyPinDialogData by viewModel.safetyPinDialogData.collectAsStateWithLifecycle()
+                    if (safetyPinDialogData != null) {
+                        val data = safetyPinDialogData!!
+                        androidx.compose.material3.AlertDialog(
+                            icon = {
+                                androidx.compose.material3.Icon(
+                                    imageVector = if (data.isConflict) Icons.Default.Warning else Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = if (data.isConflict) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            title = { androidx.compose.material3.Text(data.title) },
+                            text = { androidx.compose.material3.Text(data.description) },
+                            onDismissRequest = { data.onIgnore() },
+                            confirmButton = {
+                                androidx.compose.material3.TextButton(onClick = data.onConfirm) {
+                                    androidx.compose.material3.Text(if (data.isConflict) "Continue" else "Apply")
+                                }
+                            },
+                            dismissButton = {
+                                androidx.compose.material3.TextButton(onClick = data.onIgnore) {
+                                    androidx.compose.material3.Text(if (data.isConflict) "Stop" else "Ignore")
+                                }
+                            }
+                        )
+                    }
+
                     val navController = rememberNavController()
 
                     // Full-screen ambient gradient — sits behind ALL composables
@@ -227,6 +258,12 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("settings/beta") {
                             com.example.ui.screens.BetaFeaturesScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable("settings/safety") {
+                            com.example.ui.screens.SafetyFeaturesScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )

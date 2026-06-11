@@ -70,6 +70,30 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaBetterTextsPalette = MutableStateFlow(prefs.getBoolean("beta_better_texts_palette", true))
     val betaBetterTextsPalette = _betaBetterTextsPalette.asStateFlow()
 
+    private val _safetyPinEnabled = MutableStateFlow(prefs.getBoolean("safety_pin_enabled", true))
+    val safetyPinEnabled = _safetyPinEnabled.asStateFlow()
+
+    private val _safetyPinConflictWarning = MutableStateFlow(prefs.getBoolean("safety_pin_conflict_warning", true))
+    val safetyPinConflictWarning = _safetyPinConflictWarning.asStateFlow()
+
+    private val _safetyPinRecommendations = MutableStateFlow(prefs.getBoolean("safety_pin_recommendations", true))
+    val safetyPinRecommendations = _safetyPinRecommendations.asStateFlow()
+
+    data class SafetyPinDialogData(
+        val title: String,
+        val description: String,
+        val isConflict: Boolean,
+        val onConfirm: () -> Unit,
+        val onIgnore: () -> Unit
+    )
+
+    private val _safetyPinDialogData = MutableStateFlow<SafetyPinDialogData?>(null)
+    val safetyPinDialogData = _safetyPinDialogData.asStateFlow()
+
+    fun dismissSafetyPinDialog() {
+        _safetyPinDialogData.value = null
+    }
+
     private val _showActionHistory = MutableStateFlow(prefs.getBoolean("show_action_history", true))
     val showActionHistory = _showActionHistory.asStateFlow()
 
@@ -362,12 +386,103 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         _importExportStatus.value = null
     }
 
+    fun updateSafetyPinEnabled(enabled: Boolean) {
+        _safetyPinEnabled.value = enabled
+        prefs.edit().putBoolean("safety_pin_enabled", enabled).apply()
+    }
+
+    fun updateSafetyPinConflictWarning(enabled: Boolean) {
+        _safetyPinConflictWarning.value = enabled
+        prefs.edit().putBoolean("safety_pin_conflict_warning", enabled).apply()
+    }
+
+    fun updateSafetyPinRecommendations(enabled: Boolean) {
+        _safetyPinRecommendations.value = enabled
+        prefs.edit().putBoolean("safety_pin_recommendations", enabled).apply()
+    }
+
     fun updateThemeMode(mode: String) {
+        if (safetyPinEnabled.value && safetyPinConflictWarning.value && mode == "Light" && _pureBlackMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "Switching to 'Light' theme conflicts with 'Pure Black Mode', which requires a dark theme to function. Proceeding will automatically disable 'Pure Black Mode'.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _themeMode.value = mode
+                    prefs.edit().putString("theme_mode", mode).apply()
+                    updatePureBlackMode(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+
+        if (mode == "Dark" && safetyPinEnabled.value && safetyPinRecommendations.value && !_pureBlackMode.value) {
+            _themeMode.value = mode
+            prefs.edit().putString("theme_mode", mode).apply()
+            
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For the deepest contrast and battery savings on OLED screens, it is recommended to enable 'Pure Black Mode' with the Dark theme. Would you like to enable it?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    updatePureBlackMode(true)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+
         _themeMode.value = mode
         prefs.edit().putString("theme_mode", mode).apply()
     }
 
     fun updatePureBlackMode(enabled: Boolean) {
+        val conflictsWithDynamicBg = _betaDynamicBackground.value
+        val conflictsWithGlassUi = _betaGlassUi.value
+        val conflictsWithPalette = _betaBetterTextsPalette.value
+
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (conflictsWithDynamicBg || conflictsWithGlassUi || conflictsWithPalette)) {
+            val opposingFeatures = mutableListOf<String>()
+            if (conflictsWithDynamicBg) opposingFeatures.add("'Dynamic Lighting Background'")
+            if (conflictsWithGlassUi) opposingFeatures.add("'Glass UI'")
+            if (conflictsWithPalette) opposingFeatures.add("'Use Palette Shades for Text'")
+            
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Pure Black Mode' directly opposes the functionality of ${opposingFeatures.joinToString(" and ")}. Proceeding will automatically deactivate these opposing settings to maintain visual consistency and readability.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _pureBlackMode.value = true
+                    prefs.edit().putBoolean("pure_black_mode", true).apply()
+                    if (conflictsWithDynamicBg) updateBetaDynamicBackground(false)
+                    if (conflictsWithGlassUi) updateBetaGlassUi(false)
+                    if (conflictsWithPalette) updateBetaBetterTextsPalette(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && _themeMode.value != "Dark") {
+            _pureBlackMode.value = true
+            prefs.edit().putBoolean("pure_black_mode", true).apply()
+            
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For the optimal experience of 'Pure Black Mode', it is highly recommended to switch your system theme to 'Dark'. The current setting limits the effectiveness of the pure black backgrounds.",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    updateThemeMode("Dark")
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
         _pureBlackMode.value = enabled
         prefs.edit().putBoolean("pure_black_mode", enabled).apply()
     }
@@ -378,6 +493,22 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun updateBetaFloatingNav(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaImmersiveMode.value) {
+            _betaFloatingNav.value = true
+            prefs.edit().putBoolean("beta_floating_nav", true).apply()
+            
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For the best visual experience of 'Floating Action Bar', it is highly recommended to activate 'Full Screen Punch Hole (Immersive)'. This allows the bar to float beautifully over the background without being enclosed by the system navigation area. Would you like to enable it?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    updateBetaImmersiveMode(true)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
         _betaFloatingNav.value = enabled
         prefs.edit().putBoolean("beta_floating_nav", enabled).apply()
     }
@@ -403,31 +534,177 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun updateBetaImmersiveMode(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _betaNotchOptimization.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Full Screen Punch Hole (Immersive)' directly opposes the functionality of 'Notch & Punch Hole Optimization'. Proceeding will automatically deactivate the opposing setting to maintain system stability and optimal user experience.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaImmersiveMode.value = true
+                    prefs.edit().putBoolean("beta_immersive_mode", true).apply()
+                    updateBetaNotchOptimization(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaFloatingNav.value) {
+            _betaImmersiveMode.value = true
+            prefs.edit().putBoolean("beta_immersive_mode", true).apply()
+            
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For optimal ergonomics in Immersive Mode, it is highly recommended to activate 'Floating Action Bar', as standard bottom bars may interfere with the system gesture navigation area at the bottom. Would you like to enable it?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    updateBetaFloatingNav(true)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+
         _betaImmersiveMode.value = enabled
         prefs.edit().putBoolean("beta_immersive_mode", enabled).apply()
     }
 
     fun updateBetaNotchOptimization(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _betaImmersiveMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Notch & Punch Hole Optimization' directly opposes the functionality of 'Full Screen Punch Hole (Immersive)'. Proceeding will automatically deactivate the opposing setting to maintain optimal user experience.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaNotchOptimization.value = true
+                    prefs.edit().putBoolean("beta_notch_optimization", true).apply()
+                    updateBetaImmersiveMode(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
         _betaNotchOptimization.value = enabled
         prefs.edit().putBoolean("beta_notch_optimization", enabled).apply()
     }
 
     fun updateBetaGlassUi(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Glass UI' directly opposes the functionality of 'Pure Black Mode'. Glass UI requires background colors to create frosted translucency. Proceeding will automatically deactivate 'Pure Black Mode'.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaGlassUi.value = true
+                    prefs.edit().putBoolean("beta_glass_ui", true).apply()
+                    updatePureBlackMode(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && (!_betaDynamicBackground.value || !_betaFloatingNav.value || !_betaBetterTexts.value)) {
+            _betaGlassUi.value = true
+            prefs.edit().putBoolean("beta_glass_ui", true).apply()
+            
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For an enhanced visual experience, it is highly recommended to activate 'Dynamic Lighting Background', 'Floating Action Bar', and 'Better Texts' alongside 'Glass UI'. Would you like to apply these complementary settings?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    updateBetaDynamicBackground(true)
+                    updateBetaFloatingNav(true)
+                    updateBetaBetterTexts(true)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
         _betaGlassUi.value = enabled
         prefs.edit().putBoolean("beta_glass_ui", enabled).apply()
     }
 
     fun updateBetaDynamicBackground(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Dynamic Lighting Background' contradicts the core purpose of 'Pure Black Mode' by introducing lit pixels and gradients. Proceeding will automatically deactivate 'Pure Black Mode' to maintain visual consistency.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaDynamicBackground.value = true
+                    prefs.edit().putBoolean("beta_dynamic_background", true).apply()
+                    updatePureBlackMode(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaGlassUi.value) {
+            _betaDynamicBackground.value = true
+            prefs.edit().putBoolean("beta_dynamic_background", true).apply()
+            
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For the best visual fidelity when using 'Dynamic Lighting Background', it is highly recommended to activate 'Glass UI'. This combination creates a stunning translucent depth effect. Would you like to enable it?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    updateBetaGlassUi(true)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+
         _betaDynamicBackground.value = enabled
         prefs.edit().putBoolean("beta_dynamic_background", enabled).apply()
     }
 
     fun updateBetaBetterTexts(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaBetterTextsPalette.value) {
+            _betaBetterTexts.value = true
+            prefs.edit().putBoolean("beta_better_texts", true).apply()
+            
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "To fully experience 'Better Texts', it is recommended to also enable 'Use Palette Shades for Text'. This provides a softer, more cohesive look matching your selected theme color. Would you like to enable it?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    updateBetaBetterTextsPalette(true)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
         _betaBetterTexts.value = enabled
         prefs.edit().putBoolean("beta_better_texts", enabled).apply()
     }
 
     fun updateBetaBetterTextsPalette(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Use Palette Shades for Text' directly opposes the high contrast functionality required by 'Pure Black Mode'. Proceeding will automatically deactivate 'Pure Black Mode' to maintain text readability.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaBetterTextsPalette.value = true
+                    prefs.edit().putBoolean("beta_better_texts_palette", true).apply()
+                    updatePureBlackMode(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
         _betaBetterTextsPalette.value = enabled
         prefs.edit().putBoolean("beta_better_texts_palette", enabled).apply()
     }

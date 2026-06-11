@@ -66,6 +66,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val actionLogs by viewModel.actionLogs.collectAsStateWithLifecycle()
     val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
+    val betaPomodoro by viewModel.betaPomodoro.collectAsStateWithLifecycle()
 
     val totalAssignments = assignments.size
     val completedAssignments = assignments.count { it.isCompleted }
@@ -132,12 +133,14 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
                     )
                 }
 
-                PomodoroHeatmapChart(
-                    modifier = Modifier.fillMaxWidth(),
-                    sessions = pomodoroSessions,
-                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                    primaryColor = MaterialTheme.colorScheme.primary
-                )
+                if (betaPomodoro) {
+                    PomodoroHeatmapChart(
+                        modifier = Modifier.fillMaxWidth(),
+                        sessions = pomodoroSessions,
+                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                        primaryColor = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
 
