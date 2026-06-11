@@ -81,6 +81,5 @@ data class ScholarBackup(
     val courses: List<Course>,
     val subjects: List<Subject>,
     val topics: List<Topic>,
-    val assignments: List<PracticeAssignment>,
-    val settings: Map<String, String>? = null
+    val assignments: List<PracticeAssignment>
 ) : Serializable
