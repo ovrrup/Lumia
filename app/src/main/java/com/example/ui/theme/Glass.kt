@@ -65,26 +65,16 @@ fun Modifier.liquidGlass(
         // Liquid Glass Theme: Multi-shine premium dynamic liquid gloss
         this
             .clip(shape)
-            .then(
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    Modifier.graphicsLayer {
-                        // Use very gentle blur (e.g. 5f) so that text/icons inside stay readable
-                        renderEffect = RenderEffect
-                            .createBlurEffect(5f, 5f, Shader.TileMode.CLAMP)
-                            .asComposeRenderEffect()
-                    }
-                } else Modifier
-            )
             .background(
                 brush = Brush.linearGradient(
                     colors = if (isDark) listOf(
-                        tintColor.copy(alpha = tintAlpha + 0.06f),
-                        tintColor.copy(alpha = tintAlpha - 0.03f),
-                        tintColor.copy(alpha = tintAlpha + 0.14f) // Specular highlight
-                    ) else listOf(
-                        tintColor.copy(alpha = tintAlpha + 0.20f),
+                        tintColor.copy(alpha = tintAlpha + 0.12f),
                         tintColor.copy(alpha = tintAlpha + 0.04f),
-                        tintColor.copy(alpha = tintAlpha + 0.30f) // Specular highlight
+                        tintColor.copy(alpha = tintAlpha + 0.22f) // Specular highlight
+                    ) else listOf(
+                        tintColor.copy(alpha = tintAlpha + 0.24f),
+                        tintColor.copy(alpha = tintAlpha + 0.08f),
+                        tintColor.copy(alpha = tintAlpha + 0.38f) // Specular highlight
                     ),
                     start = Offset(0f, 0f),
                     end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
@@ -95,13 +85,13 @@ fun Modifier.liquidGlass(
                 width = 1.dp,
                 brush = Brush.linearGradient(
                     colors = if (isDark) listOf(
-                        borderColor.copy(alpha = 0.24f),
-                        borderColor.copy(alpha = 0.06f),
-                        borderColor.copy(alpha = 0.38f) // Metallic rim reflection
+                        borderColor.copy(alpha = 0.30f),
+                        borderColor.copy(alpha = 0.10f),
+                        borderColor.copy(alpha = 0.45f) // Metallic rim reflection
                     ) else listOf(
-                        borderColor.copy(alpha = 0.55f),
-                        borderColor.copy(alpha = 0.18f),
-                        borderColor.copy(alpha = 0.80f) // Metallic rim reflection
+                        borderColor.copy(alpha = 0.65f),
+                        borderColor.copy(alpha = 0.25f),
+                        borderColor.copy(alpha = 0.85f) // Metallic rim reflection
                     ),
                     start = Offset(0f, 0f),
                     end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)

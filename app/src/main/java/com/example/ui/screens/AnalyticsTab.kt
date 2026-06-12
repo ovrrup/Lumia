@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import com.example.ui.theme.liquidGlass
+import com.example.ui.theme.glassBar
 import android.text.format.DateFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -88,7 +89,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
     }
 
     Scaffold(
-        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         topBar = {
@@ -97,13 +98,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
-                                tintAlpha = if (isDark) 0.18f else 0.45f,
-                                blurRadius = 15f,
-                                isDark = isDark,
-                                tintColor = MaterialTheme.colorScheme.surface
-                            )
+                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                     )
                     // Sleek divider line for clean separation and anchoring
                     androidx.compose.material3.HorizontalDivider(
@@ -467,7 +462,11 @@ fun PomodoroHeatmapChart(
     backgroundColor: Color,
     primaryColor: Color
 ) {
-    var calendarForMonth by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(Calendar.getInstance()) }
+    var calendarForMonth by androidx.compose.runtime.remember { 
+        androidx.compose.runtime.mutableStateOf(
+            Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 1) }
+        ) 
+    }
     
     val currentYear = calendarForMonth.get(Calendar.YEAR)
     val currentMonth = calendarForMonth.get(Calendar.MONTH)
@@ -510,6 +509,7 @@ fun PomodoroHeatmapChart(
                     IconButton(
                         onClick = { 
                             val prevCal = calendarForMonth.clone() as Calendar
+                            prevCal.set(Calendar.DAY_OF_MONTH, 1)
                             prevCal.add(Calendar.MONTH, -1)
                             calendarForMonth = prevCal
                         },
@@ -527,6 +527,7 @@ fun PomodoroHeatmapChart(
                     IconButton(
                         onClick = { 
                             val nextCal = calendarForMonth.clone() as Calendar
+                            nextCal.set(Calendar.DAY_OF_MONTH, 1)
                             nextCal.add(Calendar.MONTH, 1)
                             calendarForMonth = nextCal
                         },

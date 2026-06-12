@@ -112,6 +112,15 @@ interface ScholarDao {
     
     @Query("SELECT * FROM assignments")
     suspend fun exportAllAssignments(): List<PracticeAssignment>
+
+    @Query("SELECT * FROM attendance_records")
+    suspend fun exportAllAttendance(): List<com.example.model.AttendanceRecord>
+
+    @Query("SELECT * FROM pomodoro_sessions")
+    suspend fun exportAllPomodoro(): List<com.example.model.PomodoroSession>
+
+    @Query("SELECT * FROM action_logs")
+    suspend fun exportAllActionLogs(): List<ActionLog>
     
     @Query("DELETE FROM courses") suspend fun clearCourses()
     @Query("DELETE FROM subjects") suspend fun clearSubjects()

@@ -109,6 +109,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
 
     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            modifier = Modifier.fillMaxSize(),
             containerColor = androidx.compose.ui.graphics.Color.Transparent,
             bottomBar = {
                 if (!betaFloatingNav) {
@@ -153,20 +154,27 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             } else {
                 padding
             }
-            androidx.compose.animation.AnimatedContent(
-                targetState = selectedTab,
-                label = "TabTransition"
-            ) { targetTab ->
-                if (targetTab == 0) {
-                    HomeTab(
-                        navController = navController, 
-                        viewModel = viewModel, 
-                        bottomPadding = extendedPadding,
-                        onAddCourseClick = { showAddCourseDialog = true },
-                        onAddSubjectClick = { showAddSubjectDialog = true }
-                    )
-                } else {
-                    AnalyticsTab(viewModel = viewModel, paddingValues = extendedPadding)
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = padding.calculateBottomPadding())
+            ) {
+                androidx.compose.animation.AnimatedContent(
+                    targetState = selectedTab,
+                    label = "TabTransition",
+                    modifier = Modifier.fillMaxSize()
+                ) { targetTab ->
+                    if (targetTab == 0) {
+                        HomeTab(
+                            navController = navController, 
+                            viewModel = viewModel, 
+                            bottomPadding = extendedPadding,
+                            onAddCourseClick = { showAddCourseDialog = true },
+                            onAddSubjectClick = { showAddSubjectDialog = true }
+                        )
+                    } else {
+                        AnalyticsTab(viewModel = viewModel, paddingValues = extendedPadding)
+                    }
                 }
             }
         }
@@ -401,13 +409,7 @@ fun HomeTab(
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
-                                tintAlpha = if (isDark) 0.18f else 0.45f,
-                                blurRadius = 15f,
-                                isDark = isDark,
-                                tintColor = MaterialTheme.colorScheme.surface
-                            )
+                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                     )
                     // Sleek divider line for clean separation and anchoring
                     androidx.compose.material3.HorizontalDivider(

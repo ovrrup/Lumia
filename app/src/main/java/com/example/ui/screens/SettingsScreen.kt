@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import com.example.ui.theme.liquidGlass
+import com.example.ui.theme.glassBar
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -63,13 +64,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
-                                tintAlpha = if (isDark) 0.18f else 0.45f,
-                                blurRadius = 15f,
-                                isDark = isDark,
-                                tintColor = MaterialTheme.colorScheme.surface
-                            )
+                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                     )
                     androidx.compose.material3.HorizontalDivider(
                         modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
@@ -874,13 +869,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
-                                tintAlpha = if (isDark) 0.18f else 0.45f,
-                                blurRadius = 15f,
-                                isDark = isDark,
-                                tintColor = MaterialTheme.colorScheme.surface
-                            )
+                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                     )
                     androidx.compose.material3.HorizontalDivider(
                         modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
@@ -959,13 +948,7 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
-                                tintAlpha = if (isDark) 0.18f else 0.45f,
-                                blurRadius = 15f,
-                                isDark = isDark,
-                                tintColor = MaterialTheme.colorScheme.surface
-                            )
+                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                     )
                     androidx.compose.material3.HorizontalDivider(
                         modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),

@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import com.example.ui.theme.liquidGlass
+import com.example.ui.theme.glassBar
 import android.app.DatePickerDialog
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
@@ -69,13 +70,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
-                                tintAlpha = if (isDark) 0.18f else 0.45f,
-                                blurRadius = 15f,
-                                isDark = isDark,
-                                tintColor = MaterialTheme.colorScheme.surface
-                            )
+                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                     )
                     // Sleek divider line for clean separation and anchoring
                     androidx.compose.material3.HorizontalDivider(

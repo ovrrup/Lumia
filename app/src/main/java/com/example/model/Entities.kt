@@ -52,7 +52,9 @@ data class PracticeAssignment(
     val title: String,
     val description: String = "",
     val dueDateMillis: Long = 0,
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    val category: String = "Homework",
+    val categoryColor: String = "#3197D6"
 ) : Serializable
 
 @Entity(
@@ -91,5 +93,8 @@ data class ScholarBackup(
     val subjects: List<Subject>,
     val topics: List<Topic>,
     val assignments: List<PracticeAssignment>,
-    val settings: Map<String, String>? = null
+    val settings: Map<String, String>? = null,
+    val attendance: List<AttendanceRecord>? = emptyList(),
+    val pomodoro: List<PomodoroSession>? = emptyList(),
+    val actionLogs: List<ActionLog>? = emptyList()
 ) : Serializable

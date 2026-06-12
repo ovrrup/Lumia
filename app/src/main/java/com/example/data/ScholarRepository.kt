@@ -67,7 +67,10 @@ class ScholarRepository(private val dao: ScholarDao) {
             subjects = dao.exportAllSubjects(),
             topics = dao.exportAllTopics(),
             assignments = dao.exportAllAssignments(),
-            settings = settings
+            settings = settings,
+            attendance = dao.exportAllAttendance(),
+            pomodoro = dao.exportAllPomodoro(),
+            actionLogs = dao.exportAllActionLogs()
         )
         outputStream.writer().use { it.write(backupAdapter.toJson(backup)) }
     }
@@ -76,14 +79,60 @@ class ScholarRepository(private val dao: ScholarDao) {
     suspend fun importDataFromStream(inputStream: InputStream): Map<String, String>? {
         val json = inputStream.reader().readText()
         val backup = backupAdapter.fromJson(json) ?: throw IllegalArgumentException("Invalid backup file")
+        
+        // 1. Clear database securely
         dao.clearCourses()
         dao.clearSubjects()
         dao.clearTopics()
         dao.clearAssignments()
-        backup.courses.forEach { dao.insertCourse(it.copy(id = 0)) }
-        backup.subjects.forEach { dao.insertSubject(it.copy(id = 0)) }
-        backup.topics.forEach { dao.insertTopic(it.copy(id = 0)) }
-        backup.assignments.forEach { dao.insertAssignment(it.copy(id = 0)) }
+        dao.clearAttendance()
+        dao.clearPomodoro()
+        dao.clearActionLogs()
+
+        // 2. Insert Courses and map old IDs to newly generated auto-increment IDs
+        val oldToNewCourseId = mutableMapOf<Int, Int>()
+        backup.courses.forEach { course ->
+            val oldId = course.id
+            val newId = dao.insertCourse(course.copy(id = 0)).toInt()
+            oldToNewCourseId[oldId] = newId
+        }
+
+        // 3. Insert Subjects and map old IDs to newly generated auto-increment IDs
+        val oldToNewSubjectId = mutableMapOf<Int, Int>()
+        backup.subjects.forEach { subject ->
+            val oldId = subject.id
+            val newId = dao.insertSubject(subject.copy(id = 0)).toInt()
+            oldToNewSubjectId[oldId] = newId
+        }
+
+        // 4. Insert Topics with remapped Subject IDs to satisfy foreign keys
+        backup.topics.forEach { topic ->
+            val newSubjectId = oldToNewSubjectId[topic.subjectId] ?: topic.subjectId
+            dao.insertTopic(topic.copy(id = 0, subjectId = newSubjectId))
+        }
+
+        // 5. Insert Assignments with remapped Course IDs to satisfy foreign keys
+        backup.assignments.forEach { assignment ->
+            val newCourseId = oldToNewCourseId[assignment.courseId] ?: assignment.courseId
+            dao.insertAssignment(assignment.copy(id = 0, courseId = newCourseId))
+        }
+
+        // 6. Insert Attendance Records with remapped Course IDs to satisfy foreign keys
+        backup.attendance?.forEach { record ->
+            val newCourseId = oldToNewCourseId[record.courseId] ?: record.courseId
+            dao.insertAttendanceRecord(record.copy(id = 0, courseId = newCourseId))
+        }
+
+        // 7. Insert Pomodoro Sessions
+        backup.pomodoro?.forEach { session ->
+            dao.insertPomodoroSession(session.copy(id = 0))
+        }
+
+        // 8. Insert Action Logs
+        backup.actionLogs?.forEach { log ->
+            dao.insertActionLog(log.copy(id = 0))
+        }
+
         return backup.settings
     }
 }

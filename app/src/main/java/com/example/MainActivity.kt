@@ -163,26 +163,26 @@ class MainActivity : ComponentActivity() {
                                     colorScheme.secondaryContainer,
                                     colorScheme.tertiaryContainer
                                 )
-                                val alphaScale = if (isDark) 0.18f else 0.45f
+                                val alphaScale = if (isDark) 0.28f else 0.55f
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                                        colors = listOf(colors[0].copy(alpha = alphaScale * 1.1f), colors[0].copy(alpha = alphaScale * 0.3f), androidx.compose.ui.graphics.Color.Transparent),
+                                        colors = listOf(colors[0].copy(alpha = alphaScale * 1.0f), colors[0].copy(alpha = alphaScale * 0.25f), androidx.compose.ui.graphics.Color.Transparent),
                                         center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * (0.18f + offset * 0.12f)),
-                                        radius = size.width * 1.0f
+                                        radius = size.width * 1.6f
                                     )
                                 )
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                                        colors = listOf(colors[2].copy(alpha = alphaScale * 0.9f), colors[2].copy(alpha = alphaScale * 0.2f), androidx.compose.ui.graphics.Color.Transparent),
+                                        colors = listOf(colors[2].copy(alpha = alphaScale * 0.85f), colors[2].copy(alpha = alphaScale * 0.15f), androidx.compose.ui.graphics.Color.Transparent),
                                         center = androidx.compose.ui.geometry.Offset(size.width * 0.82f, size.height * (0.65f - offset * 0.08f)),
-                                        radius = size.width * 0.95f
+                                        radius = size.width * 1.5f
                                     )
                                 )
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                                        colors = listOf(colors[1].copy(alpha = alphaScale * 0.7f), androidx.compose.ui.graphics.Color.Transparent),
-                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.9f, size.height * 0.30f),
-                                        radius = size.width * 0.75f
+                                        colors = listOf(colors[1].copy(alpha = alphaScale * 0.65f), androidx.compose.ui.graphics.Color.Transparent),
+                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.90f, size.height * 0.30f),
+                                        radius = size.width * 1.3f
                                     )
                                 )
                             }

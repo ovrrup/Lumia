@@ -418,12 +418,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addAssignment(courseId: Int, title: String, desc: String, dueDate: Long) {
+    fun addAssignment(courseId: Int, title: String, desc: String, dueDate: Long, category: String = "Homework", categoryColor: String = "#3197D6") {
         viewModelScope.launch {
-            val newId = repository.insertAssignment(PracticeAssignment(courseId = courseId, title = title, description = desc, dueDateMillis = dueDate)).toInt()
+            val newId = repository.insertAssignment(PracticeAssignment(courseId = courseId, title = title, description = desc, dueDateMillis = dueDate, category = category, categoryColor = categoryColor)).toInt()
             val context = getApplication<Application>().applicationContext
             com.example.util.ReminderScheduler.scheduleReminder(context, newId, title, desc, dueDate)
-            logAction("Added assignment: $title")
+            logAction("Added assignment: $title ($category)")
         }
     }
 
@@ -1040,6 +1040,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             _currentStreak.value = 0
 
             repository.insertActionLog(ActionLog(actionText = "Cleared all application data and settings"))
+            _importExportStatus.value = "All data and settings erased successfully"
         }
     }
 }

@@ -1,12 +1,15 @@
 package com.example.ui.screens
 
 import com.example.ui.theme.liquidGlass
+import com.example.ui.theme.glassBar
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -77,13 +80,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
-                                tintAlpha = if (isDark) 0.18f else 0.45f,
-                                blurRadius = 15f,
-                                isDark = isDark,
-                                tintColor = MaterialTheme.colorScheme.surface
-                            )
+                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                     )
                     // Sleek divider line for clean separation and anchoring
                     androidx.compose.material3.HorizontalDivider(
@@ -175,8 +172,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             if (isMonthlyView) {
                                 val calendar = java.util.Calendar.getInstance()
                                 calendar.timeInMillis = System.currentTimeMillis()
-                                calendar.add(java.util.Calendar.MONTH, displayMonthOffset)
                                 calendar.set(java.util.Calendar.DAY_OF_MONTH, 1)
+                                calendar.add(java.util.Calendar.MONTH, displayMonthOffset)
                                 calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
                                 calendar.set(java.util.Calendar.MINUTE, 0)
                                 calendar.set(java.util.Calendar.SECOND, 0)
@@ -475,15 +472,43 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 )
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        assignment.title,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textDecoration = if(assignment.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            assignment.title,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textDecoration = if(assignment.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
+                                        if (assignment.category.isNotEmpty()) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(
+                                                        color = try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(assignment.categoryColor)).copy(alpha = 0.15f) } catch(e: Exception) { MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) },
+                                                        shape = RoundedCornerShape(8.dp)
+                                                    )
+                                                    .border(
+                                                        width = 1.dp,
+                                                        color = try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(assignment.categoryColor)).copy(alpha = 0.4f) } catch(e: Exception) { MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) },
+                                                        shape = RoundedCornerShape(8.dp)
+                                                    )
+                                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = assignment.category,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(assignment.categoryColor)) } catch(e: Exception) { MaterialTheme.colorScheme.primary }
+                                                )
+                                            }
+                                        }
+                                    }
                                     if (assignment.description.isNotEmpty()) {
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
@@ -493,6 +518,27 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                             maxLines = 2,
                                             overflow = TextOverflow.Ellipsis
                                         )
+                                    }
+                                    if (assignment.dueDateMillis > 0) {
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.DateRange,
+                                                contentDescription = "Due Date",
+                                                modifier = Modifier.size(14.dp),
+                                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                                            )
+                                            val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+                                            Text(
+                                                text = "Due: ${dateFormat.format(java.util.Date(assignment.dueDateMillis))}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
                                     }
                                 }
                                 Row {
@@ -516,6 +562,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         var desc by remember { mutableStateOf("") }
         var dueDateMillis by remember { mutableStateOf(System.currentTimeMillis() + 86400000L) }
         var showDatePicker by remember { mutableStateOf(false) }
+        var category by remember { mutableStateOf("Homework") }
+        var categoryColor by remember { mutableStateOf("#3197D6") }
 
         if (showDatePicker) {
             val datePickerColors = DatePickerDefaults.colors(
@@ -566,7 +614,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             onDismissRequest = { showAddAssignmentDialog = false },
             title = { Text("Add Assignment") },
             text = {
-                Column {
+                Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
@@ -580,6 +628,96 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Text("Category Preset", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    val categoriesPresetList = listOf("Homework", "Exam", "Project", "Quiz", "Lab", "Custom")
+                    var isCustomCategory by remember { mutableStateOf(!categoriesPresetList.dropLast(1).contains(category)) }
+                    
+                    @OptIn(ExperimentalLayoutApi::class)
+                    androidx.compose.foundation.layout.FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        categoriesPresetList.forEach { cat ->
+                            val isSelected = (cat == "Custom" && isCustomCategory) || (cat == category && !isCustomCategory)
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    if (cat == "Custom") {
+                                        isCustomCategory = true
+                                        category = ""
+                                    } else {
+                                        isCustomCategory = false
+                                        category = cat
+                                        categoryColor = when (cat) {
+                                            "Exam" -> "#E52F28"
+                                            "Homework" -> "#3197D6"
+                                            "Project" -> "#2CAF5F"
+                                            "Quiz" -> "#7B2CBF"
+                                            "Lab" -> "#E65100"
+                                            else -> "#78909C"
+                                        }
+                                    }
+                                },
+                                label = { Text(cat) }
+                            )
+                        }
+                    }
+                    
+                    if (isCustomCategory) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        OutlinedTextField(
+                            value = category,
+                            onValueChange = { category = it },
+                            label = { Text("Custom Category Name") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Category Theme Color", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    
+                    val presetColorsList = listOf(
+                        "#E52F28", // Red/Rose
+                        "#E65100", // Orange
+                        "#FBC02D", // Yellow/Gold
+                        "#2CAF5F", // Green/Emerald
+                        "#3197D6", // Blue/Ocean
+                        "#7B2CBF", // Purple/Amethyst
+                        "#78909C"  // Slate/Gray
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        presetColorsList.forEach { hex ->
+                            val colorObj = try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(hex)) } catch(e: Exception) { MaterialTheme.colorScheme.primary }
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(colorObj, CircleShape)
+                                    .border(
+                                        width = 2.dp,
+                                        color = if (categoryColor == hex) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent,
+                                        shape = CircleShape
+                                    )
+                                    .clickable { categoryColor = hex },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (categoryColor == hex) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .background(androidx.compose.ui.graphics.Color.White, CircleShape)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedButton(
                         onClick = { showDatePicker = true },
@@ -593,7 +731,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             confirmButton = {
                 TextButton(onClick = {
                     if (title.isNotBlank()) {
-                        viewModel.addAssignment(courseId, title, desc, dueDateMillis)
+                        viewModel.addAssignment(courseId, title, desc, dueDateMillis, category.ifBlank { "Other" }, categoryColor)
                         showAddAssignmentDialog = false
                     }
                 }) { Text("Add") }
@@ -605,9 +743,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     }
 
     if (assignmentToEdit != null) {
-        var title by remember { mutableStateOf(assignmentToEdit!!.title) }
-        var desc by remember { mutableStateOf(assignmentToEdit!!.description) }
-        var dueDateMillis by remember { mutableStateOf(assignmentToEdit!!.dueDateMillis) }
+        var title by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit!!.title) }
+        var desc by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit!!.description) }
+        var dueDateMillis by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit!!.dueDateMillis) }
+        var category by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit!!.category) }
+        var categoryColor by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit!!.categoryColor) }
         var showDatePicker by remember { mutableStateOf(false) }
 
         if (showDatePicker) {
@@ -659,7 +799,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             onDismissRequest = { assignmentToEdit = null },
             title = { Text("Edit Assignment") },
             text = {
-                Column {
+                Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
@@ -673,6 +813,96 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Text("Category Preset", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    val categoriesPresetList = listOf("Homework", "Exam", "Project", "Quiz", "Lab", "Custom")
+                    var isCustomCategory by remember { mutableStateOf(!categoriesPresetList.dropLast(1).contains(category)) }
+                    
+                    @OptIn(ExperimentalLayoutApi::class)
+                    androidx.compose.foundation.layout.FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        categoriesPresetList.forEach { cat ->
+                            val isSelected = (cat == "Custom" && isCustomCategory) || (cat == category && !isCustomCategory)
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    if (cat == "Custom") {
+                                        isCustomCategory = true
+                                        category = ""
+                                    } else {
+                                        isCustomCategory = false
+                                        category = cat
+                                        categoryColor = when (cat) {
+                                            "Exam" -> "#E52F28"
+                                            "Homework" -> "#3197D6"
+                                            "Project" -> "#2CAF5F"
+                                            "Quiz" -> "#7B2CBF"
+                                            "Lab" -> "#E65100"
+                                            else -> "#78909C"
+                                        }
+                                    }
+                                },
+                                label = { Text(cat) }
+                            )
+                        }
+                    }
+                    
+                    if (isCustomCategory) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        OutlinedTextField(
+                            value = category,
+                            onValueChange = { category = it },
+                            label = { Text("Custom Category Name") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Category Theme Color", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    
+                    val presetColorsList = listOf(
+                        "#E52F28", // Red/Rose
+                        "#E65100", // Orange
+                        "#FBC02D", // Yellow/Gold
+                        "#2CAF5F", // Green/Emerald
+                        "#3197D6", // Blue/Ocean
+                        "#7B2CBF", // Purple/Amethyst
+                        "#78909C"  // Slate/Gray
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        presetColorsList.forEach { hex ->
+                            val colorObj = try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(hex)) } catch(e: Exception) { MaterialTheme.colorScheme.primary }
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(colorObj, CircleShape)
+                                    .border(
+                                        width = 2.dp,
+                                        color = if (categoryColor == hex) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent,
+                                        shape = CircleShape
+                                    )
+                                    .clickable { categoryColor = hex },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (categoryColor == hex) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .background(androidx.compose.ui.graphics.Color.White, CircleShape)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedButton(
                         onClick = { showDatePicker = true },
@@ -690,7 +920,9 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             assignmentToEdit!!.copy(
                                 title = title,
                                 description = desc,
-                                dueDateMillis = dueDateMillis
+                                dueDateMillis = dueDateMillis,
+                                category = category.ifBlank { "Other" },
+                                categoryColor = categoryColor
                             )
                         )
                         assignmentToEdit = null
