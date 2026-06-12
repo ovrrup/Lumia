@@ -87,6 +87,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaGlassUi = MutableStateFlow(prefs.getBoolean("beta_glass_ui", false))
     val betaGlassUi = _betaGlassUi.asStateFlow()
 
+    private val _betaGlassDynamic = MutableStateFlow(prefs.getBoolean("beta_glass_dynamic", true))
+    val betaGlassDynamic = _betaGlassDynamic.asStateFlow()
+
     private val _betaEnhancedHeader = MutableStateFlow(prefs.getBoolean("beta_enhanced_header", false))
     val betaEnhancedHeader = _betaEnhancedHeader.asStateFlow()
 
@@ -108,12 +111,20 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val defaultAlias = android.content.ComponentName(packageName, "com.example.DefaultAlias")
         val dynamicAlias = android.content.ComponentName(packageName, "com.example.DynamicAlias")
 
-        if (enabled) {
-            pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
-            pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
-        } else {
-            pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
-            pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+        try {
+            if (enabled) {
+                pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+                pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+            } else {
+                pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+                pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ScholarViewModel", "Exception toggling dynamic app icon aliases. Restoring defaults.", e)
+            try {
+                pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+                pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+            } catch (ex: Exception) {}
         }
         android.widget.Toast.makeText(getApplication(), "Icon changing... Launcher may take a moment to reflect changes or might require a home screen refresh.", android.widget.Toast.LENGTH_LONG).show()
     }
@@ -141,7 +152,29 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val onIgnore: () -> Unit
     )
 
-    private val _safetyPinDialogData = MutableStateFlow<SafetyPinDialogData?>(null)
+    private val _safetyPinDialogData = run {
+        val delegate = MutableStateFlow<SafetyPinDialogData?>(null)
+        object : MutableStateFlow<SafetyPinDialogData?> by delegate {
+            override var value: SafetyPinDialogData?
+                get() = delegate.value
+                set(v) {
+                    if (v != null && delegate.value != null) return
+                    delegate.value = v
+                }
+            override fun compareAndSet(expect: SafetyPinDialogData?, update: SafetyPinDialogData?): Boolean {
+                if (update != null && delegate.value != null) return false
+                return delegate.compareAndSet(expect, update)
+            }
+            override fun tryEmit(value: SafetyPinDialogData?): Boolean {
+                if (value != null && delegate.value != null) return false
+                return delegate.tryEmit(value)
+            }
+            override suspend fun emit(value: SafetyPinDialogData?) {
+                if (value != null && delegate.value != null) return
+                delegate.emit(value)
+            }
+        }
+    }
     val safetyPinDialogData = _safetyPinDialogData.asStateFlow()
 
     fun dismissSafetyPinDialog() {
@@ -218,12 +251,16 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private val assignmentsFlowCache = HashMap<Int, StateFlow<List<PracticeAssignment>>>()
+
     fun getAssignmentsForCourse(courseId: Int): StateFlow<List<PracticeAssignment>> {
-        return repository.getAssignmentsForCourse(courseId).stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        return assignmentsFlowCache.getOrPut(courseId) {
+            repository.getAssignmentsForCourse(courseId).stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+        }
     }
 
     private val attendanceFlowCache = HashMap<Int, StateFlow<List<com.example.model.AttendanceRecord>>>()
@@ -456,6 +493,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                         "beta_immersive_mode" -> _betaImmersiveMode.value = boolVal
                         "beta_notch_optimization" -> _betaNotchOptimization.value = boolVal
                         "beta_glass_ui" -> _betaGlassUi.value = boolVal
+                        "beta_glass_dynamic" -> _betaGlassDynamic.value = boolVal
                         "beta_enhanced_header" -> _betaEnhancedHeader.value = boolVal
                         "beta_minimalist_mode" -> _betaMinimalistMode.value = boolVal
                         "beta_dynamic_background" -> _betaDynamicBackground.value = boolVal
@@ -480,7 +518,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
                     repository.exportDataToStream(os, settings)
                 }
-                _importExportStatus.value = "Data exported successfully (Binary format)"
+                _importExportStatus.value = "Data exported successfully (JSON format)"
             } catch (e: Exception) {
                 _importExportStatus.value = "Export failed: ${e.message}"
             }
@@ -777,6 +815,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("beta_glass_ui", enabled).apply()
     }
 
+    fun updateBetaGlassDynamic(enabled: Boolean) {
+        _betaGlassDynamic.value = enabled
+        prefs.edit().putBoolean("beta_glass_dynamic", enabled).apply()
+    }
+
     fun updateBetaEnhancedHeader(enabled: Boolean) {
         if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
             _safetyPinDialogData.value = SafetyPinDialogData(
@@ -931,6 +974,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             _betaImmersiveMode.value = false
             _betaNotchOptimization.value = false
             _betaGlassUi.value = false
+            _betaGlassDynamic.value = true
             _betaEnhancedHeader.value = false
             _betaMinimalistMode.value = false
             _betaDynamicBackground.value = false

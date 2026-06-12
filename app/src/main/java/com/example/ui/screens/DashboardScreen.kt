@@ -1,6 +1,8 @@
 package com.example.ui.screens
 
 import com.example.ui.theme.liquidGlass
+import com.example.ui.theme.glassBar
+import com.example.ui.theme.glassPill
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -26,6 +28,7 @@ import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material.icons.rounded.Add
@@ -97,6 +100,7 @@ import androidx.compose.foundation.border
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     var selectedTab by remember { mutableStateOf(0) }
     val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
     
@@ -108,20 +112,32 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             containerColor = androidx.compose.ui.graphics.Color.Transparent,
             bottomBar = {
                 if (!betaFloatingNav) {
+                    val navItemColors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
+                        indicatorColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                    )
                     NavigationBar(
-                        containerColor = MaterialTheme.colorScheme.surface,
+                        modifier = if (isGlass) Modifier.glassBar() else Modifier,
+                        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
                     ) {
                         NavigationBarItem(
                             icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
                             label = { Text("Home") },
                             selected = selectedTab == 0,
-                            onClick = { selectedTab = 0 }
+                            onClick = { selectedTab = 0 },
+                            colors = navItemColors,
+                            alwaysShowLabel = true
                         )
                         NavigationBarItem(
                             icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
                             label = { Text("Analytics") },
                             selected = selectedTab == 1,
-                            onClick = { selectedTab = 1 }
+                            onClick = { selectedTab = 1 },
+                            colors = navItemColors,
+                            alwaysShowLabel = true
                         )
                     }
                 }
@@ -160,13 +176,21 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 modifier = Modifier
                     .align(androidx.compose.ui.Alignment.BottomCenter)
                     .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
-                    .windowInsetsPadding(WindowInsets.navigationBars),
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .then(if (isGlass) Modifier.glassPill(androidx.compose.foundation.shape.RoundedCornerShape(32.dp)) else Modifier),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                shadowElevation = 8.dp,
-                tonalElevation = 4.dp
+                color = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
+                contentColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
+                shadowElevation = if (isGlass) 0.dp else 8.dp,
+                tonalElevation = if (isGlass) 0.dp else 4.dp
             ) {
+                val navItemColors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
+                    selectedTextColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
+                    unselectedIconColor = if (isGlass) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.70f),
+                    unselectedTextColor = if (isGlass) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
+                    indicatorColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f)
+                )
                 NavigationBar(
                     modifier = Modifier.fillMaxWidth().height(80.dp),
                     containerColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -178,13 +202,17 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
                         label = { Text("Home") },
                         selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 }
+                        onClick = { selectedTab = 0 },
+                        colors = navItemColors,
+                        alwaysShowLabel = true
                     )
                     NavigationBarItem(
                         icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
                         label = { Text("Analytics") },
                         selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 }
+                        onClick = { selectedTab = 1 },
+                        colors = navItemColors,
+                        alwaysShowLabel = true
                     )
                 }
             }

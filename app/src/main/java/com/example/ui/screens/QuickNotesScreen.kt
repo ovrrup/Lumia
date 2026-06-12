@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import org.json.JSONArray
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,6 +26,7 @@ fun QuickNotesScreen(navController: NavController) {
     val sharedPrefs = remember { context.getSharedPreferences("quick_notes_prefs", Context.MODE_PRIVATE) }
     
     val notesList = remember { mutableStateListOf<String>() }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -44,9 +46,14 @@ fun QuickNotesScreen(navController: NavController) {
     }
 
     fun saveNotes() {
-        val jsonArray = JSONArray()
-        notesList.forEach { jsonArray.put(it) }
-        sharedPrefs.edit().putString("notes_json", jsonArray.toString()).apply()
+        val listSnapshot = notesList.toList()
+        coroutineScope.launch {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val jsonArray = JSONArray()
+                listSnapshot.forEach { jsonArray.put(it) }
+                sharedPrefs.edit().putString("notes_json", jsonArray.toString()).apply()
+            }
+        }
     }
 
     var showAddDialog by remember { mutableStateOf(false) }

@@ -4,9 +4,11 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.squareup.moshi.JsonClass
 import java.io.Serializable
 
 @Entity(tableName = "courses")
+@JsonClass(generateAdapter = true)
 data class Course(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
@@ -18,6 +20,7 @@ data class Course(
 ) : Serializable
 
 @Entity(tableName = "subjects")
+@JsonClass(generateAdapter = true)
 data class Subject(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
@@ -29,6 +32,7 @@ data class Subject(
     foreignKeys = [ForeignKey(entity = Subject::class, parentColumns = ["id"], childColumns = ["subjectId"], onDelete = ForeignKey.CASCADE)],
     indices = [Index("subjectId")]
 )
+@JsonClass(generateAdapter = true)
 data class Topic(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val subjectId: Int,
@@ -41,6 +45,7 @@ data class Topic(
     foreignKeys = [ForeignKey(entity = Course::class, parentColumns = ["id"], childColumns = ["courseId"], onDelete = ForeignKey.CASCADE)],
     indices = [Index("courseId")]
 )
+@JsonClass(generateAdapter = true)
 data class PracticeAssignment(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val courseId: Int,
@@ -55,6 +60,7 @@ data class PracticeAssignment(
     foreignKeys = [ForeignKey(entity = Course::class, parentColumns = ["id"], childColumns = ["courseId"], onDelete = ForeignKey.CASCADE)],
     indices = [Index("courseId")]
 )
+@JsonClass(generateAdapter = true)
 data class AttendanceRecord(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val courseId: Int,
@@ -63,6 +69,7 @@ data class AttendanceRecord(
 ) : Serializable
 
 @Entity(tableName = "action_logs")
+@JsonClass(generateAdapter = true)
 data class ActionLog(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val actionText: String,
@@ -70,6 +77,7 @@ data class ActionLog(
 ) : Serializable
 
 @Entity(tableName = "pomodoro_sessions")
+@JsonClass(generateAdapter = true)
 data class PomodoroSession(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val dateMillis: Long, // timestamp
@@ -77,6 +85,7 @@ data class PomodoroSession(
 ) : Serializable
 
 // For Export/Import
+@JsonClass(generateAdapter = true)
 data class ScholarBackup(
     val courses: List<Course>,
     val subjects: List<Subject>,

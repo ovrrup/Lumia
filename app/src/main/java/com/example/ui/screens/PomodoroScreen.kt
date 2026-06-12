@@ -52,7 +52,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
             isRunning = false
             
             if (mode == PomodoroMode.WORK) {
-                viewModel.addPomodoroSession(25)
+                viewModel.addPomodoroSession(totalTime / 60)
             }
             
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

@@ -140,11 +140,27 @@ object ReminderScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
+        val canScheduleExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true
+        }
+
         try {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
-            Log.d("ReminderScheduler", "Scheduled reminder exact for $title at $triggerTime")
+            if (canScheduleExact) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                Log.d("ReminderScheduler", "Scheduled exact reminder for $title at $triggerTime")
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                Log.d("ReminderScheduler", "Scheduled inexact reminder fallback for $title (exact alarm not allowed)")
+            }
         } catch (e: SecurityException) {
-            Log.e("ReminderScheduler", "Exact alarm permission missing", e)
+            Log.e("ReminderScheduler", "Exact alarm SecurityException, falling back to inexact.", e)
+            try {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+            } catch (ex: java.lang.Exception) {
+                Log.e("ReminderScheduler", "Failed to schedule fallback inexact alarm", ex)
+            }
         }
     }
 }

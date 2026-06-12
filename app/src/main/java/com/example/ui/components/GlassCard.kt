@@ -31,7 +31,7 @@ fun GlassCard(
                 .clip(shape)
                 .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
         ) {
-            Box(modifier = Modifier.matchParentSize().glassCard(shape))
+            Box(modifier = Modifier.matchParentSize().glassCard(androidx.compose.ui.graphics.RectangleShape))
             val tint = containerColor?.copy(alpha = 0.3f) ?: Color.Transparent
             Box(modifier = Modifier.matchParentSize().background(tint))
             content()
@@ -74,7 +74,7 @@ fun GlassHeroCard(
                 .clip(shape)
                 .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
         ) {
-            Box(modifier = Modifier.matchParentSize().glassHero(shape))
+            Box(modifier = Modifier.matchParentSize().glassHero(androidx.compose.ui.graphics.RectangleShape))
             content()
         }
     } else {

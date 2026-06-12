@@ -79,6 +79,7 @@ class MainActivity : ComponentActivity() {
             val betaNotchOptimization by viewModel.betaNotchOptimization.collectAsStateWithLifecycle()
             val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
             val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
+            val betaGlassDynamic by viewModel.betaGlassDynamic.collectAsStateWithLifecycle()
             val betaDynamicBackground by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
             val betaBetterTexts by viewModel.betaBetterTexts.collectAsStateWithLifecycle()
             val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
@@ -102,12 +103,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode, glassMode = betaGlassUi, betterTexts = betaBetterTexts, betterTextsPalette = betaBetterTextsPalette, customPrimary = customPrimary, customPrimaryContainer = customPrimaryContainer, customBackground = customBackground, customSurface = customSurface, customText = customText) {
+            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode, glassMode = betaGlassUi, glassDynamic = betaGlassDynamic, betterTexts = betaBetterTexts, betterTextsPalette = betaBetterTextsPalette, customPrimary = customPrimary, customPrimaryContainer = customPrimaryContainer, customBackground = customBackground, customSurface = customSurface, customText = customText) {
                 Surface(
                     modifier = Modifier.fillMaxSize().then(
                         if (betaNotchOptimization && !betaImmersiveMode) Modifier.displayCutoutPadding() else Modifier
                     ), 
-                    color = MaterialTheme.colorScheme.background
+                    color = if (betaGlassUi) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background
                 ) {
                     val safetyPinDialogData by viewModel.safetyPinDialogData.collectAsStateWithLifecycle()
                     if (safetyPinDialogData != null) {

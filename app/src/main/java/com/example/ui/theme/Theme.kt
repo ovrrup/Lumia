@@ -20,11 +20,11 @@ fun createLightScheme(
     onSurfaceText: Color = Color(0xFF1A1C1A)
 ) = lightColorScheme(
     primary = primary, onPrimary = Color.White,
-    primaryContainer = primaryContainer, onPrimaryContainer = Color.White,
+    primaryContainer = primaryContainer, onPrimaryContainer = primary.mix(Color.Black, 0.15f),
     secondary = secondary, onSecondary = Color.White,
-    secondaryContainer = secondaryContainer, onSecondaryContainer = Color.White,
+    secondaryContainer = secondaryContainer, onSecondaryContainer = secondary.mix(Color.Black, 0.15f),
     tertiary = tertiary, onTertiary = Color.White,
-    tertiaryContainer = tertiaryContainer, onTertiaryContainer = Color.White,
+    tertiaryContainer = tertiaryContainer, onTertiaryContainer = tertiary.mix(Color.Black, 0.15f),
     background = bg, onBackground = onSurfaceText,
     surface = surface, onSurface = onSurfaceText,
     surfaceVariant = Color(0xFFEAEAEA), onSurfaceVariant = Color(0xFF49454F),
@@ -42,12 +42,12 @@ fun createDarkScheme(
     surface: Color = Color(0xFF1A1A1A),
     onSurfaceText: Color = Color(0xFFE2E2E2)
 ) = darkColorScheme(
-    primary = primary, onPrimary = Color(0xFF1A1C1A),
-    primaryContainer = primaryContainer, onPrimaryContainer = Color(0xFF1A1C1A),
-    secondary = secondary, onSecondary = Color(0xFF1A1C1A),
-    secondaryContainer = secondaryContainer, onSecondaryContainer = Color(0xFF1A1C1A),
-    tertiary = tertiary, onTertiary = Color(0xFF1A1C1A),
-    tertiaryContainer = tertiaryContainer, onTertiaryContainer = Color(0xFF1A1C1A),
+    primary = primary, onPrimary = Color(0xFF101010),
+    primaryContainer = primaryContainer, onPrimaryContainer = primary.mix(Color.White, 0.15f),
+    secondary = secondary, onSecondary = Color(0xFF101010),
+    secondaryContainer = secondaryContainer, onSecondaryContainer = secondary.mix(Color.White, 0.15f),
+    tertiary = tertiary, onTertiary = Color(0xFF101010),
+    tertiaryContainer = tertiaryContainer, onTertiaryContainer = tertiary.mix(Color.White, 0.15f),
     background = bg, onBackground = onSurfaceText,
     surface = surface, onSurface = onSurfaceText,
     surfaceVariant = Color(0xFF2E2E2E), onSurfaceVariant = Color(0xFFC4C7C5),
@@ -86,6 +86,7 @@ fun Color.mix(other: Color, weight: Float): Color {
 
 val LocalGlassTint = androidx.compose.runtime.compositionLocalOf { Color.White }
 val LocalGlassMode = androidx.compose.runtime.compositionLocalOf { false }
+val LocalGlassDynamic = androidx.compose.runtime.compositionLocalOf { true }
 
 @Composable
 fun ScholarTheme(
@@ -98,6 +99,7 @@ fun ScholarTheme(
     customText: String = "",
     pureBlackMode: Boolean = false,
     glassMode: Boolean = false,
+    glassDynamic: Boolean = true,
     betterTexts: Boolean = false,
     betterTextsPalette: Boolean = true,
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -112,29 +114,11 @@ fun ScholarTheme(
 
     val context = LocalContext.current
     var colorScheme = when {
-        themeColor == "Dynamic" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> run {
-            val lightDynamic = dynamicLightColorScheme(context)
-            val darkDynamic = dynamicDarkColorScheme(context)
+        themeColor == "Dynamic" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             if (isDark) {
-                // User requirement: Light shades for components in Dark Mode
-                darkDynamic.copy(
-                    primaryContainer = lightDynamic.primaryContainer,
-                    secondaryContainer = lightDynamic.secondaryContainer,
-                    tertiaryContainer = lightDynamic.tertiaryContainer,
-                    onPrimaryContainer = lightDynamic.onPrimaryContainer,
-                    onSecondaryContainer = lightDynamic.onSecondaryContainer,
-                    onTertiaryContainer = lightDynamic.onTertiaryContainer
-                )
+                dynamicDarkColorScheme(context)
             } else {
-                // User requirement: Dark shades for components in Light Mode
-                lightDynamic.copy(
-                    primaryContainer = darkDynamic.primaryContainer,
-                    secondaryContainer = darkDynamic.secondaryContainer,
-                    tertiaryContainer = darkDynamic.tertiaryContainer,
-                    onPrimaryContainer = darkDynamic.onPrimaryContainer,
-                    onSecondaryContainer = darkDynamic.onSecondaryContainer,
-                    onTertiaryContainer = darkDynamic.onTertiaryContainer
-                )
+                dynamicLightColorScheme(context)
             }
         }
         else -> when (themeColor) {
@@ -178,41 +162,46 @@ fun ScholarTheme(
         )
     }
 
-    // Apply rule: Light shades (primary light variant in dark mode) for background/components in dark mode, darker shades in light mode.
-    // We achieve this by mixing with a proportion of the primary color natively available, since M3 primary is light in dark mode and dark in light mode!
-    val shadeMixColor = colorScheme.primary
-    
+    // Apply highly polished and harmonious Material 3 tones:
+    // We use a subtle blend of background with primary (2% on primary color, 98% base) for an elegant, non-muddy backdrop.
+    // Each component container mixes with its own respective core hue (primaryContainer with primary, secondaryContainer with secondary, etc.)
+    // to preserve unique branding and prevent monocolor dilution, while creating soft cohesiveness.
     colorScheme = colorScheme.copy(
-        background = if (isDark && pureBlackMode) Color.Black else colorScheme.background.mix(shadeMixColor, 0.95f),
-        surface = if (isDark && pureBlackMode) Color(0xCC000000) else colorScheme.surface.mix(shadeMixColor, 0.93f),
-        surfaceVariant = colorScheme.surfaceVariant.mix(shadeMixColor, 0.85f),
-        primaryContainer = colorScheme.primaryContainer.mix(shadeMixColor, 0.85f),
-        secondaryContainer = colorScheme.secondaryContainer.mix(shadeMixColor, 0.85f),
-        tertiaryContainer = colorScheme.tertiaryContainer.mix(shadeMixColor, 0.85f)
+        background = if (isDark && pureBlackMode) Color.Black else colorScheme.background.mix(colorScheme.primary, 0.98f),
+        surface = if (isDark && pureBlackMode) Color(0xCC000000) else colorScheme.surface.mix(colorScheme.primary, 0.97f),
+        surfaceVariant = colorScheme.surfaceVariant.mix(colorScheme.secondary, 0.95f),
+        primaryContainer = colorScheme.primaryContainer.mix(colorScheme.primary, 0.93f),
+        secondaryContainer = colorScheme.secondaryContainer.mix(colorScheme.secondary, 0.93f),
+        tertiaryContainer = colorScheme.tertiaryContainer.mix(colorScheme.tertiary, 0.93f),
+        surfaceContainer = if (isDark && pureBlackMode) Color(0xFF121212) else colorScheme.surface.mix(colorScheme.primary, 0.92f),
+        surfaceContainerLow = if (isDark && pureBlackMode) Color(0xFF0A0A0A) else colorScheme.surface.mix(colorScheme.primary, 0.95f),
+        surfaceContainerHigh = if (isDark && pureBlackMode) Color(0xFF1E1E1E) else colorScheme.surface.mix(colorScheme.primary, 0.88f),
+        surfaceContainerLowest = if (isDark && pureBlackMode) Color.Black else colorScheme.surface.mix(colorScheme.primary, 0.99f),
+        surfaceContainerHighest = if (isDark && pureBlackMode) Color(0xFF282828) else colorScheme.surface.mix(colorScheme.primary, 0.83f)
     )
 
     if (betterTexts) {
         val tint = colorScheme.primary
         if (betterTextsPalette) {
             if (isDark) {
-                // Use lighter shades of palette for text
+                // Use lighter shades of palette for text with extremely high contrast (AAA standard compatible)
                 colorScheme = colorScheme.copy(
-                    onSurface = tint.mix(Color.White, 0.4f),
-                    onBackground = tint.mix(Color.White, 0.4f),
-                    onSurfaceVariant = tint.mix(Color.White, 0.2f).copy(alpha = 0.8f),
-                    onPrimaryContainer = tint.mix(Color.White, 0.5f),
-                    onSecondaryContainer = colorScheme.secondary.mix(Color.White, 0.5f),
-                    onTertiaryContainer = colorScheme.tertiary.mix(Color.White, 0.5f)
+                    onSurface = tint.mix(Color.White, 0.15f),
+                    onBackground = tint.mix(Color.White, 0.15f),
+                    onSurfaceVariant = tint.mix(Color.White, 0.25f).copy(alpha = 0.88f),
+                    onPrimaryContainer = tint.mix(Color.White, 0.15f),
+                    onSecondaryContainer = colorScheme.secondary.mix(Color.White, 0.15f),
+                    onTertiaryContainer = colorScheme.tertiary.mix(Color.White, 0.15f)
                 )
             } else {
-                // Use darker shades of palette for text
+                // Use darker shades of palette for text with extremely high contrast (AAA standard compatible)
                 colorScheme = colorScheme.copy(
-                    onSurface = tint.mix(Color.Black, 0.4f),
-                    onBackground = tint.mix(Color.Black, 0.4f),
-                    onSurfaceVariant = tint.mix(Color.Black, 0.2f).copy(alpha = 0.8f),
-                    onPrimaryContainer = tint.mix(Color.Black, 0.5f),
-                    onSecondaryContainer = colorScheme.secondary.mix(Color.Black, 0.5f),
-                    onTertiaryContainer = colorScheme.tertiary.mix(Color.Black, 0.5f)
+                    onSurface = tint.mix(Color.Black, 0.15f),
+                    onBackground = tint.mix(Color.Black, 0.15f),
+                    onSurfaceVariant = tint.mix(Color.Black, 0.25f).copy(alpha = 0.88f),
+                    onPrimaryContainer = tint.mix(Color.Black, 0.15f),
+                    onSecondaryContainer = colorScheme.secondary.mix(Color.Black, 0.15f),
+                    onTertiaryContainer = colorScheme.tertiary.mix(Color.Black, 0.15f)
                 )
             }
         } else {
@@ -221,7 +210,7 @@ fun ScholarTheme(
                 colorScheme = colorScheme.copy(
                     onSurface = Color.White,
                     onBackground = Color.White,
-                    onSurfaceVariant = Color.White.copy(alpha = 0.7f),
+                    onSurfaceVariant = Color.White.copy(alpha = 0.85f),
                     onPrimaryContainer = Color.White,
                     onSecondaryContainer = Color.White,
                     onTertiaryContainer = Color.White
@@ -231,7 +220,7 @@ fun ScholarTheme(
                 colorScheme = colorScheme.copy(
                     onSurface = Color.Black,
                     onBackground = Color.Black,
-                    onSurfaceVariant = Color.Black.copy(alpha = 0.7f),
+                    onSurfaceVariant = Color.Black.copy(alpha = 0.85f),
                     onPrimaryContainer = Color.Black,
                     onSecondaryContainer = Color.Black,
                     onTertiaryContainer = Color.Black
@@ -259,7 +248,8 @@ fun ScholarTheme(
 
     androidx.compose.runtime.CompositionLocalProvider(
         LocalGlassTint provides colorScheme.primary,
-        LocalGlassMode provides glassMode
+        LocalGlassMode provides glassMode,
+        LocalGlassDynamic provides glassDynamic
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

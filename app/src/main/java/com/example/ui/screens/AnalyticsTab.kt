@@ -79,11 +79,18 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
 
     val isGlass = com.example.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val systemInDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = when (themeMode) {
+        "Dark" -> true
+        "Light" -> false
+        else -> systemInDark
+    }
 
     Scaffold(
         containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         topBar = {
             androidx.compose.foundation.layout.Box {
                 if (betaEnhancedHeader) {

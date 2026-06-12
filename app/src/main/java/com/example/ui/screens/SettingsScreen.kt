@@ -210,6 +210,39 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 onCheckedChange = { viewModel.updateBetaGlassUi(it) }
             )
 
+            AnimatedVisibility(
+                visible = betaGlassUi && !betaMinimalistMode
+            ) {
+                val betaGlassDynamic by viewModel.betaGlassDynamic.collectAsStateWithLifecycle()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 32.dp)
+                        .clickable { viewModel.updateBetaGlassDynamic(!betaGlassDynamic) }
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                        Text(
+                            text = "Dynamic Color Tinting",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "Blend glass texture with your active theme palette instead of stark white/black",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = betaGlassDynamic,
+                        onCheckedChange = { viewModel.updateBetaGlassDynamic(it) },
+                        modifier = Modifier.scale(0.85f)
+                    )
+                }
+            }
+
             val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
             SettingsToggleItem(
                 title = "Enhanced Header",
