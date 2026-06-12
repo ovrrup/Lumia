@@ -322,6 +322,12 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel
                             )
                         }
+                        composable("settings/system") {
+                            com.example.ui.screens.SystemSettingsScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
                     }
                     } // End of Box
                 }

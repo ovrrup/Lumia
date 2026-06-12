@@ -229,6 +229,15 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 )
                 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsActionItemInCard(
+                    title = "System Configuration",
+                    subtitle = "Advanced background features and interconnections",
+                    icon = Icons.Rounded.Settings,
+                    onClick = { navController.navigate("settings/system") }
+                )
+                
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                 
                 SettingsActionItemInCard(
                     title = "Database & Management",
@@ -1886,6 +1895,102 @@ fun SettingsActionItemInCard(
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             modifier = Modifier.size(20.dp)
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
+    val autoLinkByName by viewModel.systemAutoLinkByName.collectAsStateWithLifecycle()
+    val shareStudyLogs by viewModel.systemShareStudyLogs.collectAsStateWithLifecycle()
+    val enableSynergy by viewModel.systemEnableSynergy.collectAsStateWithLifecycle()
+    val autoCreateSubject by viewModel.systemAutoCreateSubject.collectAsStateWithLifecycle()
+
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
+
+    Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        topBar = {
+            androidx.compose.foundation.layout.Box {
+                if (betaEnhancedHeader || isGlass) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
+                    )
+                    androidx.compose.material3.HorizontalDivider(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    )
+                }
+                CenterAlignedTopAppBar(
+                    title = { Text("System Configuration", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                    )
+                )
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsCategoryHeading(title = "Interconnections", icon = Icons.Rounded.Settings)
+
+            SettingsGroupCard(title = "Course & Subject Integration", icon = Icons.Rounded.Settings) {
+                SettingsPremiumToggleItem(
+                    title = "Auto-Link by Name",
+                    subtitle = "Automatically couple Courses and study Subjects together if they share the same name (case-insensitive) when no explicit association is set.",
+                    checked = autoLinkByName,
+                    icon = Icons.Rounded.Settings,
+                    onCheckedChange = { viewModel.updateSystemAutoLinkByName(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsPremiumToggleItem(
+                    title = "Course Synergy Score",
+                    subtitle = "Measure alignments between lectures and study topics using a Dynamic Synergy Gauge in details screens.",
+                    checked = enableSynergy,
+                    icon = Icons.Rounded.Star,
+                    onCheckedChange = { viewModel.updateSystemEnableSynergy(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsPremiumToggleItem(
+                    title = "Share Study Logs",
+                    subtitle = "Cross-reference subject-level Pomodoro study sessions directly in the corresponding course stats cards.",
+                    checked = shareStudyLogs,
+                    icon = Icons.Rounded.Settings,
+                    onCheckedChange = { viewModel.updateSystemShareStudyLogs(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsPremiumToggleItem(
+                    title = "Auto-Create Associated Subject",
+                    subtitle = "Automatically create a matching Study Subject whenever you enroll in/add a new academic Course.",
+                    checked = autoCreateSubject,
+                    icon = Icons.Rounded.School,
+                    onCheckedChange = { viewModel.updateSystemAutoCreateSubject(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
     }
 }
 

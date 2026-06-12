@@ -54,6 +54,32 @@ import androidx.compose.material.icons.rounded.MoreVert
 fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel, courseId: Int) {
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val course = courses.find { it.id == courseId }
+    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+    val systemAutoLinkByName by viewModel.systemAutoLinkByName.collectAsStateWithLifecycle()
+    val systemShareStudyLogs by viewModel.systemShareStudyLogs.collectAsStateWithLifecycle()
+    val enableSynergy by viewModel.systemEnableSynergy.collectAsStateWithLifecycle()
+
+    val linkedSubject = remember(course, subjects, systemAutoLinkByName) {
+        if (course != null) {
+            if (course.subjectId != null) {
+                subjects.find { it.id == course.subjectId }
+            } else if (systemAutoLinkByName) {
+                subjects.find { it.name.trim().lowercase() == course.name.trim().lowercase() }
+            } else {
+                null
+            }
+        } else {
+            null
+        }
+    }
+
+    val topicsState = if (linkedSubject != null) {
+        viewModel.getTopicsForSubject(linkedSubject.id).collectAsStateWithLifecycle(emptyList())
+    } else {
+        remember { mutableStateOf(emptyList<com.example.model.Topic>()) }
+    }
+    val topics = topicsState.value
+
     val assignments by viewModel.getAssignmentsForCourse(courseId).collectAsStateWithLifecycle()
     var showAddAssignmentDialog by remember { mutableStateOf(false) }
     var assignmentToEdit by remember { mutableStateOf<com.example.model.PracticeAssignment?>(null) }
@@ -138,6 +164,128 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 }
                                 if (course.description.isNotBlank()) {
                                     Text(course.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Interconnected Study Subject & Synergy Score Section
+                if (linkedSubject != null) {
+                    item {
+                        com.example.ui.components.GlassCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Interconnected Study Subject",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = linkedSubject.name,
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                    
+                                    androidx.compose.material3.IconButton(
+                                        onClick = { navController.navigate("subject_detail/${linkedSubject.id}") }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.ChevronRight,
+                                            contentDescription = "Go to Study Subject",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+
+                                if (enableSynergy) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    val completedTopics = topics.count { it.isCompleted }
+                                    val totalTopics = topics.size
+                                    val topicPercent = if (totalTopics > 0) completedTopics.toFloat() / totalTopics else 0f
+                                    
+                                    val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle(emptyList())
+                                    val totalMinutesStudied = if (systemShareStudyLogs) {
+                                        pomodoroSessions.sumOf { it.durationMinutes }
+                                    } else {
+                                        0
+                                    }
+                                    
+                                    val pomodoroScore = if (linkedSubject.targetHours > 0) {
+                                        (totalMinutesStudied.toFloat() / (linkedSubject.targetHours * 60f)).coerceAtMost(1f)
+                                    } else {
+                                        0f
+                                    }
+
+                                    val avgScore = if (totalTopics > 0) {
+                                        if (systemShareStudyLogs && linkedSubject.targetHours > 0) {
+                                            (topicPercent + pomodoroScore) / 2f
+                                        } else {
+                                            topicPercent
+                                        }
+                                    } else {
+                                        if (systemShareStudyLogs && totalMinutesStudied > 0) pomodoroScore else 0.5f
+                                    }
+                                    val synergyScore = (avgScore * 100).toInt()
+
+                                    val ratingClass = when {
+                                        synergyScore >= 85 -> "Gold Synergy (Elite Alignment)"
+                                        synergyScore >= 60 -> "Silver Synergy (Healthy Connection)"
+                                        synergyScore >= 30 -> "Bronze Synergy (Moderate Progress)"
+                                        else -> "Basic Synergy (Awaiting Action)"
+                                    }
+
+                                    Row(
+                                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        androidx.compose.material3.CircularProgressIndicator(
+                                            progress = avgScore,
+                                            modifier = Modifier.size(50.dp),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            trackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                            strokeWidth = 5.dp
+                                        )
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column {
+                                            Text(
+                                                text = "Dynamic Synergy Index",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = ratingClass,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+
+                                    if (systemShareStudyLogs && totalMinutesStudied > 0) {
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        Text(
+                                            text = "🔒 Shared Study Metric: $totalMinutesStudied min of Pomodoro study is cross-referenced.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                        )
+                                    }
                                 }
                             }
                         }

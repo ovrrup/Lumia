@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.LibraryAddCheck
 import androidx.compose.material3.*
@@ -43,6 +44,17 @@ import androidx.compose.ui.graphics.graphicsLayer
 fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewModel, subjectId: Int) {
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val subject = subjects.find { it.id == subjectId }
+    val courses by viewModel.courses.collectAsStateWithLifecycle()
+    val systemAutoLinkByName by viewModel.systemAutoLinkByName.collectAsStateWithLifecycle()
+
+    val linkedCourses = remember(subject, courses, systemAutoLinkByName) {
+        if (subject != null) {
+            courses.filter { it.subjectId == subject.id || (systemAutoLinkByName && it.name.trim().lowercase() == subject.name.trim().lowercase()) }
+        } else {
+            emptyList()
+        }
+    }
+
     val topics by viewModel.getTopicsForSubject(subjectId).collectAsStateWithLifecycle()
     var showAddTopic by remember { mutableStateOf(false) }
     
@@ -106,47 +118,126 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            androidx.compose.animation.AnimatedVisibility(
-                visible = topics.isEmpty(),
-                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
-                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut()
+            LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxSize()
             ) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.LibraryAddCheck,
-                                contentDescription = null,
-                                modifier = Modifier.size(40.dp),
-                                tint = MaterialTheme.colorScheme.secondary
+                // Linked Courses Section
+                if (linkedCourses.isNotEmpty()) {
+                    item {
+                        Column {
+                            Text(
+                                "Interconnected Academic Courses",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 12.dp)
                             )
+                            linkedCourses.forEach { course ->
+                                com.example.ui.components.GlassCard(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clickable { navController.navigate("course_detail/${course.id}") },
+                                    shape = RoundedCornerShape(24.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(20.dp)
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = course.name,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Black,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            if (course.instructor.isNotBlank()) {
+                                                Text(
+                                                    text = "Instructor: ${course.instructor}",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            if (course.schedule.isNotBlank()) {
+                                                Text(
+                                                    text = "Schedule: ${course.schedule}",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                        IconButton(onClick = { navController.navigate("course_detail/${course.id}") }) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.ChevronRight,
+                                                contentDescription = "Go to Course",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text("No topics yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-            }
-            androidx.compose.animation.AnimatedVisibility(
-                visible = topics.isNotEmpty(),
-                enter = androidx.compose.animation.fadeIn(),
-                exit = androidx.compose.animation.fadeOut()
-            ) {
-                LazyColumn(
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 120.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
+
+                // Study Topics Section
+                item {
+                    Text(
+                        text = "Study Topics",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 10.dp)
+                    )
+                }
+
+                if (topics.isEmpty()) {
+                    item {
+                        com.example.ui.components.GlassCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth().padding(32.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.LibraryAddCheck,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(30.dp),
+                                        tint = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    "No study topics added yet",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    "Create key study concepts or lecture content above.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
+                } else {
                     items(topics, key = { "t_${it.id}" }) { topic ->
                         val cardColor by androidx.compose.animation.animateColorAsState(
                             if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
                         )
                         com.example.ui.components.GlassCard(
-                            modifier = Modifier.animateItem().fillMaxWidth().animateContentSize(),
+                            modifier = Modifier.fillMaxWidth().animateContentSize(),
                             shape = RoundedCornerShape(24.dp),
                             containerColor = cardColor
                         ) {

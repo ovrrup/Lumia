@@ -107,20 +107,21 @@ class ScholarRepository(private val dao: ScholarDao) {
         dao.clearPomodoro()
         dao.clearActionLogs()
 
-        // 2. Insert Courses and map old IDs to newly generated auto-increment IDs
-        val oldToNewCourseId = mutableMapOf<Int, Int>()
-        backup.courses.forEach { course ->
-            val oldId = course.id
-            val newId = dao.insertCourse(course.copy(id = 0)).toInt()
-            oldToNewCourseId[oldId] = newId
-        }
-
-        // 3. Insert Subjects and map old IDs to newly generated auto-increment IDs
+        // 2. Insert Subjects and map old IDs to newly generated auto-increment IDs
         val oldToNewSubjectId = mutableMapOf<Int, Int>()
         backup.subjects.forEach { subject ->
             val oldId = subject.id
             val newId = dao.insertSubject(subject.copy(id = 0)).toInt()
             oldToNewSubjectId[oldId] = newId
+        }
+
+        // 3. Insert Courses and map old IDs to newly generated auto-increment IDs with remapped subjectId
+        val oldToNewCourseId = mutableMapOf<Int, Int>()
+        backup.courses.forEach { course ->
+            val oldId = course.id
+            val newSubjectId = course.subjectId?.let { oldToNewSubjectId[it] } ?: course.subjectId
+            val newId = dao.insertCourse(course.copy(id = 0, subjectId = newSubjectId)).toInt()
+            oldToNewCourseId[oldId] = newId
         }
 
         // 4. Insert Topics with remapped Subject IDs to satisfy foreign keys

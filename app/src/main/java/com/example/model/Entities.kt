@@ -16,7 +16,8 @@ data class Course(
     val schedule: String = "",
     val description: String = "",
     val attendedClasses: Int = 0,
-    val totalClasses: Int = 0
+    val totalClasses: Int = 0,
+    val subjectId: Int? = null
 ) : Serializable
 
 @Entity(tableName = "subjects")

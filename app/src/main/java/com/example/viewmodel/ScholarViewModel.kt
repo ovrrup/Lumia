@@ -150,6 +150,38 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaDynamicBackground = MutableStateFlow(prefs.getBoolean("beta_dynamic_background", false))
     val betaDynamicBackground = _betaDynamicBackground.asStateFlow()
 
+    private val _systemAutoLinkByName = MutableStateFlow(prefs.getBoolean("system_auto_link_by_name", true))
+    val systemAutoLinkByName = _systemAutoLinkByName.asStateFlow()
+
+    private val _systemShareStudyLogs = MutableStateFlow(prefs.getBoolean("system_share_study_logs", true))
+    val systemShareStudyLogs = _systemShareStudyLogs.asStateFlow()
+
+    private val _systemEnableSynergy = MutableStateFlow(prefs.getBoolean("system_enable_synergy", true))
+    val systemEnableSynergy = _systemEnableSynergy.asStateFlow()
+
+    private val _systemAutoCreateSubject = MutableStateFlow(prefs.getBoolean("system_auto_create_subject", false))
+    val systemAutoCreateSubject = _systemAutoCreateSubject.asStateFlow()
+
+    fun updateSystemAutoLinkByName(enabled: Boolean) {
+        _systemAutoLinkByName.value = enabled
+        prefs.edit().putBoolean("system_auto_link_by_name", enabled).apply()
+    }
+
+    fun updateSystemShareStudyLogs(enabled: Boolean) {
+        _systemShareStudyLogs.value = enabled
+        prefs.edit().putBoolean("system_share_study_logs", enabled).apply()
+    }
+
+    fun updateSystemEnableSynergy(enabled: Boolean) {
+        _systemEnableSynergy.value = enabled
+        prefs.edit().putBoolean("system_enable_synergy", enabled).apply()
+    }
+
+    fun updateSystemAutoCreateSubject(enabled: Boolean) {
+        _systemAutoCreateSubject.value = enabled
+        prefs.edit().putBoolean("system_auto_create_subject", enabled).apply()
+    }
+
     private val _dynamicBgLightBrightness = MutableStateFlow(
         prefs.getFloat("dynamic_bg_light_brightness_${(prefs.getString("theme_color", "Ocean") ?: "Ocean").lowercase()}", 0.75f)
     )
@@ -414,9 +446,14 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addCourse(name: String, instructor: String, schedule: String, description: String) {
+    fun addCourse(name: String, instructor: String, schedule: String, description: String, subjectId: Int? = null) {
         viewModelScope.launch {
-            repository.insertCourse(Course(name = name, instructor = instructor, schedule = schedule, description = description))
+            var finalSubjectId = subjectId
+            if (finalSubjectId == null && _systemAutoCreateSubject.value) {
+                val subId = repository.insertSubject(Subject(name = name, targetHours = 10))
+                finalSubjectId = subId.toInt()
+            }
+            repository.insertCourse(Course(name = name, instructor = instructor, schedule = schedule, description = description, subjectId = finalSubjectId))
             logAction("Added course: $name")
         }
     }
@@ -644,6 +681,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                             "safety_pin_conflict_warning" -> _safetyPinConflictWarning.value = boolVal
                             "safety_pin_recommendations" -> _safetyPinRecommendations.value = boolVal
                             "show_action_history" -> _showActionHistory.value = boolVal
+                            "system_auto_link_by_name" -> _systemAutoLinkByName.value = boolVal
+                            "system_share_study_logs" -> _systemShareStudyLogs.value = boolVal
+                            "system_enable_synergy" -> _systemEnableSynergy.value = boolVal
+                            "system_auto_create_subject" -> _systemAutoCreateSubject.value = boolVal
                         }
                     }
                 }
@@ -1160,6 +1201,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             _safetyPinConflictWarning.value = true
             _safetyPinRecommendations.value = true
             _showActionHistory.value = true
+            _systemAutoLinkByName.value = true
+            _systemShareStudyLogs.value = true
+            _systemEnableSynergy.value = true
+            _systemAutoCreateSubject.value = false
             _currentStreak.value = 0
 
             repository.insertActionLog(ActionLog(actionText = "Cleared all application data and settings"))

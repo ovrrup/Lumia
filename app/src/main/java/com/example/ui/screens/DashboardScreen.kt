@@ -232,6 +232,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
         var instructor by remember { mutableStateOf("") }
         var schedule by remember { mutableStateOf("") }
         var description by remember { mutableStateOf("") }
+        var selectedSubjectId by remember { mutableStateOf<Int?>(null) }
 
         AlertDialog(
             onDismissRequest = { showAddCourseDialog = false },
@@ -300,12 +301,43 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         label = { Text("Description (Optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+                    if (subjects.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            "Link to Study Subject (Optional)",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        androidx.compose.foundation.lazy.LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            item {
+                                androidx.compose.material3.InputChip(
+                                    selected = selectedSubjectId == null,
+                                    onClick = { selectedSubjectId = null },
+                                    label = { Text("None") }
+                                )
+                            }
+                            items(subjects, key = { "add_chips_${it.id}" }) { subj ->
+                                androidx.compose.material3.InputChip(
+                                    selected = selectedSubjectId == subj.id,
+                                    onClick = { selectedSubjectId = subj.id },
+                                    label = { Text(subj.name) }
+                                )
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     if (name.isNotBlank()) {
-                        viewModel.addCourse(name, instructor, schedule, description)
+                        viewModel.addCourse(name, instructor, schedule, description, selectedSubjectId)
                         showAddCourseDialog = false
                     }
                 }) { Text("Add") }
@@ -897,6 +929,7 @@ fun HomeTab(
         var schedule by remember { mutableStateOf(courseToEdit!!.schedule) }
         var description by remember { mutableStateOf(courseToEdit!!.description) }
         var showTimePicker by remember { mutableStateOf(false) }
+        var selectedSubjectId by remember { mutableStateOf<Int?>(courseToEdit!!.subjectId) }
 
         if (showTimePicker) {
             val initialHour = remember {
@@ -964,6 +997,37 @@ fun HomeTab(
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 3
                     )
+
+                    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+                    if (subjects.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            "Link to Study Subject (Optional)",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        androidx.compose.foundation.lazy.LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            item {
+                                androidx.compose.material3.InputChip(
+                                    selected = selectedSubjectId == null,
+                                    onClick = { selectedSubjectId = null },
+                                    label = { Text("None") }
+                                )
+                            }
+                            items(subjects, key = { "edit_chips_${it.id}" }) { subj ->
+                                androidx.compose.material3.InputChip(
+                                    selected = selectedSubjectId == subj.id,
+                                    onClick = { selectedSubjectId = subj.id },
+                                    label = { Text(subj.name) }
+                                )
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -973,7 +1037,8 @@ fun HomeTab(
                             name = name,
                             instructor = instructor,
                             schedule = schedule,
-                            description = description
+                            description = description,
+                            subjectId = selectedSubjectId
                         ))
                         courseToEdit = null
                     }
