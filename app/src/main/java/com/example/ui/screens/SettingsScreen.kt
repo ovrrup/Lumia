@@ -834,6 +834,11 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 }
 
                 if (showLogDogDialog) {
+                    var isScanning by remember { mutableStateOf(true) }
+                    LaunchedEffect(Unit) {
+                        kotlinx.coroutines.delay(1500)
+                        isScanning = false
+                    }
                     val crashes = com.example.util.LogDog.getCrashes(context)
                     AlertDialog(
                         onDismissRequest = { showLogDogDialog = false },
@@ -841,7 +846,9 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         title = { Text("LogDog Report 🐾") },
                         text = {
                             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                if (crashes.isEmpty()) {
+                                if (isScanning) {
+                                    Text("🐾 LogDog is sniffing through the codebase... Finding bones...")
+                                } else if (crashes.isEmpty()) {
                                     Text("Woof! Everything is clean in the code kennel. No crashes found!")
                                 } else {
                                     crashes.forEachIndexed { index, crash ->

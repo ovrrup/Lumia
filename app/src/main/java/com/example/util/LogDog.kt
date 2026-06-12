@@ -37,11 +37,21 @@ object LogDog {
     }
 
     fun analyze(crash: String): String {
+        val fileName = crash.lines().firstOrNull { it.contains("com.example.") }
+            ?.substringAfterLast(".")
+            ?.substringBefore("(")
+            ?: "the Unknown Land"
+        
+        val lineNumber = crash.lines().firstOrNull { it.contains("com.example.") }
+            ?.substringAfter(":")
+            ?.substringBefore(")")
+            ?: "???"
+
         return when {
-            crash.contains("NullPointerException") -> "Woof! A NullPointerException! Seems like something was missing... I'm sniffing for it!"
-            crash.contains("SQLiteException") -> "Bark! Database trouble! Did a bone get stuck in the SQLite kennel?"
-            crash.contains("IllegalArgumentException") -> "Arf! Someone didn't follow the rules of the code kennel!"
-            else -> "Grrr... A mysterious error. I'm puzzling over this one."
+            crash.contains("NullPointerException") -> "Woof! A NullPointerException at $fileName:$lineNumber! Seems like someone forgot to feed a variable... I'm sniffing for it!"
+            crash.contains("SQLiteException") -> "Bark! Database trouble in $fileName! Did a bone get stuck in the SQLite kennel?"
+            crash.contains("IllegalArgumentException") -> "Arf! Someone didn't follow the rules of the code kennel at $fileName on line $lineNumber! Bad developer!"
+            else -> "Grrr... A mysterious error in $fileName. I'm puzzling over this one."
         }
     }
 }
