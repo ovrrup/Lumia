@@ -69,17 +69,18 @@ fun Modifier.liquidGlass(
     )
     
     // Ultra-fine border highlight mimicking physical glass physics
-    // without fake-looking, high-contrast borders standing out.
+    // Utilizing harmonized theme-conforming colors to completely avoid jarring stark white borders
+    val outlineVariant = MaterialTheme.colorScheme.outlineVariant
     val borderBrush = Brush.linearGradient(
         colors = if (isDarkTheme) {
             listOf(
-                Color.White.copy(alpha = 0.07f),
-                Color.White.copy(alpha = 0.02f)
+                outlineVariant.copy(alpha = 0.15f),
+                outlineVariant.copy(alpha = 0.04f)
             )
         } else {
             listOf(
-                Color.White.copy(alpha = 0.32f),
-                onSurfaceColor.copy(alpha = 0.04f)
+                outlineVariant.copy(alpha = 0.22f),
+                outlineVariant.copy(alpha = 0.05f)
             )
         },
         start = Offset(0f, 0f),
