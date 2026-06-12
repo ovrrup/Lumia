@@ -250,6 +250,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
     val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
     val betaDynamicBackground by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
+    val dynamicBgLightBrightness by viewModel.dynamicBgLightBrightness.collectAsStateWithLifecycle()
+    val dynamicBgDarkBrightness by viewModel.dynamicBgDarkBrightness.collectAsStateWithLifecycle()
     val betaBetterTexts by viewModel.betaBetterTexts.collectAsStateWithLifecycle()
     val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
     val glassBackdropStyle by viewModel.glassBackdropStyle.collectAsStateWithLifecycle()
@@ -499,6 +501,56 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     unavailableReason = "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
                 )
+
+                AnimatedVisibility(visible = betaDynamicBackground && !betaMinimalistMode) {
+                    val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
+                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp)) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isDarkTheme) "Dark Mode Lighting Brightness" else "Light Mode Lighting Brightness",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            val currentBrightness = if (isDarkTheme) dynamicBgDarkBrightness else dynamicBgLightBrightness
+                            Text(
+                                text = "${(currentBrightness * 100).toInt()}%",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Text(
+                            text = if (isDarkTheme) {
+                                "Calibrate background glow intensity in dark modes for optimal readability"
+                            } else {
+                                "Calibrate vibrant background energy in light modes for clean visual focus"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                        Slider(
+                            value = if (isDarkTheme) dynamicBgDarkBrightness else dynamicBgLightBrightness,
+                            onValueChange = {
+                                if (isDarkTheme) {
+                                    viewModel.updateDynamicBgDarkBrightness(it)
+                                } else {
+                                    viewModel.updateDynamicBgLightBrightness(it)
+                                }
+                            },
+                            valueRange = 0.05f..1.0f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
             }
 
             // 5. Legibility & Typography Card

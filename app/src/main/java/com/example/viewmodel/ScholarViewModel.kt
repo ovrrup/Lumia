@@ -150,6 +150,22 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaDynamicBackground = MutableStateFlow(prefs.getBoolean("beta_dynamic_background", false))
     val betaDynamicBackground = _betaDynamicBackground.asStateFlow()
 
+    private val _dynamicBgLightBrightness = MutableStateFlow(
+        prefs.getFloat("dynamic_bg_light_brightness_${(prefs.getString("theme_color", "Ocean") ?: "Ocean").lowercase()}", 0.75f)
+    )
+    val dynamicBgLightBrightness = _dynamicBgLightBrightness.asStateFlow()
+
+    private val _dynamicBgDarkBrightness = MutableStateFlow(
+        prefs.getFloat("dynamic_bg_dark_brightness_${(prefs.getString("theme_color", "Ocean") ?: "Ocean").lowercase()}", 0.45f)
+    )
+    val dynamicBgDarkBrightness = _dynamicBgDarkBrightness.asStateFlow()
+
+    fun refreshThemeBrightness() {
+        val theme = _themeColor.value
+        _dynamicBgLightBrightness.value = prefs.getFloat("dynamic_bg_light_brightness_${theme.lowercase()}", 0.75f)
+        _dynamicBgDarkBrightness.value = prefs.getFloat("dynamic_bg_dark_brightness_${theme.lowercase()}", 0.45f)
+    }
+
     private val _dynamicAppIcon = MutableStateFlow(prefs.getBoolean("dynamic_app_icon", false))
     val dynamicAppIcon = _dynamicAppIcon.asStateFlow()
 
@@ -279,6 +295,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     init {
         val database = AppDatabase.getDatabase(application)
         repository = ScholarRepository(database.scholarDao())
+        
+        refreshThemeBrightness()
         
         val lastActionDate = prefs.getString("last_action_date_str", "") ?: ""
         if (lastActionDate.isNotEmpty()) {
@@ -578,36 +596,61 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     editor.putFloat(key, floatVal)
                     _glassOpacityValue.value = floatVal
                 }
+                "dynamic_bg_light_brightness" -> {
+                    val floatVal = value.toFloatOrNull() ?: 0.75f
+                    editor.putFloat(key, floatVal)
+                    _dynamicBgLightBrightness.value = floatVal
+                    // also fallback to currently active theme if it's there
+                    val activeTheme = (settings["theme_color"] ?: "Ocean").lowercase()
+                    editor.putFloat("dynamic_bg_light_brightness_$activeTheme", floatVal)
+                }
+                "dynamic_bg_dark_brightness" -> {
+                    val floatVal = value.toFloatOrNull() ?: 0.45f
+                    editor.putFloat(key, floatVal)
+                    _dynamicBgDarkBrightness.value = floatVal
+                    // also fallback to currently active theme if it's there
+                    val activeTheme = (settings["theme_color"] ?: "Ocean").lowercase()
+                    editor.putFloat("dynamic_bg_dark_brightness_$activeTheme", floatVal)
+                }
                 else -> {
-                    val boolVal = value.toBooleanStrictOrNull() ?: return@forEach
-                    editor.putBoolean(key, boolVal)
-                    when(key) {
-                        "pure_black_mode" -> _pureBlackMode.value = boolVal
-                        "beta_floating_nav" -> _betaFloatingNav.value = boolVal
-                        "beta_pomodoro" -> _betaPomodoro.value = boolVal
-                        "beta_cgpa" -> _betaCgpa.value = boolVal
-                        "beta_notes" -> _betaNotes.value = boolVal
-                        "beta_motivation" -> _betaMotivation.value = boolVal
-                        "beta_immersive_mode" -> _betaImmersiveMode.value = boolVal
-                        "beta_notch_optimization" -> _betaNotchOptimization.value = boolVal
-                        "beta_glass_ui" -> _betaGlassUi.value = boolVal
-                        "beta_glass_dynamic" -> _betaGlassDynamic.value = boolVal
-                        "beta_frost_glass" -> _betaFrostGlass.value = boolVal
-                        "beta_enhanced_header" -> _betaEnhancedHeader.value = boolVal
-                        "beta_minimalist_mode" -> _betaMinimalistMode.value = boolVal
-                        "beta_dynamic_background" -> _betaDynamicBackground.value = boolVal
-                        "dynamic_app_icon" -> _dynamicAppIcon.value = boolVal
-                        "beta_better_texts" -> _betaBetterTexts.value = boolVal
-                        "beta_better_texts_palette" -> _betaBetterTextsPalette.value = boolVal
-                        "safety_pin_enabled" -> _safetyPinEnabled.value = boolVal
-                        "safety_pin_conflict_warning" -> _safetyPinConflictWarning.value = boolVal
-                        "safety_pin_recommendations" -> _safetyPinRecommendations.value = boolVal
-                        "show_action_history" -> _showActionHistory.value = boolVal
+                    if (key.startsWith("dynamic_bg_light_brightness_")) {
+                        val floatVal = value.toFloatOrNull() ?: 0.75f
+                        editor.putFloat(key, floatVal)
+                    } else if (key.startsWith("dynamic_bg_dark_brightness_")) {
+                        val floatVal = value.toFloatOrNull() ?: 0.45f
+                        editor.putFloat(key, floatVal)
+                    } else {
+                        val boolVal = value.toBooleanStrictOrNull() ?: return@forEach
+                        editor.putBoolean(key, boolVal)
+                        when(key) {
+                            "pure_black_mode" -> _pureBlackMode.value = boolVal
+                            "beta_floating_nav" -> _betaFloatingNav.value = boolVal
+                            "beta_pomodoro" -> _betaPomodoro.value = boolVal
+                            "beta_cgpa" -> _betaCgpa.value = boolVal
+                            "beta_notes" -> _betaNotes.value = boolVal
+                            "beta_motivation" -> _betaMotivation.value = boolVal
+                            "beta_immersive_mode" -> _betaImmersiveMode.value = boolVal
+                            "beta_notch_optimization" -> _betaNotchOptimization.value = boolVal
+                            "beta_glass_ui" -> _betaGlassUi.value = boolVal
+                            "beta_glass_dynamic" -> _betaGlassDynamic.value = boolVal
+                            "beta_frost_glass" -> _betaFrostGlass.value = boolVal
+                            "beta_enhanced_header" -> _betaEnhancedHeader.value = boolVal
+                            "beta_minimalist_mode" -> _betaMinimalistMode.value = boolVal
+                            "beta_dynamic_background" -> _betaDynamicBackground.value = boolVal
+                            "dynamic_app_icon" -> _dynamicAppIcon.value = boolVal
+                            "beta_better_texts" -> _betaBetterTexts.value = boolVal
+                            "beta_better_texts_palette" -> _betaBetterTextsPalette.value = boolVal
+                            "safety_pin_enabled" -> _safetyPinEnabled.value = boolVal
+                            "safety_pin_conflict_warning" -> _safetyPinConflictWarning.value = boolVal
+                            "safety_pin_recommendations" -> _safetyPinRecommendations.value = boolVal
+                            "show_action_history" -> _showActionHistory.value = boolVal
+                        }
                     }
                 }
             }
         }
         editor.apply()
+        refreshThemeBrightness()
     }
 
     fun exportData(uri: Uri) {
@@ -756,6 +799,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateThemeColor(color: String) {
         _themeColor.value = color
         prefs.edit().putString("theme_color", color).apply()
+        refreshThemeBrightness()
         if (_dynamicAppIcon.value) {
             applyThemeBasedAppIcon(color)
         }
@@ -1019,6 +1063,18 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("beta_dynamic_background", enabled).apply()
     }
 
+    fun updateDynamicBgLightBrightness(value: Float) {
+        val theme = _themeColor.value
+        prefs.edit().putFloat("dynamic_bg_light_brightness_${theme.lowercase()}", value).apply()
+        _dynamicBgLightBrightness.value = value
+    }
+
+    fun updateDynamicBgDarkBrightness(value: Float) {
+        val theme = _themeColor.value
+        prefs.edit().putFloat("dynamic_bg_dark_brightness_${theme.lowercase()}", value).apply()
+        _dynamicBgDarkBrightness.value = value
+    }
+
     fun updateBetaBetterTexts(enabled: Boolean) {
         if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaBetterTextsPalette.value) {
             _safetyPinDialogData.value = SafetyPinDialogData(
@@ -1096,6 +1152,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             _betaEnhancedHeader.value = false
             _betaMinimalistMode.value = false
             _betaDynamicBackground.value = false
+            refreshThemeBrightness()
             _dynamicAppIcon.value = false
             _betaBetterTexts.value = false
             _betaBetterTextsPalette.value = true
