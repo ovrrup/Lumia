@@ -222,7 +222,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                                 val displayDay = renderDay
                                                 renderDay++
                                                 
-                                                val record = attendanceRecords.find { it.dateMillis == dateMillis }
+                                                val record = attendanceRecords.find { rec ->
+                                                    val recCal = java.util.Calendar.getInstance().apply { timeInMillis = rec.dateMillis }
+                                                    recCal.get(java.util.Calendar.YEAR) == dateCal.get(java.util.Calendar.YEAR) &&
+                                                    recCal.get(java.util.Calendar.DAY_OF_YEAR) == dateCal.get(java.util.Calendar.DAY_OF_YEAR)
+                                                }
                                                 val statusColor = when (record?.status) {
                                                     "Present" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
                                                     "Absent" -> androidx.compose.ui.graphics.Color(0xFFF44336)
@@ -280,7 +284,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                         val dayOfWeek = java.text.SimpleDateFormat("E", java.util.Locale.getDefault()).format(dateCal.time)
                                         val dayOfMonth = java.text.SimpleDateFormat("d", java.util.Locale.getDefault()).format(dateCal.time)
                                         
-                                        val record = attendanceRecords.find { it.dateMillis == dateMillis }
+                                        val record = attendanceRecords.find { rec ->
+                                            val recCal = java.util.Calendar.getInstance().apply { timeInMillis = rec.dateMillis }
+                                            recCal.get(java.util.Calendar.YEAR) == dateCal.get(java.util.Calendar.YEAR) &&
+                                            recCal.get(java.util.Calendar.DAY_OF_YEAR) == dateCal.get(java.util.Calendar.DAY_OF_YEAR)
+                                        }
                                         val statusColor = when (record?.status) {
                                             "Present" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
                                             "Absent" -> androidx.compose.ui.graphics.Color(0xFFF44336)
@@ -344,7 +352,12 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
 
                     if (showAttendanceDialog) {
-                        val record = attendanceRecords.find { it.dateMillis == selectedDate }
+                        val selCal = java.util.Calendar.getInstance().apply { timeInMillis = selectedDate }
+                        val record = attendanceRecords.find { rec ->
+                            val recCal = java.util.Calendar.getInstance().apply { timeInMillis = rec.dateMillis }
+                            recCal.get(java.util.Calendar.YEAR) == selCal.get(java.util.Calendar.YEAR) &&
+                            recCal.get(java.util.Calendar.DAY_OF_YEAR) == selCal.get(java.util.Calendar.DAY_OF_YEAR)
+                        }
                         val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
                         AlertDialog(
                             onDismissRequest = { showAttendanceDialog = false },

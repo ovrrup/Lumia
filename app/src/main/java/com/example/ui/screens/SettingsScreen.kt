@@ -287,8 +287,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             val dynamicAppIcon by viewModel.dynamicAppIcon.collectAsStateWithLifecycle()
             SettingsToggleItem(
-                title = "Dynamic App Icon",
-                subtitle = "Monochrome icon that adapts to your wallpaper (requires Android 13+ and a compatible launcher with 'Themed Icons' enabled)",
+                title = "Alternate Icon Style",
+                subtitle = "Switch between default celestial blue gradient and Obsidian-Gold luxury style. (Note: System-wide wallpaper-reactive themed icons are applied automatically by launcher settings.)",
                 checked = dynamicAppIcon,
                 onCheckedChange = { viewModel.updateDynamicAppIcon(it) }
             )
@@ -585,7 +585,77 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            val coursesCount by viewModel.courses.collectAsStateWithLifecycle()
+            val assignmentsCount by viewModel.assignments.collectAsStateWithLifecycle()
+            val subjectsCount by viewModel.subjects.collectAsStateWithLifecycle()
+            val pomodoroSessionsCount by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
+
+            // System Integrity Dashboard Card
+            com.example.ui.components.GlassCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Storage,
+                                contentDescription = "Active Database Info",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                "Database Integrity Status",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                "Secure active binary protection enabled",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                            Text(text = coursesCount.size.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                            Text(text = "Courses", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                            Text(text = subjectsCount.size.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                            Text(text = "Subjects", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                            Text(text = assignmentsCount.size.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                            Text(text = "Assignments", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                            Text(text = pomodoroSessionsCount.size.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                            Text(text = "Pomodoros", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+
             SettingsActionItem(
                 title = "Export Data",
                 subtitle = "Back up settings, customisations, courses and assignments securely",

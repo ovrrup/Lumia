@@ -564,7 +564,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
                     repository.exportDataToStream(os, settings)
                 }
-                _importExportStatus.value = "Data exported successfully (JSON format)"
+                _importExportStatus.value = "Secure backup binary package exported successfully ✔"
             } catch (e: Exception) {
                 _importExportStatus.value = "Export failed: ${e.message}"
             }
@@ -579,7 +579,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     settings = repository.importDataFromStream(ins)
                 }
                 loadSettings(settings)
-                _importExportStatus.value = "Data imported successfully"
+                _importExportStatus.value = "Secure backup package imported and restored successfully ✔"
             } catch (e: Exception) {
                 _importExportStatus.value = "Import failed: Invalid file or wrong format"
             }

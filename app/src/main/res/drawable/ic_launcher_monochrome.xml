@@ -4,7 +4,12 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!--
+        Monochrome layer — system uses this as a SHAPE MASK only.
+        Fill color is irrelevant; use white. Keep it simple and bold
+        (thin lines disappear when tinted at small sizes).
+    -->
     <path
-        android:fillColor="#000000"
-        android:pathData="M 54 18 A 36 36 0 1 0 54 90 A 36 36 0 1 0 54 18 Z M 54 28 A 26 26 0 1 1 54 80 A 26 26 0 1 1 54 28 Z M 54 38 A 16 16 0 1 0 54 70 A 16 16 0 1 0 54 38 Z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,16 A38,38,0,1,0,54,92 A38,38,0,1,0,54,16 Z M54,27 A27,27,0,1,1,54,81 A27,27,0,1,1,54,27 Z M54,38 A16,16,0,1,0,54,70 A16,16,0,1,0,54,38 Z" />
 </vector>

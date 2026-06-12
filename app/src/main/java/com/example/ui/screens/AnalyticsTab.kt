@@ -584,7 +584,15 @@ fun PomodoroHeatmapChart(
                                         shape = RoundedCornerShape(4.dp)
                                     ),
                                 contentAlignment = Alignment.Center
-                            ) {}
+                            ) {
+                                Text(
+                                    text = day.toString(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (duration == 0) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                            else MaterialTheme.colorScheme.onPrimary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         } else {
                             Spacer(modifier = Modifier.weight(1f).aspectRatio(1f).padding(4.dp))
                         }

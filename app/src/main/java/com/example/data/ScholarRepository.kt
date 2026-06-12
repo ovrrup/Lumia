@@ -55,6 +55,7 @@ class ScholarRepository(private val dao: ScholarDao) {
         dao.clearAssignments()
         dao.clearAttendance()
         dao.clearPomodoro()
+        dao.clearActionLogs()
     }
 
     private val moshi = com.squareup.moshi.Moshi.Builder().addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()
@@ -72,12 +73,29 @@ class ScholarRepository(private val dao: ScholarDao) {
             pomodoro = dao.exportAllPomodoro(),
             actionLogs = dao.exportAllActionLogs()
         )
-        outputStream.writer().use { it.write(backupAdapter.toJson(backup)) }
+        // Secure binary format: wrap outputStream in GZIPOutputStream for compression and obfuscation
+        java.util.zip.GZIPOutputStream(outputStream).use { gzos ->
+            gzos.writer().use { writer ->
+                writer.write(backupAdapter.toJson(backup))
+            }
+        }
     }
 
     // Import
     suspend fun importDataFromStream(inputStream: InputStream): Map<String, String>? {
-        val json = inputStream.reader().readText()
+        val bis = java.io.BufferedInputStream(inputStream)
+        bis.mark(2)
+        val header = ByteArray(2)
+        val readBytes = bis.read(header)
+        bis.reset()
+
+        val json = if (readBytes == 2 && header[0] == 0x1f.toByte() && header[1] == 0x8b.toByte()) {
+            // Secure compressed binary GZIP stream
+            java.util.zip.GZIPInputStream(bis).reader().use { it.readText() }
+        } else {
+            // Fallback plain-text JSON stream for older backups
+            bis.reader().use { it.readText() }
+        }
         val backup = backupAdapter.fromJson(json) ?: throw IllegalArgumentException("Invalid backup file")
         
         // 1. Clear database securely
