@@ -148,6 +148,8 @@ val LocalGlassTint = androidx.compose.runtime.compositionLocalOf { Color.White }
 val LocalGlassMode = androidx.compose.runtime.compositionLocalOf { false }
 val LocalGlassDynamic = androidx.compose.runtime.compositionLocalOf { true }
 val LocalFrostGlass = androidx.compose.runtime.compositionLocalOf { true }
+val LocalGlassBackdropStyle = androidx.compose.runtime.compositionLocalOf { "Translucent" }
+val LocalGlassOpacityValue = androidx.compose.runtime.compositionLocalOf { 0.6f }
 
 @Composable
 fun ScholarTheme(
@@ -162,6 +164,8 @@ fun ScholarTheme(
     glassMode: Boolean = false,
     glassDynamic: Boolean = true,
     frostGlass: Boolean = true,
+    glassBackdropStyle: String = "Translucent",
+    glassOpacityValue: Float = 0.6f,
     betterTexts: Boolean = false,
     betterTextsPalette: Boolean = true,
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -343,7 +347,9 @@ fun ScholarTheme(
         LocalGlassTint provides colorScheme.primary,
         LocalGlassMode provides glassMode,
         LocalGlassDynamic provides glassDynamic,
-        LocalFrostGlass provides frostGlass
+        LocalFrostGlass provides frostGlass,
+        LocalGlassBackdropStyle provides glassBackdropStyle,
+        LocalGlassOpacityValue provides glassOpacityValue
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

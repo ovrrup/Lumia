@@ -367,6 +367,7 @@ fun HomeTab(
     onAddSubjectClick: () -> Unit
 ) {
     val courses by viewModel.courses.collectAsStateWithLifecycle()
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
     val streak by viewModel.currentStreak.collectAsStateWithLifecycle()
@@ -405,7 +406,7 @@ fun HomeTab(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             androidx.compose.foundation.layout.Box {
-                if (betaEnhancedHeader) {
+                if (betaEnhancedHeader || isGlass) {
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .matchParentSize()
@@ -415,7 +416,7 @@ fun HomeTab(
                     androidx.compose.material3.HorizontalDivider(
                         modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
                         thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                     )
                 }
                 CenterAlignedTopAppBar(
@@ -427,8 +428,8 @@ fun HomeTab(
                     },
                     scrollBehavior = scrollBehavior,
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = if (betaEnhancedHeader) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface.copy(alpha=0.5f),
-                        scrolledContainerColor = if (betaEnhancedHeader) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp).copy(alpha=0.5f)
+                        containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface.copy(alpha=0.5f),
+                        scrolledContainerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp).copy(alpha=0.5f)
                     )
                 )
             }

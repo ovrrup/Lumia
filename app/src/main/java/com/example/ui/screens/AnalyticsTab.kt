@@ -94,7 +94,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         topBar = {
             androidx.compose.foundation.layout.Box {
-                if (betaEnhancedHeader) {
+                if (betaEnhancedHeader || isGlass) {
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .matchParentSize()
@@ -104,15 +104,15 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
                     androidx.compose.material3.HorizontalDivider(
                         modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
                         thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                     )
                 }
                 CenterAlignedTopAppBar(
                     title = { Text("Analytics", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                     scrollBehavior = scrollBehavior,
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = if (betaEnhancedHeader) Color.Transparent else if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surface,
-                        scrolledContainerColor = if (betaEnhancedHeader) Color.Transparent else if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                        containerColor = if (betaEnhancedHeader || isGlass) Color.Transparent else MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = if (betaEnhancedHeader || isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                     )
                 )
             }

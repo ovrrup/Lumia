@@ -135,6 +135,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaFrostGlass = MutableStateFlow(prefs.getBoolean("beta_frost_glass", true))
     val betaFrostGlass = _betaFrostGlass.asStateFlow()
 
+    private val _glassBackdropStyle = MutableStateFlow(prefs.getString("glass_backdrop_style", "Translucent") ?: "Translucent")
+    val glassBackdropStyle = _glassBackdropStyle.asStateFlow()
+
+    private val _glassOpacityValue = MutableStateFlow(prefs.getFloat("glass_opacity_value", 0.6f))
+    val glassOpacityValue = _glassOpacityValue.asStateFlow()
+
     private val _betaEnhancedHeader = MutableStateFlow(prefs.getBoolean("beta_enhanced_header", false))
     val betaEnhancedHeader = _betaEnhancedHeader.asStateFlow()
 
@@ -150,28 +156,66 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateDynamicAppIcon(enabled: Boolean) {
         _dynamicAppIcon.value = enabled
         prefs.edit().putBoolean("dynamic_app_icon", enabled).apply()
-        
+        applyThemeBasedAppIcon(_themeColor.value)
+        android.widget.Toast.makeText(getApplication(), "Icon changing... Launcher may take a moment to reflect changes or might require a home screen refresh.", android.widget.Toast.LENGTH_LONG).show()
+    }
+
+    private fun applyThemeBasedAppIcon(themeColor: String) {
+        val enabled = _dynamicAppIcon.value
         val pm = getApplication<Application>().packageManager
         val packageName = getApplication<Application>().packageName
-        val defaultAlias = android.content.ComponentName(packageName, "com.example.DefaultAlias")
-        val dynamicAlias = android.content.ComponentName(packageName, "com.example.DynamicAlias")
+
+        val aliases = listOf(
+            "com.example.DefaultAlias",
+            "com.example.AliasEmerald",
+            "com.example.AliasGold",
+            "com.example.AliasRose",
+            "com.example.AliasSage",
+            "com.example.AliasTwilight",
+            "com.example.AliasCustom",
+            "com.example.AliasDynamic"
+        )
+
+        val targetAliasName = if (!enabled) {
+            "com.example.DefaultAlias"
+        } else {
+            when (themeColor) {
+                "Ocean" -> "com.example.DefaultAlias"
+                "Emerald" -> "com.example.AliasEmerald"
+                "Gold" -> "com.example.AliasGold"
+                "Rose" -> "com.example.AliasRose"
+                "Sage" -> "com.example.AliasSage"
+                "Twilight" -> "com.example.AliasTwilight"
+                "Custom" -> "com.example.AliasCustom"
+                "Dynamic" -> "com.example.AliasDynamic"
+                else -> "com.example.DefaultAlias"
+            }
+        }
 
         try {
-            if (enabled) {
-                pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
-                pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
-            } else {
-                pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
-                pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+            aliases.forEach { alias ->
+                val compName = android.content.ComponentName(packageName, alias)
+                val targetSetting = if (alias == targetAliasName) {
+                    android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                } else {
+                    android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                }
+                pm.setComponentEnabledSetting(compName, targetSetting, android.content.pm.PackageManager.DONT_KILL_APP)
             }
         } catch (e: Exception) {
             android.util.Log.e("ScholarViewModel", "Exception toggling dynamic app icon aliases. Restoring defaults.", e)
             try {
-                pm.setComponentEnabledSetting(defaultAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
-                pm.setComponentEnabledSetting(dynamicAlias, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+                aliases.forEach { alias ->
+                    val compName = android.content.ComponentName(packageName, alias)
+                    val targetSetting = if (alias == "com.example.DefaultAlias") {
+                        android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                    } else {
+                        android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                    }
+                    pm.setComponentEnabledSetting(compName, targetSetting, android.content.pm.PackageManager.DONT_KILL_APP)
+                }
             } catch (ex: Exception) {}
         }
-        android.widget.Toast.makeText(getApplication(), "Icon changing... Launcher may take a moment to reflect changes or might require a home screen refresh.", android.widget.Toast.LENGTH_LONG).show()
     }
 
     private val _betaBetterTexts = MutableStateFlow(prefs.getBoolean("beta_better_texts", false))
@@ -525,6 +569,15 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     editor.putInt(key, intVal)
                     _currentStreak.value = intVal
                 }
+                "glass_backdrop_style" -> {
+                    editor.putString(key, value)
+                    _glassBackdropStyle.value = value
+                }
+                "glass_opacity_value" -> {
+                    val floatVal = value.toFloatOrNull() ?: 0.6f
+                    editor.putFloat(key, floatVal)
+                    _glassOpacityValue.value = floatVal
+                }
                 else -> {
                     val boolVal = value.toBooleanStrictOrNull() ?: return@forEach
                     editor.putBoolean(key, boolVal)
@@ -703,6 +756,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateThemeColor(color: String) {
         _themeColor.value = color
         prefs.edit().putString("theme_color", color).apply()
+        if (_dynamicAppIcon.value) {
+            applyThemeBasedAppIcon(color)
+        }
     }
 
     fun updateBetaFloatingNav(enabled: Boolean) {
@@ -869,6 +925,16 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateBetaFrostGlass(enabled: Boolean) {
         _betaFrostGlass.value = enabled
         prefs.edit().putBoolean("beta_frost_glass", enabled).apply()
+    }
+
+    fun updateGlassBackdropStyle(style: String) {
+        _glassBackdropStyle.value = style
+        prefs.edit().putString("glass_backdrop_style", style).apply()
+    }
+
+    fun updateGlassOpacityValue(value: Float) {
+        _glassOpacityValue.value = value
+        prefs.edit().putFloat("glass_opacity_value", value).apply()
     }
 
     fun updateBetaEnhancedHeader(enabled: Boolean) {

@@ -76,7 +76,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             androidx.compose.foundation.layout.Box {
-                if (betaEnhancedHeader) {
+                if (betaEnhancedHeader || isGlass) {
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .matchParentSize()
@@ -86,7 +86,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     androidx.compose.material3.HorizontalDivider(
                         modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
                         thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                     )
                 }
                 LargeTopAppBar(
@@ -98,8 +98,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     },
                     scrollBehavior = scrollBehavior,
                     colors = TopAppBarDefaults.largeTopAppBarColors(
-                        containerColor = if (betaEnhancedHeader) androidx.compose.ui.graphics.Color.Transparent else if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
-                        scrolledContainerColor = if (betaEnhancedHeader) androidx.compose.ui.graphics.Color.Transparent else if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                        containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                     )
                 )
             }

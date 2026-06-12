@@ -1,8 +1,6 @@
 package com.example.ui.theme
 
 import android.os.Build
-import android.graphics.RenderEffect
-import android.graphics.Shader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -18,222 +16,154 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.composed
 
 /**
- * Modern soft liquid or classical frost glass effect
+ * Highly refined, elegant "OG" Frosted Glass UI effect.
+ * Completely replaces old plastic-looking liquid glass themes with pristine,
+ * harmoniously blended satin translucency.
  */
 fun Modifier.liquidGlass(
     shape: Shape = RoundedCornerShape(24.dp),
     tintColor: Color = Color.White,
     tintAlpha: Float = 0.15f,
-    blurRadius: Float = 40f,
-    isDark: Boolean = false,
-    borderColor: Color = Color.White
+    blurRadius: Float = 40f, // Kept for backwards compatibility
+    isDark: Boolean = false, // Kept for backwards compatibility
+    borderColor: Color = Color.White // Kept for backwards compatibility
 ): Modifier = composed {
-    val frostGlass = LocalFrostGlass.current
+    val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     
-    if (frostGlass) {
-        // Classic Frosted Glass Theme: Satin finish, pristine high-contrast legibility, no child blurs
-        this
-            .clip(shape)
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = if (isDark) listOf(
-                        tintColor.mix(Color.Black, 0.12f).copy(alpha = tintAlpha + 0.18f),
-                        tintColor.mix(Color.Black, 0.22f).copy(alpha = tintAlpha + 0.10f)
-                    ) else listOf(
-                        tintColor.mix(Color.White, 0.25f).copy(alpha = tintAlpha + 0.24f),
-                        tintColor.mix(Color.White, 0.12f).copy(alpha = tintAlpha + 0.12f)
-                    )
-                ),
-                shape = shape
-            )
-            .border(
-                width = 1.2.dp,
-                brush = Brush.linearGradient(
-                    colors = if (isDark) listOf(
-                        Color.White.copy(alpha = 0.20f),
-                        Color.White.copy(alpha = 0.04f)
-                    ) else listOf(
-                        Color.White.copy(alpha = 0.60f),
-                        Color.White.copy(alpha = 0.15f)
-                    ),
-                    start = Offset(0f, 0f),
-                    end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                ),
-                shape = shape
-            )
-    } else {
-        // Liquid Glass Theme: Multi-shine premium dynamic liquid gloss
-        this
-            .clip(shape)
-            .background(
-                brush = Brush.linearGradient(
-                    colors = if (isDark) listOf(
-                        tintColor.copy(alpha = tintAlpha + 0.12f),
-                        tintColor.copy(alpha = tintAlpha + 0.04f),
-                        tintColor.copy(alpha = tintAlpha + 0.22f) // Specular highlight
-                    ) else listOf(
-                        tintColor.copy(alpha = tintAlpha + 0.24f),
-                        tintColor.copy(alpha = tintAlpha + 0.08f),
-                        tintColor.copy(alpha = tintAlpha + 0.38f) // Specular highlight
-                    ),
-                    start = Offset(0f, 0f),
-                    end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                ),
-                shape = shape
-            )
-            .border(
-                width = 1.dp,
-                brush = Brush.linearGradient(
-                    colors = if (isDark) listOf(
-                        borderColor.copy(alpha = 0.30f),
-                        borderColor.copy(alpha = 0.10f),
-                        borderColor.copy(alpha = 0.45f) // Metallic rim reflection
-                    ) else listOf(
-                        borderColor.copy(alpha = 0.65f),
-                        borderColor.copy(alpha = 0.25f),
-                        borderColor.copy(alpha = 0.85f) // Metallic rim reflection
-                    ),
-                    start = Offset(0f, 0f),
-                    end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                ),
-                shape = shape
-            )
+    val backdropStyle = LocalGlassBackdropStyle.current
+    val opacitySetting = LocalGlassOpacityValue.current
+    
+    val baseAlpha1 = if (isDarkTheme) (0.50f + (tintAlpha * 0.12f)) else (0.76f + (tintAlpha * 0.15f))
+    val baseAlpha2 = if (isDarkTheme) (0.30f + (tintAlpha * 0.08f)) else (0.52f + (tintAlpha * 0.10f))
+
+    val finalAlpha1 = when (backdropStyle) {
+        "Opaque" -> 1.0f
+        "Transparent" -> 0.01f
+        else -> baseAlpha1 * opacitySetting
     }
+    val finalAlpha2 = when (backdropStyle) {
+        "Opaque" -> 1.0f
+        "Transparent" -> 0.00f
+        else -> baseAlpha2 * opacitySetting
+    }
+
+    val backColor1 = if (backdropStyle == "Opaque") {
+        if (isDarkTheme) surfaceColor.mix(tintColor, 0.96f) else surfaceColor.mix(tintColor, 0.95f)
+    } else {
+        surfaceColor.mix(tintColor, if (isDarkTheme) 0.94f else 0.93f)
+    }
+    val backColor2 = if (backdropStyle == "Opaque") {
+        if (isDarkTheme) surfaceColor.mix(tintColor, 0.98f) else surfaceColor.mix(tintColor, 0.97f)
+    } else {
+        surfaceColor.mix(tintColor, 0.97f)
+    }
+
+    // Smooth vertically blended glass filling.
+    val backBrush = Brush.verticalGradient(
+        colors = listOf(
+            backColor1.copy(alpha = finalAlpha1),
+            backColor2.copy(alpha = finalAlpha2)
+        )
+    )
+    
+    // Ultra-fine border highlight mimicking physical glass physics
+    // without fake-looking, high-contrast borders standing out.
+    val borderBrush = Brush.linearGradient(
+        colors = if (isDarkTheme) {
+            listOf(
+                Color.White.copy(alpha = 0.07f),
+                Color.White.copy(alpha = 0.02f)
+            )
+        } else {
+            listOf(
+                Color.White.copy(alpha = 0.32f),
+                onSurfaceColor.copy(alpha = 0.04f)
+            )
+        },
+        start = Offset(0f, 0f),
+        end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+    )
+
+    this
+        .clip(shape)
+        .background(brush = backBrush, shape = shape)
+        .border(width = 0.8.dp, brush = borderBrush, shape = shape)
 }
 
 fun Modifier.glassCard(shape: Shape = RoundedCornerShape(24.dp)): Modifier = composed {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
     val dynamic = LocalGlassDynamic.current
-    if (dynamic) {
-        val tint = LocalGlassTint.current
-        val tintColor = if (isDark) tint.mix(Color.Black, 0.10f) else tint.mix(Color.White, 0.15f)
-        val borderColor = if (isDark) tint.mix(Color.White, 0.30f) else tint.mix(Color.White, 0.70f)
-        liquidGlass(
-            shape = shape,
-            tintAlpha = if (isDark) 0.12f else 0.20f,
-            blurRadius = 15f,
-            isDark = isDark,
-            tintColor = tintColor,
-            borderColor = borderColor
-        )
+    val tint = LocalGlassTint.current
+    
+    val tintColor = if (dynamic) {
+        if (isDark) tint.mix(Color.Black, 0.15f) else tint.mix(Color.White, 0.25f)
     } else {
-        liquidGlass(
-            shape = shape,
-            tintAlpha = if (isDark) 0.08f else 0.15f,
-            blurRadius = 18f,
-            isDark = isDark,
-            tintColor = if (isDark) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White,
-            borderColor = androidx.compose.ui.graphics.Color.White
-        )
+        if (isDark) Color.Black else Color.White
     }
+    
+    liquidGlass(
+        shape = shape,
+        tintAlpha = if (isDark) 0.08f else 0.12f,
+        isDark = isDark,
+        tintColor = tintColor
+    )
 }
 
 fun Modifier.glassHero(shape: Shape = RoundedCornerShape(24.dp)): Modifier = composed {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
     val dynamic = LocalGlassDynamic.current
-    if (dynamic) {
-        val tint = LocalGlassTint.current
-        val tintColor = if (isDark) tint.mix(Color.Black, 0.15f) else tint.mix(Color.White, 0.25f)
-        val borderColor = if (isDark) tint.mix(Color.White, 0.40f) else tint.mix(Color.White, 0.80f)
-        liquidGlass(
-            shape = shape,
-            tintAlpha = if (isDark) 0.16f else 0.28f,
-            blurRadius = 20f,
-            isDark = isDark,
-            tintColor = tintColor,
-            borderColor = borderColor
-        )
+    val tint = LocalGlassTint.current
+    
+    val tintColor = if (dynamic) {
+        if (isDark) tint.mix(Color.Black, 0.12f) else tint.mix(Color.White, 0.30f)
     } else {
-        liquidGlass(
-            shape = shape,
-            tintAlpha = if (isDark) 0.12f else 0.3f,
-            blurRadius = 22f,
-            isDark = isDark,
-            tintColor = if (isDark) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White,
-            borderColor = androidx.compose.ui.graphics.Color.White
-        )
+        if (isDark) Color.Black else Color.White
     }
+    
+    liquidGlass(
+        shape = shape,
+        tintAlpha = if (isDark) 0.14f else 0.20f,
+        isDark = isDark,
+        tintColor = tintColor
+    )
 }
 
 fun Modifier.glassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = composed {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
     val dynamic = LocalGlassDynamic.current
+    val tint = LocalGlassTint.current
     
-    // Primary navigation bar: NEVER use RenderEffect blur on containers to keep navigation text/icons 100% visible
-    if (dynamic) {
-        val tint = LocalGlassTint.current
-        val tintColor = if (isDark) tint.mix(Color.Black, 0.10f) else tint.mix(Color.White, 0.15f)
-        val borderColor = if (isDark) tint.mix(Color.White, 0.25f) else tint.mix(Color.White, 0.65f)
-        
-        // Use high-contrast frosted translucent colors
-        this
-            .clip(shape)
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = if (isDark) listOf(
-                        tintColor.mix(Color.Black, 0.15f).copy(alpha = 0.90f),
-                        tintColor.mix(Color.Black, 0.25f).copy(alpha = 0.82f)
-                    ) else listOf(
-                        tintColor.mix(Color.White, 0.30f).copy(alpha = 0.94f),
-                        tintColor.mix(Color.White, 0.15f).copy(alpha = 0.85f)
-                    )
-                ),
-                shape = shape
-            )
-            .border(
-                width = 1.dp,
-                brush = Brush.linearGradient(
-                    colors = if (isDark) listOf(
-                        borderColor.copy(alpha = 0.25f),
-                        borderColor.copy(alpha = 0.08f)
-                    ) else listOf(
-                        borderColor.copy(alpha = 0.65f),
-                        borderColor.copy(alpha = 0.20f)
-                    ),
-                    start = Offset(0f, 0f),
-                    end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                ),
-                shape = shape
-            )
+    val tintColor = if (dynamic) {
+        if (isDark) tint.mix(Color.Black, 0.10f) else tint.mix(Color.White, 0.15f)
     } else {
-        val baseColor = if (isDark) Color(0xFF101210) else Color(0xFFF9FAF9)
-        this
-            .clip(shape)
-            .background(
-                color = baseColor.copy(alpha = if (isDark) 0.88f else 0.93f),
-                shape = shape
-            )
-            .border(
-                width = 1.dp,
-                color = if (isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f),
-                shape = shape
-            )
+        if (isDark) Color.Black else Color.White
     }
+    
+    liquidGlass(
+        shape = shape,
+        tintAlpha = if (isDark) 0.20f else 0.30f,
+        isDark = isDark,
+        tintColor = tintColor
+    )
 }
 
 fun Modifier.glassPill(shape: Shape = RoundedCornerShape(50.dp)): Modifier = composed {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
     val dynamic = LocalGlassDynamic.current
-    if (dynamic) {
-        val tint = LocalGlassTint.current
-        val tintColor = if (isDark) tint.mix(Color.Black, 0.12f) else tint.mix(Color.White, 0.18f)
-        val borderColor = if (isDark) tint.mix(Color.White, 0.35f) else tint.mix(Color.White, 0.75f)
-        liquidGlass(
-            shape = shape,
-            tintAlpha = if (isDark) 0.24f else 0.34f, // Higher alpha for floating nav-pills to guarantee readability
-            blurRadius = 12f,
-            isDark = isDark,
-            tintColor = tintColor,
-            borderColor = borderColor
-        )
+    val tint = LocalGlassTint.current
+    
+    val tintColor = if (dynamic) {
+        if (isDark) tint.mix(Color.Black, 0.12f) else tint.mix(Color.White, 0.20f)
     } else {
-        liquidGlass(
-            shape = shape,
-            tintAlpha = if (isDark) 0.20f else 0.28f,
-            blurRadius = 14f,
-            isDark = isDark,
-            tintColor = if (isDark) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White,
-            borderColor = androidx.compose.ui.graphics.Color.White
-        )
+        if (isDark) Color.Black else Color.White
     }
+    
+    liquidGlass(
+        shape = shape,
+        tintAlpha = if (isDark) 0.18f else 0.25f,
+        isDark = isDark,
+        tintColor = tintColor
+    )
 }

@@ -85,6 +85,8 @@ class MainActivity : ComponentActivity() {
             val betaDynamicBackground by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
             val betaBetterTexts by viewModel.betaBetterTexts.collectAsStateWithLifecycle()
             val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
+            val glassBackdropStyle by viewModel.glassBackdropStyle.collectAsStateWithLifecycle()
+            val glassOpacityValue by viewModel.glassOpacityValue.collectAsStateWithLifecycle()
 
             val customPrimary by viewModel.customPrimary.collectAsStateWithLifecycle()
             val customPrimaryContainer by viewModel.customPrimaryContainer.collectAsStateWithLifecycle()
@@ -105,7 +107,23 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode, glassMode = betaGlassUi, glassDynamic = betaGlassDynamic, frostGlass = betaFrostGlass, betterTexts = betaBetterTexts, betterTextsPalette = betaBetterTextsPalette, customPrimary = customPrimary, customPrimaryContainer = customPrimaryContainer, customBackground = customBackground, customSurface = customSurface, customText = customText) {
+            ScholarTheme(
+                themeMode = themeMode,
+                themeColor = themeColor,
+                pureBlackMode = pureBlackMode,
+                glassMode = betaGlassUi,
+                glassDynamic = betaGlassDynamic,
+                frostGlass = betaFrostGlass,
+                glassBackdropStyle = glassBackdropStyle,
+                glassOpacityValue = glassOpacityValue,
+                betterTexts = betaBetterTexts,
+                betterTextsPalette = betaBetterTextsPalette,
+                customPrimary = customPrimary,
+                customPrimaryContainer = customPrimaryContainer,
+                customBackground = customBackground,
+                customSurface = customSurface,
+                customText = customText
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize().then(
                         if (betaNotchOptimization && !betaImmersiveMode) Modifier.displayCutoutPadding() else Modifier
