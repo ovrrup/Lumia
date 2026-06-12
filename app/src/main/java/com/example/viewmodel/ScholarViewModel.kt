@@ -12,6 +12,8 @@ import com.example.model.PracticeAssignment
 import com.example.model.Subject
 import com.example.model.Topic
 import com.example.model.ActionLog
+import com.example.model.Chapter
+import com.example.model.Task
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -108,23 +110,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaFloatingNav = MutableStateFlow(prefs.getBoolean("beta_floating_nav", false))
     val betaFloatingNav = _betaFloatingNav.asStateFlow()
 
-    private val _betaPomodoro = MutableStateFlow(prefs.getBoolean("beta_pomodoro", false))
-    val betaPomodoro = _betaPomodoro.asStateFlow()
-
-    private val _betaCgpa = MutableStateFlow(prefs.getBoolean("beta_cgpa", false))
-    val betaCgpa = _betaCgpa.asStateFlow()
-
     private val _betaNotes = MutableStateFlow(prefs.getBoolean("beta_notes", false))
     val betaNotes = _betaNotes.asStateFlow()
 
-    private val _betaMotivation = MutableStateFlow(prefs.getBoolean("beta_motivation", false))
-    val betaMotivation = _betaMotivation.asStateFlow()
-
-    private val _betaImmersiveMode = MutableStateFlow(prefs.getBoolean("beta_immersive_mode", false))
-    val betaImmersiveMode = _betaImmersiveMode.asStateFlow()
-
-    private val _betaNotchOptimization = MutableStateFlow(prefs.getBoolean("beta_notch_optimization", false))
-    val betaNotchOptimization = _betaNotchOptimization.asStateFlow()
+    private val _displayLayoutMode = MutableStateFlow(prefs.getString("display_layout_mode", "Immersive") ?: "Immersive")
+    val displayLayoutMode = _displayLayoutMode.asStateFlow()
 
     private val _betaGlassUi = MutableStateFlow(prefs.getBoolean("beta_glass_ui", false))
     val betaGlassUi = _betaGlassUi.asStateFlow()
@@ -153,23 +143,73 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _systemAutoLinkByName = MutableStateFlow(prefs.getBoolean("system_auto_link_by_name", true))
     val systemAutoLinkByName = _systemAutoLinkByName.asStateFlow()
 
-    private val _systemShareStudyLogs = MutableStateFlow(prefs.getBoolean("system_share_study_logs", true))
-    val systemShareStudyLogs = _systemShareStudyLogs.asStateFlow()
-
     private val _systemEnableSynergy = MutableStateFlow(prefs.getBoolean("system_enable_synergy", true))
     val systemEnableSynergy = _systemEnableSynergy.asStateFlow()
 
     private val _systemAutoCreateSubject = MutableStateFlow(prefs.getBoolean("system_auto_create_subject", false))
     val systemAutoCreateSubject = _systemAutoCreateSubject.asStateFlow()
 
+    private val _systemFuseSubjectsCourses = MutableStateFlow(prefs.getBoolean("system_fuse_subjects_courses", true))
+    val systemFuseSubjectsCourses = _systemFuseSubjectsCourses.asStateFlow()
+
+    private val _systemAdvancedTasks = MutableStateFlow(prefs.getBoolean("system_advanced_tasks", true))
+    val systemAdvancedTasks = _systemAdvancedTasks.asStateFlow()
+    
+    private val _systemPomodoroAutoLog = MutableStateFlow(prefs.getBoolean("system_pomodoro_auto_log", true))
+    val systemPomodoroAutoLog = _systemPomodoroAutoLog.asStateFlow()
+
+    private val _pomodoroWorkDuration = MutableStateFlow(prefs.getInt("pomodoro_work_duration", 25))
+    val pomodoroWorkDuration = _pomodoroWorkDuration.asStateFlow()
+
+    private val _pomodoroShortBreakDuration = MutableStateFlow(prefs.getInt("pomodoro_short_break_duration", 5))
+    val pomodoroShortBreakDuration = _pomodoroShortBreakDuration.asStateFlow()
+
+    private val _pomodoroLongBreakDuration = MutableStateFlow(prefs.getInt("pomodoro_long_break_duration", 15))
+    val pomodoroLongBreakDuration = _pomodoroLongBreakDuration.asStateFlow()
+
+    private val _notifFormalTone = MutableStateFlow(prefs.getBoolean("notif_formal_tone", true))
+    val notifFormalTone = _notifFormalTone.asStateFlow()
+
+    private val _notifEnableDeadlines = MutableStateFlow(prefs.getBoolean("notif_enable_deadlines", true))
+    val notifEnableDeadlines = _notifEnableDeadlines.asStateFlow()
+
+    private val _notifEnableStreaks = MutableStateFlow(prefs.getBoolean("notif_enable_streaks", true))
+    val notifEnableStreaks = _notifEnableStreaks.asStateFlow()
+
+    private val _notifEnableClasses = MutableStateFlow(prefs.getBoolean("notif_enable_classes", true))
+    val notifEnableClasses = _notifEnableClasses.asStateFlow()
+
+    private val _notifEnableDailyDigest = MutableStateFlow(prefs.getBoolean("notif_enable_daily_digest", true))
+    val notifEnableDailyDigest = _notifEnableDailyDigest.asStateFlow()
+
+    fun updateNotifFormalTone(enabled: Boolean) {
+        _notifFormalTone.value = enabled
+        prefs.edit().putBoolean("notif_formal_tone", enabled).apply()
+    }
+
+    fun updateNotifEnableDeadlines(enabled: Boolean) {
+        _notifEnableDeadlines.value = enabled
+        prefs.edit().putBoolean("notif_enable_deadlines", enabled).apply()
+    }
+
+    fun updateNotifEnableStreaks(enabled: Boolean) {
+        _notifEnableStreaks.value = enabled
+        prefs.edit().putBoolean("notif_enable_streaks", enabled).apply()
+    }
+
+    fun updateNotifEnableClasses(enabled: Boolean) {
+        _notifEnableClasses.value = enabled
+        prefs.edit().putBoolean("notif_enable_classes", enabled).apply()
+    }
+
+    fun updateNotifEnableDailyDigest(enabled: Boolean) {
+        _notifEnableDailyDigest.value = enabled
+        prefs.edit().putBoolean("notif_enable_daily_digest", enabled).apply()
+    }
+
     fun updateSystemAutoLinkByName(enabled: Boolean) {
         _systemAutoLinkByName.value = enabled
         prefs.edit().putBoolean("system_auto_link_by_name", enabled).apply()
-    }
-
-    fun updateSystemShareStudyLogs(enabled: Boolean) {
-        _systemShareStudyLogs.value = enabled
-        prefs.edit().putBoolean("system_share_study_logs", enabled).apply()
     }
 
     fun updateSystemEnableSynergy(enabled: Boolean) {
@@ -180,6 +220,36 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateSystemAutoCreateSubject(enabled: Boolean) {
         _systemAutoCreateSubject.value = enabled
         prefs.edit().putBoolean("system_auto_create_subject", enabled).apply()
+    }
+
+    fun updateSystemFuseSubjectsCourses(enabled: Boolean) {
+        _systemFuseSubjectsCourses.value = enabled
+        prefs.edit().putBoolean("system_fuse_subjects_courses", enabled).apply()
+    }
+
+    fun updateSystemAdvancedTasks(enabled: Boolean) {
+        _systemAdvancedTasks.value = enabled
+        prefs.edit().putBoolean("system_advanced_tasks", enabled).apply()
+    }
+
+    fun updateSystemPomodoroAutoLog(enabled: Boolean) {
+        _systemPomodoroAutoLog.value = enabled
+        prefs.edit().putBoolean("system_pomodoro_auto_log", enabled).apply()
+    }
+
+    fun updatePomodoroWorkDuration(duration: Int) {
+        _pomodoroWorkDuration.value = duration
+        prefs.edit().putInt("pomodoro_work_duration", duration).apply()
+    }
+
+    fun updatePomodoroShortBreakDuration(duration: Int) {
+        _pomodoroShortBreakDuration.value = duration
+        prefs.edit().putInt("pomodoro_short_break_duration", duration).apply()
+    }
+
+    fun updatePomodoroLongBreakDuration(duration: Int) {
+        _pomodoroLongBreakDuration.value = duration
+        prefs.edit().putInt("pomodoro_long_break_duration", duration).apply()
     }
 
     private val _dynamicBgLightBrightness = MutableStateFlow(
@@ -366,7 +436,33 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         initialValue = emptyList()
     )
 
+    val tasks: StateFlow<List<Task>> = repository.allTasks.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     val pomodoroSessions: StateFlow<List<com.example.model.PomodoroSession>> = repository.allPomodoroSessions.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun getSessionsTodayCount(): Int {
+        val todayStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        return pomodoroSessions.value.count { it.dateMillis >= todayStart }
+    }
+
+    fun getNotesCount(): Int = notes.value.size
+    
+    fun getActiveTasksCount(): Int = tasks.value.count { !it.isCompleted }
+
+    val notes: StateFlow<List<com.example.model.Note>> = repository.allNotes.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
@@ -391,6 +487,17 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private val assignmentsFlowCache = HashMap<Int, StateFlow<List<PracticeAssignment>>>()
+    private val chaptersFlowCache = HashMap<Int, StateFlow<List<Chapter>>>()
+
+    fun getChaptersForSubject(subjectId: Int): StateFlow<List<Chapter>> {
+        return chaptersFlowCache.getOrPut(subjectId) {
+            repository.getChaptersForSubject(subjectId).stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+        }
+    }
 
     fun getAssignmentsForCourse(courseId: Int): StateFlow<List<PracticeAssignment>> {
         return assignmentsFlowCache.getOrPut(courseId) {
@@ -427,10 +534,42 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addPomodoroSession(durationMinutes: Int) {
+    fun addPomodoroSession(durationMinutes: Int, subjectId: Int? = null, courseId: Int? = null, assignmentId: Int? = null, taskId: Int? = null) {
         viewModelScope.launch {
-            repository.insertPomodoroSession(com.example.model.PomodoroSession(dateMillis = System.currentTimeMillis(), durationMinutes = durationMinutes))
+            repository.insertPomodoroSession(com.example.model.PomodoroSession(
+                dateMillis = System.currentTimeMillis(),
+                durationMinutes = durationMinutes,
+                subjectId = subjectId,
+                courseId = courseId,
+                assignmentId = assignmentId,
+                taskId = taskId
+            ))
             logAction("Completed Pomodoro Session ($durationMinutes min)")
+        }
+    }
+
+    fun addNote(content: String, courseId: Int? = null, subjectId: Int? = null, tag: String = "") {
+        viewModelScope.launch {
+            repository.insertNote(com.example.model.Note(
+                content = content,
+                dateMillis = System.currentTimeMillis(),
+                courseId = courseId,
+                subjectId = subjectId,
+                tag = tag
+            ))
+            logAction("Added Note: ${content.take(20)}...")
+        }
+    }
+
+    fun updateNote(note: com.example.model.Note) {
+        viewModelScope.launch {
+            repository.updateNote(note)
+        }
+    }
+
+    fun deleteNote(note: com.example.model.Note) {
+        viewModelScope.launch {
+            repository.deleteNote(note)
         }
     }
 
@@ -446,14 +585,14 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addCourse(name: String, instructor: String, schedule: String, description: String, subjectId: Int? = null) {
+    fun addCourse(name: String, instructor: String, schedule: String, description: String, subjectId: Int? = null, tags: String = "") {
         viewModelScope.launch {
             var finalSubjectId = subjectId
             if (finalSubjectId == null && _systemAutoCreateSubject.value) {
-                val subId = repository.insertSubject(Subject(name = name, targetHours = 10))
+                val subId = repository.insertSubject(Subject(name = name))
                 finalSubjectId = subId.toInt()
             }
-            repository.insertCourse(Course(name = name, instructor = instructor, schedule = schedule, description = description, subjectId = finalSubjectId))
+            repository.insertCourse(Course(name = name, instructor = instructor, schedule = schedule, description = description, subjectId = finalSubjectId, tags = tags))
             logAction("Added course: $name")
         }
     }
@@ -472,9 +611,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addSubject(name: String, targetHours: Int) {
+    fun addSubject(name: String, tags: String = "") {
         viewModelScope.launch {
-            repository.insertSubject(Subject(name = name, targetHours = targetHours))
+            repository.insertSubject(Subject(name = name, tags = tags))
             logAction("Added subject: $name")
         }
     }
@@ -493,9 +632,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addTopic(subjectId: Int, title: String) {
+    fun addTopic(subjectId: Int, title: String, tags: String = "") {
         viewModelScope.launch {
-            repository.insertTopic(Topic(subjectId = subjectId, title = title))
+            repository.insertTopic(Topic(subjectId = subjectId, title = title, tags = tags))
             logAction("Added topic: $title")
         }
     }
@@ -517,11 +656,70 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addAssignment(courseId: Int, title: String, desc: String, dueDate: Long, category: String = "Homework", categoryColor: String = "#3197D6") {
+    fun addChapter(name: String, subjectId: Int, description: String = "", tags: String = "") {
         viewModelScope.launch {
-            val newId = repository.insertAssignment(PracticeAssignment(courseId = courseId, title = title, description = desc, dueDateMillis = dueDate, category = category, categoryColor = categoryColor)).toInt()
+            repository.insertChapter(Chapter(name = name, subjectId = subjectId, description = description, tags = tags))
+            logAction("Added chapter: $name")
+        }
+    }
+
+    fun updateChapter(chapter: Chapter) {
+        viewModelScope.launch {
+            repository.updateChapter(chapter)
+            logAction("Updated chapter: ${chapter.name}")
+        }
+    }
+
+    fun deleteChapter(chapter: Chapter) {
+        viewModelScope.launch {
+            repository.deleteChapter(chapter)
+            logAction("Deleted chapter: ${chapter.name}")
+        }
+    }
+
+    fun addTask(task: Task) {
+        viewModelScope.launch {
+            val newId = repository.insertTask(task).toInt()
+            if (task.dueDateMillis != null) {
+                val context = getApplication<Application>().applicationContext
+                val links = mutableListOf<String>()
+                if (task.subjectId != null) links.add("Subject")
+                if (task.courseId != null) links.add("Course")
+                if (task.assignmentId != null) links.add("Assignment")
+                if (task.tags.isNotBlank()) links.add("Tags: ${task.tags}")
+                com.example.util.ReminderScheduler.scheduleReminder(
+                    context, newId + 20000,
+                    "Task: ${task.title}",
+                    task.description,
+                    links.joinToString(", "),
+                    task.dueDateMillis
+                )
+            }
+            logAction("Added task: ${task.title}")
+        }
+    }
+
+    fun updateTask(task: Task) {
+        viewModelScope.launch {
+            repository.updateTask(task)
+            logAction("Updated task: ${task.title}")
+        }
+    }
+
+    fun deleteTask(task: Task) {
+        viewModelScope.launch {
+            repository.deleteTask(task)
+            logAction("Deleted task: ${task.title}")
+        }
+    }
+
+    fun addAssignment(courseId: Int, title: String, desc: String, dueDate: Long, category: String = "Homework", categoryColor: String = "#3197D6", tags: String = "") {
+        viewModelScope.launch {
+            val newId = repository.insertAssignment(PracticeAssignment(courseId = courseId, title = title, description = desc, dueDateMillis = dueDate, category = category, categoryColor = categoryColor, tags = tags)).toInt()
             val context = getApplication<Application>().applicationContext
-            com.example.util.ReminderScheduler.scheduleReminder(context, newId, title, desc, dueDate)
+            var interconnections = "Course: " + (courses.value.find { it.id == courseId }?.name ?: "Unknown")
+            if (tags.isNotBlank()) interconnections += ", Tags: $tags"
+            com.example.util.ReminderScheduler.scheduleReminder(context, newId, title, desc, interconnections, dueDate)
             logAction("Added assignment: $title ($category)")
         }
     }
@@ -580,10 +778,53 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val diff = (sdf.parse(today)!!.time - lastDate.time) / 86400000L
 
         when {
-            diff == 1L -> updateStreak(_currentStreak.value + 1)
-            diff > 1L  -> updateStreak(1)  // streak broken
+            diff == 1L -> {
+                val newStreak = _currentStreak.value + 1
+                updateStreak(newStreak)
+                if (notifEnableStreaks.value) {
+                    val formal = notifFormalTone.value
+                    val title = if (formal) "Streak Maintained" else "Good Job Not Slacking!"
+                    val msg = if (formal) "You have maintained your streak for $newStreak days." else "You actually did something today! Streak is now $newStreak."
+                    sendInstantNotification("scholar_streak_channel", 1004, title, msg, com.example.R.drawable.ic_notification_streak, android.graphics.Color.parseColor("#FF5722"))
+                }
+            }
+            diff > 1L  -> {
+                updateStreak(1)  // streak broken
+                if (notifEnableStreaks.value && _currentStreak.value > 0) { // If there was a streak to break
+                    val formal = notifFormalTone.value
+                    val title = if (formal) "Streak Broken" else "Whelp... You broke it."
+                    val msg = if (formal) "Your last streak was broken. You are back to 1 day." else "I knew you couldn't keep it up. Back to day 1 for you."
+                    sendInstantNotification("scholar_streak_channel", 1005, title, msg, com.example.R.drawable.ic_notification_streak, android.graphics.Color.parseColor("#E91E63"))
+                }
+            }
         }
         prefs.edit().putString("last_action_date_str", today).apply()
+    }
+
+    private fun sendInstantNotification(channelId: String, notifId: Int, title: String, text: String, iconRes: Int, color: Int) {
+        val application = getApplication<Application>()
+        val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(channelId, "Scholar System Alerts", android.app.NotificationManager.IMPORTANCE_DEFAULT).apply {
+                enableLights(true)
+                lightColor = color
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+        val intent = android.content.Intent(application, com.example.MainActivity::class.java).apply { flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK }
+        val pendingIntent = android.app.PendingIntent.getActivity(application, 0, intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+
+        val notification = androidx.core.app.NotificationCompat.Builder(application, channelId)
+            .setSmallIcon(iconRes)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(text))
+            .setColor(color)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+        notificationManager.notify(notifId, notification)
     }
 
     private fun updateStreak(streak: Int) {
@@ -656,18 +897,24 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     } else if (key.startsWith("dynamic_bg_dark_brightness_")) {
                         val floatVal = value.toFloatOrNull() ?: 0.45f
                         editor.putFloat(key, floatVal)
+                    } else if (key == "pomodoro_work_duration" || key == "pomodoro_short_break_duration" || key == "pomodoro_long_break_duration") {
+                        val intVal = value.toIntOrNull() ?: return@forEach
+                        editor.putInt(key, intVal)
+                        when(key) {
+                            "pomodoro_work_duration" -> _pomodoroWorkDuration.value = intVal
+                            "pomodoro_short_break_duration" -> _pomodoroShortBreakDuration.value = intVal
+                            "pomodoro_long_break_duration" -> _pomodoroLongBreakDuration.value = intVal
+                        }
+                    } else if (key == "display_layout_mode") {
+                        editor.putString(key, value)
+                        _displayLayoutMode.value = value
                     } else {
                         val boolVal = value.toBooleanStrictOrNull() ?: return@forEach
                         editor.putBoolean(key, boolVal)
                         when(key) {
                             "pure_black_mode" -> _pureBlackMode.value = boolVal
                             "beta_floating_nav" -> _betaFloatingNav.value = boolVal
-                            "beta_pomodoro" -> _betaPomodoro.value = boolVal
-                            "beta_cgpa" -> _betaCgpa.value = boolVal
                             "beta_notes" -> _betaNotes.value = boolVal
-                            "beta_motivation" -> _betaMotivation.value = boolVal
-                            "beta_immersive_mode" -> _betaImmersiveMode.value = boolVal
-                            "beta_notch_optimization" -> _betaNotchOptimization.value = boolVal
                             "beta_glass_ui" -> _betaGlassUi.value = boolVal
                             "beta_glass_dynamic" -> _betaGlassDynamic.value = boolVal
                             "beta_frost_glass" -> _betaFrostGlass.value = boolVal
@@ -682,9 +929,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                             "safety_pin_recommendations" -> _safetyPinRecommendations.value = boolVal
                             "show_action_history" -> _showActionHistory.value = boolVal
                             "system_auto_link_by_name" -> _systemAutoLinkByName.value = boolVal
-                            "system_share_study_logs" -> _systemShareStudyLogs.value = boolVal
                             "system_enable_synergy" -> _systemEnableSynergy.value = boolVal
                             "system_auto_create_subject" -> _systemAutoCreateSubject.value = boolVal
+                            "system_fuse_subjects_courses" -> _systemFuseSubjectsCourses.value = boolVal
+                            "system_advanced_tasks" -> _systemAdvancedTasks.value = boolVal
+                            "system_pomodoro_auto_log" -> _systemPomodoroAutoLog.value = boolVal
                         }
                     }
                 }
@@ -847,37 +1096,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun updateBetaFloatingNav(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaImmersiveMode.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For the best visual experience of 'Floating Action Bar', it is highly recommended to activate 'Full Screen Punch Hole (Immersive)'. This allows the bar to float beautifully over the background without being enclosed by the system navigation area. Would you like to enable it?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaFloatingNav.value = true
-                    prefs.edit().putBoolean("beta_floating_nav", true).apply()
-                    updateBetaImmersiveMode(true)
-                },
-                onIgnore = {
-                    _safetyPinDialogData.value = null
-                    _betaFloatingNav.value = true
-                    prefs.edit().putBoolean("beta_floating_nav", true).apply()
-                 }
-            )
-            return
-        }
         _betaFloatingNav.value = enabled
         prefs.edit().putBoolean("beta_floating_nav", enabled).apply()
-    }
-
-    fun updateBetaPomodoro(enabled: Boolean) {
-        _betaPomodoro.value = enabled
-        prefs.edit().putBoolean("beta_pomodoro", enabled).apply()
-    }
-
-    fun updateBetaCgpa(enabled: Boolean) {
-        _betaCgpa.value = enabled
-        prefs.edit().putBoolean("beta_cgpa", enabled).apply()
     }
 
     fun updateBetaNotes(enabled: Boolean) {
@@ -885,47 +1105,13 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("beta_notes", enabled).apply()
     }
 
-    fun updateBetaMotivation(enabled: Boolean) {
-        _betaMotivation.value = enabled
-        prefs.edit().putBoolean("beta_motivation", enabled).apply()
-    }
-
-    fun updateBetaImmersiveMode(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaFloatingNav.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For optimal ergonomics in Immersive Mode, it is highly recommended to activate 'Floating Action Bar', as standard bottom bars may interfere with the system gesture navigation area at the bottom. Would you like to enable it?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaImmersiveMode.value = true
-                    prefs.edit().putBoolean("beta_immersive_mode", true).apply()
-        
-                    _betaNotchOptimization.value = false
-                    prefs.edit().putBoolean("beta_notch_optimization", false).apply()
-                    updateBetaFloatingNav(true)
-                },
-                onIgnore = {
-                    _safetyPinDialogData.value = null
-                    _betaImmersiveMode.value = true
-                    prefs.edit().putBoolean("beta_immersive_mode", true).apply()
-        
-                    _betaNotchOptimization.value = false
-                    prefs.edit().putBoolean("beta_notch_optimization", false).apply()
-                }
-            )
-            return
-        }
-
-        _betaImmersiveMode.value = enabled
-        prefs.edit().putBoolean("beta_immersive_mode", enabled).apply()
-        
-        _betaNotchOptimization.value = !enabled
-        prefs.edit().putBoolean("beta_notch_optimization", !enabled).apply()
+    fun updateDisplayLayoutMode(mode: String) {
+        _displayLayoutMode.value = mode
+        prefs.edit().putString("display_layout_mode", mode).apply()
     }
 
     fun updateBetaMinimalistMode(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaGlassUi.value || _betaDynamicBackground.value || _betaEnhancedHeader.value || _betaFloatingNav.value || _betaBetterTexts.value || !_betaImmersiveMode.value)) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaGlassUi.value || _betaDynamicBackground.value || _betaEnhancedHeader.value || _betaFloatingNav.value || _betaBetterTexts.value || _displayLayoutMode.value != "Immersive")) {
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Feature Conflict Detected",
                 description = "Activating 'Minimalist Mode' will force-disable 'Glass UI', 'Dynamic Lighting', 'Enhanced Header', 'Floating Action Bar', and 'Better Texts', locking them to reduce visual clutter. Additionally, 'Immersive Mode' will be turned ON. Proceed?",
@@ -939,7 +1125,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
                     if (_betaFloatingNav.value) updateBetaFloatingNav(false)
                     if (_betaBetterTexts.value) updateBetaBetterTexts(false)
-                    if (!_betaImmersiveMode.value) updateBetaImmersiveMode(true)
+                    if (_displayLayoutMode.value != "Immersive") updateDisplayLayoutMode("Immersive")
                 },
                 onIgnore = { _safetyPinDialogData.value = null }
             )
@@ -955,7 +1141,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
             if (_betaFloatingNav.value) updateBetaFloatingNav(false)
             if (_betaBetterTexts.value) updateBetaBetterTexts(false)
-            if (!_betaImmersiveMode.value) updateBetaImmersiveMode(true)
+            if (_displayLayoutMode.value != "Immersive") updateDisplayLayoutMode("Immersive")
         }
     }
 
@@ -1181,12 +1367,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             _customText.value = "#1A1C1A"
             _pureBlackMode.value = false
             _betaFloatingNav.value = false
-            _betaPomodoro.value = false
-            _betaCgpa.value = false
             _betaNotes.value = false
-            _betaMotivation.value = false
-            _betaImmersiveMode.value = false
-            _betaNotchOptimization.value = false
+            _displayLayoutMode.value = "Immersive"
             _betaGlassUi.value = false
             _betaGlassDynamic.value = true
             _betaFrostGlass.value = true
@@ -1202,9 +1384,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             _safetyPinRecommendations.value = true
             _showActionHistory.value = true
             _systemAutoLinkByName.value = true
-            _systemShareStudyLogs.value = true
             _systemEnableSynergy.value = true
             _systemAutoCreateSubject.value = false
+            _systemFuseSubjectsCourses.value = true
+            _systemAdvancedTasks.value = true
+            _systemPomodoroAutoLog.value = true
             _currentStreak.value = 0
 
             repository.insertActionLog(ActionLog(actionText = "Cleared all application data and settings"))

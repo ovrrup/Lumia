@@ -21,6 +21,10 @@ class ReminderReceiver : BroadcastReceiver() {
         val action = intent.action
         val assignmentId = intent.getIntExtra("assignment_id", -1)
         
+        val prefs = context.getSharedPreferences("scholar_settings", Context.MODE_PRIVATE)
+        val formalTone = prefs.getBoolean("notif_formal_tone", true)
+        val enableDeadlines = prefs.getBoolean("notif_enable_deadlines", true)
+        
         if (action == "ACTION_MARK_DONE" && assignmentId != -1) {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.cancel(assignmentId)
@@ -39,18 +43,29 @@ class ReminderReceiver : BroadcastReceiver() {
         if (action == "ACTION_SNOOZE" && assignmentId != -1) {
             val title = intent.getStringExtra("title") ?: "Assignment Due"
             val desc = intent.getStringExtra("desc") ?: "You have an assignment to complete."
+            val interconnections = intent.getStringExtra("interconnections") ?: ""
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.cancel(assignmentId)
             
             // Snooze for 15 minutes
-            ReminderScheduler.scheduleReminderExact(context, assignmentId, title, desc, System.currentTimeMillis() + 15 * 60 * 1000)
+            ReminderScheduler.scheduleReminderExact(context, assignmentId, title, desc, interconnections, System.currentTimeMillis() + 15 * 60 * 1000)
             return
         }
 
-        val title = intent.getStringExtra("title") ?: "Assignment Due"
-        val desc = intent.getStringExtra("desc") ?: "You have an assignment to complete."
+        if (!enableDeadlines) return
+
+        val titleExtra = intent.getStringExtra("title") ?: "Assignment Due"
+        val descExtra = intent.getStringExtra("desc") ?: "You have an assignment to complete."
+        val interconnections = intent.getStringExtra("interconnections") ?: ""
+
+        val finalTitle = if (formalTone) "Deadline Reminder: $titleExtra" else "URGENT: $titleExtra is DUE!"
+        val finalDesc = if (formalTone) {
+            descExtra + if (interconnections.isNotBlank()) "\nLinked with: $interconnections" else ""
+        } else {
+            "Are you procrastinating? $descExtra" + if (interconnections.isNotBlank()) "\nIt's linked to: $interconnections. You can't escape it!" else ""
+        }
         
-        Log.d("ReminderReceiver", "Showing notification for: $title")
+        Log.d("ReminderReceiver", "Showing notification for: $finalTitle")
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -59,7 +74,7 @@ class ReminderReceiver : BroadcastReceiver() {
                 "ScholarSync Reminders", 
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Reminders for assignments and homework"
+                description = "Reminders for assignments, tasks, and classes"
                 enableLights(true)
                 lightColor = android.graphics.Color.BLUE
                 enableVibration(true)
@@ -85,27 +100,28 @@ class ReminderReceiver : BroadcastReceiver() {
         val snoozeIntent = Intent(context, ReminderReceiver::class.java).apply {
             this.action = "ACTION_SNOOZE"
             putExtra("assignment_id", assignmentId)
-            putExtra("title", title)
-            putExtra("desc", desc)
+            putExtra("title", titleExtra)
+            putExtra("desc", descExtra)
+            putExtra("interconnections", interconnections)
         }
         val snoozePendingIntent = PendingIntent.getBroadcast(
             context, assignmentId + 10000, snoozeIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
         val bigTextStyle = NotificationCompat.BigTextStyle()
-            .bigText(desc)
-            .setBigContentTitle("Deadline Reminder: $title")
-            .setSummaryText("Upcoming Assignment")
+            .bigText(finalDesc)
+            .setBigContentTitle(finalTitle)
+            .setSummaryText("Deadline Alert")
 
         val notification = NotificationCompat.Builder(context, "scholar_sync_channel")
-            .setSmallIcon(android.R.drawable.ic_popup_reminder)
-            .setContentTitle("Deadline Reminder: $title")
-            .setContentText(desc)
+            .setSmallIcon(com.example.R.drawable.ic_notification_deadline)
+            .setContentTitle(finalTitle)
+            .setContentText(finalDesc)
             .setStyle(bigTextStyle)
-            .setColor(android.graphics.Color.parseColor("#4CAF50"))
+            .setColor(android.graphics.Color.parseColor("#E91E63"))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(mainPendingIntent)
-            .addAction(android.R.drawable.ic_menu_edit, "Mark Done", donePendingIntent)
+            .addAction(android.R.drawable.ic_menu_edit, if (formalTone) "Mark Done" else "I Did It!", donePendingIntent)
             .addAction(android.R.drawable.ic_popup_sync, "Snooze 15m", snoozePendingIntent)
             .setAutoCancel(true)
             .setGroup("assignments_group")
@@ -116,22 +132,32 @@ class ReminderReceiver : BroadcastReceiver() {
 }
 
 object ReminderScheduler {
-    fun scheduleReminder(context: Context, assignmentId: Int, title: String, desc: String, timestamp: Long) {
+    fun scheduleReminder(context: Context, assignmentId: Int, title: String, desc: String, interconnections: String, timestamp: Long) {
         // Remind 1 hour before due date
         val triggerTime = timestamp - (1000 * 60 * 60)
         
         // Ensure we don't schedule in the past
         if (triggerTime > System.currentTimeMillis()) {
-            scheduleReminderExact(context, assignmentId, title, desc, triggerTime)
+            scheduleReminderExact(context, assignmentId, title, desc, interconnections, triggerTime)
         }
     }
 
-    fun scheduleReminderExact(context: Context, assignmentId: Int, title: String, desc: String, triggerTime: Long) {
+    fun scheduleClassReminder(context: Context, classId: Int, title: String, desc: String, timestamp: Long) {
+        val prefs = context.getSharedPreferences("scholar_settings", Context.MODE_PRIVATE)
+        if (!prefs.getBoolean("notif_enable_classes", true)) return
+        val triggerTime = timestamp - (1000 * 60 * 15) // 15 mins before class
+        if (triggerTime > System.currentTimeMillis()) {
+            scheduleReminderExact(context, classId + 50000, "Class: $title", "Starting in 15 mins: $desc", "", triggerTime)
+        }
+    }
+
+    fun scheduleReminderExact(context: Context, assignmentId: Int, title: String, desc: String, interconnections: String, triggerTime: Long) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, ReminderReceiver::class.java).apply {
             putExtra("assignment_id", assignmentId)
             putExtra("title", title)
             putExtra("desc", desc)
+            putExtra("interconnections", interconnections)
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,

@@ -68,8 +68,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val actionLogs by viewModel.actionLogs.collectAsStateWithLifecycle()
     val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
-    val betaPomodoro by viewModel.betaPomodoro.collectAsStateWithLifecycle()
-
+    
     val totalAssignments = assignments.size
     val completedAssignments = assignments.count { it.isCompleted }
     val assignmentProgress = if (totalAssignments > 0) completedAssignments.toFloat() / totalAssignments else 0f
@@ -141,6 +140,53 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
 
         item {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                // NEW: Study Sessions Today counter
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Study Sessions Today", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text(
+                            text = viewModel.getSessionsTodayCount().toString(),
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+
+                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                             Text("Total Notes", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                            Text(
+                                text = viewModel.getNotesCount().toString(),
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                             Text("Active Tasks", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                            Text(
+                                text = viewModel.getActiveTasksCount().toString(),
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+                    }
+                }
+                
                 AssignmentsStatusDonutChart(
                     modifier = Modifier.fillMaxWidth(),
                     total = totalAssignments,
@@ -160,14 +206,12 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
                     )
                 }
 
-                if (betaPomodoro) {
-                    PomodoroHeatmapChart(
-                        modifier = Modifier.fillMaxWidth(),
-                        sessions = pomodoroSessions,
-                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                        primaryColor = MaterialTheme.colorScheme.primary
-                    )
-                }
+                PomodoroHeatmapChart(
+                    modifier = Modifier.fillMaxWidth(),
+                    sessions = pomodoroSessions,
+                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                    primaryColor = MaterialTheme.colorScheme.primary
+                )
             }
         }
 

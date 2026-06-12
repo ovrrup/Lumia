@@ -17,7 +17,8 @@ data class Course(
     val description: String = "",
     val attendedClasses: Int = 0,
     val totalClasses: Int = 0,
-    val subjectId: Int? = null
+    val subjectId: Int? = null,
+    val tags: String = ""
 ) : Serializable
 
 @Entity(tableName = "subjects")
@@ -25,7 +26,7 @@ data class Course(
 data class Subject(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
-    val targetHours: Int = 0
+    val tags: String = ""
 ) : Serializable
 
 @Entity(
@@ -38,7 +39,9 @@ data class Topic(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val subjectId: Int,
     val title: String,
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    val chapterId: Int? = null,
+    val tags: String = ""
 ) : Serializable
 
 @Entity(
@@ -55,7 +58,8 @@ data class PracticeAssignment(
     val dueDateMillis: Long = 0,
     val isCompleted: Boolean = false,
     val category: String = "Homework",
-    val categoryColor: String = "#3197D6"
+    val categoryColor: String = "#3197D6",
+    val tags: String = ""
 ) : Serializable
 
 @Entity(
@@ -84,10 +88,61 @@ data class ActionLog(
 data class PomodoroSession(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val dateMillis: Long, // timestamp
-    val durationMinutes: Int
+    val durationMinutes: Int,
+    val subjectId: Int? = null,
+    val courseId: Int? = null,
+    val assignmentId: Int? = null,
+    val taskId: Int? = null
+) : Serializable
+
+@Entity(tableName = "notes")
+@JsonClass(generateAdapter = true)
+data class Note(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val content: String,
+    val dateMillis: Long,
+    val courseId: Int? = null,
+    val subjectId: Int? = null,
+    val tag: String = ""
 ) : Serializable
 
 // For Export/Import
+@Entity(
+    tableName = "chapters",
+    foreignKeys = [ForeignKey(entity = Subject::class, parentColumns = ["id"], childColumns = ["subjectId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("subjectId")]
+)
+@JsonClass(generateAdapter = true)
+data class Chapter(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val subjectId: Int,
+    val name: String,
+    val description: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val tags: String = ""
+) : Serializable
+
+@Entity(tableName = "tasks")
+@JsonClass(generateAdapter = true)
+data class Task(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val title: String,
+    val description: String = "",
+    val dueDateMillis: Long? = null,
+    val isCompleted: Boolean = false,
+    
+    val subjectId: Int? = null,
+    val chapterId: Int? = null,
+    val topicId: Int? = null,
+    val courseId: Int? = null,
+    val assignmentId: Int? = null,
+    val classDateMillis: Long? = null,
+    
+    val priority: Int = 0,
+    val tags: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+) : Serializable
+
 @JsonClass(generateAdapter = true)
 data class ScholarBackup(
     val courses: List<Course>,
@@ -97,5 +152,8 @@ data class ScholarBackup(
     val settings: Map<String, String>? = null,
     val attendance: List<AttendanceRecord>? = emptyList(),
     val pomodoro: List<PomodoroSession>? = emptyList(),
-    val actionLogs: List<ActionLog>? = emptyList()
+    val actionLogs: List<ActionLog>? = emptyList(),
+    val notes: List<Note>? = emptyList(),
+    val chapters: List<Chapter>? = emptyList(),
+    val tasks: List<Task>? = emptyList()
 ) : Serializable

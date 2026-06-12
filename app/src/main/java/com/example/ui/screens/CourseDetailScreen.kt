@@ -19,11 +19,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.Sell
 import androidx.compose.material.icons.rounded.ViewModule
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Warning
@@ -56,8 +58,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     val course = courses.find { it.id == courseId }
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val systemAutoLinkByName by viewModel.systemAutoLinkByName.collectAsStateWithLifecycle()
-    val systemShareStudyLogs by viewModel.systemShareStudyLogs.collectAsStateWithLifecycle()
     val enableSynergy by viewModel.systemEnableSynergy.collectAsStateWithLifecycle()
+    val fuseSubjectsCourses by viewModel.systemFuseSubjectsCourses.collectAsStateWithLifecycle()
 
     val linkedSubject = remember(course, subjects, systemAutoLinkByName) {
         if (course != null) {
@@ -65,6 +67,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 subjects.find { it.id == course.subjectId }
             } else if (systemAutoLinkByName) {
                 subjects.find { it.name.trim().lowercase() == course.name.trim().lowercase() }
+                    ?: subjects.find {
+                        val subName = it.name.trim().lowercase()
+                        val crsName = course.name.trim().lowercase()
+                        subName.isNotEmpty() && crsName.isNotEmpty() && (subName.contains(crsName) || crsName.contains(subName))
+                    }
             } else {
                 null
             }
@@ -73,16 +80,48 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         }
     }
 
-    val topicsState = if (linkedSubject != null) {
-        viewModel.getTopicsForSubject(linkedSubject.id).collectAsStateWithLifecycle(emptyList())
-    } else {
-        remember { mutableStateOf(emptyList<com.example.model.Topic>()) }
+    val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
+    val courseTasks = remember(allTasks, course) {
+        if (course != null) allTasks.filter { it.courseId == course.id } else emptyList()
     }
-    val topics = topicsState.value
+
+    val topicsFlow = remember(linkedSubject) {
+        if (linkedSubject != null) viewModel.getTopicsForSubject(linkedSubject.id)
+        else kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+    }
+    val topics by topicsFlow.collectAsStateWithLifecycle(emptyList())
 
     val assignments by viewModel.getAssignmentsForCourse(courseId).collectAsStateWithLifecycle()
     var showAddAssignmentDialog by remember { mutableStateOf(false) }
+    var showLinkSubjectDialog by remember { mutableStateOf(false) }
     var assignmentToEdit by remember { mutableStateOf<com.example.model.PracticeAssignment?>(null) }
+
+    val allNotes by viewModel.notes.collectAsStateWithLifecycle()
+
+    val courseNotes = remember(allNotes, course, linkedSubject, subjects, courses, systemAutoLinkByName) {
+        if (course != null) {
+            val linkedSubjectId = linkedSubject?.id
+            val linkedCourseIds = if (linkedSubjectId != null) {
+                courses.filter { it.subjectId == linkedSubjectId || (systemAutoLinkByName && it.name.trim().lowercase() == linkedSubject.name.trim().lowercase()) }
+                    .map { it.id }
+            } else {
+                emptyList()
+            }
+
+            allNotes.filter { note ->
+                note.courseId == course.id || 
+                (linkedSubjectId != null && note.subjectId == linkedSubjectId) ||
+                (note.courseId != null && linkedCourseIds.contains(note.courseId))
+            }
+        } else {
+            emptyList()
+        }
+    }
+
+    var showAddNoteDialog by remember { mutableStateOf(false) }
+    var noteToEdit by remember { mutableStateOf<com.example.model.Note?>(null) }
+    var noteText by remember { mutableStateOf("") }
+    var noteCustomTag by remember { mutableStateOf("Core") }
 
     if (course == null) {
         LaunchedEffect(Unit) {
@@ -198,16 +237,31 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                             fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
+                                        if (linkedSubject.tags.isNotBlank()) {
+                                            Text("Tags: ${linkedSubject.tags}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
                                     }
                                     
-                                    androidx.compose.material3.IconButton(
-                                        onClick = { navController.navigate("subject_detail/${linkedSubject.id}") }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.ChevronRight,
-                                            contentDescription = "Go to Study Subject",
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
+                                    if (!fuseSubjectsCourses) {
+                                        androidx.compose.material3.IconButton(
+                                            onClick = { navController.navigate("subject_detail/${linkedSubject.id}") }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.ChevronRight,
+                                                contentDescription = "Go to Study Subject",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    } else {
+                                        androidx.compose.material3.IconButton(
+                                            onClick = { navController.navigate("subject_detail/${linkedSubject.id}") }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Edit,
+                                                contentDescription = "Manage Subject",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
                                     }
                                 }
 
@@ -220,28 +274,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     val totalTopics = topics.size
                                     val topicPercent = if (totalTopics > 0) completedTopics.toFloat() / totalTopics else 0f
                                     
-                                    val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle(emptyList())
-                                    val totalMinutesStudied = if (systemShareStudyLogs) {
-                                        pomodoroSessions.sumOf { it.durationMinutes }
-                                    } else {
-                                        0
-                                    }
-                                    
-                                    val pomodoroScore = if (linkedSubject.targetHours > 0) {
-                                        (totalMinutesStudied.toFloat() / (linkedSubject.targetHours * 60f)).coerceAtMost(1f)
-                                    } else {
-                                        0f
-                                    }
-
-                                    val avgScore = if (totalTopics > 0) {
-                                        if (systemShareStudyLogs && linkedSubject.targetHours > 0) {
-                                            (topicPercent + pomodoroScore) / 2f
-                                        } else {
-                                            topicPercent
-                                        }
-                                    } else {
-                                        if (systemShareStudyLogs && totalMinutesStudied > 0) pomodoroScore else 0.5f
-                                    }
+                                    val avgScore = topicPercent
                                     val synergyScore = (avgScore * 100).toInt()
 
                                     val ratingClass = when {
@@ -256,7 +289,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         androidx.compose.material3.CircularProgressIndicator(
-                                            progress = avgScore,
+                                            progress = { avgScore },
                                             modifier = Modifier.size(50.dp),
                                             color = MaterialTheme.colorScheme.primary,
                                             trackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
@@ -276,16 +309,33 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                             )
                                         }
                                     }
-
-                                    if (systemShareStudyLogs && totalMinutesStudied > 0) {
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        Text(
-                                            text = "🔒 Shared Study Metric: $totalMinutesStudied min of Pomodoro study is cross-referenced.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                                        )
+                                }
+                                
+                                if (fuseSubjectsCourses) {
+                                    Spacer(Modifier.height(16.dp))
+                                    Text("Embedded Subject Hub", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                                    Spacer(Modifier.height(8.dp))
+                                    Button(onClick = { navController.navigate("subject_detail/${linkedSubject.id}") }, modifier = Modifier.fillMaxWidth()) {
+                                        Text("Open Subject Workspace")
                                     }
+                                }
+                            }
+                        }
+                    }
+                } else if (fuseSubjectsCourses) {
+                    item {
+                        com.example.ui.components.GlassCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("No Subject Linked", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.height(4.dp))
+                                Text("Fuse a subject to unlock synergy and topics.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.height(12.dp))
+                                OutlinedButton(onClick = { showLinkSubjectDialog = true }) {
+                                    Text("Link or Create Subject")
                                 }
                             }
                         }
@@ -337,7 +387,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     IconButton(onClick = { displayMonthOffset-- }) {
-                                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Prev", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                                        Icon(Icons.Rounded.ChevronLeft, contentDescription = "Prev", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                     }
                                     Text(monthName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
                                     IconButton(onClick = { displayMonthOffset++ }) {
@@ -559,8 +609,124 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                 }
 
+                // Course Notes Section
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Course Notes",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Button(
+                            onClick = { 
+                                noteToEdit = null
+                                noteText = ""
+                                noteCustomTag = "Theory"
+                                showAddNoteDialog = true 
+                            },
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Rounded.Add, contentDescription = "Add Note", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Add Note")
+                        }
+                    }
+                }
+
+                if (courseNotes.isEmpty()) {
+                    item {
+                        com.example.ui.components.GlassCard(
+                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    "No notes for this course yet.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(courseNotes, key = { "cn_${it.id}" }) { note ->
+                        com.example.ui.components.GlassCard(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Tag/Capsule
+                                    val isCurrentCourse = note.courseId == course.id
+                                    val pillColor = if (isCurrentCourse) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+                                    val onPillColor = if (isCurrentCourse) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                                    
+                                    Box(
+                                        modifier = Modifier
+                                            .background(pillColor, RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = note.tag.ifBlank { if (isCurrentCourse) "Course" else "Linked" },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = onPillColor
+                                        )
+                                    }
+
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        IconButton(onClick = {
+                                            noteToEdit = note
+                                            noteText = note.content
+                                            noteCustomTag = note.tag
+                                            showAddNoteDialog = true
+                                        }, modifier = Modifier.size(32.dp)) {
+                                            Icon(Icons.Rounded.Edit, "Edit", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                        }
+                                        IconButton(onClick = {
+                                            viewModel.deleteNote(note)
+                                        }, modifier = Modifier.size(32.dp)) {
+                                            Icon(Icons.Rounded.Delete, "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = note.content,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                val formattedDate = remember(note.dateMillis) {
+                                    val sdf = java.text.SimpleDateFormat("MMM dd, yyyy · hh:mm a", java.util.Locale.getDefault())
+                                    sdf.format(java.util.Date(note.dateMillis))
+                                }
+                                Text(
+                                    text = formattedDate,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
                     Text(
                         "Assignments",
                         style = MaterialTheme.typography.titleLarge,
@@ -701,6 +867,14 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                             )
                                         }
                                     }
+                                    if (assignment.tags.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Rounded.Sell, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(assignment.tags, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
                                 }
                                 Row {
                                     IconButton(onClick = { assignmentToEdit = assignment }) {
@@ -714,8 +888,124 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         }
                     }
                 }
+                if (courseTasks.isNotEmpty()) {
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            "Related Tasks",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    items(courseTasks, key = { "task_${it.id}" }) { task ->
+                        com.example.ui.components.GlassCard(
+                            modifier = Modifier.animateItem().fillMaxWidth().animateContentSize(),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = task.isCompleted,
+                                    onCheckedChange = { ch -> viewModel.updateTask(task.copy(isCompleted = ch)) }
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        task.title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        textDecoration = if (task.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                                        color = if (task.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (task.description.isNotBlank()) {
+                                        Text(task.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
+    }
+
+    if (showLinkSubjectDialog) {
+        var createNew by remember { mutableStateOf(false) }
+        var newSubjectName by remember { mutableStateOf("") }
+        var newSubjectTags by remember { mutableStateOf("") }
+        var selectedExistingId by remember { mutableStateOf<Int?>(null) }
+
+        AlertDialog(
+            onDismissRequest = { showLinkSubjectDialog = false },
+            title = { Text("Link Subject to Course") },
+            text = {
+                Column {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        RadioButton(selected = !createNew, onClick = { createNew = false })
+                        Text("Link Existing Subject")
+                    }
+                    if (!createNew) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        if (subjects.isEmpty()) {
+                            Text("No existing subjects.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(subjects) { subj ->
+                                    FilterChip(
+                                        selected = selectedExistingId == subj.id,
+                                        onClick = { selectedExistingId = subj.id },
+                                        label = { Text(subj.name) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        RadioButton(selected = createNew, onClick = { createNew = true })
+                        Text("Create New Subject")
+                    }
+                    if (createNew) {
+                        OutlinedTextField(
+                            value = newSubjectName,
+                            onValueChange = { newSubjectName = it },
+                            label = { Text("New Subject Name") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = newSubjectTags,
+                            onValueChange = { newSubjectTags = it },
+                            label = { Text("Tags (optional)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (createNew && newSubjectName.isNotBlank()) {
+                        viewModel.addSubject(newSubjectName, newSubjectTags)
+                        viewModel.updateCourse(course.copy(subjectId = subjects.maxOfOrNull { it.id }?.plus(1) ?: 1))
+                        showLinkSubjectDialog = false
+                    } else if (!createNew && selectedExistingId != null) {
+                        viewModel.updateCourse(course.copy(subjectId = selectedExistingId))
+                        showLinkSubjectDialog = false
+                    }
+                }) { Text("Confirm") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLinkSubjectDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 
     if (showAddAssignmentDialog) {
@@ -725,6 +1015,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         var showDatePicker by remember { mutableStateOf(false) }
         var category by remember { mutableStateOf("Homework") }
         var categoryColor by remember { mutableStateOf("#3197D6") }
+        var tags by remember { mutableStateOf("") }
 
         if (showDatePicker) {
             val datePickerColors = DatePickerDefaults.colors(
@@ -787,6 +1078,13 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         value = desc,
                         onValueChange = { desc = it },
                         label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tags,
+                        onValueChange = { tags = it },
+                        label = { Text("Tags (Optional, comma separated)") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -892,7 +1190,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             confirmButton = {
                 TextButton(onClick = {
                     if (title.isNotBlank()) {
-                        viewModel.addAssignment(courseId, title, desc, dueDateMillis, category.ifBlank { "Other" }, categoryColor)
+                        viewModel.addAssignment(courseId, title, desc, dueDateMillis, category.ifBlank { "Other" }, categoryColor, tags)
                         showAddAssignmentDialog = false
                     }
                 }) { Text("Add") }
@@ -904,11 +1202,12 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     }
 
     if (assignmentToEdit != null) {
-        var title by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit!!.title) }
-        var desc by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit!!.description) }
-        var dueDateMillis by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit!!.dueDateMillis) }
-        var category by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit!!.category) }
-        var categoryColor by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit!!.categoryColor) }
+        var title by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit?.title ?: "") }
+        var desc by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit?.description ?: "") }
+        var dueDateMillis by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit?.dueDateMillis ?: System.currentTimeMillis()) }
+        var category by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit?.category ?: "") }
+        var categoryColor by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit?.categoryColor ?: "#3197D6") }
+        var tags by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit?.tags ?: "") }
         var showDatePicker by remember { mutableStateOf(false) }
 
         if (showDatePicker) {
@@ -974,6 +1273,13 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tags,
+                        onValueChange = { tags = it },
+                        label = { Text("Tags (Optional, comma separated)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     Text("Category Preset", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
@@ -1077,21 +1383,71 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             confirmButton = {
                 TextButton(onClick = {
                     if (title.isNotBlank()) {
-                        viewModel.updateAssignmentDetails(
-                            assignmentToEdit!!.copy(
+                        assignmentToEdit?.copy(
                                 title = title,
                                 description = desc,
                                 dueDateMillis = dueDateMillis,
                                 category = category.ifBlank { "Other" },
-                                categoryColor = categoryColor
-                            )
-                        )
+                                categoryColor = categoryColor,
+                                tags = tags
+                        )?.let { viewModel.updateAssignmentDetails(it) }
                         assignmentToEdit = null
                     }
                 }) { Text("Save") }
             },
             dismissButton = {
                 TextButton(onClick = { assignmentToEdit = null }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showAddNoteDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddNoteDialog = false },
+            title = { Text(if (noteToEdit == null) "Add Note" else "Edit Note") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = noteText,
+                        onValueChange = { noteText = it },
+                        label = { Text("Note content") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3
+                    )
+                    OutlinedTextField(
+                        value = noteCustomTag,
+                        onValueChange = { noteCustomTag = it },
+                        label = { Text("Note Tag (e.g. Theory, Lab, Formula)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (noteText.isNotBlank()) {
+                        val activeNote = noteToEdit
+                        if (activeNote != null) {
+                            viewModel.updateNote(
+                                activeNote.copy(
+                                    content = noteText,
+                                    tag = noteCustomTag
+                                )
+                            )
+                        } else {
+                            viewModel.addNote(
+                                content = noteText,
+                                courseId = course.id,
+                                tag = noteCustomTag
+                            )
+                        }
+                        showAddNoteDialog = false
+                        noteText = ""
+                        noteCustomTag = "Theory"
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddNoteDialog = false }) { Text("Cancel") }
             }
         )
     }

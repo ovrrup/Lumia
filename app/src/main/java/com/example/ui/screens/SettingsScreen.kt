@@ -34,13 +34,19 @@ import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.CropFree
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.School
+import androidx.compose.material.icons.rounded.MergeType
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.List
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.*
@@ -213,8 +219,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                 
                 SettingsActionItemInCard(
-                    title = "Beta Features & Tools",
-                    subtitle = "Modular timers, quick tools, and layouts",
+                    title = "Experimental Features",
+                    subtitle = "Quick tools and layouts",
                     icon = Icons.Rounded.Check,
                     onClick = { navController.navigate("settings/beta") }
                 )
@@ -235,6 +241,15 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     subtitle = "Advanced background features and interconnections",
                     icon = Icons.Rounded.Settings,
                     onClick = { navController.navigate("settings/system") }
+                )
+                
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsActionItemInCard(
+                    title = "Notifications Management",
+                    subtitle = "Tones, schedules, and active alerts",
+                    icon = Icons.Rounded.Notifications,
+                    onClick = { navController.navigate("settings/notifications") }
                 )
                 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
@@ -321,6 +336,24 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     enabled = themeMode != "Light",
                     unavailableReason = "Requires System/Dark mode options.",
                     onCheckedChange = { viewModel.updatePureBlackMode(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Screen Layout
+            SettingsGroupCard(title = "Screen Layout", icon = Icons.Rounded.CropFree) {
+                val displayLayoutMode by viewModel.displayLayoutMode.collectAsStateWithLifecycle()
+                SettingsSegmentedPicker(
+                    title = "Display Drawing Mode",
+                    subtitle = "Adjust how to handle device notches and screen edges",
+                    options = listOf(
+                        Triple("Normal", "Normal", null),
+                        Triple("Notch Optimization", "Safe Area", null),
+                        Triple("Immersive", "Immersive", Icons.Rounded.Star)
+                    ),
+                    selected = displayLayoutMode,
+                    onSelected = { viewModel.updateDisplayLayoutMode(it) }
                 )
             }
 
@@ -619,7 +652,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
     if (pendingFeature != null) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { pendingFeature = null },
-            title = { Text("Beta Feature: ${pendingFeature!!.title}", fontWeight = FontWeight.Bold) },
+            title = { Text("Beta Feature: ${pendingFeature?.title ?: ""}", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     Text(
@@ -636,14 +669,14 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        pendingFeature!!.description,
+                        pendingFeature?.description ?: "",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
             },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = { 
-                    pendingFeature!!.onConfirm()
+                    pendingFeature?.onConfirm?.invoke()
                     pendingFeature = null 
                 }) { Text("Enable Feature", fontWeight = FontWeight.Bold) }
             },
@@ -658,7 +691,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Beta Settings & Tools", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                title = { Text("Experimental Features", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
@@ -678,76 +711,17 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 1. Grid of Academic tools
-            Text(
-                text = "Beta Toolbelt".uppercase(),
-                style = MaterialTheme.typography.labelMedium.copy(
-                    letterSpacing = 1.5.sp
-                ),
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
-            )
-            Text(
-                text = "Activate modular elements and quick features to custom fit your studying environment style.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
-            )
-
-            val betaPomodoro by viewModel.betaPomodoro.collectAsStateWithLifecycle()
-            val betaCgpa by viewModel.betaCgpa.collectAsStateWithLifecycle()
-            val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
-            val betaMotivation by viewModel.betaMotivation.collectAsStateWithLifecycle()
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                BetaToolGridCard(
-                    title = "Pomodoro",
-                    subtitle = "Modular countdown timers",
-                    icon = Icons.Rounded.DateRange,
-                    checked = betaPomodoro,
-                    onToggle = { handleToggle(it, "Pomodoro Timer", "Enable the modular Pomodoro timer study widget.") { isChecked -> viewModel.updateBetaPomodoro(isChecked) } },
-                    modifier = Modifier.weight(1f)
-                )
-                BetaToolGridCard(
-                    title = "CGPA Cal",
-                    subtitle = "GPA & tier planning tools",
-                    icon = Icons.Rounded.School,
-                    checked = betaCgpa,
-                    onToggle = { handleToggle(it, "CGPA Calculator", "Enable interactive GPA calculators to plan academic tiers.") { isChecked -> viewModel.updateBetaCgpa(isChecked) } },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                BetaToolGridCard(
-                    title = "Quick Notes",
-                    subtitle = "Draft scratchpad canvas",
-                    icon = Icons.Rounded.Edit,
+            // 1. Experimental Workflow
+            SettingsGroupCard(title = "Experimental Workflow", icon = Icons.Rounded.Edit) {
+                val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
+                SettingsPremiumToggleItem(
+                    title = "Quick Notes Overlay",
+                    subtitle = "Draft scratchpad canvas for immediate raw notes overlay panel.",
                     checked = betaNotes,
-                    onToggle = { handleToggle(it, "Quick Notes", "Enable immediate raw scratchpad notes overlay panel.") { isChecked -> viewModel.updateBetaNotes(isChecked) } },
-                    modifier = Modifier.weight(1f)
-                )
-                BetaToolGridCard(
-                    title = "Quotes Panel",
-                    subtitle = "Positive sparks & quotes",
-                    icon = Icons.Rounded.Star,
-                    checked = betaMotivation,
-                    onToggle = { handleToggle(it, "Motivation Panel", "Enable active motivation blocks and quotes rotation on dashboard.") { isChecked -> viewModel.updateBetaMotivation(isChecked) } },
-                    modifier = Modifier.weight(1f)
+                    icon = Icons.Rounded.Edit,
+                    onCheckedChange = { handleToggle(it, "Quick Notes Overlay", "Enable immediate raw scratchpad notes overlay panel.") { isChecked -> viewModel.updateBetaNotes(isChecked) } }
                 )
             }
-
             Spacer(modifier = Modifier.height(16.dp))
 
             // 2. Display Hacks & System Settings
@@ -762,32 +736,6 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                     enabled = !betaMinimalistMode,
                     unavailableReason = "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { handleToggle(it, "Floating Action Bar", "Float the bottom navigation overlay panel.") { isChecked -> viewModel.updateBetaFloatingNav(isChecked) } }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-
-                val betaNotchOptimization by viewModel.betaNotchOptimization.collectAsStateWithLifecycle()
-                SettingsPremiumToggleItem(
-                    title = "Notch Avoidance",
-                    subtitle = "Align UI safely under device status notches & camera punch holes",
-                    checked = betaNotchOptimization,
-                    icon = Icons.Rounded.Check,
-                    enabled = false,
-                    unavailableReason = "Managed dynamically inside Immersive Mode.",
-                    onCheckedChange = {  }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-
-                val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
-                SettingsPremiumToggleItem(
-                    title = "Full-Screen Immersive",
-                    subtitle = "Draw UI gracefully behind punch holes to utilize full screen asset area",
-                    checked = betaImmersiveMode,
-                    enabled = !betaMinimalistMode,
-                    icon = Icons.Rounded.Star,
-                    unavailableReason = "Locked ON by Minimalist Focus Mode.",
-                    onCheckedChange = { handleToggle(it, "Full-Screen Immersive Mode", "Draw UI elements gracefully behind camera punch notch lines.") { isChecked -> viewModel.updateBetaImmersiveMode(isChecked) } }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
@@ -866,16 +814,54 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             val subjectsCount by viewModel.subjects.collectAsStateWithLifecycle()
             val pomodoroSessionsCount by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
 
-            // System Integrity Dashboard Card
-            com.example.ui.components.GlassCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
+                // LogDog Card
+                var showLogDogDialog by remember { mutableStateOf(false) }
+                com.example.ui.components.GlassCard(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text("LogDog Diagnostic Handler", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        SettingsActionItemInCard(
+                            title = "Trigger Analysis (Woof!)",
+                            subtitle = "Run code analysis and view last captured crash error data with a funny twist.",
+                            icon = Icons.Rounded.RecordVoiceOver,
+                            onClick = { 
+                                showLogDogDialog = true
+                            }
+                        )
+                    }
+                }
+
+                if (showLogDogDialog) {
+                    val crashes = com.example.util.LogDog.getCrashes(context)
+                    AlertDialog(
+                        onDismissRequest = { showLogDogDialog = false },
+                        icon = { Icon(Icons.Rounded.RecordVoiceOver, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        title = { Text("LogDog Report 🐾") },
+                        text = {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                if (crashes.isEmpty()) {
+                                    Text("Woof! Everything is clean in the code kennel. No crashes found!")
+                                } else {
+                                    crashes.forEachIndexed { index, crash ->
+                                        Text("Crash ${index + 1}: ${com.example.util.LogDog.analyze(crash)}", fontWeight = FontWeight.Bold)
+                                        Text(crash.take(150), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = { TextButton(onClick = { showLogDogDialog = false }) { Text("Acknowledge") } }
+                    )
+                }
+                com.example.ui.components.GlassCard(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
@@ -1902,9 +1888,10 @@ fun SettingsActionItemInCard(
 @Composable
 fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     val autoLinkByName by viewModel.systemAutoLinkByName.collectAsStateWithLifecycle()
-    val shareStudyLogs by viewModel.systemShareStudyLogs.collectAsStateWithLifecycle()
     val enableSynergy by viewModel.systemEnableSynergy.collectAsStateWithLifecycle()
     val autoCreateSubject by viewModel.systemAutoCreateSubject.collectAsStateWithLifecycle()
+    val fuseSubjectsCourses by viewModel.systemFuseSubjectsCourses.collectAsStateWithLifecycle()
+    val advancedTasks by viewModel.systemAdvancedTasks.collectAsStateWithLifecycle()
 
     val isGlass = com.example.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
@@ -1971,21 +1958,176 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                 SettingsPremiumToggleItem(
-                    title = "Share Study Logs",
-                    subtitle = "Cross-reference subject-level Pomodoro study sessions directly in the corresponding course stats cards.",
-                    checked = shareStudyLogs,
-                    icon = Icons.Rounded.Settings,
-                    onCheckedChange = { viewModel.updateSystemShareStudyLogs(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                SettingsPremiumToggleItem(
                     title = "Auto-Create Associated Subject",
                     subtitle = "Automatically create a matching Study Subject whenever you enroll in/add a new academic Course.",
                     checked = autoCreateSubject,
                     icon = Icons.Rounded.School,
                     onCheckedChange = { viewModel.updateSystemAutoCreateSubject(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsPremiumToggleItem(
+                    title = "Fuse Subjects & Courses",
+                    subtitle = "Embed subjects within courses to simplify navigation. Turn off to display 'Subjects' as a separate bottom tab.",
+                    checked = fuseSubjectsCourses,
+                    icon = Icons.Rounded.MergeType,
+                    onCheckedChange = { viewModel.updateSystemFuseSubjectsCourses(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsPremiumToggleItem(
+                    title = "Advanced Tasks & Linkages",
+                    subtitle = "Enable complex task tracking, including multi-linking with courses and assignments, plus advanced sorting and cross-referencing.",
+                    checked = advancedTasks,
+                    icon = Icons.Rounded.List,
+                    onCheckedChange = { viewModel.updateSystemAdvancedTasks(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            SettingsCategoryHeading(title = "Pomodoro Integration", icon = Icons.Rounded.Timer)
+
+            SettingsGroupCard(title = "Timer & Environment Behaviors", icon = Icons.Rounded.Timer) {
+                SettingsPremiumToggleItem(
+                    title = "Auto-Log Focus Sessions",
+                    subtitle = "Automatically register and log Pomodoro 'Work' sessions into the database productivity history log upon completion.",
+                    checked = viewModel.systemPomodoroAutoLog.collectAsStateWithLifecycle().value,
+                    icon = Icons.Rounded.History,
+                    onCheckedChange = { viewModel.updateSystemPomodoroAutoLog(it) }
+                )
+                
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                
+                Column(modifier = Modifier.padding(16.dp)) {
+                    val workDur by viewModel.pomodoroWorkDuration.collectAsStateWithLifecycle()
+                    Text("Work Duration: $workDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    androidx.compose.material3.Slider(
+                        value = workDur.toFloat(),
+                        onValueChange = { viewModel.updatePomodoroWorkDuration(it.toInt()) },
+                        valueRange = 5f..120f,
+                        steps = 114
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    val shortDur by viewModel.pomodoroShortBreakDuration.collectAsStateWithLifecycle()
+                    Text("Short Break: $shortDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    androidx.compose.material3.Slider(
+                        value = shortDur.toFloat(),
+                        onValueChange = { viewModel.updatePomodoroShortBreakDuration(it.toInt()) },
+                        valueRange = 1f..30f,
+                        steps = 28
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    val longDur by viewModel.pomodoroLongBreakDuration.collectAsStateWithLifecycle()
+                    Text("Long Break: $longDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    androidx.compose.material3.Slider(
+                        value = longDur.toFloat(),
+                        onValueChange = { viewModel.updatePomodoroLongBreakDuration(it.toInt()) },
+                        valueRange = 5f..60f,
+                        steps = 54
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NotificationsScreen(navController: NavController, viewModel: ScholarViewModel) {
+    val notifFormalTone by viewModel.notifFormalTone.collectAsStateWithLifecycle()
+    val notifEnableDeadlines by viewModel.notifEnableDeadlines.collectAsStateWithLifecycle()
+    val notifEnableStreaks by viewModel.notifEnableStreaks.collectAsStateWithLifecycle()
+    val notifEnableClasses by viewModel.notifEnableClasses.collectAsStateWithLifecycle()
+    val notifEnableDailyDigest by viewModel.notifEnableDailyDigest.collectAsStateWithLifecycle()
+
+    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
+
+    Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        topBar = {
+            androidx.compose.foundation.layout.Box {
+                if (betaEnhancedHeader || isGlass) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
+                    )
+                    androidx.compose.material3.HorizontalDivider(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    )
+                }
+                CenterAlignedTopAppBar(
+                    title = { Text("Notifications", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        scrolledContainerColor = androidx.compose.ui.graphics.Color.Transparent
+                    ),
+                )
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            com.example.ui.components.NotificationPermissionPanel()
+            com.example.ui.components.ExactAlarmPermissionPanel()
+            
+            SettingsGroupCard(title = "Notification Configuration", icon = Icons.Rounded.Notifications) {
+                SettingsPremiumToggleItem(
+                    title = "Formal Notification Tone",
+                    subtitle = if (notifFormalTone) "Notifications will sound polite and professional" else "Notifications will sound taunting and strict to push you harder!",
+                    checked = notifFormalTone,
+                    icon = Icons.Rounded.RecordVoiceOver,
+                    onCheckedChange = { viewModel.updateNotifFormalTone(it) }
+                )
+                
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsToggleItem(
+                    title = "Deadline Alerts",
+                    subtitle = "Get notified before assignment and task deadlines",
+                    checked = notifEnableDeadlines,
+                    onCheckedChange = { viewModel.updateNotifEnableDeadlines(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsToggleItem(
+                    title = "Streak Maintenance",
+                    subtitle = "Warnings when streak is at risk, and alerts on updates",
+                    checked = notifEnableStreaks,
+                    onCheckedChange = { viewModel.updateNotifEnableStreaks(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsToggleItem(
+                    title = "Daily Digest",
+                    subtitle = "A combined summary of tasks & assignments for the day",
+                    checked = notifEnableDailyDigest,
+                    onCheckedChange = { viewModel.updateNotifEnableDailyDigest(it) }
                 )
             }
 

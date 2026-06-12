@@ -14,6 +14,8 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 // ... the rest of the imports ...
 import androidx.compose.foundation.lazy.LazyColumn
@@ -70,8 +72,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.rounded.FolderOpen
+import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -103,6 +108,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     val isGlass = com.example.ui.theme.LocalGlassMode.current
     var selectedTab by remember { mutableStateOf(0) }
     val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
+    val fuseSubjectsCourses by viewModel.systemFuseSubjectsCourses.collectAsStateWithLifecycle()
     
     var showAddCourseDialog by remember { mutableStateOf(false) }
     var showAddSubjectDialog by remember { mutableStateOf(false) }
@@ -133,10 +139,36 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             alwaysShowLabel = true
                         )
                         NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
-                            label = { Text("Analytics") },
+                            icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
+                            label = { Text("Courses") },
                             selected = selectedTab == 1,
                             onClick = { selectedTab = 1 },
+                            colors = navItemColors,
+                            alwaysShowLabel = true
+                        )
+                        if (!fuseSubjectsCourses) {
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
+                                label = { Text("Subjects") },
+                                selected = selectedTab == 2,
+                                onClick = { selectedTab = 2 },
+                                colors = navItemColors,
+                                alwaysShowLabel = true
+                            )
+                        }
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Self Study") },
+                            label = { Text("Self Study") },
+                            selected = selectedTab == 3,
+                            onClick = { selectedTab = 3 },
+                            colors = navItemColors,
+                            alwaysShowLabel = true
+                        )
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
+                            label = { Text("Analytics") },
+                            selected = selectedTab == 4,
+                            onClick = { selectedTab = 4 },
                             colors = navItemColors,
                             alwaysShowLabel = true
                         )
@@ -164,16 +196,35 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     label = "TabTransition",
                     modifier = Modifier.fillMaxSize()
                 ) { targetTab ->
-                    if (targetTab == 0) {
-                        HomeTab(
+                    when (targetTab) {
+                        0 -> HomeTab(
                             navController = navController, 
                             viewModel = viewModel, 
                             bottomPadding = extendedPadding,
                             onAddCourseClick = { showAddCourseDialog = true },
+                            onAddSubjectClick = { showAddSubjectDialog = true },
+                            onNavigateToTasks = { selectedTab = 3 }
+                        )
+                        1 -> CoursesTab(
+                            navController = navController,
+                            viewModel = viewModel,
+                            bottomPadding = extendedPadding,
+                            onEditCourse = { /* Handled in tab if hoisted, else ignore */ },
+                            onAddCourseClick = { showAddCourseDialog = true }
+                        )
+                        2 -> SubjectsTab(
+                            navController = navController,
+                            viewModel = viewModel,
+                            bottomPadding = extendedPadding,
+                            onEditSubject = { /* Handled in tab */ },
                             onAddSubjectClick = { showAddSubjectDialog = true }
                         )
-                    } else {
-                        AnalyticsTab(viewModel = viewModel, paddingValues = extendedPadding)
+                        3 -> SelfStudyTab(
+                            navController = navController,
+                            viewModel = viewModel,
+                            bottomPadding = extendedPadding
+                        )
+                        4 -> AnalyticsTab(viewModel = viewModel, paddingValues = extendedPadding)
                     }
                 }
             }
@@ -215,10 +266,36 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         alwaysShowLabel = true
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
-                        label = { Text("Analytics") },
+                        icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
+                        label = { Text("Courses") },
                         selected = selectedTab == 1,
                         onClick = { selectedTab = 1 },
+                        colors = navItemColors,
+                        alwaysShowLabel = true
+                    )
+                    if (!fuseSubjectsCourses) {
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
+                            label = { Text("Subjects") },
+                            selected = selectedTab == 2,
+                            onClick = { selectedTab = 2 },
+                            colors = navItemColors,
+                            alwaysShowLabel = true
+                        )
+                    }
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Self Study") },
+                        label = { Text("Self Study") },
+                        selected = selectedTab == 3,
+                        onClick = { selectedTab = 3 },
+                        colors = navItemColors,
+                        alwaysShowLabel = true
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
+                        label = { Text("Analytics") },
+                        selected = selectedTab == 4,
+                        onClick = { selectedTab = 4 },
                         colors = navItemColors,
                         alwaysShowLabel = true
                     )
@@ -232,13 +309,14 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
         var instructor by remember { mutableStateOf("") }
         var schedule by remember { mutableStateOf("") }
         var description by remember { mutableStateOf("") }
+        var tags by remember { mutableStateOf("") }
         var selectedSubjectId by remember { mutableStateOf<Int?>(null) }
 
         AlertDialog(
             onDismissRequest = { showAddCourseDialog = false },
             title = { Text("Add New Course") },
             text = {
-                Column {
+                Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
                     androidx.compose.material3.OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
@@ -250,6 +328,13 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         value = instructor,
                         onValueChange = { instructor = it },
                         label = { Text("Instructor") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    androidx.compose.material3.OutlinedTextField(
+                        value = tags,
+                        onValueChange = { tags = it },
+                        label = { Text("Tags (Optional, comma separated)") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -337,7 +422,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             confirmButton = {
                 TextButton(onClick = {
                     if (name.isNotBlank()) {
-                        viewModel.addCourse(name, instructor, schedule, description, selectedSubjectId)
+                        viewModel.addCourse(name, instructor, schedule, description, selectedSubjectId, tags)
                         showAddCourseDialog = false
                     }
                 }) { Text("Add") }
@@ -350,7 +435,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
 
     if (showAddSubjectDialog) {
         var name by remember { mutableStateOf("") }
-        var targetHours by remember { mutableStateOf("") }
+        var tags by remember { mutableStateOf("") }
 
         AlertDialog(
             onDismissRequest = { showAddSubjectDialog = false },
@@ -365,19 +450,17 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     androidx.compose.material3.OutlinedTextField(
-                        value = targetHours,
-                        onValueChange = { targetHours = it.filter { char -> char.isDigit() } },
-                        label = { Text("Target Hours") },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Done)
+                        value = tags,
+                        onValueChange = { tags = it },
+                        label = { Text("Tags (comma separated, optional)") },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     if (name.isNotBlank()) {
-                        val hours = targetHours.toIntOrNull() ?: 0
-                        viewModel.addSubject(name, hours)
+                        viewModel.addSubject(name, tags)
                         showAddSubjectDialog = false
                     }
                 }) { Text("Add") }
@@ -396,17 +479,16 @@ fun HomeTab(
     viewModel: ScholarViewModel, 
     bottomPadding: PaddingValues, 
     onAddCourseClick: () -> Unit, 
-    onAddSubjectClick: () -> Unit
+    onAddSubjectClick: () -> Unit,
+    onNavigateToTasks: () -> Unit
 ) {
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val isGlass = com.example.ui.theme.LocalGlassMode.current
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
     val streak by viewModel.currentStreak.collectAsStateWithLifecycle()
-    val betaMotivation by viewModel.betaMotivation.collectAsStateWithLifecycle()
-    val betaPomodoro by viewModel.betaPomodoro.collectAsStateWithLifecycle()
-    val betaCgpa by viewModel.betaCgpa.collectAsStateWithLifecycle()
     val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
+    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var courseToEdit by remember { mutableStateOf<com.example.model.Course?>(null) }
@@ -452,10 +534,22 @@ fun HomeTab(
                     )
                 }
                 CenterAlignedTopAppBar(
-                    title = { Text(stringResource(id = R.string.app_name), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                    title = { Text(stringResource(id = R.string.app_name), fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 16.dp)) },
                     actions = {
-                        IconButton(onClick = { navController.navigate("settings") }) {
-                            Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.primary)
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .padding(end = 16.dp)
+                                .size(44.dp)
+                                .shadow(elevation = 8.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                                .clip(CircleShape)
+                                .clickable(
+                                    onClick = { navController.navigate("settings") },
+                                    role = androidx.compose.ui.semantics.Role.Button
+                                ),
+                            contentAlignment = androidx.compose.ui.Alignment.Center
+                        ) {
+                            Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
                         }
                     },
                     scrollBehavior = scrollBehavior,
@@ -466,23 +560,7 @@ fun HomeTab(
                 )
             }
         },
-        floatingActionButton = {
-            var fabExpanded by remember { mutableStateOf(false) }
-            Box(modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding())) {
-                DropdownMenu(expanded = fabExpanded, onDismissRequest = { fabExpanded = false }) {
-                    DropdownMenuItem(text = { Text("Add Course") }, onClick = { fabExpanded=false; onAddCourseClick() })
-                    DropdownMenuItem(text = { Text("Add Subject") }, onClick = { fabExpanded=false; onAddSubjectClick() })
-                }
-                androidx.compose.material3.FloatingActionButton(
-                    onClick = { fabExpanded = true },
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ) {
-                    val rotation by androidx.compose.animation.core.animateFloatAsState(targetValue = if (fabExpanded) 45f else 0f)
-                    Icon(Icons.Rounded.Add, contentDescription = "Add", modifier = Modifier.graphicsLayer { rotationZ = rotation })
-                }
-            }
-        }
+        floatingActionButton = {}
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -494,6 +572,10 @@ fun HomeTab(
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item {
+                com.example.ui.components.NotificationPermissionPanel()
+                com.example.ui.components.ExactAlarmPermissionPanel()
+            }
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     // Streak Card
@@ -572,7 +654,7 @@ fun HomeTab(
                 }
             }
 
-            if (betaMotivation || betaPomodoro || betaCgpa || betaNotes) {
+            if (betaNotes) {
                 item(key = "student_tools_title") {
                     Text(
                         "Student Tools",
@@ -582,515 +664,134 @@ fun HomeTab(
                     )
                 }
 
-                if (betaMotivation) {
-                    item(key = "beta_motivation") {
-                        GlassCard(
-                            modifier = Modifier.animateItem().fillMaxWidth().padding(bottom = 8.dp),
-                            shape = RoundedCornerShape(24.dp)
+                item(key = "notes_tool") {
+                    GlassCard(
+                        onClick = { navController.navigate("notes") },
+                        modifier = Modifier.animateItem().fillMaxWidth().height(100.dp),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Star,
-                                    contentDescription = "Motivation",
-                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f), CircleShape).padding(6.dp)
-                                )
-                                Spacer(modifier = Modifier.width(16.dp))
-                                val quotes = listOf(
-                                    "Success is the sum of small efforts.",
-                                    "The expert in everything was once a beginner.",
-                                    "Don’t stop until you’re proud.",
-                                    "Focus on your goals, not your obstacles."
-                                )
-                                val quote = remember { quotes.random() }
-                                Text(
-                                    text = "\"$quote\"",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                                )
+                            Column {
+                                Text("Quick Notes", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                                Text("Draft scratchpad canvas", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
                             }
-                        }
-                    }
-                }
-
-                if (betaPomodoro || betaCgpa || betaNotes) {
-                    item(key = "toolbox_card") {
-                        GlassCard(
-                            onClick = { navController.navigate("toolbox") },
-                            modifier = Modifier.animateItem().fillMaxWidth().height(100.dp),
-                            shape = RoundedCornerShape(24.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    val activeTools = listOfNotNull(
-                                        "Pomodoro".takeIf { betaPomodoro },
-                                        "CGPA".takeIf { betaCgpa },
-                                        "Notes".takeIf { betaNotes }
-                                    ).joinToString(" • ")
-                                    
-                                    Text("Toolbox", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                    Text(activeTools, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
-                                }
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.ManageSearch,
-                                    contentDescription = "Toolbox",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f), CircleShape).padding(8.dp)
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.Notes,
+                                contentDescription = "Quick Notes",
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f), CircleShape).padding(8.dp)
+                            )
                         }
                     }
                 }
             }
 
-            item(key = "your_courses_title") {
-                Text(
-                        "Your Courses",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.animateItem().padding(vertical = 8.dp)
-                    )
-                }
-
-                if (courses.isEmpty()) {
-                    item(key = "courses_empty") {
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = true,
-                            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
-                            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically(),
-                            modifier = Modifier.animateItem()
+            item(key = "upcoming_classes_assignments") {
+                Spacer(modifier = Modifier.height(16.dp))
+                GlassCard(
+                    modifier = Modifier.animateItem().fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            GlassCard(
-                                modifier = Modifier.fillMaxWidth().height(240.dp),
-                                shape = RoundedCornerShape(32.dp)
+                            Text("Upcoming Classes & Assignments", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            IconButton(
+                                onClick = onAddCourseClick,
+                                modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
                             ) {
-                                Column(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(80.dp)
-                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Rounded.MenuBook,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(40.dp),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(24.dp))
-                                    Text(
-                                        "No courses yet",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
+                                Icon(Icons.Rounded.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             }
                         }
-                    }
-                } else {
-                    items(courses, key = { it.id }) { course ->
-                        var expanded by remember { mutableStateOf(false) }
-                        GlassCard(
-                            onClick = { navController.navigate("courseDetail/${course.id}") },
-                            modifier = Modifier
-                                .animateItem()
-                                .fillMaxWidth()
-                                .animateContentSize(),
-                            shape = MaterialTheme.shapes.extraLarge,
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp),
-                                verticalArrangement = Arrangement.SpaceBetween
-                            ) {
+                        Spacer(Modifier.height(8.dp))
+                        
+                        val upcomingAssigns = assignments.filter { !it.isCompleted && it.dueDateMillis > System.currentTimeMillis() }.sortedBy { it.dueDateMillis }.take(3)
+                        if (upcomingAssigns.isEmpty()) {
+                            Text("No upcoming classes or assignments.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            upcomingAssigns.forEach { assignment ->
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.Top
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Box(
-                                        modifier = Modifier
-                                            .size(56.dp)
-                                            .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.large),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Rounded.MenuBook,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(8.dp).background(
+                                            androidx.compose.ui.graphics.Color(
+                                                android.graphics.Color.parseColor(
+                                                    assignment.categoryColor.ifEmpty { "#3197D6" }
+                                                )
+                                            ), CircleShape
                                         )
-                                    }
-                                    
-                                    Box {
-                                        IconButton(onClick = { expanded = true }) {
-                                            Icon(Icons.Rounded.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        }
-                                        DropdownMenu(
-                                            expanded = expanded,
-                                            onDismissRequest = { expanded = false }
-                                        ) {
-                                            DropdownMenuItem(
-                                                text = { Text("Edit") },
-                                                onClick = {
-                                                    expanded = false
-                                                    courseToEdit = course
-                                                },
-                                                leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text("Delete") },
-                                                onClick = {
-                                                    expanded = false
-                                                    viewModel.deleteCourse(course)
-                                                },
-                                                leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Column {
+                                    )
+                                    Spacer(Modifier.width(8.dp))
                                     Text(
-                                        text = course.name,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
+                                        text = assignment.title,
+                                        style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    if (course.description.isNotEmpty()) {
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = course.description,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                item(key = "your_subjects_title") {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "Your Subjects",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.animateItem().padding(vertical = 8.dp)
-                    )
-                }
-
-                if (subjects.isEmpty()) {
-                    item(key = "subjects_empty") {
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = true,
-                            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
-                            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically(),
-                            modifier = Modifier.animateItem()
-                        ) {
-                            GlassCard(
-                                modifier = Modifier.fillMaxWidth().height(240.dp),
-                                shape = RoundedCornerShape(32.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(80.dp)
-                                            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f), CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Rounded.MenuBook,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(40.dp),
-                                            tint = MaterialTheme.colorScheme.tertiary
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(24.dp))
-                                    Text(
-                                        "No subjects yet",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                     )
                                 }
                             }
                         }
                     }
-                } else {
-                    items(subjects, key = { it.id }) { subject ->
-                        var expanded by remember { mutableStateOf(false) }
-                        GlassCard(
-                            onClick = { navController.navigate("subjectDetail/${subject.id}") },
-                            modifier = Modifier.animateItem().fillMaxWidth(),
-                            shape = RoundedCornerShape(32.dp)
+                }
+            }
+
+            item(key = "upcoming_tasks") {
+                Spacer(modifier = Modifier.height(16.dp))
+                GlassCard(
+                    modifier = Modifier.animateItem().fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(24.dp)
+                            Text("Upcoming Tasks", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
+                            IconButton(
+                                onClick = onNavigateToTasks,
+                                modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f), CircleShape)
                             ) {
+                                Icon(Icons.Rounded.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        
+                        val upcomingTasks = tasks.filter { !it.isCompleted }.sortedBy { it.dueDateMillis ?: Long.MAX_VALUE }.take(3)
+                        if (upcomingTasks.isEmpty()) {
+                            Text("No upcoming tasks.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            upcomingTasks.forEach { task ->
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.Top
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Box(
-                                        modifier = Modifier.size(64.dp).background(MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(20.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = subject.name.take(1).uppercase(),
-                                            style = MaterialTheme.typography.headlineMedium,
-                                            fontWeight = FontWeight.Black,
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
-                                    }
-                                    Box {
-                                        IconButton(onClick = { expanded = true }) {
-                                            Icon(Icons.Rounded.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        }
-                                        DropdownMenu(
-                                            expanded = expanded,
-                                            onDismissRequest = { expanded = false }
-                                        ) {
-                                            DropdownMenuItem(
-                                                text = { Text("Edit") },
-                                                onClick = {
-                                                    expanded = false
-                                                    subjectToEdit = subject
-                                                },
-                                                leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text("Delete") },
-                                                onClick = {
-                                                    expanded = false
-                                                    viewModel.deleteSubject(subject)
-                                                },
-                                                leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
-                                            )
-                                        }
-                                    }
+                                    Icon(Icons.Rounded.TaskAlt, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = task.title,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
                                 }
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Text(
-                                    text = subject.name,
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Black,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "${subject.targetHours} hr target",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
                             }
                         }
                     }
                 }
-                item {
-                    Spacer(modifier = Modifier.height(80.dp))
-                }
             }
         }
-
-    if (courseToEdit != null) {
-        var name by remember { mutableStateOf(courseToEdit!!.name) }
-        var instructor by remember { mutableStateOf(courseToEdit!!.instructor) }
-        var schedule by remember { mutableStateOf(courseToEdit!!.schedule) }
-        var description by remember { mutableStateOf(courseToEdit!!.description) }
-        var showTimePicker by remember { mutableStateOf(false) }
-        var selectedSubjectId by remember { mutableStateOf<Int?>(courseToEdit!!.subjectId) }
-
-        if (showTimePicker) {
-            val initialHour = remember {
-                try {
-                    var parsedHour = schedule.substringBefore(":").toInt()
-                    if (schedule.contains("PM", ignoreCase = true) && parsedHour < 12) parsedHour += 12
-                    if (schedule.contains("AM", ignoreCase = true) && parsedHour == 12) parsedHour = 0
-                    parsedHour
-                } catch (e: Exception) { 12 }
-            }
-            val initialMinute = remember {
-                try {
-                    schedule.substringAfter(":").substringBefore(" ").toInt()
-                } catch (e: Exception) { 0 }
-            }
-            val timePickerState = rememberTimePickerState(initialHour = initialHour, initialMinute = initialMinute)
-            AlertDialog(
-                onDismissRequest = { showTimePicker = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        val hour = timePickerState.hour
-                        val minute = timePickerState.minute
-                        val amPm = if (hour >= 12) "PM" else "AM"
-                        val formatHour = if (hour % 12 == 0) 12 else hour % 12
-                        schedule = String.format(java.util.Locale.getDefault(), "%02d:%02d %s", formatHour, minute, amPm)
-                        showTimePicker = false
-                    }) { Text("OK") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
-                },
-                text = {
-                    TimePicker(state = timePickerState)
-                }
-            )
-        }
-
-        AlertDialog(
-            onDismissRequest = { courseToEdit = null },
-            title = { Text("Edit Course") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Course Name") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = instructor,
-                        onValueChange = { instructor = it },
-                        label = { Text("Instructor") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    androidx.compose.material3.OutlinedButton(onClick = { showTimePicker = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(if (schedule.isEmpty()) "Select Schedule Time" else "Schedule: $schedule")
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        label = { Text("Description") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 3
-                    )
-
-                    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
-                    if (subjects.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            "Link to Study Subject (Optional)",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        androidx.compose.foundation.lazy.LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            item {
-                                androidx.compose.material3.InputChip(
-                                    selected = selectedSubjectId == null,
-                                    onClick = { selectedSubjectId = null },
-                                    label = { Text("None") }
-                                )
-                            }
-                            items(subjects, key = { "edit_chips_${it.id}" }) { subj ->
-                                androidx.compose.material3.InputChip(
-                                    selected = selectedSubjectId == subj.id,
-                                    onClick = { selectedSubjectId = subj.id },
-                                    label = { Text(subj.name) }
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (name.isNotBlank()) {
-                        viewModel.updateCourse(courseToEdit!!.copy(
-                            name = name,
-                            instructor = instructor,
-                            schedule = schedule,
-                            description = description,
-                            subjectId = selectedSubjectId
-                        ))
-                        courseToEdit = null
-                    }
-                }) { Text("Save") }
-            },
-            dismissButton = {
-                TextButton(onClick = { courseToEdit = null }) { Text("Cancel") }
-            }
-        )
-    }
-
-    if (subjectToEdit != null) {
-        var name by remember { mutableStateOf(subjectToEdit!!.name) }
-        var targetHours by remember { mutableStateOf(subjectToEdit!!.targetHours.toString()) }
-
-        AlertDialog(
-            onDismissRequest = { subjectToEdit = null },
-            title = { Text("Edit Subject") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Subject Name") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = targetHours,
-                        onValueChange = { targetHours = it.filter { char -> char.isDigit() } },
-                        label = { Text("Target Hours") },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (name.isNotBlank()) {
-                        val hours = targetHours.toIntOrNull() ?: subjectToEdit!!.targetHours
-                        viewModel.updateSubject(subjectToEdit!!.copy(
-                            name = name,
-                            targetHours = hours
-                        ))
-                        subjectToEdit = null
-                    }
-                }) { Text("Save") }
-            },
-            dismissButton = {
-                TextButton(onClick = { subjectToEdit = null }) { Text("Cancel") }
-            }
-        )
     }
 }
 

@@ -195,11 +195,16 @@ fun ScholarTheme(
             "Sage" -> if (isDark) SageDark else SageLight
             "Twilight" -> if (isDark) TwilightDark else TwilightLight
             "Custom" -> {
-                val p = try { Color(android.graphics.Color.parseColor(customPrimary)) } catch(e:Exception) { Color(0xFF3197D6) }
-                val pc = try { Color(android.graphics.Color.parseColor(customPrimaryContainer)) } catch(e:Exception) { Color(0xFFDAF1FF) }
-                val bgIn = try { Color(android.graphics.Color.parseColor(customBackground)) } catch(e:Exception) { if (isDark) Color(0xFF101010) else Color(0xFFFAFAFA) }
-                val sfIn = try { Color(android.graphics.Color.parseColor(customSurface)) } catch(e:Exception) { if (isDark) Color(0xFF1A1A1A) else Color(0xFFFFFFFF) }
-                val txtIn = try { Color(android.graphics.Color.parseColor(customText)) } catch(e:Exception) { if (isDark) Color(0xFFE2E2E2) else Color(0xFF1A1C1A) }
+                fun safeColor(hex: String, fallback: Color): Color {
+                    if (hex.isBlank()) return fallback
+                    return try { Color(android.graphics.Color.parseColor(hex)) } catch(e: Exception) { fallback }
+                }
+                
+                val p = safeColor(customPrimary, Color(0xFF3197D6))
+                val pc = safeColor(customPrimaryContainer, Color(0xFFDAF1FF))
+                val bgIn = safeColor(customBackground, if (isDark) Color(0xFF101010) else Color(0xFFFAFAFA))
+                val sfIn = safeColor(customSurface, if (isDark) Color(0xFF1A1A1A) else Color(0xFFFFFFFF))
+                val txtIn = safeColor(customText, if (isDark) Color(0xFFE2E2E2) else Color(0xFF1A1C1A))
 
                 // Safe luminance calculation helper
                 val bgInLum = bgIn.red * 0.299f + bgIn.green * 0.587f + bgIn.blue * 0.114f
@@ -271,7 +276,7 @@ fun ScholarTheme(
     )
 
     if (betterTexts) {
-        val baseTextSourceColor = if (themeColor == "Custom") {
+        val baseTextSourceColor = if (themeColor == "Custom" && customText.isNotBlank()) {
             try { Color(android.graphics.Color.parseColor(customText)) } catch(e: Exception) { colorScheme.primary }
         } else {
             colorScheme.primary

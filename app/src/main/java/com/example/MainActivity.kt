@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.example.util.LogDog.setup(applicationContext)
         
         try {
             val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(1, TimeUnit.DAYS)
@@ -77,8 +78,7 @@ class MainActivity : ComponentActivity() {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
             val pureBlackMode by viewModel.pureBlackMode.collectAsStateWithLifecycle()
-            val betaNotchOptimization by viewModel.betaNotchOptimization.collectAsStateWithLifecycle()
-            val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
+            val displayLayoutMode by viewModel.displayLayoutMode.collectAsStateWithLifecycle()
             val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
             val betaGlassDynamic by viewModel.betaGlassDynamic.collectAsStateWithLifecycle()
             val betaFrostGlass by viewModel.betaFrostGlass.collectAsStateWithLifecycle()
@@ -96,11 +96,11 @@ class MainActivity : ComponentActivity() {
             val customSurface by viewModel.customSurface.collectAsStateWithLifecycle()
             val customText by viewModel.customText.collectAsStateWithLifecycle()
 
-            androidx.compose.runtime.LaunchedEffect(betaImmersiveMode) {
+            androidx.compose.runtime.LaunchedEffect(displayLayoutMode) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     val window = (this@MainActivity).window
                     window.attributes = window.attributes.apply {
-                        layoutInDisplayCutoutMode = if (betaImmersiveMode) {
+                        layoutInDisplayCutoutMode = if (displayLayoutMode == "Immersive") {
                             android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
                         } else {
                             android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize().then(
-                        if (betaNotchOptimization && !betaImmersiveMode) Modifier.displayCutoutPadding() else Modifier
+                        if (displayLayoutMode == "Notch Optimization") Modifier.displayCutoutPadding() else Modifier
                     ), 
                     color = MaterialTheme.colorScheme.background
                 ) {
@@ -212,7 +212,7 @@ class MainActivity : ComponentActivity() {
                             navController = navController, 
                             startDestination = "dashboard",
                             modifier = Modifier.then(
-                                if (betaImmersiveMode) Modifier.windowInsetsPadding(
+                                if (displayLayoutMode == "Immersive") Modifier.windowInsetsPadding(
                                     androidx.compose.foundation.layout.WindowInsets.safeDrawing.only(
                                         androidx.compose.foundation.layout.WindowInsetsSides.Horizontal
                                     )
@@ -257,17 +257,8 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel
                             )
                         }
-                        composable("toolbox") {
-                            com.example.ui.screens.ToolboxScreen(
-                                navController = navController,
-                                viewModel = viewModel
-                            )
-                        }
                         composable("pomodoro") {
                             com.example.ui.screens.PomodoroScreen(navController = navController, viewModel = viewModel)
-                        }
-                        composable("cgpa") {
-                            com.example.ui.screens.CgpaCalculatorScreen(navController = navController)
                         }
                         composable("notes") {
                             com.example.ui.screens.QuickNotesScreen(navController = navController)
@@ -324,6 +315,12 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("settings/system") {
                             com.example.ui.screens.SystemSettingsScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable("settings/notifications") {
+                            com.example.ui.screens.NotificationsScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )

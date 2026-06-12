@@ -6,6 +6,8 @@ import com.example.model.ScholarBackup
 import com.example.model.Subject
 import com.example.model.Topic
 import com.example.model.ActionLog
+import com.example.model.Chapter
+import com.example.model.Task
 import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
 import java.io.ObjectInputStream
@@ -19,9 +21,20 @@ class ScholarRepository(private val dao: ScholarDao) {
     val allAssignments: Flow<List<PracticeAssignment>> = dao.getAllAssignments()
     val allActionLogs: Flow<List<ActionLog>> = dao.getAllActionLogs()
     val allPomodoroSessions: Flow<List<com.example.model.PomodoroSession>> = dao.getAllPomodoroSessions()
+    val allNotes: Flow<List<com.example.model.Note>> = dao.getAllNotes()
+    val allTasks: Flow<List<Task>> = dao.getAllTasks()
 
     fun getTopicsForSubject(subjectId: Int) = dao.getTopicsForSubject(subjectId)
+    fun getChaptersForSubject(subjectId: Int) = dao.getChaptersForSubject(subjectId)
     fun getAssignmentsForCourse(courseId: Int) = dao.getAssignmentsForCourse(courseId)
+
+    suspend fun insertChapter(chapter: Chapter) = dao.insertChapter(chapter)
+    suspend fun updateChapter(chapter: Chapter) = dao.updateChapter(chapter)
+    suspend fun deleteChapter(chapter: Chapter) = dao.deleteChapter(chapter)
+
+    suspend fun insertTask(task: Task) = dao.insertTask(task)
+    suspend fun updateTask(task: Task) = dao.updateTask(task)
+    suspend fun deleteTask(task: Task) = dao.deleteTask(task)
 
     suspend fun insertCourse(course: Course) = dao.insertCourse(course)
     suspend fun updateCourse(course: Course) = dao.updateCourse(course)
@@ -48,14 +61,22 @@ class ScholarRepository(private val dao: ScholarDao) {
     suspend fun insertActionLog(log: ActionLog) = dao.insertActionLog(log)
     suspend fun clearActionLogs() = dao.clearActionLogs()
     suspend fun insertPomodoroSession(session: com.example.model.PomodoroSession) = dao.insertPomodoroSession(session)
+    
+    suspend fun insertNote(note: com.example.model.Note) = dao.insertNote(note)
+    suspend fun updateNote(note: com.example.model.Note) = dao.updateNote(note)
+    suspend fun deleteNote(note: com.example.model.Note) = dao.deleteNote(note)
+
     suspend fun clearAllData() {
         dao.clearCourses()
         dao.clearSubjects()
+        dao.clearChapters()
         dao.clearTopics()
         dao.clearAssignments()
         dao.clearAttendance()
         dao.clearPomodoro()
         dao.clearActionLogs()
+        dao.clearNotes()
+        dao.clearTasks()
     }
 
     private val moshi = com.squareup.moshi.Moshi.Builder().addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()
@@ -71,7 +92,10 @@ class ScholarRepository(private val dao: ScholarDao) {
             settings = settings,
             attendance = dao.exportAllAttendance(),
             pomodoro = dao.exportAllPomodoro(),
-            actionLogs = dao.exportAllActionLogs()
+            actionLogs = dao.exportAllActionLogs(),
+            notes = dao.exportAllNotes(),
+            chapters = dao.exportAllChapters(),
+            tasks = dao.exportAllTasks()
         )
         // Secure binary format: wrap outputStream in GZIPOutputStream for compression and obfuscation
         java.util.zip.GZIPOutputStream(outputStream).use { gzos ->
@@ -101,11 +125,14 @@ class ScholarRepository(private val dao: ScholarDao) {
         // 1. Clear database securely
         dao.clearCourses()
         dao.clearSubjects()
+        dao.clearChapters()
         dao.clearTopics()
         dao.clearAssignments()
         dao.clearAttendance()
         dao.clearPomodoro()
         dao.clearActionLogs()
+        dao.clearNotes()
+        dao.clearTasks()
 
         // 2. Insert Subjects and map old IDs to newly generated auto-increment IDs
         val oldToNewSubjectId = mutableMapOf<Int, Int>()
@@ -142,14 +169,39 @@ class ScholarRepository(private val dao: ScholarDao) {
             dao.insertAttendanceRecord(record.copy(id = 0, courseId = newCourseId))
         }
 
-        // 7. Insert Pomodoro Sessions
+        // 7. Insert Pomodoro Sessions with remapped Subject IDs
         backup.pomodoro?.forEach { session ->
-            dao.insertPomodoroSession(session.copy(id = 0))
+            val newSubjectId = session.subjectId?.let { oldToNewSubjectId[it] } ?: session.subjectId
+            dao.insertPomodoroSession(session.copy(id = 0, subjectId = newSubjectId))
         }
 
         // 8. Insert Action Logs
         backup.actionLogs?.forEach { log ->
             dao.insertActionLog(log.copy(id = 0))
+        }
+
+        // 9. Insert Notes with mapped Course/Subject IDs
+        backup.notes?.forEach { note ->
+            val newCourseId = note.courseId?.let { oldToNewCourseId[it] } ?: note.courseId
+            val newSubjectId = note.subjectId?.let { oldToNewSubjectId[it] } ?: note.subjectId
+            dao.insertNote(note.copy(id = 0, courseId = newCourseId, subjectId = newSubjectId))
+        }
+
+        // 10. Insert Chapters
+        val oldToNewChapterId = mutableMapOf<Int, Int>()
+        backup.chapters?.forEach { chapter ->
+            val oldId = chapter.id
+            val newSubjectId = oldToNewSubjectId[chapter.subjectId] ?: chapter.subjectId
+            val newId = dao.insertChapter(chapter.copy(id = 0, subjectId = newSubjectId)).toInt()
+            oldToNewChapterId[oldId] = newId
+        }
+
+        // 11. Insert Tasks
+        backup.tasks?.forEach { task ->
+            val newSubjectId = task.subjectId?.let { oldToNewSubjectId[it] } ?: task.subjectId
+            val newChapterId = task.chapterId?.let { oldToNewChapterId[it] } ?: task.chapterId
+            val newCourseId = task.courseId?.let { oldToNewCourseId[it] } ?: task.courseId
+            dao.insertTask(task.copy(id = 0, subjectId = newSubjectId, chapterId = newChapterId, courseId = newCourseId))
         }
 
         return backup.settings

@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.LibraryAddCheck
@@ -49,7 +51,14 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
 
     val linkedCourses = remember(subject, courses, systemAutoLinkByName) {
         if (subject != null) {
-            courses.filter { it.subjectId == subject.id || (systemAutoLinkByName && it.name.trim().lowercase() == subject.name.trim().lowercase()) }
+            courses.filter { course ->
+                val crsName = course.name.trim().lowercase()
+                val subName = subject.name.trim().lowercase()
+                course.subjectId == subject.id || (systemAutoLinkByName && (
+                    crsName == subName || 
+                    (crsName.isNotEmpty() && subName.isNotEmpty() && (crsName.contains(subName) || subName.contains(crsName)))
+                ))
+            }
         } else {
             emptyList()
         }
@@ -57,6 +66,24 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
 
     val topics by viewModel.getTopicsForSubject(subjectId).collectAsStateWithLifecycle()
     var showAddTopic by remember { mutableStateOf(false) }
+
+    val allNotes by viewModel.notes.collectAsStateWithLifecycle()
+    val subjectNotes = remember(allNotes, subject, linkedCourses) {
+        if (subject != null) {
+            val linkedCourseIds = linkedCourses.map { it.id }
+            allNotes.filter { note ->
+                note.subjectId == subject.id || 
+                (note.courseId != null && linkedCourseIds.contains(note.courseId))
+            }
+        } else {
+            emptyList()
+        }
+    }
+
+    var showAddNoteDialog by remember { mutableStateOf(false) }
+    var noteToEdit by remember { mutableStateOf<com.example.model.Note?>(null) }
+    var noteText by remember { mutableStateOf("") }
+    var noteCustomTag by remember { mutableStateOf("Core") }
     
     val context = LocalContext.current
 
@@ -182,6 +209,122 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     }
                 }
 
+                // Subject Notes Section
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Subject Notes",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Button(
+                            onClick = { 
+                                noteToEdit = null
+                                noteText = ""
+                                noteCustomTag = "Theory"
+                                showAddNoteDialog = true 
+                            },
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Rounded.Add, contentDescription = "Add Note", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Add Note")
+                        }
+                    }
+                }
+
+                if (subjectNotes.isEmpty()) {
+                    item {
+                        com.example.ui.components.GlassCard(
+                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    "No notes for this study subject yet.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(subjectNotes, key = { "sn_${it.id}" }) { note ->
+                        com.example.ui.components.GlassCard(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Tag/Capsule
+                                    val isCurrentSubject = note.subjectId == subject.id
+                                    val pillColor = if (isCurrentSubject) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+                                    val onPillColor = if (isCurrentSubject) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                                    
+                                    Box(
+                                        modifier = Modifier
+                                            .background(pillColor, RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = note.tag.ifBlank { if (isCurrentSubject) "Subject" else "Linked" },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = onPillColor
+                                        )
+                                    }
+
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        IconButton(onClick = {
+                                            noteToEdit = note
+                                            noteText = note.content
+                                            noteCustomTag = note.tag
+                                            showAddNoteDialog = true
+                                        }, modifier = Modifier.size(32.dp)) {
+                                            Icon(Icons.Rounded.Edit, "Edit", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                        }
+                                        IconButton(onClick = {
+                                            viewModel.deleteNote(note)
+                                        }, modifier = Modifier.size(32.dp)) {
+                                            Icon(Icons.Rounded.Delete, "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = note.content,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                val formattedDate = remember(note.dateMillis) {
+                                    val sdf = java.text.SimpleDateFormat("MMM dd, yyyy · hh:mm a", java.util.Locale.getDefault())
+                                    sdf.format(java.util.Date(note.dateMillis))
+                                }
+                                Text(
+                                    text = formattedDate,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Study Topics Section
                 item {
                     Text(
@@ -232,7 +375,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         }
                     }
                 } else {
-                    items(topics, key = { "t_${it.id}" }) { topic ->
+                    itemsIndexed(topics, key = { _, topic -> "t_${topic.id}" }) { index, topic ->
                         val cardColor by androidx.compose.animation.animateColorAsState(
                             if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
                         )
@@ -247,14 +390,22 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                     onCheckedChange = { viewModel.toggleTopicCompleted(topic) }
                                 )
                                 Spacer(modifier = Modifier.width(16.dp))
-                                Text(
-                                    topic.title,
-                                    modifier = Modifier.weight(1f),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface,
-                                    textDecoration = if (topic.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "${index + 1}. ${topic.title}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface,
+                                        textDecoration = if (topic.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
+                                    )
+                                    if (topic.tags.isNotBlank()) {
+                                        Text(
+                                            "Tags: ${topic.tags}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
                                 IconButton(onClick = { viewModel.deleteTopic(topic) }) {
                                     Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                                 }
@@ -268,16 +419,71 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
 
     if (showAddTopic) {
         var title by remember { mutableStateOf("") }
+        var tags by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showAddTopic = false },
             title = { Text("Add Topic") },
             text = {
-                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Topic Title") })
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Topic Title") })
+                    OutlinedTextField(value = tags, onValueChange = { tags = it }, label = { Text("Tags (optional)") })
+                }
             },
             confirmButton = {
-                TextButton(onClick = { if (title.isNotBlank()) { viewModel.addTopic(subjectId, title); showAddTopic = false } }) { Text("Add") }
+                TextButton(onClick = { if (title.isNotBlank()) { viewModel.addTopic(subjectId, title, tags); showAddTopic = false } }) { Text("Add") }
             },
             dismissButton = { TextButton(onClick = { showAddTopic = false }) { Text("Cancel") } }
+        )
+    }
+
+    if (showAddNoteDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddNoteDialog = false },
+            title = { Text(if (noteToEdit == null) "Add Note" else "Edit Note") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = noteText,
+                        onValueChange = { noteText = it },
+                        label = { Text("Note content") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3
+                    )
+                    OutlinedTextField(
+                        value = noteCustomTag,
+                        onValueChange = { noteCustomTag = it },
+                        label = { Text("Note Tag (e.g. Theory, Lab, Formula)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (noteText.isNotBlank()) {
+                        val activeNote = noteToEdit
+                        if (activeNote != null) {
+                            viewModel.updateNote(
+                                activeNote.copy(
+                                    content = noteText,
+                                    tag = noteCustomTag
+                                )
+                            )
+                        } else {
+                            viewModel.addNote(
+                                content = noteText,
+                                subjectId = subject.id,
+                                tag = noteCustomTag
+                            )
+                        }
+                        showAddNoteDialog = false
+                        noteText = ""
+                        noteCustomTag = "Theory"
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddNoteDialog = false }) { Text("Cancel") }
+            }
         )
     }
 }

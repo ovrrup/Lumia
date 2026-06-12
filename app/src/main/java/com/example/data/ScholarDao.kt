@@ -11,6 +11,8 @@ import com.example.model.PracticeAssignment
 import com.example.model.Subject
 import com.example.model.Topic
 import com.example.model.ActionLog
+import com.example.model.Chapter
+import com.example.model.Task
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -121,6 +123,9 @@ interface ScholarDao {
 
     @Query("SELECT * FROM action_logs")
     suspend fun exportAllActionLogs(): List<ActionLog>
+
+    @Query("SELECT * FROM notes")
+    suspend fun exportAllNotes(): List<com.example.model.Note>
     
     @Query("DELETE FROM courses") suspend fun clearCourses()
     @Query("DELETE FROM subjects") suspend fun clearSubjects()
@@ -128,4 +133,53 @@ interface ScholarDao {
     @Query("DELETE FROM assignments") suspend fun clearAssignments()
     @Query("DELETE FROM attendance_records") suspend fun clearAttendance()
     @Query("DELETE FROM pomodoro_sessions") suspend fun clearPomodoro()
+    @Query("DELETE FROM notes") suspend fun clearNotes()
+
+    @Query("SELECT * FROM notes ORDER BY dateMillis DESC")
+    fun getAllNotes(): Flow<List<com.example.model.Note>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertNote(note: com.example.model.Note): Long
+
+    @Update
+    suspend fun updateNote(note: com.example.model.Note)
+
+    @Delete
+    suspend fun deleteNote(note: com.example.model.Note)
+
+    @Query("SELECT * FROM chapters WHERE subjectId = :subjectId ORDER BY id ASC")
+    fun getChaptersForSubject(subjectId: Int): Flow<List<Chapter>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertChapter(chapter: Chapter): Long
+
+    @Update
+    suspend fun updateChapter(chapter: Chapter)
+
+    @Delete
+    suspend fun deleteChapter(chapter: Chapter)
+
+    @Query("SELECT * FROM chapters")
+    suspend fun exportAllChapters(): List<Chapter>
+
+    @Query("DELETE FROM chapters")
+    suspend fun clearChapters()
+
+    @Query("SELECT * FROM tasks ORDER BY dueDateMillis ASC, id DESC")
+    fun getAllTasks(): Flow<List<Task>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTask(task: Task): Long
+
+    @Update
+    suspend fun updateTask(task: Task)
+
+    @Delete
+    suspend fun deleteTask(task: Task)
+
+    @Query("SELECT * FROM tasks")
+    suspend fun exportAllTasks(): List<Task>
+
+    @Query("DELETE FROM tasks")
+    suspend fun clearTasks()
 }
