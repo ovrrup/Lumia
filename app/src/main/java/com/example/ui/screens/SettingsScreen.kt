@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -63,12 +64,17 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                         modifier = Modifier
                             .matchParentSize()
                             .liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
-                                tintAlpha = if (isDark) 0.15f else 0.4f,
-                                blurRadius = 60f,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
+                                tintAlpha = if (isDark) 0.18f else 0.45f,
+                                blurRadius = 15f,
                                 isDark = isDark,
                                 tintColor = MaterialTheme.colorScheme.surface
                             )
+                    )
+                    androidx.compose.material3.HorizontalDivider(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
                     )
                 }
                 CenterAlignedTopAppBar(
@@ -214,32 +220,63 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 visible = betaGlassUi && !betaMinimalistMode
             ) {
                 val betaGlassDynamic by viewModel.betaGlassDynamic.collectAsStateWithLifecycle()
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 32.dp)
-                        .clickable { viewModel.updateBetaGlassDynamic(!betaGlassDynamic) }
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                        Text(
-                            text = "Dynamic Color Tinting",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = "Blend glass texture with your active theme palette instead of stark white/black",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                val betaFrostGlass by viewModel.betaFrostGlass.collectAsStateWithLifecycle()
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 32.dp)
+                            .clickable { viewModel.updateBetaGlassDynamic(!betaGlassDynamic) }
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                            Text(
+                                text = "Dynamic Color Tinting",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "Blend glass texture with your active theme palette instead of stark white/black",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = betaGlassDynamic,
+                            onCheckedChange = { viewModel.updateBetaGlassDynamic(it) },
+                            modifier = Modifier.scale(0.85f)
                         )
                     }
-                    Switch(
-                        checked = betaGlassDynamic,
-                        onCheckedChange = { viewModel.updateBetaGlassDynamic(it) },
-                        modifier = Modifier.scale(0.85f)
-                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 32.dp)
+                            .clickable { viewModel.updateBetaFrostGlass(!betaFrostGlass) }
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                            Text(
+                                text = "Frosted Glass Style",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "Switch back to the classic high-contrast frosted glass canvas rather than a dark/liquid fluid finish",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = betaFrostGlass,
+                            onCheckedChange = { viewModel.updateBetaFrostGlass(it) },
+                            modifier = Modifier.scale(0.85f)
+                        )
+                    }
                 }
             }
 
@@ -838,12 +875,17 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                         modifier = Modifier
                             .matchParentSize()
                             .liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
-                                tintAlpha = if (isDark) 0.15f else 0.4f,
-                                blurRadius = 60f,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
+                                tintAlpha = if (isDark) 0.18f else 0.45f,
+                                blurRadius = 15f,
                                 isDark = isDark,
                                 tintColor = MaterialTheme.colorScheme.surface
                             )
+                    )
+                    androidx.compose.material3.HorizontalDivider(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
                     )
                 }
                 CenterAlignedTopAppBar(
@@ -918,12 +960,17 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
                         modifier = Modifier
                             .matchParentSize()
                             .liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
-                                tintAlpha = if (isDark) 0.15f else 0.4f,
-                                blurRadius = 60f,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
+                                tintAlpha = if (isDark) 0.18f else 0.45f,
+                                blurRadius = 15f,
                                 isDark = isDark,
                                 tintColor = MaterialTheme.colorScheme.surface
                             )
+                    )
+                    androidx.compose.material3.HorizontalDivider(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
                     )
                 }
                 CenterAlignedTopAppBar(
@@ -947,9 +994,94 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingsCategoryHeading(title = "Configure Hex Colors", icon = Icons.Rounded.Edit)
+            SettingsCategoryHeading(title = "Auto-Generate Custom Palette", icon = Icons.Rounded.Palette)
             
+            Text(
+                text = "Tap a preset to load a beautifully calculated theme, or enter a Primary Hex below and tap 'Generate Palette' to scientifically compute matching container, surface, background, and text shades.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Spacer(modifier = Modifier.width(16.dp))
+                val presets = listOf(
+                    Triple("Cyber Glow", "#00A896", androidx.compose.ui.graphics.Color(0xFF00A896)),
+                    Triple("Amethyst", "#7B2CBF", androidx.compose.ui.graphics.Color(0xFF7B2CBF)),
+                    Triple("Emerald Forest", "#2D6A4F", androidx.compose.ui.graphics.Color(0xFF2D6A4F)),
+                    Triple("Sunset Orange", "#FF7043", androidx.compose.ui.graphics.Color(0xFFFF7043)),
+                    Triple("Midnight Ocean", "#1A237E", androidx.compose.ui.graphics.Color(0xFF1A237E)),
+                    Triple("Rose Petal", "#D81B60", androidx.compose.ui.graphics.Color(0xFFD81B60)),
+                    Triple("Cappuccino", "#8D6E63", androidx.compose.ui.graphics.Color(0xFF8D6E63)),
+                    Triple("Lavender Bliss", "#9575CD", androidx.compose.ui.graphics.Color(0xFF9575CD))
+                )
+                presets.forEach { preset ->
+                    val name = preset.first
+                    val hex = preset.second
+                    val previewColor = preset.third
+                    Surface(
+                        modifier = Modifier.clickable {
+                            viewModel.generatePaletteFromPrimaryHex(hex)
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        color = previewColor.copy(alpha = 0.12f),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, previewColor.copy(alpha = 0.6f))
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .background(previewColor, CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                name,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            SettingsCategoryHeading(title = "Fine-Tune Individual Colors", icon = Icons.Rounded.Edit)
+
             HexColorInputItem("Primary Shade", customPrimary) { viewModel.updateCustomColor("primary", it) }
+            
+            Button(
+                onClick = { viewModel.generatePaletteFromPrimaryHex(customPrimary) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Palette,
+                    contentDescription = "Magic Wand",
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Generate Cohesive Palette from Primary", fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            
             HexColorInputItem("Secondary/Header Shade", customPrimaryContainer) { viewModel.updateCustomColor("primary_container", it) }
             HexColorInputItem("Background Shade", customBackground) { viewModel.updateCustomColor("background", it) }
             HexColorInputItem("Surface/Panel Shade", customSurface) { viewModel.updateCustomColor("surface", it) }
@@ -963,12 +1095,28 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
 @Composable
 fun HexColorInputItem(label: String, value: String, onValueChange: (String) -> Unit) {
     var textValue by remember(value) { mutableStateOf(value) }
-    var isError by remember { mutableStateOf(false) }
-    val colorPreview = try {
-        androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(textValue))
-    } catch(e: Exception) {
-        isError = true
-        androidx.compose.ui.graphics.Color.Transparent
+    
+    val colorPreview = remember(textValue) {
+        try {
+            val formatted = if (textValue.isNotEmpty() && !textValue.startsWith("#")) "#$textValue" else textValue
+            androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(formatted))
+        } catch(e: Exception) {
+            androidx.compose.ui.graphics.Color.Transparent
+        }
+    }
+    
+    val isError = remember(textValue) {
+        try {
+            val formatted = if (textValue.isNotEmpty() && !textValue.startsWith("#")) "#$textValue" else textValue
+            if (formatted.length == 7 || formatted.length == 9) {
+                android.graphics.Color.parseColor(formatted)
+                false
+            } else {
+                true
+            }
+        } catch(e: Exception) {
+            true
+        }
     }
 
     Row(
@@ -987,13 +1135,10 @@ fun HexColorInputItem(label: String, value: String, onValueChange: (String) -> U
                     try {
                         if (formatted.length == 7 || formatted.length == 9) {
                             android.graphics.Color.parseColor(formatted)
-                            isError = false
                             onValueChange(formatted)
-                        } else {
-                            isError = true
                         }
                     } catch(e: Exception) {
-                        isError = true
+                        // Safe ignore during half-typed strings
                     }
                 },
                 singleLine = true,

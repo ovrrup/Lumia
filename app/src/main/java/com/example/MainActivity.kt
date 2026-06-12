@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -80,6 +81,7 @@ class MainActivity : ComponentActivity() {
             val betaImmersiveMode by viewModel.betaImmersiveMode.collectAsStateWithLifecycle()
             val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
             val betaGlassDynamic by viewModel.betaGlassDynamic.collectAsStateWithLifecycle()
+            val betaFrostGlass by viewModel.betaFrostGlass.collectAsStateWithLifecycle()
             val betaDynamicBackground by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
             val betaBetterTexts by viewModel.betaBetterTexts.collectAsStateWithLifecycle()
             val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
@@ -103,12 +105,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode, glassMode = betaGlassUi, glassDynamic = betaGlassDynamic, betterTexts = betaBetterTexts, betterTextsPalette = betaBetterTextsPalette, customPrimary = customPrimary, customPrimaryContainer = customPrimaryContainer, customBackground = customBackground, customSurface = customSurface, customText = customText) {
+            ScholarTheme(themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode, glassMode = betaGlassUi, glassDynamic = betaGlassDynamic, frostGlass = betaFrostGlass, betterTexts = betaBetterTexts, betterTextsPalette = betaBetterTextsPalette, customPrimary = customPrimary, customPrimaryContainer = customPrimaryContainer, customBackground = customBackground, customSurface = customSurface, customText = customText) {
                 Surface(
                     modifier = Modifier.fillMaxSize().then(
                         if (betaNotchOptimization && !betaImmersiveMode) Modifier.displayCutoutPadding() else Modifier
                     ), 
-                    color = if (betaGlassUi) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     val safetyPinDialogData by viewModel.safetyPinDialogData.collectAsStateWithLifecycle()
                     if (safetyPinDialogData != null) {
@@ -141,33 +143,46 @@ class MainActivity : ComponentActivity() {
 
                     // Full-screen ambient gradient — sits behind ALL composables
                     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
-                        if (betaDynamicBackground) {
-                            // Animated ambient background
+                        if (betaDynamicBackground || betaGlassUi) {
+                            // Animated or static soft ambient background
                             val infiniteTransition = rememberInfiniteTransition()
-                            val offset by infiniteTransition.animateFloat(
-                                initialValue = 0f, targetValue = 1f,
-                                animationSpec = infiniteRepeatable(tween(8000), RepeatMode.Reverse),
-                                label = "bg_anim"
-                            )
+                            val offset by if (betaDynamicBackground) {
+                                infiniteTransition.animateFloat(
+                                    initialValue = 0f, targetValue = 1f,
+                                    animationSpec = infiniteRepeatable(tween(12000), RepeatMode.Reverse),
+                                    label = "bg_anim"
+                                )
+                            } else {
+                                remember { androidx.compose.runtime.mutableStateOf(0.5f) }
+                            }
                             val colorScheme = MaterialTheme.colorScheme
+                            val isDark = androidx.compose.foundation.isSystemInDarkTheme() || colorScheme.background.red < 0.5f
                             androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                                 val colors = listOf(
                                     colorScheme.primaryContainer,
                                     colorScheme.secondaryContainer,
                                     colorScheme.tertiaryContainer
                                 )
+                                val alphaScale = if (isDark) 0.18f else 0.45f
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                                        colors = listOf(colors[0].copy(alpha=if (betaGlassUi) 0.6f else 0.35f), androidx.compose.ui.graphics.Color.Transparent),
-                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * (0.2f + offset * 0.15f)),
-                                        radius = size.width * 0.9f
+                                        colors = listOf(colors[0].copy(alpha = alphaScale * 1.1f), colors[0].copy(alpha = alphaScale * 0.3f), androidx.compose.ui.graphics.Color.Transparent),
+                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * (0.18f + offset * 0.12f)),
+                                        radius = size.width * 1.0f
                                     )
                                 )
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                                        colors = listOf(colors[2].copy(alpha=if (betaGlassUi) 0.6f else 0.25f), androidx.compose.ui.graphics.Color.Transparent),
-                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.8f, size.height * (0.6f - offset * 0.1f)),
-                                        radius = size.width * 0.85f
+                                        colors = listOf(colors[2].copy(alpha = alphaScale * 0.9f), colors[2].copy(alpha = alphaScale * 0.2f), androidx.compose.ui.graphics.Color.Transparent),
+                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.82f, size.height * (0.65f - offset * 0.08f)),
+                                        radius = size.width * 0.95f
+                                    )
+                                )
+                                drawRect(
+                                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                                        colors = listOf(colors[1].copy(alpha = alphaScale * 0.7f), androidx.compose.ui.graphics.Color.Transparent),
+                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.9f, size.height * 0.30f),
+                                        radius = size.width * 0.75f
                                     )
                                 )
                             }

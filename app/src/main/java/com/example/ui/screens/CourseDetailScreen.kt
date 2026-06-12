@@ -78,12 +78,18 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         modifier = Modifier
                             .matchParentSize()
                             .liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
-                                tintAlpha = if (isDark) 0.15f else 0.4f,
-                                blurRadius = 60f,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
+                                tintAlpha = if (isDark) 0.18f else 0.45f,
+                                blurRadius = 15f,
                                 isDark = isDark,
                                 tintColor = MaterialTheme.colorScheme.surface
                             )
+                    )
+                    // Sleek divider line for clean separation and anchoring
+                    androidx.compose.material3.HorizontalDivider(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
                     )
                 }
                 LargeTopAppBar(

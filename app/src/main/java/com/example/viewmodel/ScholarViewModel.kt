@@ -60,6 +60,48 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putString("custom_$key", hex).apply()
     }
 
+    fun generatePaletteFromPrimaryHex(hex: String) {
+        val cleanHex = if (hex.startsWith("#")) hex else "#$hex"
+        try {
+            val colorInt = android.graphics.Color.parseColor(cleanHex)
+            val hsv = FloatArray(3)
+            android.graphics.Color.colorToHSV(colorInt, hsv) // Hue: 0-360, Sat: 0-1, Val: 0-1
+            
+            // 1. Primary is already set
+            updateCustomColor("primary", cleanHex)
+            
+            // 2. Generate PrimaryContainer (high light, medium-low saturation)
+            val pcHsv = floatArrayOf(hsv[0], Math.min(1.0f, hsv[1] * 0.35f), 0.94f)
+            val pcColor = android.graphics.Color.HSVToColor(pcHsv)
+            val pcHex = String.format("#%06X", 0xFFFFFF and pcColor)
+            updateCustomColor("primary_container", pcHex)
+            
+            // 3. Generate Ambient background (extremely low saturation, high brightness)
+            val bgHsv = floatArrayOf(hsv[0], Math.min(1.0f, hsv[1] * 0.05f), 0.98f)
+            val bgColor = android.graphics.Color.HSVToColor(bgHsv)
+            val bgHex = String.format("#%06X", 0xFFFFFF and bgColor)
+            updateCustomColor("background", bgHex)
+            
+            // 4. Generate Surface (almost pure white, extremely low saturation)
+            val sfHsv = floatArrayOf(hsv[0], Math.min(1.0f, hsv[1] * 0.03f), 1.00f)
+            val sfColor = android.graphics.Color.HSVToColor(sfHsv)
+            val sfHex = String.format("#%06X", 0xFFFFFF and sfColor)
+            updateCustomColor("surface", sfHex)
+            
+            // 5. Generate Text (deep brand color, high saturation weight, extremely dark value)
+            val txtHsv = floatArrayOf(hsv[0], Math.min(1.0f, hsv[1] * 0.30f), 0.12f)
+            val txtColor = android.graphics.Color.HSVToColor(txtHsv)
+            val txtHex = String.format("#%06X", 0xFFFFFF and txtColor)
+            updateCustomColor("text", txtHex)
+
+            // Auto-select "Custom" theme color
+            updateThemeColor("Custom")
+            
+        } catch(e: Exception) {
+            // Safe fallback so formatting typos while editing the input field do not cause crashes
+        }
+    }
+
     private val _pureBlackMode = MutableStateFlow(prefs.getBoolean("pure_black_mode", false))
     val pureBlackMode = _pureBlackMode.asStateFlow()
 
@@ -89,6 +131,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     private val _betaGlassDynamic = MutableStateFlow(prefs.getBoolean("beta_glass_dynamic", true))
     val betaGlassDynamic = _betaGlassDynamic.asStateFlow()
+
+    private val _betaFrostGlass = MutableStateFlow(prefs.getBoolean("beta_frost_glass", true))
+    val betaFrostGlass = _betaFrostGlass.asStateFlow()
 
     private val _betaEnhancedHeader = MutableStateFlow(prefs.getBoolean("beta_enhanced_header", false))
     val betaEnhancedHeader = _betaEnhancedHeader.asStateFlow()
@@ -494,6 +539,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                         "beta_notch_optimization" -> _betaNotchOptimization.value = boolVal
                         "beta_glass_ui" -> _betaGlassUi.value = boolVal
                         "beta_glass_dynamic" -> _betaGlassDynamic.value = boolVal
+                        "beta_frost_glass" -> _betaFrostGlass.value = boolVal
                         "beta_enhanced_header" -> _betaEnhancedHeader.value = boolVal
                         "beta_minimalist_mode" -> _betaMinimalistMode.value = boolVal
                         "beta_dynamic_background" -> _betaDynamicBackground.value = boolVal
@@ -820,6 +866,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("beta_glass_dynamic", enabled).apply()
     }
 
+    fun updateBetaFrostGlass(enabled: Boolean) {
+        _betaFrostGlass.value = enabled
+        prefs.edit().putBoolean("beta_frost_glass", enabled).apply()
+    }
+
     fun updateBetaEnhancedHeader(enabled: Boolean) {
         if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
             _safetyPinDialogData.value = SafetyPinDialogData(
@@ -975,6 +1026,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             _betaNotchOptimization.value = false
             _betaGlassUi.value = false
             _betaGlassDynamic.value = true
+            _betaFrostGlass.value = true
             _betaEnhancedHeader.value = false
             _betaMinimalistMode.value = false
             _betaDynamicBackground.value = false
