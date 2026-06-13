@@ -244,7 +244,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     
                                     if (!fuseSubjectsCourses) {
                                         androidx.compose.material3.IconButton(
-                                            onClick = { navController.navigate("subject_detail/${linkedSubject.id}") }
+                                            onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.ChevronRight,
@@ -254,7 +254,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                         }
                                     } else {
                                         androidx.compose.material3.IconButton(
-                                            onClick = { navController.navigate("subject_detail/${linkedSubject.id}") }
+                                            onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.Edit,
@@ -315,7 +315,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     Spacer(Modifier.height(16.dp))
                                     Text("Embedded Subject Hub", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
                                     Spacer(Modifier.height(8.dp))
-                                    Button(onClick = { navController.navigate("subject_detail/${linkedSubject.id}") }, modifier = Modifier.fillMaxWidth()) {
+                                    Button(onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }, modifier = Modifier.fillMaxWidth()) {
                                         Text("Open Subject Workspace")
                                     }
                                 }

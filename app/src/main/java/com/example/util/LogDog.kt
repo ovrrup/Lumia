@@ -37,21 +37,19 @@ object LogDog {
     }
 
     fun analyze(crash: String): String {
-        val fileName = crash.lines().firstOrNull { it.contains("com.example.") }
-            ?.substringAfterLast(".")
-            ?.substringBefore("(")
-            ?: "the Unknown Land"
+        val lines = crash.lines()
+        val errorIndex = lines.indexOfFirst { it.startsWith("Error:") }
         
-        val lineNumber = crash.lines().firstOrNull { it.contains("com.example.") }
-            ?.substringAfter(":")
-            ?.substringBefore(")")
-            ?: "???"
-
-        return when {
-            crash.contains("NullPointerException") -> "Woof! A NullPointerException at $fileName:$lineNumber! Seems like someone forgot to feed a variable... I'm sniffing for it!"
-            crash.contains("SQLiteException") -> "Bark! Database trouble in $fileName! Did a bone get stuck in the SQLite kennel?"
-            crash.contains("IllegalArgumentException") -> "Arf! Someone didn't follow the rules of the code kennel at $fileName on line $lineNumber! Bad developer!"
-            else -> "Grrr... A mysterious error in $fileName. I'm puzzling over this one."
+        if (errorIndex == -1) return "Unable to parse crash report."
+        
+        val exceptionLine = lines[errorIndex].substringAfter("Error: ").trim().ifEmpty {
+            lines.getOrNull(errorIndex + 1)?.trim() ?: "Unknown Error"
         }
+        
+        val appTrace = lines.firstOrNull { it.trim().startsWith("at ") && it.contains("com.example.") }?.trim()
+        val defaultTrace = lines.firstOrNull { it.trim().startsWith("at ") }?.trim()
+        val location = appTrace ?: defaultTrace ?: "Unknown location"
+        
+        return "Cause: $exceptionLine\nLocation: $location"
     }
 }

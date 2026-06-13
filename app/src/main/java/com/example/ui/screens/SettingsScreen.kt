@@ -847,14 +847,17 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         text = {
                             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                                 if (isScanning) {
-                                    Text("🐾 LogDog is sniffing through the codebase... Finding bones...")
+                                    Text("Analyzing crash logs and stack traces...")
                                 } else if (crashes.isEmpty()) {
-                                    Text("Woof! Everything is clean in the code kennel. No crashes found!")
+                                    Text("No crash logs found. System is stable.")
                                 } else {
                                     crashes.forEachIndexed { index, crash ->
-                                        Text("Crash ${index + 1}: ${com.example.util.LogDog.analyze(crash)}", fontWeight = FontWeight.Bold)
-                                        Text(crash.take(150), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text("Crash Report ${index + 1}", fontWeight = FontWeight.Bold)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(com.example.util.LogDog.analyze(crash), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(crash, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                                        Spacer(modifier = Modifier.height(16.dp))
                                     }
                                 }
                             }

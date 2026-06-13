@@ -166,7 +166,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp)
-                                        .clickable { navController.navigate("course_detail/${course.id}") },
+                                        .clickable { navController.navigate("courseDetail/${course.id}") },
                                     shape = RoundedCornerShape(24.dp)
                                 ) {
                                     Row(
@@ -195,7 +195,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                                 )
                                             }
                                         }
-                                        IconButton(onClick = { navController.navigate("course_detail/${course.id}") }) {
+                                        IconButton(onClick = { navController.navigate("courseDetail/${course.id}") }) {
                                             Icon(
                                                 imageVector = Icons.Rounded.ChevronRight,
                                                 contentDescription = "Go to Course",
