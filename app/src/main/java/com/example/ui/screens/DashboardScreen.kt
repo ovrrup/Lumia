@@ -9,10 +9,11 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+                            import com.example.ui.theme.bouncyClick
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -192,8 +193,27 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .fillMaxSize()
                     .padding(bottom = padding.calculateBottomPadding())
             ) {
+                val appAnimationMode = com.example.ui.theme.LocalAppAnimationMode.current
                 androidx.compose.animation.AnimatedContent(
                     targetState = selectedTab,
+                    transitionSpec = {
+                        val spec = if (appAnimationMode == "Bouncy") {
+                            spring<androidx.compose.ui.unit.IntOffset>(dampingRatio = 0.45f, stiffness = 200f)
+                        } else if (appAnimationMode == "Dynamic") {
+                            spring<androidx.compose.ui.unit.IntOffset>(dampingRatio = 0.75f, stiffness = 500f)
+                        } else {
+                            tween<androidx.compose.ui.unit.IntOffset>(300, easing = LinearOutSlowInEasing)
+                        }
+                        if (targetState > initialState) {
+                            (androidx.compose.animation.slideInHorizontally(animationSpec = spec) { width -> width } + androidx.compose.animation.fadeIn()).togetherWith(
+                                androidx.compose.animation.slideOutHorizontally(animationSpec = spec) { width -> -width } + androidx.compose.animation.fadeOut()
+                            )
+                        } else {
+                            (androidx.compose.animation.slideInHorizontally(animationSpec = spec) { width -> -width } + androidx.compose.animation.fadeIn()).togetherWith(
+                                androidx.compose.animation.slideOutHorizontally(animationSpec = spec) { width -> width } + androidx.compose.animation.fadeOut()
+                            )
+                        }
+                    },
                     label = "TabTransition",
                     modifier = Modifier.fillMaxSize()
                 ) { targetTab ->
@@ -536,9 +556,8 @@ fun HomeTab(
                                 .shadow(elevation = 8.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
                                 .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
                                 .clip(CircleShape)
-                                .clickable(
-                                    onClick = { navController.navigate("settings") },
-                                    role = androidx.compose.ui.semantics.Role.Button
+                                .bouncyClick(
+                                    onClick = { navController.navigate("settings") }
                                 ),
                             contentAlignment = androidx.compose.ui.Alignment.Center
                         ) {
@@ -769,7 +788,7 @@ fun HomeTab(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp)
-                                        .clickable { viewModel.toggleTaskCompleted(task) },
+                                        .bouncyClick { viewModel.toggleTaskCompleted(task) },
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(

@@ -19,6 +19,8 @@ import androidx.compose.material.icons.rounded.NightlightRound
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -58,48 +60,48 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
     var selectedAssignmentId by remember { mutableStateOf<Int?>(null) }
     var selectedTaskId by remember { mutableStateOf<Int?>(null) }
 
+    var isPaused by remember { mutableStateOf(false) }
+    var sessionsCompleted by remember { mutableStateOf(0) }
+    var modeString by remember { mutableStateOf("WORK") }
+
     val systemPomodoroAutoLog by viewModel.systemPomodoroAutoLog.collectAsStateWithLifecycle()
     val workDuration by viewModel.pomodoroWorkDuration.collectAsStateWithLifecycle()
     val shortBreakDuration by viewModel.pomodoroShortBreakDuration.collectAsStateWithLifecycle()
     val longBreakDuration by viewModel.pomodoroLongBreakDuration.collectAsStateWithLifecycle()
+    val periodSessions by viewModel.pomodoroPeriodSessions.collectAsStateWithLifecycle()
+    val enablePeriodTarget by viewModel.pomodoroEnablePeriodTarget.collectAsStateWithLifecycle()
     
-    val totalTime = when (mode) {
-        PomodoroMode.WORK -> workDuration * 60
-        PomodoroMode.SHORT_BREAK -> shortBreakDuration * 60
-        PomodoroMode.LONG_BREAK -> longBreakDuration * 60
-    }
+    var totalTime by remember { mutableStateOf(workDuration * 60) }
 
     DisposableEffect(context) {
         val receiver = object : android.content.BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: android.content.Intent?) {
                 when (intent?.action) {
                     "PomodoroTick" -> {
+                        isRunning = true // active service
                         timeLeft = intent.getIntExtra("timeLeft", 0)
-                        isRunning = true // in case app was reopened
-                    }
-                    "PomodoroFinished" -> {
-                        isRunning = false
-                        timeLeft = 0
-                        val wasWork = intent.getBooleanExtra("isWork", true)
-                        val originalTime = intent.getIntExtra("originalTime", 25 * 60)
-                        
-                        val sId = if (intent.hasExtra("subjectId")) intent.getIntExtra("subjectId", -1) else null
-                        val cId = if (intent.hasExtra("courseId")) intent.getIntExtra("courseId", -1) else null
-                        val aId = if (intent.hasExtra("assignmentId")) intent.getIntExtra("assignmentId", -1) else null
-                        val tId = if (intent.hasExtra("taskId")) intent.getIntExtra("taskId", -1) else null
-
-                        if (wasWork && systemPomodoroAutoLog) {
-                            viewModel.addPomodoroSession(originalTime / 60, sId, cId, aId, tId)
-                        }
+                        totalTime = intent.getIntExtra("originalTime", 25 * 60)
+                        modeString = intent.getStringExtra("mode") ?: "WORK"
+                        isPaused = intent.getBooleanExtra("isPaused", false)
+                        sessionsCompleted = intent.getIntExtra("sessionsCompleted", 0)
                     }
                 }
             }
         }
         val filter = android.content.IntentFilter().apply {
             addAction("PomodoroTick")
-            addAction("PomodoroFinished")
         }
         androidx.core.content.ContextCompat.registerReceiver(context, receiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
+        
+        // Sync initial state if running
+        if (com.example.service.PomodoroService.isServiceRunning) {
+            isRunning = true
+            modeString = com.example.service.PomodoroService.currentStateStr
+        } else {
+            timeLeft = workDuration * 60
+            totalTime = workDuration * 60
+        }
+
         onDispose {
             context.unregisterReceiver(receiver)
         }
@@ -108,25 +110,78 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
     val isGlass = com.example.ui.theme.LocalGlassMode.current
     val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle(emptyList())
 
+    val aodTrueBlackOled by viewModel.aodTrueBlackOled.collectAsStateWithLifecycle()
+    val aodAutoDeactivateTrueBlack by viewModel.aodAutoDeactivateTrueBlack.collectAsStateWithLifecycle()
+    val aodBurnInShiftSpeed by viewModel.aodBurnInShiftSpeed.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val isDynamicBg by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
+    val isGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
+    val aodLockScreenSupport by viewModel.aodLockScreenSupport.collectAsStateWithLifecycle()
+
+    val isTrueBlack = remember(aodTrueBlackOled, aodAutoDeactivateTrueBlack, themeMode, isDynamicBg, isGlassUi) {
+        aodTrueBlackOled && !(aodAutoDeactivateTrueBlack && (themeMode == "Light" || isDynamicBg || isGlassUi))
+    }
+
+    LaunchedEffect(isAodMode, aodLockScreenSupport) {
+        val activity = context as? android.app.Activity
+        if (activity != null) {
+            if (isAodMode) {
+                if (aodLockScreenSupport) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                        activity.setShowWhenLocked(true)
+                        activity.setTurnScreenOn(true)
+                    } else {
+                        activity.window.addFlags(
+                            android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                            android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                        )
+                    }
+                }
+                activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            } else {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                    activity.setShowWhenLocked(false)
+                    activity.setTurnScreenOn(false)
+                } else {
+                    activity.window.clearFlags(
+                        android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                        android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    )
+                }
+                activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+        }
+    }
+
     if (isAodMode) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black)
+                .background(if (isTrueBlack) Color.Black else MaterialTheme.colorScheme.background)
                 .clickable { isAodMode = false },
             contentAlignment = Alignment.Center
         ) {
+            if (!isTrueBlack) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.88f))
+                )
+            }
+            
             val minutes = timeLeft / 60
             val seconds = timeLeft % 60
             
-            val burnInOffset = remember(timeLeft) {
-                val tick = (timeLeft % 10)
+            val burnInOffset = remember(timeLeft, aodBurnInShiftSpeed) {
+                val shiftSpeed = if (aodBurnInShiftSpeed > 0) aodBurnInShiftSpeed else 10
+                val tickFraction = timeLeft / shiftSpeed
+                val tick = (tickFraction % 10)
                 val x = if (tick % 2 == 0) (tick - 5).dp else 0.dp
                 val y = if (tick % 2 != 0) (tick - 5).dp else 0.dp
                 Pair(x, y)
             }
 
-            Column(
+             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.padding(24.dp).offset(x = burnInOffset.first, y = burnInOffset.second)
@@ -135,7 +190,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                     text = String.format("%02d:%02d", minutes, seconds),
                     style = MaterialTheme.typography.displayLarge.copy(fontSize = 110.sp),
                     fontWeight = FontWeight.Light,
-                    color = Color.DarkGray.copy(alpha = 0.8f)
+                    color = if (isTrueBlack) Color.DarkGray.copy(alpha = 0.8f) else MaterialTheme.colorScheme.primary
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -150,7 +205,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                 Text(
                     text = statusText,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.DarkGray,
+                    color = if (isTrueBlack) Color.DarkGray else MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Medium
                 )
                 
@@ -159,7 +214,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                 Text(
                     text = "Always-On Focus Active • Tap to Exit",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.DarkGray.copy(alpha = 0.5f),
+                    color = if (isTrueBlack) Color.DarkGray.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
             }
@@ -194,34 +249,22 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        ModeButton(
-                            text = "Work",
-                            selected = mode == PomodoroMode.WORK,
-                            onClick = { 
-                                mode = PomodoroMode.WORK; timeLeft = 25 * 60; isRunning = false 
-                                context.startService(android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" })
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                        ModeButton(
-                            text = "Short Break",
-                            selected = mode == PomodoroMode.SHORT_BREAK,
-                            onClick = { 
-                                mode = PomodoroMode.SHORT_BREAK; timeLeft = 5 * 60; isRunning = false 
-                                context.startService(android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" })
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                        ModeButton(
-                            text = "Long Break",
-                            selected = mode == PomodoroMode.LONG_BREAK,
-                            onClick = { 
-                                mode = PomodoroMode.LONG_BREAK; timeLeft = 15 * 60; isRunning = false 
-                                context.startService(android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" })
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Period Structure",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            val modeFancy = when(modeString) { "SHORT_BREAK" -> "Short Rest"; "LONG_BREAK" -> "Long Rest"; else -> "Focusing" }
+                            Text(
+                                text = "Session ${sessionsCompleted + 1}/$periodSessions • $modeFancy",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
 
@@ -231,7 +274,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
                     val pulseScale by infiniteTransition.animateFloat(
                         initialValue = 1f,
-                        targetValue = if (isRunning) 1.03f else 1f,
+                        targetValue = if (isRunning && !isPaused) 1.03f else 1f,
                         animationSpec = infiniteRepeatable(
                             animation = tween(1200, easing = FastOutSlowInEasing),
                             repeatMode = RepeatMode.Reverse
@@ -246,7 +289,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                             .background(Color.Transparent)
                     ) {
                         val progress = if (totalTime > 0) timeLeft.toFloat() / totalTime else 0f
-                        val circleColor = MaterialTheme.colorScheme.primary
+                        val circleColor = when (modeString) { "SHORT_BREAK" -> MaterialTheme.colorScheme.secondary; "LONG_BREAK" -> MaterialTheme.colorScheme.tertiary; else -> MaterialTheme.colorScheme.primary }
                         
                         Canvas(modifier = Modifier.fillMaxSize()) {
                             drawArc(
@@ -280,11 +323,12 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
+                            val statusStr = if (!isRunning) "Stopped" else if (isPaused) "Paused" else when(modeString) { "SHORT_BREAK" -> "Short Rest"; "LONG_BREAK" -> "Long Rest"; else -> "Focusing" }
                             Text(
-                                text = if (isRunning) "Focusing" else "Paused",
+                                text = statusStr,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                color = circleColor.copy(alpha = 0.8f)
                             )
                         }
                     }
@@ -292,19 +336,31 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
 
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    var lastClickTime by remember { mutableStateOf(0L) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         FloatingActionButton(
                             onClick = { 
+                                val now = System.currentTimeMillis()
                                 if (isRunning) {
-                                    isRunning = false
-                                    val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" }
-                                    context.startService(intent)
+                                    if (isPaused && now - lastClickTime < 500) {
+                                        // Double tap to exit when paused
+                                        isRunning = false
+                                        val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" }
+                                        context.startService(intent)
+                                    } else {
+                                        val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "PAUSE_RESUME" }
+                                        context.startService(intent)
+                                        lastClickTime = now
+                                    }
                                 } else {
                                     isRunning = true
                                     val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply {
                                         action = "START"
-                                        putExtra("time", timeLeft)
-                                        putExtra("isWork", mode == PomodoroMode.WORK)
+                                        putExtra("workDuration", workDuration * 60)
+                                        putExtra("shortBreakDuration", shortBreakDuration * 60)
+                                        putExtra("longBreakDuration", longBreakDuration * 60)
+                                        putExtra("periodSessions", periodSessions)
+                                        putExtra("maxPeriods", if (enablePeriodTarget) 1 else -1) // Simplified maxPeriods
                                         selectedSubjectId?.let { putExtra("subjectId", it) }
                                         selectedCourseId?.let { putExtra("courseId", it) }
                                         selectedAssignmentId?.let { putExtra("assignmentId", it) }
@@ -317,47 +373,67 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                                     }
                                 }
                             },
-                            containerColor = if (isRunning) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+                            containerColor = if (isRunning && !isPaused) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.size(72.dp)
                         ) {
                             Icon(
-                                imageVector = if (isRunning) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
-                                contentDescription = "Play/Stop",
+                                imageVector = if (isRunning && !isPaused) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                                contentDescription = "Play/Pause",
                                 modifier = Modifier.size(36.dp)
                             )
                         }
+                        
+                        // Skip Button
+                        if (isRunning) {
+                            FloatingActionButton(
+                                onClick = { 
+                                    val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "SKIP" }
+                                    context.startService(intent)
+                                },
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.size(72.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.SkipNext,
+                                    contentDescription = "Skip",
+                                    modifier = Modifier.size(28.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
 
-                    FloatingActionButton(
-                        onClick = { 
-                            isRunning = false
-                            timeLeft = totalTime 
-                            val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" }
-                            context.startService(intent)
-                        },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        modifier = Modifier.size(72.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Refresh,
-                            contentDescription = "Reset",
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
+                        FloatingActionButton(
+                            onClick = { 
+                                isRunning = false
+                                val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" }
+                                context.startService(intent)
+                                timeLeft = workDuration * 60
+                                totalTime = workDuration * 60
+                            },
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Refresh,
+                                contentDescription = "Reset",
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
 
-                    FloatingActionButton(
-                        onClick = { isAodMode = true },
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        modifier = Modifier.size(72.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.NightlightRound,
-                            contentDescription = "Always On Display focus mode",
-                            modifier = Modifier.size(28.dp),
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
+                        FloatingActionButton(
+                            onClick = { isAodMode = true },
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.NightlightRound,
+                                contentDescription = "Always On Display focus mode",
+                                modifier = Modifier.size(28.dp),
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
                     }
                 }
-            }
 
             item {
                 Spacer(modifier = Modifier.height(24.dp))

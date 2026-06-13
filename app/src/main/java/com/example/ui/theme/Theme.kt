@@ -3,9 +3,18 @@ package com.example.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -150,6 +159,8 @@ val LocalGlassDynamic = androidx.compose.runtime.compositionLocalOf { true }
 val LocalFrostGlass = androidx.compose.runtime.compositionLocalOf { true }
 val LocalGlassBackdropStyle = androidx.compose.runtime.compositionLocalOf { "Translucent" }
 val LocalGlassOpacityValue = androidx.compose.runtime.compositionLocalOf { 0.6f }
+val LocalAppAnimationMode = androidx.compose.runtime.compositionLocalOf { "Normal" }
+val LocalMoreRounds = androidx.compose.runtime.compositionLocalOf { false }
 
 @Composable
 fun ScholarTheme(
@@ -168,6 +179,8 @@ fun ScholarTheme(
     glassOpacityValue: Float = 0.6f,
     betterTexts: Boolean = false,
     betterTextsPalette: Boolean = true,
+    appAnimationMode: String = "Normal",
+    moreRounds: Boolean = false,
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
@@ -354,13 +367,88 @@ fun ScholarTheme(
         LocalGlassDynamic provides glassDynamic,
         LocalFrostGlass provides frostGlass,
         LocalGlassBackdropStyle provides glassBackdropStyle,
-        LocalGlassOpacityValue provides glassOpacityValue
+        LocalGlassOpacityValue provides glassOpacityValue,
+        LocalAppAnimationMode provides appAnimationMode,
+        LocalMoreRounds provides moreRounds
     ) {
+        val currentShapes = if (moreRounds) Shapes(
+            extraSmall = androidx.compose.foundation.shape.CircleShape,
+            small = androidx.compose.foundation.shape.CircleShape,
+            medium = Shapes.medium,
+            large = Shapes.large,
+            extraLarge = Shapes.extraLarge
+        ) else Shapes
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,
-            shapes = Shapes,
+            shapes = currentShapes,
             content = content
         )
     }
+}
+
+@Composable
+fun Modifier.bouncyScale(interactionSource: androidx.compose.foundation.interaction.InteractionSource): Modifier {
+    val animationMode = LocalAppAnimationMode.current
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val targetScale = if (isPressed) {
+        when (animationMode) {
+            "Bouncy" -> 0.85f
+            "Dynamic" -> 0.92f
+            else -> 0.96f
+        }
+    } else 1f
+
+    val scale by animateFloatAsState(
+        targetValue = targetScale,
+        animationSpec = when (animationMode) {
+            "Bouncy" -> spring(dampingRatio = 0.35f, stiffness = 300f)
+            "Dynamic" -> spring(dampingRatio = 0.6f, stiffness = 600f)
+            else -> spring(dampingRatio = 0.85f, stiffness = 1000f)
+        },
+        label = "bouncyScale"
+    )
+    
+    return this.graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }
+}
+
+@Composable
+fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Modifier {
+    val animationMode = LocalAppAnimationMode.current
+    if (!enabled) return this.clickable(enabled = false) {}
+    
+    val interactionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val targetScale = if (isPressed) {
+        when (animationMode) {
+            "Bouncy" -> 0.85f
+            "Dynamic" -> 0.92f
+            else -> 0.96f
+        }
+    } else 1f
+
+    val scale by animateFloatAsState(
+        targetValue = targetScale,
+        animationSpec = when (animationMode) {
+            "Bouncy" -> spring(dampingRatio = 0.35f, stiffness = 300f)
+            "Dynamic" -> spring(dampingRatio = 0.6f, stiffness = 600f)
+            else -> spring(dampingRatio = 0.85f, stiffness = 1000f)
+        },
+        label = "bouncyClickScale"
+    )
+    
+    return this.graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }.clickable(
+        interactionSource = interactionSource,
+        indication = androidx.compose.material3.ripple(),
+        enabled = enabled,
+        onClick = onClick
+    )
 }

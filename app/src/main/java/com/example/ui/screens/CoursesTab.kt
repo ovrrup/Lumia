@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.example.ui.theme.glassBar
+import com.example.ui.theme.bouncyScale
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -63,11 +64,13 @@ fun CoursesTab(
             }
         },
         floatingActionButton = {
+            val src = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
             androidx.compose.material3.FloatingActionButton(
                 onClick = onAddCourseClick,
+                interactionSource = src,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding())
+                modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding()).bouncyScale(src)
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = "Add Course")
             }

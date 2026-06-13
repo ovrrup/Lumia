@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.example.ui.theme.glassBar
+import com.example.ui.theme.bouncyScale
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.Sell
@@ -65,11 +66,13 @@ fun SubjectsTab(
             }
         },
         floatingActionButton = {
+            val src = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
             androidx.compose.material3.FloatingActionButton(
                 onClick = onAddSubjectClick,
+                interactionSource = src,
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding())
+                modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding()).bouncyScale(src)
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = "Add Subject")
             }

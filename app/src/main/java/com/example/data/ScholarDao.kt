@@ -57,10 +57,10 @@ interface ScholarDao {
     suspend fun deleteTopic(topic: Topic)
 
 
-    @Query("SELECT * FROM assignments WHERE courseId = :courseId ORDER BY dueDateMillis ASC")
+    @Query("SELECT * FROM assignments WHERE courseId = :courseId ORDER BY priority DESC, orderIndex ASC, dueDateMillis ASC")
     fun getAssignmentsForCourse(courseId: Int): Flow<List<PracticeAssignment>>
 
-    @Query("SELECT * FROM assignments ORDER BY dueDateMillis ASC")
+    @Query("SELECT * FROM assignments ORDER BY priority DESC, orderIndex ASC, dueDateMillis ASC")
     fun getAllAssignments(): Flow<List<PracticeAssignment>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -165,7 +165,7 @@ interface ScholarDao {
     @Query("DELETE FROM chapters")
     suspend fun clearChapters()
 
-    @Query("SELECT * FROM tasks ORDER BY dueDateMillis ASC, id DESC")
+    @Query("SELECT * FROM tasks ORDER BY priority DESC, orderIndex ASC, dueDateMillis ASC, id DESC")
     fun getAllTasks(): Flow<List<Task>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

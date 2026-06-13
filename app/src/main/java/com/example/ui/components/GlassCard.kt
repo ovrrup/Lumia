@@ -15,6 +15,7 @@ import com.example.ui.theme.glassCard
 import androidx.compose.foundation.background
 import com.example.ui.theme.glassHero
 import com.example.ui.theme.LocalGlassMode
+import com.example.ui.theme.bouncyClick
 
 @Composable
 fun GlassCard(
@@ -29,7 +30,7 @@ fun GlassCard(
         Box(
             modifier = modifier
                 .clip(shape)
-                .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+                .then(if (onClick != null) Modifier.bouncyClick(onClick = onClick) else Modifier)
         ) {
             Box(modifier = Modifier.matchParentSize().glassCard(shape))
             val tint = containerColor?.copy(alpha = 0.3f) ?: Color.Transparent
@@ -39,11 +40,10 @@ fun GlassCard(
     } else {
         if (onClick != null) {
             Surface(
-                modifier = modifier,
+                modifier = modifier.bouncyClick(onClick = onClick),
                 shape = shape,
                 color = containerColor ?: MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = if (containerColor == null) 2.dp else 0.dp,
-                onClick = onClick
+                tonalElevation = if (containerColor == null) 2.dp else 0.dp
             ) {
                 Box(content = content)
             }
@@ -72,7 +72,7 @@ fun GlassHeroCard(
         Box(
             modifier = modifier
                 .clip(shape)
-                .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+                .then(if (onClick != null) Modifier.bouncyClick(onClick = onClick) else Modifier)
         ) {
             Box(modifier = Modifier.matchParentSize().glassHero(shape))
             content()
@@ -80,11 +80,10 @@ fun GlassHeroCard(
     } else {
         if (onClick != null) {
             Surface(
-                modifier = modifier,
+                modifier = modifier.bouncyClick(onClick = onClick),
                 shape = shape,
                 color = MaterialTheme.colorScheme.primaryContainer,
-                tonalElevation = 0.dp,
-                onClick = onClick
+                tonalElevation = 0.dp
             ) {
                 Box(content = content)
             }

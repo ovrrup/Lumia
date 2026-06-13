@@ -59,7 +59,10 @@ data class PracticeAssignment(
     val isCompleted: Boolean = false,
     val category: String = "Homework",
     val categoryColor: String = "#3197D6",
-    val tags: String = ""
+    val tags: String = "",
+    val subjectId: Int? = null,
+    val priority: Int = 0,
+    val orderIndex: Int = 0
 ) : Serializable
 
 @Entity(
@@ -139,6 +142,7 @@ data class Task(
     val classDateMillis: Long? = null,
     
     val priority: Int = 0,
+    val orderIndex: Int = 0,
     val tags: String = "",
     val createdAt: Long = System.currentTimeMillis()
 ) : Serializable

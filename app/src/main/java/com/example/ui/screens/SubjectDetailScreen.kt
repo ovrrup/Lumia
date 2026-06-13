@@ -86,6 +86,11 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         }
     }
 
+    val allAssignments by viewModel.assignments.collectAsStateWithLifecycle()
+    val subjectAssignments = remember(allAssignments, subjectId) {
+        allAssignments.filter { it.subjectId == subjectId }
+    }
+
     var showAddNoteDialog by remember { mutableStateOf(false) }
     var noteToEdit by remember { mutableStateOf<com.example.model.Note?>(null) }
     var noteText by remember { mutableStateOf("") }
@@ -138,16 +143,6 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     )
                 )
             }
-        },
-        floatingActionButton = {
-            androidx.compose.material3.FloatingActionButton(
-                onClick = { showAddTopic = true },
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                val rotation by androidx.compose.animation.core.animateFloatAsState(targetValue = if (showAddTopic) 45f else 0f)
-                Icon(Icons.Rounded.Add, contentDescription = "Add Topic", modifier = Modifier.graphicsLayer { rotationZ = rotation })
-            }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
@@ -171,9 +166,9 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 com.example.ui.components.GlassCard(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                        .clickable { navController.navigate("courseDetail/${course.id}") },
-                                    shape = RoundedCornerShape(24.dp)
+                                        .padding(vertical = 4.dp),
+                                    shape = RoundedCornerShape(24.dp),
+                                    onClick = { navController.navigate("courseDetail/${course.id}") }
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -208,6 +203,87 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                                 tint = MaterialTheme.colorScheme.primary
                                             )
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Connected Practice Assignments Section
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Connected Practice Assignments",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
+                if (subjectAssignments.isEmpty()) {
+                    item {
+                        com.example.ui.components.GlassCard(
+                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    "No connected assignments for this subject yet.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(subjectAssignments, key = { "asgn_${it.id}" }) { assignment ->
+                        val associatedCourse = remember(courses, assignment.courseId) {
+                            courses.find { it.id == assignment.courseId }
+                        }
+                        com.example.ui.components.GlassCard(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Checkbox(
+                                        checked = assignment.isCompleted,
+                                        onCheckedChange = { viewModel.toggleAssignmentCompleted(assignment) }
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = assignment.title,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            textDecoration = if (assignment.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                                            color = if (assignment.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        if (associatedCourse != null) {
+                                            Text(
+                                                text = "Course: ${associatedCourse.name}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.secondary,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                        val dateFormat = remember(assignment.dueDateMillis) {
+                                            java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+                                        }
+                                        Text(
+                                            text = "Due: ${dateFormat.format(java.util.Date(assignment.dueDateMillis))}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
                                 }
                             }

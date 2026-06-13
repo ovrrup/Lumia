@@ -27,6 +27,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.DarkMode
@@ -357,6 +359,35 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     ),
                     selected = displayLayoutMode,
                     onSelected = { viewModel.updateDisplayLayoutMode(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsGroupCard(title = "Animatics & Shape Configurations", icon = Icons.Rounded.PlayArrow) {
+                val appAnimationMode by viewModel.appAnimationMode.collectAsStateWithLifecycle()
+                val moreRounds by viewModel.moreRounds.collectAsStateWithLifecycle()
+
+                SettingsSegmentedPicker(
+                    title = "Application Animation Quality",
+                    subtitle = "Changes the responsiveness and bounce traits across panels and gestures.",
+                    options = listOf(
+                        Triple("Normal", "Normal", null),
+                        Triple("Dynamic", "Dynamic", null),
+                        Triple("Bouncy", "Bouncy", Icons.Rounded.Star)
+                    ),
+                    selected = appAnimationMode,
+                    onSelected = { viewModel.updateAppAnimationMode(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
+
+                SettingsPremiumToggleItem(
+                    title = "More Rounds Mode",
+                    subtitle = "Replace all sharp-edged geometries with bouncy, spherical rounded layouts",
+                    checked = moreRounds,
+                    icon = Icons.Rounded.CheckCircle,
+                    onCheckedChange = { viewModel.updateMoreRounds(it) }
                 )
             }
 
@@ -1299,6 +1330,10 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
     val safetyPinConflictWarning by viewModel.safetyPinConflictWarning.collectAsStateWithLifecycle()
     val safetyPinRecommendations by viewModel.safetyPinRecommendations.collectAsStateWithLifecycle()
 
+    val aodTrueBlackOled by viewModel.aodTrueBlackOled.collectAsStateWithLifecycle()
+    val aodAutoDeactivateTrueBlack by viewModel.aodAutoDeactivateTrueBlack.collectAsStateWithLifecycle()
+    val aodBurnInShiftSpeed by viewModel.aodBurnInShiftSpeed.collectAsStateWithLifecycle()
+
     val isGlass = com.example.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
@@ -1371,6 +1406,69 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                         )
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsGroupCard(title = "Focus & AOD Safety Rules", icon = Icons.Rounded.Timer) {
+                SettingsPremiumToggleItem(
+                    title = "True Black OLED Focus",
+                    subtitle = "AOD focus screen will use solid #000000 pixels to conserve battery power on OLED hardware",
+                    checked = aodTrueBlackOled,
+                    icon = Icons.Rounded.Timer,
+                    onCheckedChange = { viewModel.updateAodTrueBlackOled(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
+
+                SettingsPremiumToggleItem(
+                    title = "Auto-Deactivate with Bright Themes",
+                    subtitle = "Automatically replace True Black with a beautifully dimmed themed focus screen when using Light theme, dynamic layouts, or Glass UI",
+                    checked = aodAutoDeactivateTrueBlack,
+                    onCheckedChange = { viewModel.updateAodAutoDeactivateTrueBlack(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
+
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "Pixel Burn-In Shift Interval",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        "Period taken before slightly shifting always-on focus layout items slightly to protect modern screen pixels from permanent burn-in",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    androidx.compose.foundation.lazy.LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        listOf(5, 10, 20, 30).forEach { seconds ->
+                            item {
+                                FilterChip(
+                                    selected = aodBurnInShiftSpeed == seconds,
+                                    onClick = { viewModel.updateAodBurnInShiftSpeed(seconds) },
+                                    label = { Text("$seconds sec") }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
+                
+                val aodLockScreenSupport by viewModel.aodLockScreenSupport.collectAsStateWithLifecycle()
+                SettingsPremiumToggleItem(
+                    title = "Lock Screen Protection",
+                    subtitle = "Allows AOD to safely bypass system lock screen without permanently turning screen on, ideal for extended focus",
+                    checked = aodLockScreenSupport,
+                    icon = Icons.Rounded.Lock,
+                    onCheckedChange = { viewModel.updateAodLockScreenSupport(it) }
+                )
             }
         }
     }
@@ -2135,6 +2233,32 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                         onValueChange = { viewModel.updatePomodoroLongBreakDuration(it.toInt()) },
                         valueRange = 5f..60f,
                         steps = 54
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsGroupCard(title = "Period Structure", icon = Icons.Rounded.List) {
+                SettingsPremiumToggleItem(
+                    title = "Enable Target Periods",
+                    subtitle = "Allows restricting pomodoro loops to a fixed target instead of infinite repetetion.",
+                    checked = viewModel.pomodoroEnablePeriodTarget.collectAsStateWithLifecycle().value,
+                    icon = Icons.Rounded.Star,
+                    onCheckedChange = { viewModel.updatePomodoroEnablePeriodTarget(it) }
+                )
+                
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                
+                Column(modifier = Modifier.padding(16.dp)) {
+                    val periodSessions by viewModel.pomodoroPeriodSessions.collectAsStateWithLifecycle()
+                    Text("Sessions per Period: $periodSessions", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text("Number of study/work sessions before a long break.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    androidx.compose.material3.Slider(
+                        value = periodSessions.toFloat(),
+                        onValueChange = { viewModel.updatePomodoroPeriodSessions(it.toInt()) },
+                        valueRange = 1f..10f,
+                        steps = 8
                     )
                 }
             }

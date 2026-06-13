@@ -113,6 +113,56 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaNotes = MutableStateFlow(prefs.getBoolean("beta_notes", false))
     val betaNotes = _betaNotes.asStateFlow()
 
+    private val _appAnimationMode = MutableStateFlow(prefs.getString("app_animation_mode", "Normal") ?: "Normal")
+    val appAnimationMode = _appAnimationMode.asStateFlow()
+
+    private val _moreRounds = MutableStateFlow(prefs.getBoolean("more_rounds", false))
+    val moreRounds = _moreRounds.asStateFlow()
+
+    fun updateAppAnimationMode(mode: String) {
+        if (mode == "Bouncy" && safetyPinEnabled.value && safetyPinConflictWarning.value && (_displayLayoutMode.value != "Immersive" || !_moreRounds.value)) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Bouncy Animations Warning",
+                description = "Bouncy animations require 'Immersive' layout mode and 'More Rounds' feature to be enabled. Proceed with enabling these requirements automatically?",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    updateDisplayLayoutMode("Immersive")
+                    updateMoreRounds(true)
+                    _appAnimationMode.value = "Bouncy"
+                    prefs.edit().putString("app_animation_mode", "Bouncy").apply()
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        _appAnimationMode.value = mode
+        prefs.edit().putString("app_animation_mode", mode).apply()
+    }
+
+    fun updateMoreRounds(enabled: Boolean) {
+        if (!enabled && _appAnimationMode.value == "Bouncy" && safetyPinEnabled.value && safetyPinConflictWarning.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Required by Bouncy Animations",
+                description = "Disabling 'More Rounds' will also disable 'Bouncy' animations and revert to 'Dynamic'. Proceed?",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _moreRounds.value = false
+                    prefs.edit().putBoolean("more_rounds", false).apply()
+                    updateAppAnimationMode("Dynamic")
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        _moreRounds.value = enabled
+        prefs.edit().putBoolean("more_rounds", enabled).apply()
+        if (!enabled && _appAnimationMode.value == "Bouncy") {
+            updateAppAnimationMode("Dynamic")
+        }
+    }
+
     private val _displayLayoutMode = MutableStateFlow(prefs.getString("display_layout_mode", "Immersive") ?: "Immersive")
     val displayLayoutMode = _displayLayoutMode.asStateFlow()
 
@@ -167,6 +217,22 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _pomodoroLongBreakDuration = MutableStateFlow(prefs.getInt("pomodoro_long_break_duration", 15))
     val pomodoroLongBreakDuration = _pomodoroLongBreakDuration.asStateFlow()
 
+    private val _pomodoroPeriodSessions = MutableStateFlow(prefs.getInt("pomodoro_period_sessions", 4))
+    val pomodoroPeriodSessions = _pomodoroPeriodSessions.asStateFlow()
+    
+    private val _pomodoroEnablePeriodTarget = MutableStateFlow(prefs.getBoolean("pomodoro_enable_period_target", false))
+    val pomodoroEnablePeriodTarget = _pomodoroEnablePeriodTarget.asStateFlow()
+
+    fun updatePomodoroPeriodSessions(sessions: Int) {
+        _pomodoroPeriodSessions.value = sessions
+        prefs.edit().putInt("pomodoro_period_sessions", sessions).apply()
+    }
+
+    fun updatePomodoroEnablePeriodTarget(enabled: Boolean) {
+        _pomodoroEnablePeriodTarget.value = enabled
+        prefs.edit().putBoolean("pomodoro_enable_period_target", enabled).apply()
+    }
+
     private val _notifFormalTone = MutableStateFlow(prefs.getBoolean("notif_formal_tone", true))
     val notifFormalTone = _notifFormalTone.asStateFlow()
 
@@ -205,6 +271,52 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateNotifEnableDailyDigest(enabled: Boolean) {
         _notifEnableDailyDigest.value = enabled
         prefs.edit().putBoolean("notif_enable_daily_digest", enabled).apply()
+    }
+
+    private val _aodTrueBlackOled = MutableStateFlow(prefs.getBoolean("aod_true_black_oled", true))
+    val aodTrueBlackOled = _aodTrueBlackOled.asStateFlow()
+
+    private val _aodAutoDeactivateTrueBlack = MutableStateFlow(prefs.getBoolean("aod_auto_deactivate_true_black", true))
+    val aodAutoDeactivateTrueBlack = _aodAutoDeactivateTrueBlack.asStateFlow()
+
+    private val _aodBurnInShiftSpeed = MutableStateFlow(prefs.getInt("aod_burn_in_shift_speed", 10)) // in seconds
+    val aodBurnInShiftSpeed = _aodBurnInShiftSpeed.asStateFlow()
+    
+    private val _aodLockScreenSupport = MutableStateFlow(prefs.getBoolean("aod_lock_screen_support", false))
+    val aodLockScreenSupport = _aodLockScreenSupport.asStateFlow()
+
+    fun updateAodLockScreenSupport(enabled: Boolean) {
+        _aodLockScreenSupport.value = enabled
+        prefs.edit().putBoolean("aod_lock_screen_support", enabled).apply()
+    }
+
+    fun updateAodTrueBlackOled(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_themeMode.value == "Light" || _betaGlassUi.value || _betaDynamicBackground.value)) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "AOD Style Warning",
+                description = "Enabling 'True Black OLED' mode during Light theme, Dynamic wallpapers, or Glass UI can lead to strong contrast transitions when AOD focus opens or exits. Consider allowing auto-deactivation instead.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _aodTrueBlackOled.value = true
+                    prefs.edit().putBoolean("aod_true_black_oled", true).apply()
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        _aodTrueBlackOled.value = enabled
+        prefs.edit().putBoolean("aod_true_black_oled", enabled).apply()
+    }
+
+    fun updateAodAutoDeactivateTrueBlack(enabled: Boolean) {
+        _aodAutoDeactivateTrueBlack.value = enabled
+        prefs.edit().putBoolean("aod_auto_deactivate_true_black", enabled).apply()
+    }
+
+    fun updateAodBurnInShiftSpeed(speed: Int) {
+        _aodBurnInShiftSpeed.value = speed
+        prefs.edit().putInt("aod_burn_in_shift_speed", speed).apply()
     }
 
     fun updateSystemAutoLinkByName(enabled: Boolean) {
@@ -718,6 +830,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun updateTasksOrder(tasks: List<Task>) {
+        viewModelScope.launch {
+            repository.updateTasks(tasks)
+        }
+    }
+
     fun deleteTask(task: Task) {
         viewModelScope.launch {
             repository.deleteTask(task)
@@ -725,9 +843,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addAssignment(courseId: Int, title: String, desc: String, dueDate: Long, category: String = "Homework", categoryColor: String = "#3197D6", tags: String = "") {
+    fun addAssignment(courseId: Int, title: String, desc: String, dueDate: Long, category: String = "Homework", categoryColor: String = "#3197D6", tags: String = "", subjectId: Int? = null) {
         viewModelScope.launch {
-            val newId = repository.insertAssignment(PracticeAssignment(courseId = courseId, title = title, description = desc, dueDateMillis = dueDate, category = category, categoryColor = categoryColor, tags = tags)).toInt()
+            val newId = repository.insertAssignment(PracticeAssignment(courseId = courseId, title = title, description = desc, dueDateMillis = dueDate, category = category, categoryColor = categoryColor, tags = tags, subjectId = subjectId)).toInt()
             val context = getApplication<Application>().applicationContext
             var interconnections = "Course: " + (courses.value.find { it.id == courseId }?.name ?: "Unknown")
             if (tags.isNotBlank()) interconnections += ", Tags: $tags"
@@ -756,6 +874,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.updateAssignment(assignment)
             logAction("Updated assignment: ${assignment.title}")
+        }
+    }
+
+    fun updateAssignmentsOrder(assignments: List<PracticeAssignment>) {
+        viewModelScope.launch {
+            repository.updateAssignments(assignments)
         }
     }
 
@@ -1118,8 +1242,26 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun updateDisplayLayoutMode(mode: String) {
+        if (mode != "Immersive" && _appAnimationMode.value == "Bouncy" && safetyPinEnabled.value && safetyPinConflictWarning.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Required by Bouncy Animations",
+                description = "Changing from 'Immersive' mode will also disable 'Bouncy' animations and revert to 'Dynamic'. Proceed?",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _displayLayoutMode.value = mode
+                    prefs.edit().putString("display_layout_mode", mode).apply()
+                    updateAppAnimationMode("Dynamic")
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
         _displayLayoutMode.value = mode
         prefs.edit().putString("display_layout_mode", mode).apply()
+        if (mode != "Immersive" && _appAnimationMode.value == "Bouncy") {
+            updateAppAnimationMode("Dynamic")
+        }
     }
 
     fun updateBetaMinimalistMode(enabled: Boolean) {

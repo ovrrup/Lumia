@@ -25,7 +25,14 @@ object LogDog {
             
             prefs.edit().putString("crashes", crashes.toString()).apply()
             
-            defaultHandler?.uncaughtException(thread, throwable)
+            // Gracefully restart and show panel
+            val intent = android.content.Intent(context, com.example.MainActivity::class.java).apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                putExtra("FATAL_CRASH_DATA", crashInfo)
+            }
+            context.startActivity(intent)
+            android.os.Process.killProcess(android.os.Process.myPid())
+            System.exit(1)
         }
     }
     
@@ -92,29 +99,38 @@ object LogDog {
         // Intelligent troubleshooting suggestions based on type
         val suggestion = when {
             exceptionType.contains("NullPointerException") -> {
-                "🐾 Sniffing detail: A NullPointerException indicates that a variable or object reference was accessed before it was initialized or assigned. Check variables at $fileAndLine to ensure they aren't null."
+                "🐾 Sniffing detail: Whoops, found a NullPointerException! You tried to play fetch with a stick that doesn't exist. Check variables at $fileAndLine to ensure they aren't null."
             }
             exceptionType.contains("IllegalArgumentException") -> {
                 if (errorMessage.contains("matches route", ignoreCase = true) || errorMessage.contains("navigation", ignoreCase = true)) {
-                    "🐾 Sniffing detail: This is a navigation route mismatch! A navController tried to navigate to a route that isn't defined in MainActivity.kt. Check route definitions and arguments at $fileAndLine."
+                    "🐾 Sniffing detail: Navigation route mismatch! We ran into a wall because the route ain't on the map. Check route definitions at $fileAndLine."
                 } else {
-                    "🐾 Sniffing detail: An invalid argument was passed to a function at $fileAndLine. Verify input types and argument ranges."
+                    "🐾 Sniffing detail: We got an IllegalArgument. I only eat premium kibble, but you gave me this! Verify input types at $fileAndLine."
                 }
             }
             exceptionType.contains("SQLiteException") || exceptionType.contains("Room") || exceptionType.contains("database", ignoreCase = true) -> {
-                "🐾 Sniffing detail: Database operation failed. This is usually caused by changing the entity schema without incrementing the Room database version, a missing migration query, or an invalid column/table name."
+                "🐾 Sniffing detail: SQL Database barked back! Check if you changed the schema without a migration, or maybe a typo'd column. The data bowl is a mess."
             }
             exceptionType.contains("IndexOutOfBoundsException") || exceptionType.contains("ArrayIndexOutOfBoundsException") -> {
-                "🐾 Sniffing detail: Attempted to get an element from a list or array using an invalid index (e.g., negative index or index >= size). Check collection sizes in $fileAndLine before accessing elements."
+                "🐾 Sniffing detail: Out of bounds! We ran out of yard space. You're looking for an element past the end of the line at $fileAndLine."
             }
             exceptionType.contains("ClassCastException") -> {
-                "🐾 Sniffing detail: An object type cast operation failed. Verify that you are cast-checking types with 'instanceof' or 'is' before downcasting."
+                "🐾 Sniffing detail: Class Cast Exception! You're trying to put a cat uniform on a dog. Check 'instanceof' or 'as' casts safely."
             }
             exceptionType.contains("IllegalStateException") -> {
-                "🐾 Sniffing detail: The application reached an invalid state. Check if any state assertions failed or lifecycle states were compromised."
+                "🐾 Sniffing detail: Illegal State! I'm dizzy. You activated something before the app was ready for it. Check lifecycle states or dirty components."
+            }
+            exceptionType.contains("ActivityNotFoundException") -> {
+                "🐾 Sniffing detail: Activity Not Found! That activity threw its invisibility cloak on. Did you declare it in the AndroidManifest?"
+            }
+            exceptionType.contains("SecurityException") -> {
+                "🐾 Sniffing detail: Security Exception! Halt! Who goes there? We need permissions before doing this action."
+            }
+            exceptionType.contains("OutOfMemoryError") -> {
+                "🐾 Sniffing detail: OUT OF MEMORY (OOM)! The bowl overfloweth! The app loaded too much data or massive bitmaps. Try downscaling."
             }
             else -> {
-                "🐾 Sniffing detail: System crashed with a standard exception. Pinpoint your investigation around $fileAndLine."
+                "🐾 Sniffing detail: Standard exception glitch. It happens even to the goodest boys. Pinpoint your investigation around $fileAndLine!"
             }
         }
         

@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import com.example.ui.theme.bouncyClick
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
@@ -51,6 +52,11 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.rounded.MoreVert
 
+import org.burnoutcrew.reorderable.rememberReorderableLazyListState
+import org.burnoutcrew.reorderable.reorderable
+import org.burnoutcrew.reorderable.detectReorderAfterLongPress
+import org.burnoutcrew.reorderable.ReorderableItem
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel, courseId: Int) {
@@ -91,8 +97,60 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     }
     val topics by topicsFlow.collectAsStateWithLifecycle(emptyList())
 
-    val assignments by viewModel.getAssignmentsForCourse(courseId).collectAsStateWithLifecycle()
+    val assignments by viewModel.getAssignmentsForCourse(courseId).collectAsStateWithLifecycle(emptyList())
     var showAddAssignmentDialog by remember { mutableStateOf(false) }
+    var localAssignments by remember(assignments) { mutableStateOf(assignments) }
+    var localTasks by remember(courseTasks) { mutableStateOf(courseTasks) }
+
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val reorderableState = rememberReorderableLazyListState(
+        listState = listState,
+        onMove = { from, to ->
+            if (from.key is String && to.key is String) {
+                val fromStr = from.key as String
+                val toStr = to.key as String
+                if (fromStr.startsWith("assignment_") && toStr.startsWith("assignment_")) {
+                    localAssignments = localAssignments.toMutableList().apply {
+                        val fromId = fromStr.removePrefix("assignment_").toInt()
+                        val toId = toStr.removePrefix("assignment_").toInt()
+                        val fromIndex = indexOfFirst { it.id == fromId }
+                        val toIndex = indexOfFirst { it.id == toId }
+                        if (fromIndex != -1 && toIndex != -1) {
+                            add(toIndex, removeAt(fromIndex))
+                        }
+                    }
+                } else if (fromStr.startsWith("task_") && toStr.startsWith("task_")) {
+                    localTasks = localTasks.toMutableList().apply {
+                        val fromId = fromStr.removePrefix("task_").toInt()
+                        val toId = toStr.removePrefix("task_").toInt()
+                        val fromIndex = indexOfFirst { it.id == fromId }
+                        val toIndex = indexOfFirst { it.id == toId }
+                        if (fromIndex != -1 && toIndex != -1) {
+                            add(toIndex, removeAt(fromIndex))
+                        }
+                    }
+                }
+            }
+        },
+        canDragOver = { draggedOver, dragged -> 
+            val typeOver = (draggedOver.key as? String)?.substringBefore("_")
+            val typeVal = (dragged.key as? String)?.substringBefore("_")
+            typeOver == typeVal && typeOver != null
+        }
+    )
+
+    LaunchedEffect(reorderableState.draggingItemKey) {
+        if (reorderableState.draggingItemKey == null) {
+            if (localAssignments != assignments) {
+                val updatedAssignments = localAssignments.mapIndexed { index, assignment -> assignment.copy(orderIndex = index) }
+                viewModel.updateAssignmentsOrder(updatedAssignments)
+            }
+            if (localTasks != courseTasks) {
+                val updatedTasks = localTasks.mapIndexed { index, task -> task.copy(orderIndex = index) }
+                viewModel.updateTasksOrder(updatedTasks)
+            }
+        }
+    }
     var showLinkSubjectDialog by remember { mutableStateOf(false) }
     var assignmentToEdit by remember { mutableStateOf<com.example.model.PracticeAssignment?>(null) }
 
@@ -168,23 +226,14 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     )
                 )
             }
-        },
-        floatingActionButton = {
-            androidx.compose.material3.FloatingActionButton(
-                onClick = { showAddAssignmentDialog = true },
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                val rotation by androidx.compose.animation.core.animateFloatAsState(targetValue = if (showAddAssignmentDialog) 45f else 0f)
-                Icon(Icons.Rounded.Add, contentDescription = "Add Assignment", modifier = Modifier.graphicsLayer { rotationZ = rotation })
-            }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             LazyColumn(
+                state = listState,
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 120.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().reorderable(reorderableState)
             ) {
                 if (course.instructor.isNotBlank() || course.schedule.isNotBlank() || course.description.isNotBlank()) {
                     item {
@@ -445,7 +494,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                                         .clip(CircleShape)
                                                         .background(statusColor)
                                                         .then(if (isToday) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape) else Modifier)
-                                                        .clickable {
+                                                        .bouncyClick {
                                                             selectedDate = dateMillis
                                                             showAttendanceDialog = true
                                                         },
@@ -499,7 +548,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                             horizontalAlignment = Alignment.CenterHorizontally,
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(8.dp))
-                                                .clickable {
+                                                .bouncyClick {
                                                     selectedDate = dateMillis
                                                     showAttendanceDialog = true
                                                 }
@@ -567,7 +616,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .clickable {
+                                                .bouncyClick {
                                                     if (record != null) {
                                                         viewModel.updateAttendanceRecord(record.copy(status = option))
                                                     } else {
@@ -727,16 +776,30 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
                 item {
                     Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        "Assignments",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Assignments",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        IconButton(
+                            onClick = { showAddAssignmentDialog = true },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        ) {
+                            Icon(Icons.Rounded.Add, contentDescription = "Add Assignment")
+                        }
+                    }
                 }
 
-                if (assignments.isEmpty()) {
+                if (localAssignments.isEmpty()) {
                     item(key = "assignments_empty") {
                         androidx.compose.animation.AnimatedVisibility(
                             visible = true,
@@ -778,15 +841,16 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         }
                     }
                 } else {
-                    items(assignments, key = { it.id }) { assignment ->
-                        val cardColor by androidx.compose.animation.animateColorAsState(
-                            if (assignment.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
-                        )
-                        com.example.ui.components.GlassCard(
-                            modifier = Modifier.animateItem().fillMaxWidth().animateContentSize(),
-                            shape = RoundedCornerShape(24.dp),
-                            containerColor = cardColor
-                        ) {
+                    items(localAssignments, key = { "assignment_${it.id}" }) { assignment ->
+                        ReorderableItem(reorderableState, key = "assignment_${assignment.id}") { isDragging ->
+                            val cardColor by androidx.compose.animation.animateColorAsState(
+                                if (assignment.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
+                            )
+                            com.example.ui.components.GlassCard(
+                                modifier = Modifier.detectReorderAfterLongPress(reorderableState).animateItem().fillMaxWidth().animateContentSize(),
+                                shape = RoundedCornerShape(24.dp),
+                                containerColor = cardColor
+                            ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -886,9 +950,10 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 }
                             }
                         }
+                        }
                     }
                 }
-                if (courseTasks.isNotEmpty()) {
+                if (localTasks.isNotEmpty()) {
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
@@ -899,11 +964,15 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
-                    items(courseTasks, key = { "task_${it.id}" }) { task ->
-                        com.example.ui.components.GlassCard(
-                            modifier = Modifier.animateItem().fillMaxWidth().animateContentSize(),
-                            shape = RoundedCornerShape(24.dp)
-                        ) {
+                    items(localTasks, key = { "task_${it.id}" }) { task ->
+                        ReorderableItem(reorderableState, key = "task_${task.id}") { isDragging ->
+                            com.example.ui.components.GlassCard(
+                                modifier = Modifier.detectReorderAfterLongPress(reorderableState).animateItem().fillMaxWidth().animateContentSize()
+                                    .graphicsLayer {
+                                        shadowElevation = if (isDragging) 16f else 0f
+                                    },
+                                shape = RoundedCornerShape(24.dp)
+                            ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -926,6 +995,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     }
                                 }
                             }
+                        }
                         }
                     }
                 }
@@ -1016,6 +1086,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         var category by remember { mutableStateOf("Homework") }
         var categoryColor by remember { mutableStateOf("#3197D6") }
         var tags by remember { mutableStateOf("") }
+        var selectedSubjectId by remember { mutableStateOf<Int?>(linkedSubject?.id) }
 
         if (showDatePicker) {
             val datePickerColors = DatePickerDefaults.colors(
@@ -1178,6 +1249,28 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
+                    Text("Link to Study Subject (Optional)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    androidx.compose.foundation.lazy.LazyRow(
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 48.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        item {
+                            FilterChip(
+                                selected = selectedSubjectId == null,
+                                onClick = { selectedSubjectId = null },
+                                label = { Text("None") }
+                            )
+                        }
+                        items(subjects) { subj ->
+                            FilterChip(
+                                selected = selectedSubjectId == subj.id,
+                                onClick = { selectedSubjectId = subj.id },
+                                label = { Text(subj.name) }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                     OutlinedButton(
                         onClick = { showDatePicker = true },
                         modifier = Modifier.fillMaxWidth()
@@ -1190,7 +1283,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             confirmButton = {
                 TextButton(onClick = {
                     if (title.isNotBlank()) {
-                        viewModel.addAssignment(courseId, title, desc, dueDateMillis, category.ifBlank { "Other" }, categoryColor, tags)
+                        viewModel.addAssignment(courseId, title, desc, dueDateMillis, category.ifBlank { "Other" }, categoryColor, tags, selectedSubjectId)
                         showAddAssignmentDialog = false
                     }
                 }) { Text("Add") }
@@ -1209,6 +1302,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         var categoryColor by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit?.categoryColor ?: "#3197D6") }
         var tags by remember(assignmentToEdit) { mutableStateOf(assignmentToEdit?.tags ?: "") }
         var showDatePicker by remember { mutableStateOf(false) }
+        var selectedSubjectId by remember(assignmentToEdit) { mutableStateOf<Int?>(assignmentToEdit?.subjectId) }
 
         if (showDatePicker) {
             val datePickerColors = DatePickerDefaults.colors(
@@ -1371,6 +1465,28 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
+                    Text("Link to Study Subject (Optional)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    androidx.compose.foundation.lazy.LazyRow(
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 48.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        item {
+                            FilterChip(
+                                selected = selectedSubjectId == null,
+                                onClick = { selectedSubjectId = null },
+                                label = { Text("None") }
+                            )
+                        }
+                        items(subjects) { subj ->
+                            FilterChip(
+                                selected = selectedSubjectId == subj.id,
+                                onClick = { selectedSubjectId = subj.id },
+                                label = { Text(subj.name) }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                     OutlinedButton(
                         onClick = { showDatePicker = true },
                         modifier = Modifier.fillMaxWidth()
@@ -1389,7 +1505,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 dueDateMillis = dueDateMillis,
                                 category = category.ifBlank { "Other" },
                                 categoryColor = categoryColor,
-                                tags = tags
+                                tags = tags,
+                                subjectId = selectedSubjectId
                         )?.let { viewModel.updateAssignmentDetails(it) }
                         assignmentToEdit = null
                     }

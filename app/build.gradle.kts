@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
@@ -6,16 +9,23 @@ plugins {
   alias(libs.plugins.secrets)
 }
 
+val appConfig = Properties().apply {
+    val configFile = project.file("app-config.properties")
+    if (configFile.exists()) {
+        load(FileInputStream(configFile))
+    }
+}
+
 android {
-  namespace = "com.example"
+  namespace = appConfig.getProperty("NAMESPACE", "com.example")
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "lumia.foss"
+    applicationId = appConfig.getProperty("APPLICATION_ID", "lumia.foss")
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = appConfig.getProperty("VERSION_CODE", "1").toInt()
+    versionName = appConfig.getProperty("VERSION_NAME", "1.0")
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -82,6 +92,7 @@ dependencies {
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.ui.text.google.fonts)
+  implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.core.ktx)
   // implementation(libs.androidx.datastore.preferences)

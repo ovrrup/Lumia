@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
+import com.example.ui.theme.bouncyScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -23,8 +24,12 @@ import com.example.model.Task
 import com.example.ui.components.GlassCard
 import com.example.ui.theme.glassBar
 import com.example.viewmodel.ScholarViewModel
+import org.burnoutcrew.reorderable.rememberReorderableLazyListState
+import org.burnoutcrew.reorderable.reorderable
+import org.burnoutcrew.reorderable.ReorderableItem
+import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SelfStudyTab(
     navController: NavController,
@@ -41,6 +46,26 @@ fun SelfStudyTab(
     var showAddTaskDialog by remember { mutableStateOf(false) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
     var groupBy by remember { mutableStateOf("None") }
+
+    var localTasks by remember(tasks) { mutableStateOf(tasks) }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val reorderableState = rememberReorderableLazyListState(
+        listState = listState,
+        onMove = { from, to ->
+            localTasks = localTasks.toMutableList().apply {
+                add(to.index, removeAt(from.index))
+            }
+        },
+        canDragOver = { draggedOver, _ -> localTasks.any { it.id == draggedOver.key } }
+    )
+    
+    // Save when drag finishes
+    LaunchedEffect(reorderableState.draggingItemKey) {
+        if (reorderableState.draggingItemKey == null && localTasks != tasks) {
+            val updatedTasks = localTasks.mapIndexed { index, task -> task.copy(orderIndex = index, priority = if (groupBy == "Priority") task.priority else task.priority) }
+            viewModel.updateTasksOrder(updatedTasks)
+        }
+    }
 
     val upcomingAssignments = assignments.filter { !it.isCompleted && it.dueDateMillis > System.currentTimeMillis() }
     val pendingTasks = tasks.filter { !it.isCompleted && (it.dueDateMillis == null || it.dueDateMillis < System.currentTimeMillis()) }
@@ -68,18 +93,21 @@ fun SelfStudyTab(
             }
         },
         floatingActionButton = {
+            val src = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
             androidx.compose.material3.FloatingActionButton(
                 onClick = { showAddTaskDialog = true },
+                interactionSource = src,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding())
+                modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding()).bouncyScale(src)
             ) {
                 Icon(Icons.Rounded.AddTask, contentDescription = "Add Task")
             }
         }
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            modifier = Modifier.fillMaxSize().reorderable(reorderableState),
             contentPadding = PaddingValues(
                 start = 16.dp, end = 16.dp, 
                 top = padding.calculateTopPadding() + 16.dp, bottom = bottomPadding.calculateBottomPadding() + 80.dp
@@ -121,10 +149,11 @@ fun SelfStudyTab(
                 Spacer(Modifier.height(16.dp))
                 
                 GlassCard(
-                    modifier = Modifier.fillMaxWidth().clickable {
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                    onClick = {
                         navController.navigate("pomodoro")
-                    },
-                    shape = MaterialTheme.shapes.medium
+                    }
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -180,17 +209,25 @@ fun SelfStudyTab(
                 }
             }
 
-            if (tasks.isEmpty()) {
+            if (localTasks.isEmpty()) {
                 item {
                     Text("No tasks added. Add a Task to manage your future study plans.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 if (!advancedTasks || groupBy == "None") {
-                    items(tasks, key = { it.id }) { task ->
-                        TaskItemCard(task = task, viewModel = viewModel, onEdit = { taskToEdit = task })
+                    items(localTasks, key = { it.id }) { task ->
+                        ReorderableItem(reorderableState, key = task.id) { isDragging ->
+                            val elevation = if (isDragging) 8.dp else 0.dp
+                            TaskItemCard(
+                                task = task, 
+                                viewModel = viewModel, 
+                                onEdit = { taskToEdit = task },
+                                modifier = Modifier.detectReorderAfterLongPress(reorderableState)
+                            )
+                        }
                     }
                 } else if (groupBy == "Tags") {
-                    val grouped = tasks.groupBy { if (it.tags.isBlank()) "Uncategorized" else it.tags.split(",")[0].trim() }
+                    val grouped = localTasks.groupBy { if (it.tags.isBlank()) "Uncategorized" else it.tags.split(",")[0].trim() }
                     grouped.forEach { (tag, tTasks) ->
                         item {
                             Text(tag, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(top = 8.dp))
@@ -200,7 +237,7 @@ fun SelfStudyTab(
                         }
                     }
                 } else if (groupBy == "Priority") {
-                    val grouped = tasks.groupBy { when(it.priority) { 2 -> "High Priority"; 1 -> "Medium Priority"; else -> "Low Priority" } }
+                    val grouped = localTasks.groupBy { when(it.priority) { 2 -> "High Priority"; 1 -> "Medium Priority"; else -> "Low Priority" } }
                     listOf("High Priority", "Medium Priority", "Low Priority").forEach { pLabel ->
                         val tTasks = grouped[pLabel]
                         if (!tTasks.isNullOrEmpty()) {
@@ -292,6 +329,37 @@ fun SelfStudyTab(
                             Text(if (dueDateMillis != null) df.format(java.util.Date(dueDateMillis!!)) else "Not set")
                         }
                         if (dueDateMillis != null) {
+                            var showTimePicker by remember { mutableStateOf(false) }
+                            if (showTimePicker) {
+                                val timePickerState = androidx.compose.material3.rememberTimePickerState(
+                                    initialHour = java.util.Calendar.getInstance().apply { timeInMillis = dueDateMillis!! }.get(java.util.Calendar.HOUR_OF_DAY),
+                                    initialMinute = java.util.Calendar.getInstance().apply { timeInMillis = dueDateMillis!! }.get(java.util.Calendar.MINUTE)
+                                )
+                                androidx.compose.material3.DatePickerDialog(
+                                    onDismissRequest = { showTimePicker = false },
+                                    confirmButton = {
+                                        TextButton(onClick = {
+                                            val cal = java.util.Calendar.getInstance()
+                                            cal.timeInMillis = dueDateMillis!!
+                                            cal.set(java.util.Calendar.HOUR_OF_DAY, timePickerState.hour)
+                                            cal.set(java.util.Calendar.MINUTE, timePickerState.minute)
+                                            dueDateMillis = cal.timeInMillis
+                                            showTimePicker = false
+                                        }) { Text("OK") }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                                    }
+                                ) {
+                                    Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        androidx.compose.material3.TimePicker(state = timePickerState)
+                                    }
+                                }
+                            }
+                            TextButton(onClick = { showTimePicker = true }) {
+                                val tf = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                                Text(tf.format(java.util.Date(dueDateMillis!!)))
+                            }
                             IconButton(onClick = { dueDateMillis = null }) {
                                 Icon(Icons.Rounded.Cancel, contentDescription = "Clear Date", modifier = Modifier.size(16.dp))
                             }
@@ -365,8 +433,8 @@ fun SelfStudyTab(
 }
 
 @Composable
-fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit) {
-    GlassCard(onClick = onEdit, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit, modifier: Modifier = Modifier) {
+    GlassCard(onClick = onEdit, modifier = modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
                 checked = task.isCompleted,
@@ -376,7 +444,14 @@ fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit) {
             )
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(task.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(task.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f, fill = false))
+                    if (task.priority > 0) {
+                        Spacer(Modifier.width(8.dp))
+                        val pColor = when (task.priority) { 1 -> MaterialTheme.colorScheme.secondary 2 -> MaterialTheme.colorScheme.error else -> MaterialTheme.colorScheme.onSurfaceVariant }
+                        Box(modifier = Modifier.size(10.dp).background(pColor, androidx.compose.foundation.shape.CircleShape))
+                    }
+                }
                 if (task.description.isNotBlank()) {
                     Text(task.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -384,10 +459,10 @@ fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit) {
                 if (task.dueDateMillis != null) {
                     Spacer(Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.DateRange, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Rounded.DateRange, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.width(4.dp))
-                        val df = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
-                        Text(df.format(java.util.Date(task.dueDateMillis)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val df = java.text.SimpleDateFormat("MMM dd, yyyy • hh:mm a", java.util.Locale.getDefault())
+                        Text(df.format(java.util.Date(task.dueDateMillis)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                     }
                 }
                 
@@ -412,17 +487,7 @@ fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit) {
                             if (task.assignmentId != null) "Assignment" else null
                         ).joinToString(", ")
                         Text("$linkText Linked", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                        
-                        Spacer(Modifier.width(8.dp))
-                        val pColor = when (task.priority) { 1 -> MaterialTheme.colorScheme.secondary 2 -> MaterialTheme.colorScheme.error else -> MaterialTheme.colorScheme.onSurfaceVariant }
-                        val pText = when (task.priority) { 1 -> "Medium" 2 -> "High" else -> "Low" }
-                        Text("• $pText Priority", style = MaterialTheme.typography.labelSmall, color = pColor)
                     }
-                } else if (task.priority > 0) {
-                    Spacer(Modifier.height(4.dp))
-                    val pColor = when (task.priority) { 1 -> MaterialTheme.colorScheme.secondary 2 -> MaterialTheme.colorScheme.error else -> MaterialTheme.colorScheme.onSurfaceVariant }
-                    val pText = when (task.priority) { 1 -> "Medium" 2 -> "High" else -> "Low" }
-                    Text("$pText Priority", style = MaterialTheme.typography.labelSmall, color = pColor)
                 }
             }
             IconButton(onClick = { viewModel.deleteTask(task) }) {

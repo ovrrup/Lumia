@@ -19,8 +19,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.WindowInsets
@@ -56,9 +61,41 @@ import androidx.compose.material.icons.rounded.Info
 class MainActivity : ComponentActivity() {
     private val viewModel: ScholarViewModel by viewModels()
 
+    private val _crashData = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Handle crash restarts
+        val crashData = intent.getStringExtra("FATAL_CRASH_DATA")
+        if (crashData != null) {
+            _crashData.value = crashData
+            intent.removeExtra("FATAL_CRASH_DATA")
+        }
+
         com.example.util.LogDog.setup(applicationContext)
+        
+        val pomodoroReceiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+                if (intent?.action == "PomodoroLogSession") {
+                    val wasWork = intent.getBooleanExtra("isWork", true)
+                    val originalTime = intent.getIntExtra("originalTime", 25 * 60)
+                    val sId = if (intent.hasExtra("subjectId")) intent.getIntExtra("subjectId", -1).takeIf { it != -1 } else null
+                    val cId = if (intent.hasExtra("courseId")) intent.getIntExtra("courseId", -1).takeIf { it != -1 } else null
+                    val aId = if (intent.hasExtra("assignmentId")) intent.getIntExtra("assignmentId", -1).takeIf { it != -1 } else null
+                    val tId = if (intent.hasExtra("taskId")) intent.getIntExtra("taskId", -1).takeIf { it != -1 } else null
+
+                    if (wasWork && viewModel.systemPomodoroAutoLog.value) {
+                        viewModel.addPomodoroSession(originalTime / 60, sId, cId, aId, tId)
+                    }
+                }
+            }
+        }
+        val filterOptions = android.content.IntentFilter("PomodoroLogSession")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(pomodoroReceiver, filterOptions, android.content.Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(pomodoroReceiver, filterOptions)
+        }
         
         try {
             val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(1, TimeUnit.DAYS)
@@ -89,6 +126,8 @@ class MainActivity : ComponentActivity() {
             val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
             val glassBackdropStyle by viewModel.glassBackdropStyle.collectAsStateWithLifecycle()
             val glassOpacityValue by viewModel.glassOpacityValue.collectAsStateWithLifecycle()
+            val appAnimationMode by viewModel.appAnimationMode.collectAsStateWithLifecycle()
+            val moreRounds by viewModel.moreRounds.collectAsStateWithLifecycle()
 
             val customPrimary by viewModel.customPrimary.collectAsStateWithLifecycle()
             val customPrimaryContainer by viewModel.customPrimaryContainer.collectAsStateWithLifecycle()
@@ -120,6 +159,8 @@ class MainActivity : ComponentActivity() {
                 glassOpacityValue = glassOpacityValue,
                 betterTexts = betaBetterTexts,
                 betterTextsPalette = betaBetterTextsPalette,
+                appAnimationMode = appAnimationMode,
+                moreRounds = moreRounds,
                 customPrimary = customPrimary,
                 customPrimaryContainer = customPrimaryContainer,
                 customBackground = customBackground,
@@ -219,36 +260,48 @@ class MainActivity : ComponentActivity() {
                                 ) else Modifier
                             ),
                         enterTransition = {
-                            androidx.compose.animation.fadeIn(
-                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
-                            ) + androidx.compose.animation.scaleIn(
-                                initialScale = 0.95f,
-                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
-                            )
+                            val spec = if (appAnimationMode == "Bouncy") {
+                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
+                            } else if (appAnimationMode == "Dynamic") {
+                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                            } else {
+                                androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+                            }
+                            androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                            androidx.compose.animation.scaleIn(initialScale = if (appAnimationMode == "Bouncy") 0.8f else 0.95f, animationSpec = spec)
                         },
                         exitTransition = {
-                            androidx.compose.animation.fadeOut(
-                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
-                            ) + androidx.compose.animation.scaleOut(
-                                targetScale = 1.05f,
-                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
-                            )
+                            val spec = if (appAnimationMode == "Bouncy") {
+                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
+                            } else if (appAnimationMode == "Dynamic") {
+                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                            } else {
+                                androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                            }
+                            androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                            androidx.compose.animation.scaleOut(targetScale = if (appAnimationMode == "Bouncy") 1.2f else 1.05f, animationSpec = spec)
                         },
                         popEnterTransition = {
-                            androidx.compose.animation.fadeIn(
-                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
-                            ) + androidx.compose.animation.scaleIn(
-                                initialScale = 1.05f,
-                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
-                            )
+                            val spec = if (appAnimationMode == "Bouncy") {
+                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
+                            } else if (appAnimationMode == "Dynamic") {
+                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                            } else {
+                                androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+                            }
+                            androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                            androidx.compose.animation.scaleIn(initialScale = if (appAnimationMode == "Bouncy") 1.2f else 1.05f, animationSpec = spec)
                         },
                         popExitTransition = {
-                            androidx.compose.animation.fadeOut(
-                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
-                            ) + androidx.compose.animation.scaleOut(
-                                targetScale = 0.95f,
-                                animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
-                            )
+                            val spec = if (appAnimationMode == "Bouncy") {
+                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
+                            } else if (appAnimationMode == "Dynamic") {
+                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                            } else {
+                                androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                            }
+                            androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                            androidx.compose.animation.scaleOut(targetScale = if (appAnimationMode == "Bouncy") 0.8f else 0.95f, animationSpec = spec)
                         }
                     ) {
                         composable("dashboard") {
@@ -326,6 +379,44 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                    
+                    val crashDataState by _crashData.collectAsStateWithLifecycle()
+                    if (crashDataState != null) {
+                        val parsed = remember(crashDataState) { com.example.util.LogDog.analyzeCrash(crashDataState ?: "") }
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = { _crashData.value = null },
+                            title = { 
+                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                    androidx.compose.material3.Icon(
+                                        imageVector = androidx.compose.material.icons.Icons.Rounded.Warning, 
+                                        contentDescription = "LogDog",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("LogDog Crash Recovery", color = MaterialTheme.colorScheme.onSurface)
+                                }
+                            },
+                            text = {
+                                Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                                    Text("Ruff rough... I caught a crash before it took down the whole app completely! Here is my analysis:", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 12.dp))
+                                    Text(parsed.suggestion, style = MaterialTheme.typography.bodyMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                                    Spacer(Modifier.height(16.dp))
+                                    Text("Location: ${parsed.crashLocation}", style = MaterialTheme.typography.bodySmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium)
+                                    Text("Error: ${parsed.exceptionType}", style = MaterialTheme.typography.bodySmall)
+                                }
+                            },
+                            confirmButton = {
+                                androidx.compose.material3.Button(onClick = { _crashData.value = null }) { Text("Good Boy") }
+                            },
+                            dismissButton = {
+                                androidx.compose.material3.TextButton(onClick = {
+                                    _crashData.value = null
+                                    navController.navigate("settings/beta") // or wherever logs are shown
+                                }) { Text("View Full Logs") }
+                            }
+                        )
+                    }
+
                     } // End of Box
                 }
             }

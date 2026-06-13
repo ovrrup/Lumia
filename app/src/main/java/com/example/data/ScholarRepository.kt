@@ -34,6 +34,7 @@ class ScholarRepository(private val dao: ScholarDao) {
 
     suspend fun insertTask(task: Task) = dao.insertTask(task)
     suspend fun updateTask(task: Task) = dao.updateTask(task)
+    suspend fun updateTasks(tasks: List<Task>) { tasks.forEach { dao.updateTask(it) } }
     suspend fun deleteTask(task: Task) = dao.deleteTask(task)
 
     suspend fun insertCourse(course: Course) = dao.insertCourse(course)
@@ -50,6 +51,7 @@ class ScholarRepository(private val dao: ScholarDao) {
 
     suspend fun insertAssignment(assignment: PracticeAssignment): Long = dao.insertAssignment(assignment)
     suspend fun updateAssignment(assignment: PracticeAssignment) = dao.updateAssignment(assignment)
+    suspend fun updateAssignments(assignments: List<PracticeAssignment>) { assignments.forEach { dao.updateAssignment(it) } }
     suspend fun deleteAssignment(assignment: PracticeAssignment) = dao.deleteAssignment(assignment)
     
     fun getAttendanceForCourse(courseId: Int) = dao.getAttendanceForCourse(courseId)
