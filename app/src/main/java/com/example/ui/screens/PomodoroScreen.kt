@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.NightlightRound
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Stop
@@ -25,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationCompat
 import androidx.navigation.NavController
@@ -42,6 +44,7 @@ import com.example.model.PracticeAssignment
 fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmodel.ScholarViewModel) {
     var timeLeft by remember { mutableStateOf(25 * 60) }
     var isRunning by remember { mutableStateOf(false) }
+    var isAodMode by remember { mutableStateOf(false) }
     var mode by remember { mutableStateOf(PomodoroMode.WORK) }
     val context = LocalContext.current
     
@@ -105,167 +108,224 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
     val isGlass = com.example.ui.theme.LocalGlassMode.current
     val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle(emptyList())
 
-    Scaffold(
-        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { Text("Pomodoro Timer", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
-        }
-    ) { padding ->
-        LazyColumn(
+    if (isAodMode) {
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .background(Color.Black)
+                .clickable { isAodMode = false },
+            contentAlignment = Alignment.Center
         ) {
-            item {
-                com.example.ui.components.NotificationPermissionPanel()
-                com.example.ui.components.ExactAlarmPermissionPanel()
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    ModeButton(
-                        text = "Work",
-                        selected = mode == PomodoroMode.WORK,
-                        onClick = { 
-                            mode = PomodoroMode.WORK; timeLeft = 25 * 60; isRunning = false 
-                            context.startService(android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" })
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                    ModeButton(
-                        text = "Short Break",
-                        selected = mode == PomodoroMode.SHORT_BREAK,
-                        onClick = { 
-                            mode = PomodoroMode.SHORT_BREAK; timeLeft = 5 * 60; isRunning = false 
-                            context.startService(android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" })
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                    ModeButton(
-                        text = "Long Break",
-                        selected = mode == PomodoroMode.LONG_BREAK,
-                        onClick = { 
-                            mode = PomodoroMode.LONG_BREAK; timeLeft = 15 * 60; isRunning = false 
-                            context.startService(android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" })
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+            val minutes = timeLeft / 60
+            val seconds = timeLeft % 60
+            
+            val burnInOffset = remember(timeLeft) {
+                val tick = (timeLeft % 10)
+                val x = if (tick % 2 == 0) (tick - 5).dp else 0.dp
+                val y = if (tick % 2 != 0) (tick - 5).dp else 0.dp
+                Pair(x, y)
             }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                // Beautiful pulsing scale animation
-                val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-                val pulseScale by infiniteTransition.animateFloat(
-                    initialValue = 1f,
-                    targetValue = if (isRunning) 1.03f else 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(1200, easing = FastOutSlowInEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "scale"
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(24.dp).offset(x = burnInOffset.first, y = burnInOffset.second)
+            ) {
+                Text(
+                    text = String.format("%02d:%02d", minutes, seconds),
+                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 110.sp),
+                    fontWeight = FontWeight.Light,
+                    color = Color.DarkGray.copy(alpha = 0.8f)
                 )
-
-                Box(
-                    contentAlignment = Alignment.Center, 
-                    modifier = Modifier
-                        .size(280.dp)
-                        .background(Color.Transparent)
-                ) {
-                    val progress = if (totalTime > 0) timeLeft.toFloat() / totalTime else 0f
-                    val circleColor = MaterialTheme.colorScheme.primary
-                    
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        drawArc(
-                            color = circleColor.copy(alpha = 0.15f),
-                            startAngle = -90f,
-                            sweepAngle = 360f,
-                            useCenter = false,
-                            style = Stroke(width = 16.dp.toPx())
-                        )
-                        drawArc(
-                            color = circleColor,
-                            startAngle = -90f,
-                            sweepAngle = 360f * progress,
-                            useCenter = false,
-                            style = Stroke(width = 16.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-                        )
-                    }
-
-                    val minutes = timeLeft / 60
-                    val seconds = timeLeft % 60
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.graphicsLayer {
-                            scaleX = pulseScale
-                            scaleY = pulseScale
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                val statusText = if (isRunning) {
+                    val contextName = subjects.find { it.id == selectedSubjectId }?.name ?: "Focus Block"
+                    "Focusing on $contextName"
+                } else {
+                    "Session Paused"
+                }
+                
+                Text(
+                    text = statusText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.DarkGray,
+                    fontWeight = FontWeight.Medium
+                )
+                
+                Spacer(modifier = Modifier.height(48.dp))
+                
+                Text(
+                    text = "Always-On Focus Active • Tap to Exit",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.DarkGray.copy(alpha = 0.5f),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
+    } else {
+        Scaffold(
+            containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
+            topBar = {
+                TopAppBar(
+                    title = { Text("Pomodoro Timer", fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back")
                         }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                )
+            }
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    com.example.ui.components.NotificationPermissionPanel()
+                    com.example.ui.components.ExactAlarmPermissionPanel()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(
-                            text = String.format("%02d:%02d", minutes, seconds),
-                            style = MaterialTheme.typography.displayLarge,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.onSurface
+                        ModeButton(
+                            text = "Work",
+                            selected = mode == PomodoroMode.WORK,
+                            onClick = { 
+                                mode = PomodoroMode.WORK; timeLeft = 25 * 60; isRunning = false 
+                                context.startService(android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" })
+                            },
+                            modifier = Modifier.weight(1f)
                         )
-                        Text(
-                            text = if (isRunning) "Focusing" else "Paused",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                        ModeButton(
+                            text = "Short Break",
+                            selected = mode == PomodoroMode.SHORT_BREAK,
+                            onClick = { 
+                                mode = PomodoroMode.SHORT_BREAK; timeLeft = 5 * 60; isRunning = false 
+                                context.startService(android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" })
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        ModeButton(
+                            text = "Long Break",
+                            selected = mode == PomodoroMode.LONG_BREAK,
+                            onClick = { 
+                                mode = PomodoroMode.LONG_BREAK; timeLeft = 15 * 60; isRunning = false 
+                                context.startService(android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" })
+                            },
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
-            }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                    FloatingActionButton(
-                        onClick = { 
-                            if (isRunning) {
-                                isRunning = false
-                                val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" }
-                                context.startService(intent)
-                            } else {
-                                isRunning = true
-                                val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply {
-                                    action = "START"
-                                    putExtra("time", timeLeft)
-                                    putExtra("isWork", mode == PomodoroMode.WORK)
-                                    selectedSubjectId?.let { putExtra("subjectId", it) }
-                                    selectedCourseId?.let { putExtra("courseId", it) }
-                                    selectedAssignmentId?.let { putExtra("assignmentId", it) }
-                                    selectedTaskId?.let { putExtra("taskId", it) }
-                                }
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    context.startForegroundService(intent)
-                                } else {
-                                    context.startService(intent)
-                                }
-                            }
-                        },
-                        containerColor = if (isRunning) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(72.dp)
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    // Beautiful pulsing scale animation
+                    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+                    val pulseScale by infiniteTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = if (isRunning) 1.03f else 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1200, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "scale"
+                    )
+
+                    Box(
+                        contentAlignment = Alignment.Center, 
+                        modifier = Modifier
+                            .size(280.dp)
+                            .background(Color.Transparent)
                     ) {
-                        Icon(
-                            imageVector = if (isRunning) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
-                            contentDescription = "Play/Stop",
-                            modifier = Modifier.size(36.dp)
-                        )
+                        val progress = if (totalTime > 0) timeLeft.toFloat() / totalTime else 0f
+                        val circleColor = MaterialTheme.colorScheme.primary
+                        
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            drawArc(
+                                color = circleColor.copy(alpha = 0.15f),
+                                startAngle = -90f,
+                                sweepAngle = 360f,
+                                useCenter = false,
+                                style = Stroke(width = 16.dp.toPx())
+                            )
+                            drawArc(
+                                color = circleColor,
+                                startAngle = -90f,
+                                sweepAngle = 360f * progress,
+                                useCenter = false,
+                                style = Stroke(width = 16.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                            )
+                        }
+
+                        val minutes = timeLeft / 60
+                        val seconds = timeLeft % 60
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.graphicsLayer {
+                                scaleX = pulseScale
+                                scaleY = pulseScale
+                            }
+                        ) {
+                            Text(
+                                text = String.format("%02d:%02d", minutes, seconds),
+                                style = MaterialTheme.typography.displayLarge,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (isRunning) "Focusing" else "Paused",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                            )
+                        }
                     }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                        FloatingActionButton(
+                            onClick = { 
+                                if (isRunning) {
+                                    isRunning = false
+                                    val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" }
+                                    context.startService(intent)
+                                } else {
+                                    isRunning = true
+                                    val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply {
+                                        action = "START"
+                                        putExtra("time", timeLeft)
+                                        putExtra("isWork", mode == PomodoroMode.WORK)
+                                        selectedSubjectId?.let { putExtra("subjectId", it) }
+                                        selectedCourseId?.let { putExtra("courseId", it) }
+                                        selectedAssignmentId?.let { putExtra("assignmentId", it) }
+                                        selectedTaskId?.let { putExtra("taskId", it) }
+                                    }
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                        context.startForegroundService(intent)
+                                    } else {
+                                        context.startService(intent)
+                                    }
+                                }
+                            },
+                            containerColor = if (isRunning) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isRunning) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
+                                contentDescription = "Play/Stop",
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
 
                     FloatingActionButton(
                         onClick = { 
@@ -281,6 +341,19 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                             imageVector = Icons.Rounded.Refresh,
                             contentDescription = "Reset",
                             modifier = Modifier.size(28.dp)
+                        )
+                    }
+
+                    FloatingActionButton(
+                        onClick = { isAodMode = true },
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        modifier = Modifier.size(72.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.NightlightRound,
+                            contentDescription = "Always On Display focus mode",
+                            modifier = Modifier.size(28.dp),
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer
                         )
                     }
                 }
@@ -412,6 +485,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
             }
         }
     }
+}
 }
 
 @Composable

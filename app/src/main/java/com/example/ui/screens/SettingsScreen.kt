@@ -47,6 +47,9 @@ import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.List
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.RecordVoiceOver
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.*
@@ -836,33 +839,124 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 if (showLogDogDialog) {
                     var isScanning by remember { mutableStateOf(true) }
                     LaunchedEffect(Unit) {
-                        kotlinx.coroutines.delay(1500)
+                        kotlinx.coroutines.delay(1200)
                         isScanning = false
                     }
-                    val crashes = com.example.util.LogDog.getCrashes(context)
+                    var crashesList by remember { mutableStateOf(com.example.util.LogDog.getCrashes(context)) }
+                    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+                    
                     AlertDialog(
                         onDismissRequest = { showLogDogDialog = false },
                         icon = { Icon(Icons.Rounded.RecordVoiceOver, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                        title = { Text("LogDog Report 🐾") },
+                        title = { Text("LogDog System Diagnostics 🐾") },
                         text = {
                             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                                 if (isScanning) {
-                                    Text("Analyzing crash logs and stack traces...")
-                                } else if (crashes.isEmpty()) {
-                                    Text("No crash logs found. System is stable.")
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            CircularProgressIndicator()
+                                            Spacer(Modifier.height(12.dp))
+                                            Text("Sniffing stack traces, analyzing root causes...", style = MaterialTheme.typography.bodyMedium)
+                                        }
+                                    }
+                                } else if (crashesList.isEmpty()) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.CheckCircle,
+                                            contentDescription = null,
+                                            tint = androidx.compose.ui.graphics.Color(0xFF2E7D32),
+                                            modifier = Modifier.size(36.dp)
+                                        )
+                                        Spacer(Modifier.height(8.dp))
+                                        Text("No crashes detected in the log kennel. Your application is perfectly stable!", style = MaterialTheme.typography.bodyMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                    }
                                 } else {
-                                    crashes.forEachIndexed { index, crash ->
-                                        Text("Crash Report ${index + 1}", fontWeight = FontWeight.Bold)
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(com.example.util.LogDog.analyze(crash), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(crash, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                                        Spacer(modifier = Modifier.height(16.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("${crashesList.size} crash(es) recorded", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                        TextButton(
+                                            onClick = {
+                                                com.example.util.LogDog.clearCrashes(context)
+                                                crashesList = emptyList()
+                                                android.widget.Toast.makeText(context, "LogDog cleared all crash records!", android.widget.Toast.LENGTH_SHORT).show()
+                                            },
+                                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Rounded.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("Clear Logs")
+                                            }
+                                        }
+                                    }
+                                    
+                                    HorizontalDivider()
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    
+                                    crashesList.forEachIndexed { index, crash ->
+                                        val parsed = remember(crash) { com.example.util.LogDog.analyzeCrash(crash) }
+                                        
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                        ) {
+                                            Column(modifier = Modifier.padding(12.dp)) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text("Report #${index + 1}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                                                    IconButton(
+                                                        onClick = {
+                                                            clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(crash))
+                                                            android.widget.Toast.makeText(context, "Copied crash trace to clipboard!", android.widget.Toast.LENGTH_SHORT).show()
+                                                        },
+                                                        modifier = Modifier.size(28.dp)
+                                                    ) {
+                                                        Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy raw log", modifier = Modifier.size(16.dp))
+                                                    }
+                                                }
+                                                
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text("Exception:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                                Text(parsed.exceptionType, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                                                
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text("Message:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                                Text(parsed.errorMessage, style = MaterialTheme.typography.bodySmall)
+                                                
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text("Location:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                                Text(parsed.crashLocation, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                                
+                                                Spacer(modifier = Modifier.height(6.dp))
+                                                Card(
+                                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.Top) {
+                                                        Text("🐾", modifier = Modifier.padding(end = 4.dp))
+                                                        Text(parsed.suggestion, style = MaterialTheme.typography.bodySmall)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
                                     }
                                 }
                             }
                         },
-                        confirmButton = { TextButton(onClick = { showLogDogDialog = false }) { Text("Acknowledge") } }
+                        confirmButton = { TextButton(onClick = { showLogDogDialog = false }) { Text("Close") } }
                     )
                 }
                 com.example.ui.components.GlassCard(

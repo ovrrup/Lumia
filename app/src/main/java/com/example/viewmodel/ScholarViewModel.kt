@@ -632,9 +632,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addTopic(subjectId: Int, title: String, tags: String = "") {
+    fun addTopic(subjectId: Int, title: String, tags: String = "", chapterId: Int? = null) {
         viewModelScope.launch {
-            repository.insertTopic(Topic(subjectId = subjectId, title = title, tags = tags))
+            repository.insertTopic(Topic(subjectId = subjectId, title = title, tags = tags, chapterId = chapterId))
             logAction("Added topic: $title")
         }
     }
@@ -696,6 +696,18 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 )
             }
             logAction("Added task: ${task.title}")
+        }
+    }
+
+    fun toggleTaskCompleted(task: Task) {
+        viewModelScope.launch {
+            val newlyCompleted = !task.isCompleted
+            repository.updateTask(task.copy(isCompleted = newlyCompleted))
+            val actionText = if (newlyCompleted) "Completed task: ${task.title}" else "Unmarked task: ${task.title}"
+            logAction(actionText)
+            if (newlyCompleted) {
+                checkAndUpdateStreak()
+            }
         }
     }
 

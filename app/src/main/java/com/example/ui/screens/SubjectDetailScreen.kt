@@ -16,7 +16,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Assignment
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ControlPoint
+import androidx.compose.material.icons.rounded.ArrowCircleRight
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
@@ -66,6 +69,9 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
 
     val topics by viewModel.getTopicsForSubject(subjectId).collectAsStateWithLifecycle()
     var showAddTopic by remember { mutableStateOf(false) }
+    val chapters by viewModel.getChaptersForSubject(subjectId).collectAsStateWithLifecycle()
+    var showAddChapter by remember { mutableStateOf(false) }
+    var chapterToEdit by remember { mutableStateOf<com.example.model.Chapter?>(null) }
 
     val allNotes by viewModel.notes.collectAsStateWithLifecycle()
     val subjectNotes = remember(allNotes, subject, linkedCourses) {
@@ -325,18 +331,43 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     }
                 }
 
-                // Study Topics Section
+                // Chapters & Topics Section
                 item {
-                    Text(
-                        text = "Study Topics",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 10.dp)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Study Chapters & Topics",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilledTonalButton(
+                                onClick = { showAddChapter = true },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                modifier = Modifier.height(36.dp)
+                            ) {
+                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Chapter", style = MaterialTheme.typography.labelMedium)
+                            }
+                            Button(
+                                onClick = { showAddTopic = true },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                modifier = Modifier.height(36.dp)
+                            ) {
+                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Topic", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
                 }
 
-                if (topics.isEmpty()) {
+                if (chapters.isEmpty() && topics.isEmpty()) {
                     item {
                         com.example.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth(),
@@ -361,13 +392,13 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    "No study topics added yet",
+                                    "No chapters or topics added yet",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    "Create key study concepts or lecture content above.",
+                                    "Create chapters and associate study topics with them.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
@@ -375,39 +406,176 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         }
                     }
                 } else {
-                    itemsIndexed(topics, key = { _, topic -> "t_${topic.id}" }) { index, topic ->
-                        val cardColor by androidx.compose.animation.animateColorAsState(
-                            if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
-                        )
-                        com.example.ui.components.GlassCard(
-                            modifier = Modifier.fillMaxWidth().animateContentSize(),
-                            shape = RoundedCornerShape(24.dp),
-                            containerColor = cardColor
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(24.dp)) {
-                                Checkbox(
-                                    checked = topic.isCompleted,
-                                    onCheckedChange = { viewModel.toggleTopicCompleted(topic) }
-                                )
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "${index + 1}. ${topic.title}",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface,
-                                        textDecoration = if (topic.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
-                                    )
-                                    if (topic.tags.isNotBlank()) {
+                    // Render styled Chapters & nested Topics
+                    chapters.forEach { chapter ->
+                        val chapterTopics = topics.filter { it.chapterId == chapter.id }
+                        val totalTopicCount = chapterTopics.size
+                        val completedTopicCount = chapterTopics.count { it.isCompleted }
+                        val progress = if (totalTopicCount > 0) completedTopicCount.toFloat() / totalTopicCount else 0f
+                        
+                        item(key = "chap_card_${chapter.id}") {
+                            com.example.ui.components.GlassCard(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.25f)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = chapter.name,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.secondary
+                                            )
+                                            if (chapter.description.isNotEmpty()) {
+                                                Text(
+                                                    text = chapter.description,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 2
+                                                )
+                                            }
+                                        }
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            IconButton(onClick = { chapterToEdit = chapter; showAddChapter = true }) {
+                                                Icon(Icons.Rounded.Edit, "Edit Chapter", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                            }
+                                            IconButton(onClick = { viewModel.deleteChapter(chapter) }) {
+                                                Icon(Icons.Rounded.Delete, "Delete Chapter", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                                            }
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                        LinearProgressIndicator(
+                                            progress = { progress },
+                                            color = MaterialTheme.colorScheme.primary,
+                                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            modifier = Modifier.weight(1f).clip(RoundedCornerShape(4.dp))
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
                                         Text(
-                                            "Tags: ${topic.tags}",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                            text = "${completedTopicCount}/${totalTopicCount} Topics (${(progress * 100).toInt()}%)",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
                                         )
                                     }
                                 }
-                                IconButton(onClick = { viewModel.deleteTopic(topic) }) {
-                                    Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                            }
+                        }
+
+                        if (chapterTopics.isEmpty()) {
+                            item(key = "chap_empty_${chapter.id}") {
+                                Text(
+                                    "No topics added inside this chapter yet. Click the + Topic button to associate first concept.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                    modifier = Modifier.padding(start = 16.dp, bottom = 12.dp, end = 16.dp)
+                                )
+                            }
+                        } else {
+                            itemsIndexed(chapterTopics, key = { _, topic -> "t_${topic.id}" }) { index, topic ->
+                                val cardColor by androidx.compose.animation.animateColorAsState(
+                                    if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface
+                                )
+                                Row(modifier = Modifier.fillMaxWidth().padding(start = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.ChevronRight,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    com.example.ui.components.GlassCard(
+                                        modifier = Modifier.weight(1f).padding(vertical = 4.dp).animateContentSize(),
+                                        shape = RoundedCornerShape(16.dp),
+                                        containerColor = cardColor
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                                            Checkbox(
+                                                checked = topic.isCompleted,
+                                                onCheckedChange = { viewModel.toggleTopicCompleted(topic) }
+                                            )
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    "${index + 1}. ${topic.title}",
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface,
+                                                    textDecoration = if (topic.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
+                                                )
+                                                if (topic.tags.isNotBlank()) {
+                                                    Text(
+                                                        "Tags: ${topic.tags}",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                                    )
+                                                }
+                                            }
+                                            IconButton(onClick = { viewModel.deleteTopic(topic) }) {
+                                                Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Render General / Uncategorized Topics
+                    val generalTopics = topics.filter { it.chapterId == null }
+                    if (generalTopics.isNotEmpty()) {
+                        item(key = "chapters_general_header") {
+                            Text(
+                                text = "General Concepts",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                            )
+                        }
+                        
+                        itemsIndexed(generalTopics, key = { _, topic -> "t_${topic.id}" }) { index, topic ->
+                            val cardColor by androidx.compose.animation.animateColorAsState(
+                                if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface
+                            )
+                            com.example.ui.components.GlassCard(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).animateContentSize(),
+                                shape = RoundedCornerShape(16.dp),
+                                containerColor = cardColor
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                                    Checkbox(
+                                        checked = topic.isCompleted,
+                                        onCheckedChange = { viewModel.toggleTopicCompleted(topic) }
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            "${index + 1}. ${topic.title}",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface,
+                                            textDecoration = if (topic.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
+                                        )
+                                        if (topic.tags.isNotBlank()) {
+                                            Text(
+                                                "Tags: ${topic.tags}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                            )
+                                        }
+                                    }
+                                    IconButton(onClick = { viewModel.deleteTopic(topic) }) {
+                                        Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                                    }
                                 }
                             }
                         }
@@ -420,19 +588,123 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     if (showAddTopic) {
         var title by remember { mutableStateOf("") }
         var tags by remember { mutableStateOf("") }
+        var selectedChapterId by remember { mutableStateOf<Int?>(null) }
+        var dropdownExpanded by remember { mutableStateOf(false) }
+
         AlertDialog(
             onDismissRequest = { showAddTopic = false },
             title = { Text("Add Topic") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Topic Title") })
-                    OutlinedTextField(value = tags, onValueChange = { tags = it }, label = { Text("Tags (optional)") })
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Topic Title") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = tags,
+                        onValueChange = { tags = it },
+                        label = { Text("Tags (optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    if (chapters.isNotEmpty()) {
+                        Text("Associate Chapter (Optional):", style = MaterialTheme.typography.labelMedium)
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            val activeChapterName = chapters.find { it.id == selectedChapterId }?.name ?: "None (General concept)"
+                            OutlinedButton(
+                                onClick = { dropdownExpanded = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(activeChapterName)
+                                    Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
+                                }
+                            }
+                            DropdownMenu(
+                                expanded = dropdownExpanded,
+                                onDismissRequest = { dropdownExpanded = false },
+                                modifier = Modifier.fillMaxWidth(0.8f)
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("None (General concept)") },
+                                    onClick = { selectedChapterId = null; dropdownExpanded = false }
+                                )
+                                chapters.forEach { chapter ->
+                                    DropdownMenuItem(
+                                        text = { Text(chapter.name) },
+                                        onClick = { selectedChapterId = chapter.id; dropdownExpanded = false }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { if (title.isNotBlank()) { viewModel.addTopic(subjectId, title, tags); showAddTopic = false } }) { Text("Add") }
+                TextButton(onClick = {
+                    if (title.isNotBlank()) {
+                        viewModel.addTopic(subjectId, title, tags, selectedChapterId)
+                        showAddTopic = false
+                    }
+                }) { Text("Add") }
             },
             dismissButton = { TextButton(onClick = { showAddTopic = false }) { Text("Cancel") } }
+        )
+    }
+
+    if (showAddChapter) {
+        val editing = chapterToEdit
+        var name by remember(editing) { mutableStateOf(editing?.name ?: "") }
+        var description by remember(editing) { mutableStateOf(editing?.description ?: "") }
+        var tags by remember(editing) { mutableStateOf(editing?.tags ?: "") }
+
+        AlertDialog(
+            onDismissRequest = { showAddChapter = false; chapterToEdit = null },
+            title = { Text(if (editing != null) "Edit Chapter" else "Add Chapter") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Chapter Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = tags,
+                        onValueChange = { tags = it },
+                        label = { Text("Tags (optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (name.isNotBlank()) {
+                        if (editing != null) {
+                            viewModel.updateChapter(editing.copy(name = name, description = description, tags = tags))
+                        } else {
+                            viewModel.addChapter(name, subjectId, description, tags)
+                        }
+                        showAddChapter = false
+                        chapterToEdit = null
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddChapter = false; chapterToEdit = null }) { Text("Cancel") }
+            }
         )
     }
 

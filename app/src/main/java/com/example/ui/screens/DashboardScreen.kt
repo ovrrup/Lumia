@@ -45,6 +45,7 @@ import androidx.compose.material.icons.automirrored.rounded.ManageSearch
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -765,10 +766,17 @@ fun HomeTab(
                         } else {
                             upcomingTasks.forEach { task ->
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clickable { viewModel.toggleTaskCompleted(task) },
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Rounded.TaskAlt, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp))
+                                    Checkbox(
+                                        checked = task.isCompleted,
+                                        onCheckedChange = { _ -> viewModel.toggleTaskCompleted(task) },
+                                        modifier = Modifier.size(24.dp)
+                                    )
                                     Spacer(Modifier.width(8.dp))
                                     Text(
                                         text = task.title,

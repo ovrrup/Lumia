@@ -370,8 +370,8 @@ fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
                 checked = task.isCompleted,
-                onCheckedChange = { ch ->
-                    viewModel.updateTask(task.copy(isCompleted = ch))
+                onCheckedChange = { _ ->
+                    viewModel.toggleTaskCompleted(task)
                 }
             )
             Spacer(Modifier.width(16.dp))
