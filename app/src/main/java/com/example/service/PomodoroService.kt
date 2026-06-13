@@ -1,4 +1,4 @@
-package com.example.service
+package ovrrup.lumia.service
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -9,18 +9,95 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.example.MainActivity
-import com.example.R
+import ovrrup.lumia.MainActivity
+import ovrrup.lumia.R
 import kotlinx.coroutines.*
 import android.widget.RemoteViews
 
 enum class PomodoroMode { WORK, SHORT_BREAK, LONG_BREAK }
 
+data class PomodoroState(
+    val isRunning: Boolean = false,
+    val isPaused: Boolean = false,
+    val timeLeft: Int = 25 * 60,
+    val originalTime: Int = 25 * 60,
+    val modeString: String = "WORK",
+    val sessionsCompleted: Int = 0,
+    val subjectId: Int? = null,
+    val courseId: Int? = null,
+    val assignmentId: Int? = null,
+    val taskId: Int? = null
+)
+
 class PomodoroService : Service() {
 
     companion object {
-        var isServiceRunning = false
-        var currentStateStr = ""
+        private val _state = kotlinx.coroutines.flow.MutableStateFlow(PomodoroState())
+        val state: kotlinx.coroutines.flow.StateFlow<PomodoroState> = _state
+
+        var isServiceRunning: Boolean
+            get() = _state.value.isRunning
+            set(value) {
+                _state.value = _state.value.copy(isRunning = value)
+            }
+
+        var currentStateStr: String
+            get() = _state.value.modeString
+            set(value) {
+                _state.value = _state.value.copy(modeString = value)
+            }
+
+        var timeLeft: Int
+            get() = _state.value.timeLeft
+            set(value) {
+                _state.value = _state.value.copy(timeLeft = value)
+            }
+
+        var originalTime: Int
+            get() = _state.value.originalTime
+            set(value) {
+                _state.value = _state.value.copy(originalTime = value)
+            }
+
+        var isPaused: Boolean
+            get() = _state.value.isPaused
+            set(value) {
+                _state.value = _state.value.copy(isPaused = value)
+            }
+
+        var sessionsCompleted: Int
+            get() = _state.value.sessionsCompleted
+            set(value) {
+                _state.value = _state.value.copy(sessionsCompleted = value)
+            }
+
+        var subjectId: Int?
+            get() = _state.value.subjectId
+            set(value) {
+                _state.value = _state.value.copy(subjectId = value)
+            }
+
+        var courseId: Int?
+            get() = _state.value.courseId
+            set(value) {
+                _state.value = _state.value.copy(courseId = value)
+            }
+
+        var assignmentId: Int?
+            get() = _state.value.assignmentId
+            set(value) {
+                _state.value = _state.value.copy(assignmentId = value)
+            }
+
+        var taskId: Int?
+            get() = _state.value.taskId
+            set(value) {
+                _state.value = _state.value.copy(taskId = value)
+            }
+
+        fun updateState(block: (PomodoroState) -> PomodoroState) {
+            _state.value = block(_state.value)
+        }
     }
 
     private var job: Job? = null
@@ -48,10 +125,28 @@ class PomodoroService : Service() {
     private var maxPeriods = -1
     private var periodsCompleted = 0
 
+    private fun syncToState() {
+        updateState {
+            it.copy(
+                isRunning = isServiceRunning,
+                isPaused = isPaused,
+                timeLeft = timeLeft,
+                originalTime = originalTime,
+                modeString = currentMode.name,
+                sessionsCompleted = sessionsCompleted,
+                subjectId = subjectId,
+                courseId = courseId,
+                assignmentId = assignmentId,
+                taskId = taskId
+            )
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         isServiceRunning = false
         job?.cancel()
+        syncToState()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -69,6 +164,7 @@ class PomodoroService : Service() {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(2002, buildNotification(timeLeft))
             sendTick()
+            syncToState()
             return START_NOT_STICKY
         }
         
@@ -97,6 +193,7 @@ class PomodoroService : Service() {
             startForegroundService()
         }
 
+        syncToState()
         return START_NOT_STICKY
     }
     
@@ -110,6 +207,7 @@ class PomodoroService : Service() {
         timeLeft = originalTime
         isPaused = false
         currentStateStr = currentMode.name
+        syncToState()
         startTimer()
     }
 
@@ -181,6 +279,7 @@ class PomodoroService : Service() {
     private fun startTimer() {
         job?.cancel()
         job = scope.launch {
+            syncToState()
             while (timeLeft > 0) {
                 if (!isPaused) {
                     delay(1000)
@@ -191,6 +290,7 @@ class PomodoroService : Service() {
                         notificationManager.notify(2002, buildNotification(timeLeft))
                     }
                     sendTick()
+                    syncToState()
                 } else {
                     delay(100) // Sleep minimally when paused but loop
                 }
@@ -211,6 +311,31 @@ class PomodoroService : Service() {
             assignmentId?.let { finishedIntent.putExtra("assignmentId", it) }
             taskId?.let { finishedIntent.putExtra("taskId", it) }
             sendBroadcast(finishedIntent)
+            
+            val prefs = getSharedPreferences("scholar_prefs", Context.MODE_PRIVATE)
+            val autoLog = prefs.getBoolean("system_pomodoro_auto_log", true)
+            if (autoLog) {
+                scope.launch {
+                    try {
+                        val db = ovrrup.lumia.data.AppDatabase.getDatabase(applicationContext)
+                        db.scholarDao().insertPomodoroSession(
+                            ovrrup.lumia.model.PomodoroSession(
+                                dateMillis = System.currentTimeMillis(),
+                                durationMinutes = originalTime / 60,
+                                subjectId = subjectId,
+                                courseId = courseId,
+                                assignmentId = assignmentId,
+                                taskId = taskId
+                            )
+                        )
+                        db.scholarDao().insertActionLog(
+                            ovrrup.lumia.model.ActionLog(actionText = "Completed Pomodoro Session (${originalTime / 60} min)")
+                        )
+                    } catch (e: Exception) {
+                        android.util.Log.e("PomodoroService", "Failed to auto-log pomodoro session", e)
+                    }
+                }
+            }
         }
 
         // Advance Period Logic

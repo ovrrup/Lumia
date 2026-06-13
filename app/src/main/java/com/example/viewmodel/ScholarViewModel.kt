@@ -1,19 +1,19 @@
-package com.example.viewmodel
+package ovrrup.lumia.viewmodel
 
 import android.app.Application
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.AppDatabase
-import com.example.data.ScholarRepository
-import com.example.model.Course
-import com.example.model.PracticeAssignment
-import com.example.model.Subject
-import com.example.model.Topic
-import com.example.model.ActionLog
-import com.example.model.Chapter
-import com.example.model.Task
+import ovrrup.lumia.data.AppDatabase
+import ovrrup.lumia.data.ScholarRepository
+import ovrrup.lumia.model.Course
+import ovrrup.lumia.model.PracticeAssignment
+import ovrrup.lumia.model.Subject
+import ovrrup.lumia.model.Topic
+import ovrrup.lumia.model.ActionLog
+import ovrrup.lumia.model.Chapter
+import ovrrup.lumia.model.Task
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,6 +29,30 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val repository: ScholarRepository
     
     private val prefs = application.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
+
+    private val initiallyCompleted = run {
+        var completed = prefs.getBoolean("onboarding_completed", false)
+        val wasInstalledBefore = prefs.getBoolean("was_installed_before", false)
+        if (!wasInstalledBefore) {
+            val dbFile = application.getDatabasePath("scholar_sync_database")
+            val isUpdate = prefs.all.filterKeys { it != "was_installed_before" && it != "onboarding_completed" }.isNotEmpty() || dbFile.exists()
+            if (isUpdate) {
+                completed = true
+                prefs.edit().putBoolean("onboarding_completed", true).putBoolean("was_installed_before", true).apply()
+            } else {
+                prefs.edit().putBoolean("was_installed_before", true).apply()
+            }
+        }
+        completed
+    }
+
+    private val _isOnboardingCompleted = MutableStateFlow(initiallyCompleted)
+    val isOnboardingCompleted = _isOnboardingCompleted.asStateFlow()
+
+    fun completeOnboarding() {
+        _isOnboardingCompleted.value = true
+        prefs.edit().putBoolean("onboarding_completed", true).apply()
+    }
 
     private val _themeMode = MutableStateFlow(prefs.getString("theme_mode", "System") ?: "System")
     val themeMode = _themeMode.asStateFlow()
@@ -110,6 +134,27 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaFloatingNav = MutableStateFlow(prefs.getBoolean("beta_floating_nav", false))
     val betaFloatingNav = _betaFloatingNav.asStateFlow()
 
+    private val _navBarHeight = MutableStateFlow(prefs.getFloat("nav_bar_height", 80f))
+    val navBarHeight = _navBarHeight.asStateFlow()
+
+    private val _navBarPaddingHorizontal = MutableStateFlow(prefs.getFloat("nav_bar_padding_horizontal", 24f))
+    val navBarPaddingHorizontal = _navBarPaddingHorizontal.asStateFlow()
+
+    private val _navBarPaddingBottom = MutableStateFlow(prefs.getFloat("nav_bar_padding_bottom", 24f))
+    val navBarPaddingBottom = _navBarPaddingBottom.asStateFlow()
+
+    private val _navBarCornerRadius = MutableStateFlow(prefs.getFloat("nav_bar_corner_radius", 32f))
+    val navBarCornerRadius = _navBarCornerRadius.asStateFlow()
+
+    private val _navBarLabelMode = MutableStateFlow(prefs.getString("nav_bar_label_mode", "Always") ?: "Always")
+    val navBarLabelMode = _navBarLabelMode.asStateFlow()
+
+    private val _navBarGlassForceEnabled = MutableStateFlow(prefs.getBoolean("nav_bar_glass_force_enabled", false))
+    val navBarGlassForceEnabled = _navBarGlassForceEnabled.asStateFlow()
+
+    private val _navBarIndicatorAlpha = MutableStateFlow(prefs.getFloat("nav_bar_indicator_alpha", 0.15f))
+    val navBarIndicatorAlpha = _navBarIndicatorAlpha.asStateFlow()
+
     private val _betaNotes = MutableStateFlow(prefs.getBoolean("beta_notes", false))
     val betaNotes = _betaNotes.asStateFlow()
 
@@ -180,6 +225,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     private val _glassOpacityValue = MutableStateFlow(prefs.getFloat("glass_opacity_value", 0.6f))
     val glassOpacityValue = _glassOpacityValue.asStateFlow()
+
+    private val _navBarGlassOpacityValue = MutableStateFlow(0.6f)
+    val navBarGlassOpacityValue = _navBarGlassOpacityValue.asStateFlow()
 
     private val _betaEnhancedHeader = MutableStateFlow(prefs.getBoolean("beta_enhanced_header", false))
     val betaEnhancedHeader = _betaEnhancedHeader.asStateFlow()
@@ -285,9 +333,49 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _aodLockScreenSupport = MutableStateFlow(prefs.getBoolean("aod_lock_screen_support", false))
     val aodLockScreenSupport = _aodLockScreenSupport.asStateFlow()
 
+    private val _aodTrueAodEnabled = MutableStateFlow(prefs.getBoolean("aod_true_aod_enabled", false))
+    val aodTrueAodEnabled = _aodTrueAodEnabled.asStateFlow()
+
+    private val _aodTrueAodMode = MutableStateFlow(prefs.getString("aod_true_aod_mode", "overlay") ?: "overlay")
+    val aodTrueAodMode = _aodTrueAodMode.asStateFlow()
+
+    private val _aodSensitivity = MutableStateFlow(prefs.getString("aod_sensitivity", "highest") ?: "highest")
+    val aodSensitivity = _aodSensitivity.asStateFlow()
+
+    private val _aodDimnessLevel = MutableStateFlow(prefs.getFloat("aod_dimness_level", 0.95f))
+    val aodDimnessLevel = _aodDimnessLevel.asStateFlow()
+
+    private val _aodLockTimeout = MutableStateFlow(prefs.getInt("aod_lock_timeout", 30))
+    val aodLockTimeout = _aodLockTimeout.asStateFlow()
+
     fun updateAodLockScreenSupport(enabled: Boolean) {
         _aodLockScreenSupport.value = enabled
         prefs.edit().putBoolean("aod_lock_screen_support", enabled).apply()
+    }
+
+    fun updateAodTrueAodEnabled(enabled: Boolean) {
+        _aodTrueAodEnabled.value = enabled
+        prefs.edit().putBoolean("aod_true_aod_enabled", enabled).apply()
+    }
+
+    fun updateAodTrueAodMode(mode: String) {
+        _aodTrueAodMode.value = mode
+        prefs.edit().putString("aod_true_aod_mode", mode).apply()
+    }
+
+    fun updateAodSensitivity(sensitivity: String) {
+        _aodSensitivity.value = sensitivity
+        prefs.edit().putString("aod_sensitivity", sensitivity).apply()
+    }
+
+    fun updateAodDimnessLevel(level: Float) {
+        _aodDimnessLevel.value = level
+        prefs.edit().putFloat("aod_dimness_level", level).apply()
+    }
+
+    fun updateAodLockTimeout(seconds: Int) {
+        _aodLockTimeout.value = seconds
+        prefs.edit().putInt("aod_lock_timeout", seconds).apply()
     }
 
     fun updateAodTrueBlackOled(enabled: Boolean) {
@@ -396,29 +484,29 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val packageName = getApplication<Application>().packageName
 
         val aliases = listOf(
-            "com.example.DefaultAlias",
-            "com.example.AliasEmerald",
-            "com.example.AliasGold",
-            "com.example.AliasRose",
-            "com.example.AliasSage",
-            "com.example.AliasTwilight",
-            "com.example.AliasCustom",
-            "com.example.AliasDynamic"
+            "ovrrup.lumia.DefaultAlias",
+            "ovrrup.lumia.AliasEmerald",
+            "ovrrup.lumia.AliasGold",
+            "ovrrup.lumia.AliasRose",
+            "ovrrup.lumia.AliasSage",
+            "ovrrup.lumia.AliasTwilight",
+            "ovrrup.lumia.AliasCustom",
+            "ovrrup.lumia.AliasDynamic"
         )
 
         val targetAliasName = if (!enabled) {
-            "com.example.DefaultAlias"
+            "ovrrup.lumia.DefaultAlias"
         } else {
             when (themeColor) {
-                "Ocean" -> "com.example.DefaultAlias"
-                "Emerald" -> "com.example.AliasEmerald"
-                "Gold" -> "com.example.AliasGold"
-                "Rose" -> "com.example.AliasRose"
-                "Sage" -> "com.example.AliasSage"
-                "Twilight" -> "com.example.AliasTwilight"
-                "Custom" -> "com.example.AliasCustom"
-                "Dynamic" -> "com.example.AliasDynamic"
-                else -> "com.example.DefaultAlias"
+                "Ocean" -> "ovrrup.lumia.DefaultAlias"
+                "Emerald" -> "ovrrup.lumia.AliasEmerald"
+                "Gold" -> "ovrrup.lumia.AliasGold"
+                "Rose" -> "ovrrup.lumia.AliasRose"
+                "Sage" -> "ovrrup.lumia.AliasSage"
+                "Twilight" -> "ovrrup.lumia.AliasTwilight"
+                "Custom" -> "ovrrup.lumia.AliasCustom"
+                "Dynamic" -> "ovrrup.lumia.AliasDynamic"
+                else -> "ovrrup.lumia.DefaultAlias"
             }
         }
 
@@ -437,7 +525,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             try {
                 aliases.forEach { alias ->
                     val compName = android.content.ComponentName(packageName, alias)
-                    val targetSetting = if (alias == "com.example.DefaultAlias") {
+                    val targetSetting = if (alias == "ovrrup.lumia.DefaultAlias") {
                         android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                     } else {
                         android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED
@@ -554,7 +642,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         initialValue = emptyList()
     )
 
-    val pomodoroSessions: StateFlow<List<com.example.model.PomodoroSession>> = repository.allPomodoroSessions.stateIn(
+    val pomodoroSessions: StateFlow<List<ovrrup.lumia.model.PomodoroSession>> = repository.allPomodoroSessions.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
@@ -574,7 +662,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     
     fun getActiveTasksCount(): Int = tasks.value.count { !it.isCompleted }
 
-    val notes: StateFlow<List<com.example.model.Note>> = repository.allNotes.stateIn(
+    val notes: StateFlow<List<ovrrup.lumia.model.Note>> = repository.allNotes.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
@@ -621,9 +709,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    private val attendanceFlowCache = HashMap<Int, StateFlow<List<com.example.model.AttendanceRecord>>>()
+    private val attendanceFlowCache = HashMap<Int, StateFlow<List<ovrrup.lumia.model.AttendanceRecord>>>()
 
-    fun getAttendanceForCourse(courseId: Int): StateFlow<List<com.example.model.AttendanceRecord>> {
+    fun getAttendanceForCourse(courseId: Int): StateFlow<List<ovrrup.lumia.model.AttendanceRecord>> {
         return attendanceFlowCache.getOrPut(courseId) {
             repository.getAttendanceForCourse(courseId).stateIn(
                 scope = viewModelScope,
@@ -642,13 +730,13 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 set(java.util.Calendar.SECOND, 0)
                 set(java.util.Calendar.MILLISECOND, 0)
             }.timeInMillis
-            repository.insertAttendanceRecord(com.example.model.AttendanceRecord(courseId = courseId, dateMillis = normalized, status = status))
+            repository.insertAttendanceRecord(ovrrup.lumia.model.AttendanceRecord(courseId = courseId, dateMillis = normalized, status = status))
         }
     }
 
     fun addPomodoroSession(durationMinutes: Int, subjectId: Int? = null, courseId: Int? = null, assignmentId: Int? = null, taskId: Int? = null) {
         viewModelScope.launch {
-            repository.insertPomodoroSession(com.example.model.PomodoroSession(
+            repository.insertPomodoroSession(ovrrup.lumia.model.PomodoroSession(
                 dateMillis = System.currentTimeMillis(),
                 durationMinutes = durationMinutes,
                 subjectId = subjectId,
@@ -662,7 +750,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun addNote(content: String, courseId: Int? = null, subjectId: Int? = null, tag: String = "") {
         viewModelScope.launch {
-            repository.insertNote(com.example.model.Note(
+            repository.insertNote(ovrrup.lumia.model.Note(
                 content = content,
                 dateMillis = System.currentTimeMillis(),
                 courseId = courseId,
@@ -673,25 +761,25 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun updateNote(note: com.example.model.Note) {
+    fun updateNote(note: ovrrup.lumia.model.Note) {
         viewModelScope.launch {
             repository.updateNote(note)
         }
     }
 
-    fun deleteNote(note: com.example.model.Note) {
+    fun deleteNote(note: ovrrup.lumia.model.Note) {
         viewModelScope.launch {
             repository.deleteNote(note)
         }
     }
 
-    fun updateAttendanceRecord(record: com.example.model.AttendanceRecord) {
+    fun updateAttendanceRecord(record: ovrrup.lumia.model.AttendanceRecord) {
         viewModelScope.launch {
             repository.updateAttendanceRecord(record)
         }
     }
 
-    fun deleteAttendanceRecord(record: com.example.model.AttendanceRecord) {
+    fun deleteAttendanceRecord(record: ovrrup.lumia.model.AttendanceRecord) {
         viewModelScope.launch {
             repository.deleteAttendanceRecord(record)
         }
@@ -799,7 +887,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 if (task.courseId != null) links.add("Course")
                 if (task.assignmentId != null) links.add("Assignment")
                 if (task.tags.isNotBlank()) links.add("Tags: ${task.tags}")
-                com.example.util.ReminderScheduler.scheduleReminder(
+                ovrrup.lumia.util.ReminderScheduler.scheduleReminder(
                     context, newId + 20000,
                     "Task: ${task.title}",
                     task.description,
@@ -849,7 +937,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             val context = getApplication<Application>().applicationContext
             var interconnections = "Course: " + (courses.value.find { it.id == courseId }?.name ?: "Unknown")
             if (tags.isNotBlank()) interconnections += ", Tags: $tags"
-            com.example.util.ReminderScheduler.scheduleReminder(context, newId, title, desc, interconnections, dueDate)
+            ovrrup.lumia.util.ReminderScheduler.scheduleReminder(context, newId, title, desc, interconnections, dueDate)
             logAction("Added assignment: $title ($category)")
         }
     }
@@ -921,7 +1009,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     val formal = notifFormalTone.value
                     val title = if (formal) "Streak Maintained" else "Good Job Not Slacking!"
                     val msg = if (formal) "You have maintained your streak for $newStreak days." else "You actually did something today! Streak is now $newStreak."
-                    sendInstantNotification("scholar_streak_channel", 1004, title, msg, com.example.R.drawable.ic_notification_streak, android.graphics.Color.parseColor("#FF5722"))
+                    sendInstantNotification("scholar_streak_channel", 1004, title, msg, ovrrup.lumia.R.drawable.ic_notification_streak, android.graphics.Color.parseColor("#FF5722"))
                 }
             }
             diff > 1L  -> {
@@ -930,7 +1018,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     val formal = notifFormalTone.value
                     val title = if (formal) "Streak Broken" else "Whelp... You broke it."
                     val msg = if (formal) "Your last streak was broken. You are back to 1 day." else "I knew you couldn't keep it up. Back to day 1 for you."
-                    sendInstantNotification("scholar_streak_channel", 1005, title, msg, com.example.R.drawable.ic_notification_streak, android.graphics.Color.parseColor("#E91E63"))
+                    sendInstantNotification("scholar_streak_channel", 1005, title, msg, ovrrup.lumia.R.drawable.ic_notification_streak, android.graphics.Color.parseColor("#E91E63"))
                 }
             }
         }
@@ -947,7 +1035,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             }
             notificationManager.createNotificationChannel(channel)
         }
-        val intent = android.content.Intent(application, com.example.MainActivity::class.java).apply { flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK }
+        val intent = android.content.Intent(application, ovrrup.lumia.MainActivity::class.java).apply { flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK }
         val pendingIntent = android.app.PendingIntent.getActivity(application, 0, intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
 
         val notification = androidx.core.app.NotificationCompat.Builder(application, channelId)
@@ -1070,6 +1158,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                             "system_fuse_subjects_courses" -> _systemFuseSubjectsCourses.value = boolVal
                             "system_advanced_tasks" -> _systemAdvancedTasks.value = boolVal
                             "system_pomodoro_auto_log" -> _systemPomodoroAutoLog.value = boolVal
+                            "nav_bar_glass_force_enabled" -> _navBarGlassForceEnabled.value = boolVal
                         }
                     }
                 }
@@ -1236,6 +1325,41 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("beta_floating_nav", enabled).apply()
     }
 
+    fun updateNavBarHeight(height: Float) {
+        _navBarHeight.value = height
+        prefs.edit().putFloat("nav_bar_height", height).apply()
+    }
+
+    fun updateNavBarPaddingHorizontal(padding: Float) {
+        _navBarPaddingHorizontal.value = padding
+        prefs.edit().putFloat("nav_bar_padding_horizontal", padding).apply()
+    }
+
+    fun updateNavBarPaddingBottom(padding: Float) {
+        _navBarPaddingBottom.value = padding
+        prefs.edit().putFloat("nav_bar_padding_bottom", padding).apply()
+    }
+
+    fun updateNavBarCornerRadius(radius: Float) {
+        _navBarCornerRadius.value = radius
+        prefs.edit().putFloat("nav_bar_corner_radius", radius).apply()
+    }
+
+    fun updateNavBarLabelMode(mode: String) {
+        _navBarLabelMode.value = mode
+        prefs.edit().putString("nav_bar_label_mode", mode).apply()
+    }
+
+    fun updateNavBarGlassForceEnabled(enabled: Boolean) {
+        _navBarGlassForceEnabled.value = enabled
+        prefs.edit().putBoolean("nav_bar_glass_force_enabled", enabled).apply()
+    }
+
+    fun updateNavBarIndicatorAlpha(alpha: Float) {
+        _navBarIndicatorAlpha.value = alpha
+        prefs.edit().putFloat("nav_bar_indicator_alpha", alpha).apply()
+    }
+
     fun updateBetaNotes(enabled: Boolean) {
         _betaNotes.value = enabled
         prefs.edit().putBoolean("beta_notes", enabled).apply()
@@ -1265,10 +1389,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun updateBetaMinimalistMode(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaGlassUi.value || _betaDynamicBackground.value || _betaEnhancedHeader.value || _betaFloatingNav.value || _betaBetterTexts.value || _displayLayoutMode.value != "Immersive")) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaGlassUi.value || _betaDynamicBackground.value || _betaEnhancedHeader.value || _betaFloatingNav.value || _betaBetterTexts.value || _displayLayoutMode.value != "Immersive" || _appAnimationMode.value != "Minimal" || _moreRounds.value)) {
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Feature Conflict Detected",
-                description = "Activating 'Minimalist Mode' will force-disable 'Glass UI', 'Dynamic Lighting', 'Enhanced Header', 'Floating Action Bar', and 'Better Texts', locking them to reduce visual clutter. Additionally, 'Immersive Mode' will be turned ON. Proceed?",
+                description = "Activating 'Minimalist Mode' will force-disable 'Glass UI', 'Dynamic Lighting', 'Enhanced Header', 'Floating Action Bar', 'Better Texts', bouncy animations, and rounded UI components, locking them to drastically reduce visual clutter. Additionally, 'Immersive Mode' will be turned ON. Proceed?",
                 isConflict = true,
                 onConfirm = {
                     _safetyPinDialogData.value = null
@@ -1279,6 +1403,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
                     if (_betaFloatingNav.value) updateBetaFloatingNav(false)
                     if (_betaBetterTexts.value) updateBetaBetterTexts(false)
+                    if (_moreRounds.value) updateMoreRounds(false)
+                    if (_appAnimationMode.value != "Minimal") updateAppAnimationMode("Minimal")
                     if (_displayLayoutMode.value != "Immersive") updateDisplayLayoutMode("Immersive")
                 },
                 onIgnore = { _safetyPinDialogData.value = null }
@@ -1360,6 +1486,17 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateGlassOpacityValue(value: Float) {
         _glassOpacityValue.value = value
         prefs.edit().putFloat("glass_opacity_value", value).apply()
+    }
+
+    fun updateNavBarGlassOpacityValue(value: Float, alias: String, isDark: Boolean) {
+        val key = "nav_glass_opacity_${alias}_${if (isDark) "dark" else "light"}"
+        _navBarGlassOpacityValue.value = value
+        prefs.edit().putFloat(key, value).apply()
+    }
+
+    fun refreshNavBarGlassOpacity(alias: String, isDark: Boolean) {
+        val key = "nav_glass_opacity_${alias}_${if (isDark) "dark" else "light"}"
+        _navBarGlassOpacityValue.value = prefs.getFloat(key, 0.6f)
     }
 
     fun updateBetaEnhancedHeader(enabled: Boolean) {

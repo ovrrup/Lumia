@@ -1,7 +1,7 @@
-package com.example.ui.screens
+package ovrrup.lumia.ui.screens
 
-import com.example.ui.theme.liquidGlass
-import com.example.ui.theme.glassBar
+import ovrrup.lumia.ui.theme.liquidGlass
+import ovrrup.lumia.ui.theme.glassBar
 import android.app.DatePickerDialog
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
@@ -39,7 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.viewmodel.ScholarViewModel
+import ovrrup.lumia.viewmodel.ScholarViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.graphics.graphicsLayer
@@ -71,7 +71,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     var showAddTopic by remember { mutableStateOf(false) }
     val chapters by viewModel.getChaptersForSubject(subjectId).collectAsStateWithLifecycle()
     var showAddChapter by remember { mutableStateOf(false) }
-    var chapterToEdit by remember { mutableStateOf<com.example.model.Chapter?>(null) }
+    var chapterToEdit by remember { mutableStateOf<ovrrup.lumia.model.Chapter?>(null) }
 
     val allNotes by viewModel.notes.collectAsStateWithLifecycle()
     val subjectNotes = remember(allNotes, subject, linkedCourses) {
@@ -92,7 +92,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     }
 
     var showAddNoteDialog by remember { mutableStateOf(false) }
-    var noteToEdit by remember { mutableStateOf<com.example.model.Note?>(null) }
+    var noteToEdit by remember { mutableStateOf<ovrrup.lumia.model.Note?>(null) }
     var noteText by remember { mutableStateOf("") }
     var noteCustomTag by remember { mutableStateOf("Core") }
     
@@ -107,7 +107,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
-    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
@@ -163,7 +163,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
                             linkedCourses.forEach { course ->
-                                com.example.ui.components.GlassCard(
+                                ovrrup.lumia.ui.components.GlassCard(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp),
@@ -224,7 +224,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
 
                 if (subjectAssignments.isEmpty()) {
                     item {
-                        com.example.ui.components.GlassCard(
+                        ovrrup.lumia.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth().height(100.dp),
                             shape = RoundedCornerShape(24.dp)
                         ) {
@@ -242,7 +242,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         val associatedCourse = remember(courses, assignment.courseId) {
                             courses.find { it.id == assignment.courseId }
                         }
-                        com.example.ui.components.GlassCard(
+                        ovrrup.lumia.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             shape = RoundedCornerShape(20.dp)
                         ) {
@@ -323,7 +323,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
 
                 if (subjectNotes.isEmpty()) {
                     item {
-                        com.example.ui.components.GlassCard(
+                        ovrrup.lumia.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth().height(100.dp),
                             shape = RoundedCornerShape(24.dp)
                         ) {
@@ -338,7 +338,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     }
                 } else {
                     items(subjectNotes, key = { "sn_${it.id}" }) { note ->
-                        com.example.ui.components.GlassCard(
+                        ovrrup.lumia.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             shape = RoundedCornerShape(20.dp)
                         ) {
@@ -445,7 +445,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
 
                 if (chapters.isEmpty() && topics.isEmpty()) {
                     item {
-                        com.example.ui.components.GlassCard(
+                        ovrrup.lumia.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(24.dp)
                         ) {
@@ -490,7 +490,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         val progress = if (totalTopicCount > 0) completedTopicCount.toFloat() / totalTopicCount else 0f
                         
                         item(key = "chap_card_${chapter.id}") {
-                            com.example.ui.components.GlassCard(
+                            ovrrup.lumia.ui.components.GlassCard(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                                 shape = RoundedCornerShape(20.dp),
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.25f)
@@ -568,7 +568,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    com.example.ui.components.GlassCard(
+                                    ovrrup.lumia.ui.components.GlassCard(
                                         modifier = Modifier.weight(1f).padding(vertical = 4.dp).animateContentSize(),
                                         shape = RoundedCornerShape(16.dp),
                                         containerColor = cardColor
@@ -622,7 +622,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             val cardColor by androidx.compose.animation.animateColorAsState(
                                 if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface
                             )
-                            com.example.ui.components.GlassCard(
+                            ovrrup.lumia.ui.components.GlassCard(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).animateContentSize(),
                                 shape = RoundedCornerShape(16.dp),
                                 containerColor = cardColor

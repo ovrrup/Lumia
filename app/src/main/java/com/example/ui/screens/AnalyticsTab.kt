@@ -1,7 +1,7 @@
-package com.example.ui.screens
+package ovrrup.lumia.ui.screens
 
-import com.example.ui.theme.liquidGlass
-import com.example.ui.theme.glassBar
+import ovrrup.lumia.ui.theme.liquidGlass
+import ovrrup.lumia.ui.theme.glassBar
 import android.text.format.DateFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -46,7 +46,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.viewmodel.ScholarViewModel
+import ovrrup.lumia.viewmodel.ScholarViewModel
 import java.util.Date
 import androidx.compose.material3.IconButtonDefaults
 import java.util.Calendar
@@ -75,9 +75,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
     
     val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
 
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-
-    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val systemInDark = androidx.compose.foundation.isSystemInDarkTheme()
@@ -89,35 +87,9 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
 
     Scaffold(
         containerColor = Color.Transparent,
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
-        topBar = {
-            androidx.compose.foundation.layout.Box {
-                if (betaEnhancedHeader || isGlass) {
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
-                    )
-                    // Sleek divider line for clean separation and anchoring
-                    androidx.compose.material3.HorizontalDivider(
-                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                    )
-                }
-                CenterAlignedTopAppBar(
-                    title = { Text("Analytics", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
-                    scrollBehavior = scrollBehavior,
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = if (betaEnhancedHeader || isGlass) Color.Transparent else MaterialTheme.colorScheme.surface,
-                        scrolledContainerColor = if (betaEnhancedHeader || isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
-                    )
-                )
-            }
-        }
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
-        val topP = innerPadding.calculateTopPadding() + 16.dp
+        val topP = paddingValues.calculateTopPadding() + 16.dp
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
@@ -243,7 +215,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
 
             if (actionLogs.isEmpty()) {
             item {
-                com.example.ui.components.GlassCard(
+                ovrrup.lumia.ui.components.GlassCard(
                     modifier = Modifier.fillMaxWidth().height(200.dp),
                     shape = RoundedCornerShape(32.dp)
                 ) {
@@ -277,7 +249,7 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
             }
         } else {
             items(actionLogs, key = { it.id }) { log ->
-                com.example.ui.components.GlassCard(
+                ovrrup.lumia.ui.components.GlassCard(
                     modifier = Modifier.animateItem().fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp)
                 ) {
@@ -326,7 +298,7 @@ fun AssignmentsStatusDonutChart(
     primaryColor: Color,
     secondaryColor: Color
 ) {
-    com.example.ui.components.GlassCard(
+    ovrrup.lumia.ui.components.GlassCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge
     ) {
@@ -416,12 +388,12 @@ fun AssignmentsStatusDonutChart(
 @Composable
 fun AssignmentsPerCourseBarChart(
     modifier: Modifier = Modifier,
-    courses: List<com.example.model.Course>,
-    assignments: List<com.example.model.PracticeAssignment>,
+    courses: List<ovrrup.lumia.model.Course>,
+    assignments: List<ovrrup.lumia.model.PracticeAssignment>,
     backgroundColor: Color,
     barColor: Color
 ) {
-    com.example.ui.components.GlassCard(
+    ovrrup.lumia.ui.components.GlassCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge
     ) {
@@ -502,7 +474,7 @@ fun AssignmentsPerCourseBarChart(
 @Composable
 fun PomodoroHeatmapChart(
     modifier: Modifier = Modifier,
-    sessions: List<com.example.model.PomodoroSession>,
+    sessions: List<ovrrup.lumia.model.PomodoroSession>,
     backgroundColor: Color,
     primaryColor: Color
 ) {
@@ -532,7 +504,7 @@ fun PomodoroHeatmapChart(
     
     val maxDuration = dailyDurations.maxOrNull()?.takeIf { it > 0 } ?: 60 // fallback to 60 as max base
 
-    com.example.ui.components.GlassCard(
+    ovrrup.lumia.ui.components.GlassCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge
     ) {

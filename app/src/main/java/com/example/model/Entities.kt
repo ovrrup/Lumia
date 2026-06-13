@@ -1,4 +1,4 @@
-package com.example.model
+package ovrrup.lumia.model
 
 import androidx.room.Entity
 import androidx.room.ForeignKey

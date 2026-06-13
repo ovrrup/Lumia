@@ -1,9 +1,9 @@
-package com.example.util
+package ovrrup.lumia.util
 
 import android.content.Context
 import android.os.Build
 import android.util.Log
-import com.example.BuildConfig
+import ovrrup.lumia.BuildConfig
 import org.json.JSONArray
 
 object LogDog {
@@ -26,7 +26,7 @@ object LogDog {
             prefs.edit().putString("crashes", crashes.toString()).apply()
             
             // Gracefully restart and show panel
-            val intent = android.content.Intent(context, com.example.MainActivity::class.java).apply {
+            val intent = android.content.Intent(context, ovrrup.lumia.MainActivity::class.java).apply {
                 addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 putExtra("FATAL_CRASH_DATA", crashInfo)
             }
@@ -53,7 +53,10 @@ object LogDog {
         val errorMessage: String,
         val crashLocation: String,
         val appCrashLine: String?,
-        val suggestion: String
+        val suggestion: String,
+        val severityLevel: String,
+        val likelyComponent: String,
+        val isFrameworkBug: Boolean
     )
 
     fun analyzeCrash(crash: String): AnalyzedCrash {
@@ -74,12 +77,11 @@ object LogDog {
             }
         }
         
-        // Find com.example. line in stack trace
-        val appTraceLine = lines.firstOrNull { it.trim().startsWith("at ") && it.contains("com.example.") }?.trim()
+        // Find ovrrup.lumia. line in stack trace
+        val appTraceLine = lines.firstOrNull { it.trim().startsWith("at ") && it.contains("ovrrup.lumia.") }?.trim()
         val defaultTraceLine = lines.firstOrNull { it.trim().startsWith("at ") }?.trim()
         val rawLocation = appTraceLine ?: defaultTraceLine ?: ""
         
-        // Parse rawLocation: at com.example.ui.screens.CourseDetailScreenKt.CourseDetailScreen(CourseDetailScreen.kt:318)
         var parsedLocation = "Unknown Location"
         var fileAndLine = "Unknown file"
         var methodName = ""
@@ -96,41 +98,64 @@ object LogDog {
             }
         }
         
-        // Intelligent troubleshooting suggestions based on type
+        var severityLevel = "Moderate"
+        var likelyComponent = "Unknown Component"
+        var isFrameworkBug = false
+
+        if (crash.contains("androidx.compose") || crash.contains("android.view")) likelyComponent = "UI Framework"
+        else if (crash.contains("androidx.room") || crash.contains("android.database")) likelyComponent = "Local Database"
+        else if (crash.contains("androidx.navigation")) likelyComponent = "Navigation"
+        else if (crash.contains("java.lang.OutOfMemoryError")) likelyComponent = "Memory Management"
+        else if (crash.contains("retrofit2") || crash.contains("okhttp3")) likelyComponent = "Network Layer"
+        else if (crash.contains("coroutines") || crash.contains("java.lang.Thread")) likelyComponent = "Concurrency"
+
+        if (appTraceLine == null && rawLocation.isNotEmpty()) {
+            isFrameworkBug = true
+        }
+
         val suggestion = when {
             exceptionType.contains("NullPointerException") -> {
-                "🐾 Sniffing detail: Whoops, found a NullPointerException! You tried to play fetch with a stick that doesn't exist. Check variables at $fileAndLine to ensure they aren't null."
+                severityLevel = "High"
+                "🐾 Sniffing detail: Found a NullPointerException! Checked variables around $fileAndLine. Ensure you are using Kotlin's null safety (?.) and not forcing non-null (!!)."
             }
             exceptionType.contains("IllegalArgumentException") -> {
+                severityLevel = "Moderate"
                 if (errorMessage.contains("matches route", ignoreCase = true) || errorMessage.contains("navigation", ignoreCase = true)) {
-                    "🐾 Sniffing detail: Navigation route mismatch! We ran into a wall because the route ain't on the map. Check route definitions at $fileAndLine."
+                    "🐾 Sniffing detail: Navigation route mismatch! We ran into a wall. Check route definitions and arguments passed at $fileAndLine."
                 } else {
-                    "🐾 Sniffing detail: We got an IllegalArgument. I only eat premium kibble, but you gave me this! Verify input types at $fileAndLine."
+                    "🐾 Sniffing detail: Got an IllegalArgument. Verify input types and argument constraints at $fileAndLine."
                 }
             }
             exceptionType.contains("SQLiteException") || exceptionType.contains("Room") || exceptionType.contains("database", ignoreCase = true) -> {
-                "🐾 Sniffing detail: SQL Database barked back! Check if you changed the schema without a migration, or maybe a typo'd column. The data bowl is a mess."
+                severityLevel = "Critical"
+                "🐾 Sniffing detail: SQL Database conflict! Check for missing migrations, typo'd column names, or incorrect Dao syntax."
             }
             exceptionType.contains("IndexOutOfBoundsException") || exceptionType.contains("ArrayIndexOutOfBoundsException") -> {
-                "🐾 Sniffing detail: Out of bounds! We ran out of yard space. You're looking for an element past the end of the line at $fileAndLine."
+                severityLevel = "High"
+                "🐾 Sniffing detail: Out of bounds array indexing. You requested an element past the end of the collection at $fileAndLine."
             }
             exceptionType.contains("ClassCastException") -> {
-                "🐾 Sniffing detail: Class Cast Exception! You're trying to put a cat uniform on a dog. Check 'instanceof' or 'as' casts safely."
+                severityLevel = "High"
+                "🐾 Sniffing detail: Invalid Cast operation. Verify 'as' casts safely using 'as?' or check generic boundaries."
             }
             exceptionType.contains("IllegalStateException") -> {
-                "🐾 Sniffing detail: Illegal State! I'm dizzy. You activated something before the app was ready for it. Check lifecycle states or dirty components."
+                severityLevel = "High"
+                "🐾 Sniffing detail: Illegal State! A component or lifecycle method was called at an inappropriate time."
             }
             exceptionType.contains("ActivityNotFoundException") -> {
-                "🐾 Sniffing detail: Activity Not Found! That activity threw its invisibility cloak on. Did you declare it in the AndroidManifest?"
+                severityLevel = "Moderate"
+                "🐾 Sniffing detail: Intent target missing. Did you forget to declare an Activity in the AndroidManifest?"
             }
             exceptionType.contains("SecurityException") -> {
-                "🐾 Sniffing detail: Security Exception! Halt! Who goes there? We need permissions before doing this action."
+                severityLevel = "Critical"
+                "🐾 Sniffing detail: Permission denied! Declare necessary permissions in AndroidManifest and request them explicitly."
             }
             exceptionType.contains("OutOfMemoryError") -> {
-                "🐾 Sniffing detail: OUT OF MEMORY (OOM)! The bowl overfloweth! The app loaded too much data or massive bitmaps. Try downscaling."
+                severityLevel = "Critical"
+                "🐾 Sniffing detail: OUT OF MEMORY (OOM)! The heap overflowed. Check for memory leaks, massive bitmaps, or endless loops."
             }
             else -> {
-                "🐾 Sniffing detail: Standard exception glitch. It happens even to the goodest boys. Pinpoint your investigation around $fileAndLine!"
+                "🐾 Sniffing detail: An undetermined exception occurred. Pinpoint your investigation around $fileAndLine!"
             }
         }
         
@@ -139,7 +164,10 @@ object LogDog {
             errorMessage = errorMessage,
             crashLocation = parsedLocation,
             appCrashLine = appTraceLine,
-            suggestion = suggestion
+            suggestion = suggestion,
+            severityLevel = severityLevel,
+            likelyComponent = likelyComponent,
+            isFrameworkBug = isFrameworkBug
         )
     }
 

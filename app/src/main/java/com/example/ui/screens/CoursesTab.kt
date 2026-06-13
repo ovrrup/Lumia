@@ -1,4 +1,4 @@
-package com.example.ui.screens
+package ovrrup.lumia.ui.screens
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -14,8 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import com.example.ui.theme.glassBar
-import com.example.ui.theme.bouncyScale
+import ovrrup.lumia.ui.theme.glassBar
+import ovrrup.lumia.ui.theme.bouncyScale
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -23,9 +23,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.model.Course
-import com.example.ui.components.GlassCard
-import com.example.viewmodel.ScholarViewModel
+import ovrrup.lumia.model.Course
+import ovrrup.lumia.ui.components.GlassCard
+import ovrrup.lumia.viewmodel.ScholarViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,36 +36,16 @@ fun CoursesTab(
     onEditCourse: (Course) -> Unit,
     onAddCourseClick: () -> Unit
 ) {
-    var courseToEdit by remember { mutableStateOf<com.example.model.Course?>(null) }
+    var courseToEdit by remember { mutableStateOf<ovrrup.lumia.model.Course?>(null) }
     val courses by viewModel.courses.collectAsStateWithLifecycle()
-    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            androidx.compose.foundation.layout.Box {
-                if (betaEnhancedHeader || isGlass) {
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
-                    )
-                }
-                CenterAlignedTopAppBar(
-                    title = { Text("Your Courses", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
-                    scrollBehavior = scrollBehavior,
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface.copy(alpha=0.5f)
-                    )
-                )
-            }
-        },
         floatingActionButton = {
             val src = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-            androidx.compose.material3.FloatingActionButton(
+            ovrrup.lumia.ui.components.BouncyFloatingActionButton(
                 onClick = onAddCourseClick,
                 interactionSource = src,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -80,7 +60,7 @@ fun CoursesTab(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 16.dp, end = 16.dp, 
-                top = padding.calculateTopPadding() + 16.dp, bottom = bottomPadding.calculateBottomPadding() + 80.dp
+                top = bottomPadding.calculateTopPadding() + 16.dp, bottom = bottomPadding.calculateBottomPadding() + 16.dp
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

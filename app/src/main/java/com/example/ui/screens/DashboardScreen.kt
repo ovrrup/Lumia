@@ -1,8 +1,9 @@
-package com.example.ui.screens
+package ovrrup.lumia.ui.screens
 
-import com.example.ui.theme.liquidGlass
-import com.example.ui.theme.glassBar
-import com.example.ui.theme.glassPill
+import ovrrup.lumia.ui.theme.liquidGlass
+import ovrrup.lumia.ui.theme.glassBar
+import ovrrup.lumia.ui.theme.navGlassBar
+import ovrrup.lumia.ui.theme.glassPill
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -13,7 +14,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-                            import com.example.ui.theme.bouncyClick
+                            import ovrrup.lumia.ui.theme.bouncyClick
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -78,6 +79,7 @@ import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -89,10 +91,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.R
-import com.example.viewmodel.ScholarViewModel
-import com.example.ui.components.GlassCard
-import com.example.ui.components.GlassHeroCard
+import ovrrup.lumia.R
+import ovrrup.lumia.viewmodel.ScholarViewModel
+import ovrrup.lumia.ui.components.GlassCard
+import ovrrup.lumia.ui.components.GlassHeroCard
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -107,72 +109,136 @@ import androidx.compose.foundation.border
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
-    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
     var selectedTab by remember { mutableStateOf(0) }
     val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
+    val navBarHeight by viewModel.navBarHeight.collectAsStateWithLifecycle()
+    val navBarPaddingHorizontal by viewModel.navBarPaddingHorizontal.collectAsStateWithLifecycle()
+    val navBarPaddingBottom by viewModel.navBarPaddingBottom.collectAsStateWithLifecycle()
+    val navBarCornerRadius by viewModel.navBarCornerRadius.collectAsStateWithLifecycle()
+    val navBarLabelMode by viewModel.navBarLabelMode.collectAsStateWithLifecycle()
+    val navBarGlassForceEnabled by viewModel.navBarGlassForceEnabled.collectAsStateWithLifecycle()
+    val navBarIndicatorAlpha by viewModel.navBarIndicatorAlpha.collectAsStateWithLifecycle()
     val fuseSubjectsCourses by viewModel.systemFuseSubjectsCourses.collectAsStateWithLifecycle()
     
     var showAddCourseDialog by remember { mutableStateOf(false) }
     var showAddSubjectDialog by remember { mutableStateOf(false) }
 
+    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
             containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            topBar = {
+                val titleText = when (selectedTab) {
+                    0 -> stringResource(id = R.string.app_name)
+                    1 -> "Your Courses"
+                    2 -> "Your Subjects"
+                    3 -> "Self Study & Tasks"
+                    else -> "Analytics"
+                }
+                androidx.compose.foundation.layout.Box {
+                    if (betaEnhancedHeader || isGlass) {
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
+                        )
+                        // Sleek divider line for clean separation and anchoring
+                        androidx.compose.material3.HorizontalDivider(
+                            modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        )
+                    }
+                    CenterAlignedTopAppBar(
+                        title = { Text(titleText, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                        actions = {
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .padding(end = 16.dp)
+                                    .size(44.dp)
+                                    .shadow(elevation = 8.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                                    .clip(CircleShape)
+                                    .bouncyClick(
+                                        onClick = { navController.navigate("settings") }
+                                    ),
+                                contentAlignment = androidx.compose.ui.Alignment.Center
+                            ) {
+                                Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
+                            }
+                        },
+                        scrollBehavior = scrollBehavior,
+                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                            containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                            scrolledContainerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp).copy(alpha = 0.5f)
+                        )
+                    )
+                }
+            },
             bottomBar = {
                 if (!betaFloatingNav) {
+                    val useGlass = isGlass || navBarGlassForceEnabled
                     val navItemColors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.primary,
                         selectedTextColor = MaterialTheme.colorScheme.primary,
                         unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                         unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
-                        indicatorColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = navBarIndicatorAlpha)
                     )
                     NavigationBar(
-                        modifier = if (isGlass) Modifier.glassBar() else Modifier,
-                        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                        modifier = Modifier
+                            .height(navBarHeight.dp)
+                            .then(if (useGlass) Modifier.navGlassBar(androidx.compose.foundation.shape.RoundedCornerShape(topStart = navBarCornerRadius.dp, topEnd = navBarCornerRadius.dp)) else Modifier),
+                        containerColor = if (useGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
                     ) {
+                        val labelModeAlways = navBarLabelMode == "Always"
+                        val hideLabels = navBarLabelMode == "Hidden"
+                        
                         NavigationBarItem(
                             icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
-                            label = { Text("Home") },
+                            label = if (hideLabels) null else { { Text("Home") } },
                             selected = selectedTab == 0,
                             onClick = { selectedTab = 0 },
                             colors = navItemColors,
-                            alwaysShowLabel = true
+                            alwaysShowLabel = labelModeAlways
                         )
                         NavigationBarItem(
                             icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
-                            label = { Text("Courses") },
+                            label = if (hideLabels) null else { { Text("Courses") } },
                             selected = selectedTab == 1,
                             onClick = { selectedTab = 1 },
                             colors = navItemColors,
-                            alwaysShowLabel = true
+                            alwaysShowLabel = labelModeAlways
                         )
                         if (!fuseSubjectsCourses) {
                             NavigationBarItem(
                                 icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
-                                label = { Text("Subjects") },
+                                label = if (hideLabels) null else { { Text("Subjects") } },
                                 selected = selectedTab == 2,
                                 onClick = { selectedTab = 2 },
                                 colors = navItemColors,
-                                alwaysShowLabel = true
+                                alwaysShowLabel = labelModeAlways
                             )
                         }
                         NavigationBarItem(
                             icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Self Study") },
-                            label = { Text("Self Study") },
+                            label = if (hideLabels) null else { { Text("Self Study") } },
                             selected = selectedTab == 3,
                             onClick = { selectedTab = 3 },
                             colors = navItemColors,
-                            alwaysShowLabel = true
+                            alwaysShowLabel = labelModeAlways
                         )
                         NavigationBarItem(
                             icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
-                            label = { Text("Analytics") },
+                            label = if (hideLabels) null else { { Text("Analytics") } },
                             selected = selectedTab == 4,
                             onClick = { selectedTab = 4 },
                             colors = navItemColors,
-                            alwaysShowLabel = true
+                            alwaysShowLabel = labelModeAlways
                         )
                     }
                 }
@@ -181,19 +247,25 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             val extendedPadding = if (betaFloatingNav) {
                 PaddingValues(
                     start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-                    top = padding.calculateTopPadding(),
+                    top = 0.dp,
                     end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-                    bottom = padding.calculateBottomPadding() + 112.dp
+                    bottom = padding.calculateBottomPadding() + navBarHeight.dp + navBarPaddingBottom.dp + 16.dp
                 )
             } else {
-                padding
+                PaddingValues(
+                    start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+                    top = 0.dp,
+                    end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+                    bottom = padding.calculateBottomPadding()
+                )
             }
             androidx.compose.foundation.layout.Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = padding.calculateBottomPadding())
+                    .padding(top = padding.calculateTopPadding())
+                    .clipToBounds()
             ) {
-                val appAnimationMode = com.example.ui.theme.LocalAppAnimationMode.current
+                val appAnimationMode = ovrrup.lumia.ui.theme.LocalAppAnimationMode.current
                 androidx.compose.animation.AnimatedContent(
                     targetState = selectedTab,
                     transitionSpec = {
@@ -252,73 +324,81 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
         }
 
         if (betaFloatingNav) {
+            val useGlass = isGlass || navBarGlassForceEnabled
             androidx.compose.material3.Surface(
                 modifier = Modifier
                     .align(androidx.compose.ui.Alignment.BottomCenter)
-                    .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
+                    .padding(
+                        start = navBarPaddingHorizontal.dp,
+                        end = navBarPaddingHorizontal.dp,
+                        bottom = navBarPaddingBottom.dp
+                    )
                     .windowInsetsPadding(WindowInsets.navigationBars)
-                    .then(if (isGlass) Modifier.glassPill(androidx.compose.foundation.shape.RoundedCornerShape(32.dp)) else Modifier),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
-                color = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
-                contentColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
-                shadowElevation = if (isGlass) 0.dp else 8.dp,
-                tonalElevation = if (isGlass) 0.dp else 4.dp
+                    .then(if (useGlass) Modifier.glassPill(androidx.compose.foundation.shape.RoundedCornerShape(navBarCornerRadius.dp)) else Modifier),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(navBarCornerRadius.dp),
+                color = if (useGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
+                contentColor = if (useGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
+                shadowElevation = if (useGlass) 0.dp else 8.dp,
+                tonalElevation = if (useGlass) 0.dp else 4.dp
             ) {
                 val navItemColors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
-                    selectedTextColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
-                    unselectedIconColor = if (isGlass) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.70f),
-                    unselectedTextColor = if (isGlass) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
-                    indicatorColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f)
+                    selectedIconColor = if (useGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
+                    selectedTextColor = if (useGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
+                    unselectedIconColor = if (useGlass) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.70f),
+                    unselectedTextColor = if (useGlass) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
+                    indicatorColor = if (useGlass) MaterialTheme.colorScheme.primary.copy(alpha = navBarIndicatorAlpha) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = navBarIndicatorAlpha)
                 )
                 NavigationBar(
-                    modifier = Modifier.fillMaxWidth().height(80.dp),
+                    modifier = Modifier.fillMaxWidth().height(navBarHeight.dp),
                     containerColor = androidx.compose.ui.graphics.Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     tonalElevation = 0.dp,
                     windowInsets = WindowInsets(0, 0, 0, 0)
                 ) {
+                    val labelModeAlways = navBarLabelMode == "Always"
+                    val hideLabels = navBarLabelMode == "Hidden"
+
                     NavigationBarItem(
                         icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
-                        label = { Text("Home") },
+                        label = if (hideLabels) null else { { Text("Home") } },
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
                         colors = navItemColors,
-                        alwaysShowLabel = true
+                        alwaysShowLabel = labelModeAlways
                     )
                     NavigationBarItem(
                         icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
-                        label = { Text("Courses") },
+                        label = if (hideLabels) null else { { Text("Courses") } },
                         selected = selectedTab == 1,
                         onClick = { selectedTab = 1 },
                         colors = navItemColors,
-                        alwaysShowLabel = true
+                        alwaysShowLabel = labelModeAlways
                     )
                     if (!fuseSubjectsCourses) {
                         NavigationBarItem(
                             icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
-                            label = { Text("Subjects") },
+                            label = if (hideLabels) null else { { Text("Subjects") } },
                             selected = selectedTab == 2,
                             onClick = { selectedTab = 2 },
                             colors = navItemColors,
-                            alwaysShowLabel = true
+                            alwaysShowLabel = labelModeAlways
                         )
                     }
                     NavigationBarItem(
                         icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Self Study") },
-                        label = { Text("Self Study") },
+                        label = if (hideLabels) null else { { Text("Self Study") } },
                         selected = selectedTab == 3,
                         onClick = { selectedTab = 3 },
                         colors = navItemColors,
-                        alwaysShowLabel = true
+                        alwaysShowLabel = labelModeAlways
                     )
                     NavigationBarItem(
                         icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
-                        label = { Text("Analytics") },
+                        label = if (hideLabels) null else { { Text("Analytics") } },
                         selected = selectedTab == 4,
                         onClick = { selectedTab = 4 },
                         colors = navItemColors,
-                        alwaysShowLabel = true
+                        alwaysShowLabel = labelModeAlways
                     )
                 }
             }
@@ -504,7 +584,7 @@ fun HomeTab(
     onNavigateToTasks: () -> Unit
 ) {
     val courses by viewModel.courses.collectAsStateWithLifecycle()
-    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
     val streak by viewModel.currentStreak.collectAsStateWithLifecycle()
@@ -512,8 +592,8 @@ fun HomeTab(
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    var courseToEdit by remember { mutableStateOf<com.example.model.Course?>(null) }
-    var subjectToEdit by remember { mutableStateOf<com.example.model.Subject?>(null) }
+    var courseToEdit by remember { mutableStateOf<ovrrup.lumia.model.Course?>(null) }
+    var subjectToEdit by remember { mutableStateOf<ovrrup.lumia.model.Subject?>(null) }
 
     // Notifications Permission
     val requestPermissionLauncher = rememberLauncherForActivityResult(
@@ -526,52 +606,9 @@ fun HomeTab(
 
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            androidx.compose.foundation.layout.Box {
-                if (betaEnhancedHeader || isGlass) {
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
-                    )
-                    // Sleek divider line for clean separation and anchoring
-                    androidx.compose.material3.HorizontalDivider(
-                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                    )
-                }
-                CenterAlignedTopAppBar(
-                    title = { Text(stringResource(id = R.string.app_name), fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 16.dp)) },
-                    actions = {
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier
-                                .padding(end = 16.dp)
-                                .size(44.dp)
-                                .shadow(elevation = 8.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
-                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                                .clip(CircleShape)
-                                .bouncyClick(
-                                    onClick = { navController.navigate("settings") }
-                                ),
-                            contentAlignment = androidx.compose.ui.Alignment.Center
-                        ) {
-                            Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
-                        }
-                    },
-                    scrollBehavior = scrollBehavior,
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface.copy(alpha=0.5f),
-                        scrolledContainerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp).copy(alpha=0.5f)
-                    )
-                )
-            }
-        },
         floatingActionButton = {}
     ) { padding ->
         LazyColumn(
@@ -579,14 +616,14 @@ fun HomeTab(
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
-                top = padding.calculateTopPadding() + 16.dp,
+                top = bottomPadding.calculateTopPadding() + 16.dp,
                 bottom = bottomPadding.calculateBottomPadding() + 32.dp
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                com.example.ui.components.NotificationPermissionPanel()
-                com.example.ui.components.ExactAlarmPermissionPanel()
+                ovrrup.lumia.ui.components.NotificationPermissionPanel()
+                ovrrup.lumia.ui.components.ExactAlarmPermissionPanel()
             }
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {

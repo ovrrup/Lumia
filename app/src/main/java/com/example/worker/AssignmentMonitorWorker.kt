@@ -1,4 +1,4 @@
-package com.example.worker
+package ovrrup.lumia.worker
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -10,9 +10,9 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.MainActivity
-import com.example.data.AppDatabase
-import com.example.model.PracticeAssignment
+import ovrrup.lumia.MainActivity
+import ovrrup.lumia.data.AppDatabase
+import ovrrup.lumia.model.PracticeAssignment
 import java.util.concurrent.TimeUnit
 
 class AssignmentMonitorWorker(
@@ -61,7 +61,7 @@ class AssignmentMonitorWorker(
             if (enableClasses) {
                 val title = if (formalTone) "Daily Attendance Tracker" else "Class Attendance Reminder!"
                 val desc = if (formalTone) "Please ensure your attendance is updated for all courses today." else "Skipped any classes today? Go update your attendance board before I tell your parents!"
-                sendNotification("scholar_monitor_channel", 1003, title, desc, com.example.R.drawable.ic_notification_scholar, android.graphics.Color.parseColor("#3F51B5"))
+                sendNotification("scholar_monitor_channel", 1003, title, desc, ovrrup.lumia.R.drawable.ic_notification_scholar, android.graphics.Color.parseColor("#3F51B5"))
             }
             
             return Result.success()
@@ -86,7 +86,7 @@ class AssignmentMonitorWorker(
                         // At risk of breaking the streak tomorrow if not continued
                         val title = if (formalTone) "Maintain Your Streak" else "Don't Break the Streak!"
                         val msg = if (formalTone) "Your current streak is $currentStreak days. Study today to keep it going." else "You've survived $currentStreak days! Don't be lazy today to ruin it!"
-                        sendNotification("scholar_streak_channel", 1002, title, msg, com.example.R.drawable.ic_notification_streak, android.graphics.Color.parseColor("#FF5722"))
+                        sendNotification("scholar_streak_channel", 1002, title, msg, ovrrup.lumia.R.drawable.ic_notification_streak, android.graphics.Color.parseColor("#FF5722"))
                     }
                 }
             } catch (e: Exception) { }
@@ -118,7 +118,7 @@ class AssignmentMonitorWorker(
         notificationManager.notify(notifId, notification)
     }
 
-    private fun showDigestNotification(assignments: List<PracticeAssignment>, tasks: List<com.example.model.Task>, formalTone: Boolean) {
+    private fun showDigestNotification(assignments: List<PracticeAssignment>, tasks: List<ovrrup.lumia.model.Task>, formalTone: Boolean) {
         val assignmentCount = assignments.size
         val taskCount = tasks.size
         val totalCount = assignmentCount + taskCount
@@ -176,7 +176,7 @@ class AssignmentMonitorWorker(
         }
 
         val notification = NotificationCompat.Builder(context, "scholar_monitor_channel")
-            .setSmallIcon(com.example.R.drawable.ic_notification_scholar)
+            .setSmallIcon(ovrrup.lumia.R.drawable.ic_notification_scholar)
             .setContentTitle(title)
             .setContentText(desc)
             .setStyle(inboxStyle)

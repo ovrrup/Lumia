@@ -1,4 +1,4 @@
-package com.example.ui.screens
+package ovrrup.lumia.ui.screens
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
@@ -59,7 +59,7 @@ fun QuickNotesScreen(navController: NavController) {
     var showAddDialog by remember { mutableStateOf(false) }
     var newNoteText by remember { mutableStateOf("") }
 
-    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
@@ -95,7 +95,7 @@ fun QuickNotesScreen(navController: NavController) {
                 }
             }
             itemsIndexed(notesList) { index, note ->
-                com.example.ui.components.GlassCard(
+                ovrrup.lumia.ui.components.GlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
                 ) {

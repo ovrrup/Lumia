@@ -1,4 +1,4 @@
-package com.example.ui.theme
+package ovrrup.lumia.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -159,6 +159,7 @@ val LocalGlassDynamic = androidx.compose.runtime.compositionLocalOf { true }
 val LocalFrostGlass = androidx.compose.runtime.compositionLocalOf { true }
 val LocalGlassBackdropStyle = androidx.compose.runtime.compositionLocalOf { "Translucent" }
 val LocalGlassOpacityValue = androidx.compose.runtime.compositionLocalOf { 0.6f }
+val LocalNavBarGlassOpacityValue = androidx.compose.runtime.compositionLocalOf { 0.6f }
 val LocalAppAnimationMode = androidx.compose.runtime.compositionLocalOf { "Normal" }
 val LocalMoreRounds = androidx.compose.runtime.compositionLocalOf { false }
 
@@ -177,6 +178,7 @@ fun ScholarTheme(
     frostGlass: Boolean = true,
     glassBackdropStyle: String = "Translucent",
     glassOpacityValue: Float = 0.6f,
+    navBarGlassOpacityValue: Float = 0.6f,
     betterTexts: Boolean = false,
     betterTextsPalette: Boolean = true,
     appAnimationMode: String = "Normal",
@@ -368,6 +370,7 @@ fun ScholarTheme(
         LocalFrostGlass provides frostGlass,
         LocalGlassBackdropStyle provides glassBackdropStyle,
         LocalGlassOpacityValue provides glassOpacityValue,
+        LocalNavBarGlassOpacityValue provides navBarGlassOpacityValue,
         LocalAppAnimationMode provides appAnimationMode,
         LocalMoreRounds provides moreRounds
     ) {
@@ -394,9 +397,9 @@ fun Modifier.bouncyScale(interactionSource: androidx.compose.foundation.interact
     
     val targetScale = if (isPressed) {
         when (animationMode) {
-            "Bouncy" -> 0.85f
-            "Dynamic" -> 0.92f
-            else -> 0.96f
+            "Bouncy" -> 1.15f
+            "Dynamic" -> 1.08f
+            else -> 1.02f
         }
     } else 1f
 
@@ -426,9 +429,9 @@ fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Mod
     
     val targetScale = if (isPressed) {
         when (animationMode) {
-            "Bouncy" -> 0.85f
-            "Dynamic" -> 0.92f
-            else -> 0.96f
+            "Bouncy" -> 1.15f
+            "Dynamic" -> 1.08f
+            else -> 1.02f
         }
     } else 1f
 

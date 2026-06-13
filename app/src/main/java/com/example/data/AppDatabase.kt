@@ -1,19 +1,19 @@
-package com.example.data
+package ovrrup.lumia.data
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.model.AttendanceRecord
-import com.example.model.Course
-import com.example.model.PracticeAssignment
-import com.example.model.Subject
-import com.example.model.Topic
-import com.example.model.ActionLog
-import com.example.model.PomodoroSession
-import com.example.model.Note
-import com.example.model.Chapter
-import com.example.model.Task
+import ovrrup.lumia.model.AttendanceRecord
+import ovrrup.lumia.model.Course
+import ovrrup.lumia.model.PracticeAssignment
+import ovrrup.lumia.model.Subject
+import ovrrup.lumia.model.Topic
+import ovrrup.lumia.model.ActionLog
+import ovrrup.lumia.model.PomodoroSession
+import ovrrup.lumia.model.Note
+import ovrrup.lumia.model.Chapter
+import ovrrup.lumia.model.Task
 
 @Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class, AttendanceRecord::class, PomodoroSession::class, Note::class, Chapter::class, Task::class], version = 15, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {

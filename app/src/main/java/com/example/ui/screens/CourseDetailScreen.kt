@@ -1,14 +1,14 @@
-package com.example.ui.screens
+package ovrrup.lumia.ui.screens
 
-import com.example.ui.theme.liquidGlass
-import com.example.ui.theme.glassBar
+import ovrrup.lumia.ui.theme.liquidGlass
+import ovrrup.lumia.ui.theme.glassBar
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import com.example.ui.theme.bouncyClick
+import ovrrup.lumia.ui.theme.bouncyClick
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
@@ -42,7 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.viewmodel.ScholarViewModel
+import ovrrup.lumia.viewmodel.ScholarViewModel
 
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -152,7 +152,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         }
     }
     var showLinkSubjectDialog by remember { mutableStateOf(false) }
-    var assignmentToEdit by remember { mutableStateOf<com.example.model.PracticeAssignment?>(null) }
+    var assignmentToEdit by remember { mutableStateOf<ovrrup.lumia.model.PracticeAssignment?>(null) }
 
     val allNotes by viewModel.notes.collectAsStateWithLifecycle()
 
@@ -177,7 +177,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     }
 
     var showAddNoteDialog by remember { mutableStateOf(false) }
-    var noteToEdit by remember { mutableStateOf<com.example.model.Note?>(null) }
+    var noteToEdit by remember { mutableStateOf<ovrrup.lumia.model.Note?>(null) }
     var noteText by remember { mutableStateOf("") }
     var noteCustomTag by remember { mutableStateOf("Core") }
 
@@ -190,7 +190,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     
-    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
@@ -237,7 +237,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             ) {
                 if (course.instructor.isNotBlank() || course.schedule.isNotBlank() || course.description.isNotBlank()) {
                     item {
-                        com.example.ui.components.GlassCard(
+                        ovrrup.lumia.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(32.dp)
                         ) {
@@ -261,7 +261,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 // Interconnected Study Subject & Synergy Score Section
                 if (linkedSubject != null) {
                     item {
-                        com.example.ui.components.GlassCard(
+                        ovrrup.lumia.ui.components.GlassCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -373,7 +373,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                 } else if (fuseSubjectsCourses) {
                     item {
-                        com.example.ui.components.GlassCard(
+                        ovrrup.lumia.ui.components.GlassCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -399,7 +399,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     var isMonthlyView by remember { mutableStateOf(false) }
                     var displayMonthOffset by remember { mutableIntStateOf(0) }
 
-                    com.example.ui.components.GlassCard(
+                    ovrrup.lumia.ui.components.GlassCard(
                         modifier = Modifier.fillMaxWidth().animateContentSize(),
                         shape = RoundedCornerShape(32.dp)
                     ) {
@@ -690,7 +690,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
                 if (courseNotes.isEmpty()) {
                     item {
-                        com.example.ui.components.GlassCard(
+                        ovrrup.lumia.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth().height(100.dp),
                             shape = RoundedCornerShape(24.dp)
                         ) {
@@ -705,7 +705,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                 } else {
                     items(courseNotes, key = { "cn_${it.id}" }) { note ->
-                        com.example.ui.components.GlassCard(
+                        ovrrup.lumia.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             shape = RoundedCornerShape(20.dp)
                         ) {
@@ -807,7 +807,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
                             modifier = Modifier.animateItem()
                         ) {
-                            com.example.ui.components.GlassCard(
+                            ovrrup.lumia.ui.components.GlassCard(
                                 modifier = Modifier.fillMaxWidth().height(200.dp),
                                 shape = RoundedCornerShape(32.dp)
                             ) {
@@ -846,7 +846,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             val cardColor by androidx.compose.animation.animateColorAsState(
                                 if (assignment.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
                             )
-                            com.example.ui.components.GlassCard(
+                            ovrrup.lumia.ui.components.GlassCard(
                                 modifier = Modifier.detectReorderAfterLongPress(reorderableState).animateItem().fillMaxWidth().animateContentSize(),
                                 shape = RoundedCornerShape(24.dp),
                                 containerColor = cardColor
@@ -966,7 +966,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                     items(localTasks, key = { "task_${it.id}" }) { task ->
                         ReorderableItem(reorderableState, key = "task_${task.id}") { isDragging ->
-                            com.example.ui.components.GlassCard(
+                            ovrrup.lumia.ui.components.GlassCard(
                                 modifier = Modifier.detectReorderAfterLongPress(reorderableState).animateItem().fillMaxWidth().animateContentSize()
                                     .graphicsLayer {
                                         shadowElevation = if (isDragging) 16f else 0f

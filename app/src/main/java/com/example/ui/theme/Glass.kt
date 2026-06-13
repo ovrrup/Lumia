@@ -1,4 +1,4 @@
-package com.example.ui.theme
+package ovrrup.lumia.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.background
@@ -26,27 +26,36 @@ fun Modifier.liquidGlass(
     tintAlpha: Float = 0.15f,
     blurRadius: Float = 40f, // Kept for backwards compatibility
     isDark: Boolean = false, // Kept for backwards compatibility
-    borderColor: Color = Color.White // Kept for backwards compatibility
+    borderColor: Color = Color.White, // Kept for backwards compatibility
+    opacityOverride: Float? = null
 ): Modifier = composed {
     val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
     val surfaceColor = MaterialTheme.colorScheme.surface
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     
     val backdropStyle = LocalGlassBackdropStyle.current
-    val opacitySetting = LocalGlassOpacityValue.current
+    val opacitySetting = opacityOverride ?: LocalGlassOpacityValue.current
     
     val baseAlpha1 = if (isDarkTheme) (0.50f + (tintAlpha * 0.12f)) else (0.76f + (tintAlpha * 0.15f))
     val baseAlpha2 = if (isDarkTheme) (0.30f + (tintAlpha * 0.08f)) else (0.52f + (tintAlpha * 0.10f))
 
-    val finalAlpha1 = when (backdropStyle) {
-        "Opaque" -> 1.0f
-        "Transparent" -> 0.01f
-        else -> baseAlpha1 * opacitySetting
+    val finalAlpha1 = if (opacityOverride != null) {
+        baseAlpha1 * opacitySetting
+    } else {
+        when (backdropStyle) {
+            "Opaque" -> 1.0f
+            "Transparent" -> 0.01f
+            else -> baseAlpha1 * opacitySetting
+        }
     }
-    val finalAlpha2 = when (backdropStyle) {
-        "Opaque" -> 1.0f
-        "Transparent" -> 0.00f
-        else -> baseAlpha2 * opacitySetting
+    val finalAlpha2 = if (opacityOverride != null) {
+        baseAlpha2 * opacitySetting
+    } else {
+        when (backdropStyle) {
+            "Opaque" -> 1.0f
+            "Transparent" -> 0.00f
+            else -> baseAlpha2 * opacitySetting
+        }
     }
 
     val backColor1 = if (backdropStyle == "Opaque") {
@@ -135,13 +144,11 @@ fun Modifier.glassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = compo
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
     val dynamic = LocalGlassDynamic.current
     val tint = LocalGlassTint.current
-    
     val tintColor = if (dynamic) {
         if (isDark) tint.mix(Color.Black, 0.10f) else tint.mix(Color.White, 0.15f)
     } else {
         if (isDark) Color.Black else Color.White
     }
-    
     liquidGlass(
         shape = shape,
         tintAlpha = if (isDark) 0.20f else 0.30f,
@@ -150,10 +157,30 @@ fun Modifier.glassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = compo
     )
 }
 
+fun Modifier.navGlassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = composed {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
+    val dynamic = LocalGlassDynamic.current
+    val tint = LocalGlassTint.current
+    val customOpacity = LocalNavBarGlassOpacityValue.current
+    val tintColor = if (dynamic) {
+        if (isDark) tint.mix(Color.Black, 0.10f) else tint.mix(Color.White, 0.15f)
+    } else {
+        if (isDark) Color.Black else Color.White
+    }
+    liquidGlass(
+        shape = shape,
+        tintAlpha = if (isDark) 0.20f else 0.30f,
+        isDark = isDark,
+        tintColor = tintColor,
+        opacityOverride = customOpacity
+    )
+}
+
 fun Modifier.glassPill(shape: Shape = RoundedCornerShape(50.dp)): Modifier = composed {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
     val dynamic = LocalGlassDynamic.current
     val tint = LocalGlassTint.current
+    val customOpacity = LocalNavBarGlassOpacityValue.current
     
     val tintColor = if (dynamic) {
         if (isDark) tint.mix(Color.Black, 0.12f) else tint.mix(Color.White, 0.20f)
@@ -165,6 +192,7 @@ fun Modifier.glassPill(shape: Shape = RoundedCornerShape(50.dp)): Modifier = com
         shape = shape,
         tintAlpha = if (isDark) 0.18f else 0.25f,
         isDark = isDark,
-        tintColor = tintColor
+        tintColor = tintColor,
+        opacityOverride = customOpacity
     )
 }

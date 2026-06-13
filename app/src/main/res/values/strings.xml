@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Lumia</string>
+    <string name="accessibility_service_desc">Provides True Always-On Display overlays and secure lock screen fallback functionality for focused study.</string>
 </resources>

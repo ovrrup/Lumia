@@ -1,4 +1,4 @@
-package com.example
+package ovrrup.lumia
 
 import org.junit.Assert.*
 import org.junit.Test

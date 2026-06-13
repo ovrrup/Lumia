@@ -1,4 +1,4 @@
-package com.example.data
+package ovrrup.lumia.data
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -6,13 +6,13 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.example.model.Course
-import com.example.model.PracticeAssignment
-import com.example.model.Subject
-import com.example.model.Topic
-import com.example.model.ActionLog
-import com.example.model.Chapter
-import com.example.model.Task
+import ovrrup.lumia.model.Course
+import ovrrup.lumia.model.PracticeAssignment
+import ovrrup.lumia.model.Subject
+import ovrrup.lumia.model.Topic
+import ovrrup.lumia.model.ActionLog
+import ovrrup.lumia.model.Chapter
+import ovrrup.lumia.model.Task
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -48,7 +48,7 @@ interface ScholarDao {
     fun getTopicsForSubject(subjectId: Int): Flow<List<Topic>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTopic(topic: Topic)
+    suspend fun insertTopic(topic: Topic): Long
 
     @Update
     suspend fun updateTopic(topic: Topic)
@@ -73,19 +73,19 @@ interface ScholarDao {
     suspend fun deleteAssignment(assignment: PracticeAssignment)
 
     @Query("SELECT * FROM attendance_records WHERE courseId = :courseId ORDER BY dateMillis DESC")
-    fun getAttendanceForCourse(courseId: Int): Flow<List<com.example.model.AttendanceRecord>>
+    fun getAttendanceForCourse(courseId: Int): Flow<List<ovrrup.lumia.model.AttendanceRecord>>
     
     @Query("SELECT * FROM attendance_records ORDER BY dateMillis DESC")
-    fun getAllAttendanceRecords(): Flow<List<com.example.model.AttendanceRecord>>
+    fun getAllAttendanceRecords(): Flow<List<ovrrup.lumia.model.AttendanceRecord>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAttendanceRecord(record: com.example.model.AttendanceRecord)
+    suspend fun insertAttendanceRecord(record: ovrrup.lumia.model.AttendanceRecord)
 
     @Update
-    suspend fun updateAttendanceRecord(record: com.example.model.AttendanceRecord)
+    suspend fun updateAttendanceRecord(record: ovrrup.lumia.model.AttendanceRecord)
 
     @Delete
-    suspend fun deleteAttendanceRecord(record: com.example.model.AttendanceRecord)
+    suspend fun deleteAttendanceRecord(record: ovrrup.lumia.model.AttendanceRecord)
     
     @Query("SELECT * FROM action_logs ORDER BY timestampMillis DESC")
     fun getAllActionLogs(): Flow<List<ActionLog>>
@@ -97,10 +97,10 @@ interface ScholarDao {
     suspend fun clearActionLogs()
     
     @Query("SELECT * FROM pomodoro_sessions ORDER BY dateMillis DESC")
-    fun getAllPomodoroSessions(): Flow<List<com.example.model.PomodoroSession>>
+    fun getAllPomodoroSessions(): Flow<List<ovrrup.lumia.model.PomodoroSession>>
 
     @Insert
-    suspend fun insertPomodoroSession(session: com.example.model.PomodoroSession)
+    suspend fun insertPomodoroSession(session: ovrrup.lumia.model.PomodoroSession)
 
     // For Backup / Restore
     @Query("SELECT * FROM courses")
@@ -116,16 +116,16 @@ interface ScholarDao {
     suspend fun exportAllAssignments(): List<PracticeAssignment>
 
     @Query("SELECT * FROM attendance_records")
-    suspend fun exportAllAttendance(): List<com.example.model.AttendanceRecord>
+    suspend fun exportAllAttendance(): List<ovrrup.lumia.model.AttendanceRecord>
 
     @Query("SELECT * FROM pomodoro_sessions")
-    suspend fun exportAllPomodoro(): List<com.example.model.PomodoroSession>
+    suspend fun exportAllPomodoro(): List<ovrrup.lumia.model.PomodoroSession>
 
     @Query("SELECT * FROM action_logs")
     suspend fun exportAllActionLogs(): List<ActionLog>
 
     @Query("SELECT * FROM notes")
-    suspend fun exportAllNotes(): List<com.example.model.Note>
+    suspend fun exportAllNotes(): List<ovrrup.lumia.model.Note>
     
     @Query("DELETE FROM courses") suspend fun clearCourses()
     @Query("DELETE FROM subjects") suspend fun clearSubjects()
@@ -136,16 +136,16 @@ interface ScholarDao {
     @Query("DELETE FROM notes") suspend fun clearNotes()
 
     @Query("SELECT * FROM notes ORDER BY dateMillis DESC")
-    fun getAllNotes(): Flow<List<com.example.model.Note>>
+    fun getAllNotes(): Flow<List<ovrrup.lumia.model.Note>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertNote(note: com.example.model.Note): Long
+    suspend fun insertNote(note: ovrrup.lumia.model.Note): Long
 
     @Update
-    suspend fun updateNote(note: com.example.model.Note)
+    suspend fun updateNote(note: ovrrup.lumia.model.Note)
 
     @Delete
-    suspend fun deleteNote(note: com.example.model.Note)
+    suspend fun deleteNote(note: ovrrup.lumia.model.Note)
 
     @Query("SELECT * FROM chapters WHERE subjectId = :subjectId ORDER BY id ASC")
     fun getChaptersForSubject(subjectId: Int): Flow<List<Chapter>>

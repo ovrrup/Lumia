@@ -1,4 +1,4 @@
-package com.example.util
+package ovrrup.lumia.util
 
 import android.app.AlarmManager
 import android.app.NotificationChannel
@@ -10,8 +10,8 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.example.MainActivity
-import com.example.data.AppDatabase
+import ovrrup.lumia.MainActivity
+import ovrrup.lumia.data.AppDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -114,7 +114,7 @@ class ReminderReceiver : BroadcastReceiver() {
             .setSummaryText("Deadline Alert")
 
         val notification = NotificationCompat.Builder(context, "scholar_sync_channel")
-            .setSmallIcon(com.example.R.drawable.ic_notification_deadline)
+            .setSmallIcon(ovrrup.lumia.R.drawable.ic_notification_deadline)
             .setContentTitle(finalTitle)
             .setContentText(finalDesc)
             .setStyle(bigTextStyle)

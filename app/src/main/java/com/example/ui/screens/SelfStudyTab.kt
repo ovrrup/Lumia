@@ -1,4 +1,4 @@
-package com.example.ui.screens
+package ovrrup.lumia.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,14 +16,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
-import com.example.ui.theme.bouncyScale
+import ovrrup.lumia.ui.theme.bouncyScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.model.Task
-import com.example.ui.components.GlassCard
-import com.example.ui.theme.glassBar
-import com.example.viewmodel.ScholarViewModel
+import ovrrup.lumia.model.Task
+import ovrrup.lumia.ui.components.GlassCard
+import ovrrup.lumia.ui.theme.glassBar
+import ovrrup.lumia.viewmodel.ScholarViewModel
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 import org.burnoutcrew.reorderable.ReorderableItem
@@ -40,8 +40,7 @@ fun SelfStudyTab(
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val advancedTasks by viewModel.systemAdvancedTasks.collectAsStateWithLifecycle()
-    val isGlass = com.example.ui.theme.LocalGlassMode.current
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
 
     var showAddTaskDialog by remember { mutableStateOf(false) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
@@ -73,28 +72,9 @@ fun SelfStudyTab(
 
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            androidx.compose.foundation.layout.Box {
-                if (betaEnhancedHeader || isGlass) {
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
-                    )
-                }
-                CenterAlignedTopAppBar(
-                    title = { Text("Self Study & Tasks", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
-                    scrollBehavior = scrollBehavior,
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface.copy(alpha=0.5f)
-                    )
-                )
-            }
-        },
         floatingActionButton = {
             val src = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-            androidx.compose.material3.FloatingActionButton(
+            ovrrup.lumia.ui.components.BouncyFloatingActionButton(
                 onClick = { showAddTaskDialog = true },
                 interactionSource = src,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -110,13 +90,13 @@ fun SelfStudyTab(
             modifier = Modifier.fillMaxSize().reorderable(reorderableState),
             contentPadding = PaddingValues(
                 start = 16.dp, end = 16.dp, 
-                top = padding.calculateTopPadding() + 16.dp, bottom = bottomPadding.calculateBottomPadding() + 80.dp
+                top = bottomPadding.calculateTopPadding() + 16.dp, bottom = bottomPadding.calculateBottomPadding() + 16.dp
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                com.example.ui.components.NotificationPermissionPanel()
-                com.example.ui.components.ExactAlarmPermissionPanel()
+                ovrrup.lumia.ui.components.NotificationPermissionPanel()
+                ovrrup.lumia.ui.components.ExactAlarmPermissionPanel()
             }
             item {
                 Text("Overview", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)

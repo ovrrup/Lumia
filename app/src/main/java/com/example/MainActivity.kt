@@ -1,4 +1,4 @@
-package com.example
+package ovrrup.lumia
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -45,13 +45,13 @@ import androidx.navigation.navArgument
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.example.ui.screens.CourseDetailScreen
-import com.example.ui.screens.DashboardScreen
-import com.example.ui.screens.SettingsScreen
-import com.example.ui.screens.SubjectDetailScreen
-import com.example.ui.theme.ScholarTheme
-import com.example.viewmodel.ScholarViewModel
-import com.example.worker.AssignmentMonitorWorker
+import ovrrup.lumia.ui.screens.CourseDetailScreen
+import ovrrup.lumia.ui.screens.DashboardScreen
+import ovrrup.lumia.ui.screens.SettingsScreen
+import ovrrup.lumia.ui.screens.SubjectDetailScreen
+import ovrrup.lumia.ui.theme.ScholarTheme
+import ovrrup.lumia.viewmodel.ScholarViewModel
+import ovrrup.lumia.worker.AssignmentMonitorWorker
 import java.util.concurrent.TimeUnit
 
 import androidx.compose.material.icons.Icons
@@ -72,30 +72,7 @@ class MainActivity : ComponentActivity() {
             intent.removeExtra("FATAL_CRASH_DATA")
         }
 
-        com.example.util.LogDog.setup(applicationContext)
-        
-        val pomodoroReceiver = object : android.content.BroadcastReceiver() {
-            override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
-                if (intent?.action == "PomodoroLogSession") {
-                    val wasWork = intent.getBooleanExtra("isWork", true)
-                    val originalTime = intent.getIntExtra("originalTime", 25 * 60)
-                    val sId = if (intent.hasExtra("subjectId")) intent.getIntExtra("subjectId", -1).takeIf { it != -1 } else null
-                    val cId = if (intent.hasExtra("courseId")) intent.getIntExtra("courseId", -1).takeIf { it != -1 } else null
-                    val aId = if (intent.hasExtra("assignmentId")) intent.getIntExtra("assignmentId", -1).takeIf { it != -1 } else null
-                    val tId = if (intent.hasExtra("taskId")) intent.getIntExtra("taskId", -1).takeIf { it != -1 } else null
-
-                    if (wasWork && viewModel.systemPomodoroAutoLog.value) {
-                        viewModel.addPomodoroSession(originalTime / 60, sId, cId, aId, tId)
-                    }
-                }
-            }
-        }
-        val filterOptions = android.content.IntentFilter("PomodoroLogSession")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(pomodoroReceiver, filterOptions, android.content.Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            registerReceiver(pomodoroReceiver, filterOptions)
-        }
+        ovrrup.lumia.util.LogDog.setup(applicationContext)
         
         try {
             val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(1, TimeUnit.DAYS)
@@ -134,6 +111,15 @@ class MainActivity : ComponentActivity() {
             val customBackground by viewModel.customBackground.collectAsStateWithLifecycle()
             val customSurface by viewModel.customSurface.collectAsStateWithLifecycle()
             val customText by viewModel.customText.collectAsStateWithLifecycle()
+            val isOnboardingCompleted by viewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
+
+            val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val effectiveDark = themeMode == "Dark" || (themeMode == "System" && isSystemDark)
+
+            val navBarGlassOpacityValue by viewModel.navBarGlassOpacityValue.collectAsStateWithLifecycle()
+            androidx.compose.runtime.LaunchedEffect(effectiveDark, themeColor) {
+                viewModel.refreshNavBarGlassOpacity(themeColor, effectiveDark)
+            }
 
             androidx.compose.runtime.LaunchedEffect(displayLayoutMode) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -157,6 +143,7 @@ class MainActivity : ComponentActivity() {
                 frostGlass = betaFrostGlass,
                 glassBackdropStyle = glassBackdropStyle,
                 glassOpacityValue = glassOpacityValue,
+                navBarGlassOpacityValue = navBarGlassOpacityValue,
                 betterTexts = betaBetterTexts,
                 betterTextsPalette = betaBetterTextsPalette,
                 appAnimationMode = appAnimationMode,
@@ -251,7 +238,7 @@ class MainActivity : ComponentActivity() {
 
                         NavHost(
                             navController = navController, 
-                            startDestination = "dashboard",
+                            startDestination = if (isOnboardingCompleted) "dashboard" else "onboarding",
                             modifier = Modifier.then(
                                 if (displayLayoutMode == "Immersive") Modifier.windowInsetsPadding(
                                     androidx.compose.foundation.layout.WindowInsets.safeDrawing.only(
@@ -304,6 +291,9 @@ class MainActivity : ComponentActivity() {
                             androidx.compose.animation.scaleOut(targetScale = if (appAnimationMode == "Bouncy") 0.8f else 0.95f, animationSpec = spec)
                         }
                     ) {
+                        composable("onboarding") {
+                            ovrrup.lumia.ui.screens.OnboardingScreen(navController = navController, viewModel = viewModel)
+                        }
                         composable("dashboard") {
                             DashboardScreen(
                                 navController = navController,
@@ -311,10 +301,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("pomodoro") {
-                            com.example.ui.screens.PomodoroScreen(navController = navController, viewModel = viewModel)
+                            ovrrup.lumia.ui.screens.PomodoroScreen(navController = navController, viewModel = viewModel)
                         }
                         composable("notes") {
-                            com.example.ui.screens.QuickNotesScreen(navController = navController)
+                            ovrrup.lumia.ui.screens.QuickNotesScreen(navController = navController)
                         }
                         composable(
                             "courseDetail/{id}",
@@ -337,43 +327,49 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("settings/appearance") {
-                            com.example.ui.screens.AppearanceScreen(
+                            ovrrup.lumia.ui.screens.AppearanceScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )
                         }
                         composable("settings/advanced_theme") {
-                            com.example.ui.screens.AdvancedThemeScreen(
+                            ovrrup.lumia.ui.screens.AdvancedThemeScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )
                         }
                         composable("settings/beta") {
-                            com.example.ui.screens.BetaFeaturesScreen(
+                            ovrrup.lumia.ui.screens.BetaFeaturesScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )
                         }
                         composable("settings/safety") {
-                            com.example.ui.screens.SafetyFeaturesScreen(
+                            ovrrup.lumia.ui.screens.SafetyFeaturesScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )
                         }
                         composable("settings/data") {
-                            com.example.ui.screens.DataManagementScreen(
+                            ovrrup.lumia.ui.screens.DataManagementScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )
                         }
                         composable("settings/system") {
-                            com.example.ui.screens.SystemSettingsScreen(
+                            ovrrup.lumia.ui.screens.SystemSettingsScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )
                         }
                         composable("settings/notifications") {
-                            com.example.ui.screens.NotificationsScreen(
+                            ovrrup.lumia.ui.screens.NotificationsScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable("settings/about") {
+                            ovrrup.lumia.ui.screens.AboutAppScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )
@@ -382,7 +378,7 @@ class MainActivity : ComponentActivity() {
                     
                     val crashDataState by _crashData.collectAsStateWithLifecycle()
                     if (crashDataState != null) {
-                        val parsed = remember(crashDataState) { com.example.util.LogDog.analyzeCrash(crashDataState ?: "") }
+                        val parsed = remember(crashDataState) { ovrrup.lumia.util.LogDog.analyzeCrash(crashDataState ?: "") }
                         androidx.compose.material3.AlertDialog(
                             onDismissRequest = { _crashData.value = null },
                             title = { 

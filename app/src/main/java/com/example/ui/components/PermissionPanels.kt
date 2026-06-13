@@ -1,4 +1,4 @@
-package com.example.ui.components
+package ovrrup.lumia.ui.components
 
 import android.Manifest
 import android.app.AlarmManager

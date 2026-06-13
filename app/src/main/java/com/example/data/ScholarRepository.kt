@@ -1,13 +1,13 @@
-package com.example.data
+package ovrrup.lumia.data
 
-import com.example.model.Course
-import com.example.model.PracticeAssignment
-import com.example.model.ScholarBackup
-import com.example.model.Subject
-import com.example.model.Topic
-import com.example.model.ActionLog
-import com.example.model.Chapter
-import com.example.model.Task
+import ovrrup.lumia.model.Course
+import ovrrup.lumia.model.PracticeAssignment
+import ovrrup.lumia.model.ScholarBackup
+import ovrrup.lumia.model.Subject
+import ovrrup.lumia.model.Topic
+import ovrrup.lumia.model.ActionLog
+import ovrrup.lumia.model.Chapter
+import ovrrup.lumia.model.Task
 import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
 import java.io.ObjectInputStream
@@ -20,8 +20,8 @@ class ScholarRepository(private val dao: ScholarDao) {
     val allSubjects: Flow<List<Subject>> = dao.getAllSubjects()
     val allAssignments: Flow<List<PracticeAssignment>> = dao.getAllAssignments()
     val allActionLogs: Flow<List<ActionLog>> = dao.getAllActionLogs()
-    val allPomodoroSessions: Flow<List<com.example.model.PomodoroSession>> = dao.getAllPomodoroSessions()
-    val allNotes: Flow<List<com.example.model.Note>> = dao.getAllNotes()
+    val allPomodoroSessions: Flow<List<ovrrup.lumia.model.PomodoroSession>> = dao.getAllPomodoroSessions()
+    val allNotes: Flow<List<ovrrup.lumia.model.Note>> = dao.getAllNotes()
     val allTasks: Flow<List<Task>> = dao.getAllTasks()
 
     fun getTopicsForSubject(subjectId: Int) = dao.getTopicsForSubject(subjectId)
@@ -56,17 +56,17 @@ class ScholarRepository(private val dao: ScholarDao) {
     
     fun getAttendanceForCourse(courseId: Int) = dao.getAttendanceForCourse(courseId)
     val allAttendanceRecords = dao.getAllAttendanceRecords()
-    suspend fun insertAttendanceRecord(record: com.example.model.AttendanceRecord) = dao.insertAttendanceRecord(record)
-    suspend fun updateAttendanceRecord(record: com.example.model.AttendanceRecord) = dao.updateAttendanceRecord(record)
-    suspend fun deleteAttendanceRecord(record: com.example.model.AttendanceRecord) = dao.deleteAttendanceRecord(record)
+    suspend fun insertAttendanceRecord(record: ovrrup.lumia.model.AttendanceRecord) = dao.insertAttendanceRecord(record)
+    suspend fun updateAttendanceRecord(record: ovrrup.lumia.model.AttendanceRecord) = dao.updateAttendanceRecord(record)
+    suspend fun deleteAttendanceRecord(record: ovrrup.lumia.model.AttendanceRecord) = dao.deleteAttendanceRecord(record)
     
     suspend fun insertActionLog(log: ActionLog) = dao.insertActionLog(log)
     suspend fun clearActionLogs() = dao.clearActionLogs()
-    suspend fun insertPomodoroSession(session: com.example.model.PomodoroSession) = dao.insertPomodoroSession(session)
+    suspend fun insertPomodoroSession(session: ovrrup.lumia.model.PomodoroSession) = dao.insertPomodoroSession(session)
     
-    suspend fun insertNote(note: com.example.model.Note) = dao.insertNote(note)
-    suspend fun updateNote(note: com.example.model.Note) = dao.updateNote(note)
-    suspend fun deleteNote(note: com.example.model.Note) = dao.deleteNote(note)
+    suspend fun insertNote(note: ovrrup.lumia.model.Note) = dao.insertNote(note)
+    suspend fun updateNote(note: ovrrup.lumia.model.Note) = dao.updateNote(note)
+    suspend fun deleteNote(note: ovrrup.lumia.model.Note) = dao.deleteNote(note)
 
     suspend fun clearAllData() {
         dao.clearCourses()
@@ -153,43 +153,7 @@ class ScholarRepository(private val dao: ScholarDao) {
             oldToNewCourseId[oldId] = newId
         }
 
-        // 4. Insert Topics with remapped Subject IDs to satisfy foreign keys
-        backup.topics.forEach { topic ->
-            val newSubjectId = oldToNewSubjectId[topic.subjectId] ?: topic.subjectId
-            dao.insertTopic(topic.copy(id = 0, subjectId = newSubjectId))
-        }
-
-        // 5. Insert Assignments with remapped Course IDs to satisfy foreign keys
-        backup.assignments.forEach { assignment ->
-            val newCourseId = oldToNewCourseId[assignment.courseId] ?: assignment.courseId
-            dao.insertAssignment(assignment.copy(id = 0, courseId = newCourseId))
-        }
-
-        // 6. Insert Attendance Records with remapped Course IDs to satisfy foreign keys
-        backup.attendance?.forEach { record ->
-            val newCourseId = oldToNewCourseId[record.courseId] ?: record.courseId
-            dao.insertAttendanceRecord(record.copy(id = 0, courseId = newCourseId))
-        }
-
-        // 7. Insert Pomodoro Sessions with remapped Subject IDs
-        backup.pomodoro?.forEach { session ->
-            val newSubjectId = session.subjectId?.let { oldToNewSubjectId[it] } ?: session.subjectId
-            dao.insertPomodoroSession(session.copy(id = 0, subjectId = newSubjectId))
-        }
-
-        // 8. Insert Action Logs
-        backup.actionLogs?.forEach { log ->
-            dao.insertActionLog(log.copy(id = 0))
-        }
-
-        // 9. Insert Notes with mapped Course/Subject IDs
-        backup.notes?.forEach { note ->
-            val newCourseId = note.courseId?.let { oldToNewCourseId[it] } ?: note.courseId
-            val newSubjectId = note.subjectId?.let { oldToNewSubjectId[it] } ?: note.subjectId
-            dao.insertNote(note.copy(id = 0, courseId = newCourseId, subjectId = newSubjectId))
-        }
-
-        // 10. Insert Chapters
+        // 4. Insert Chapters with mapped Subject IDs
         val oldToNewChapterId = mutableMapOf<Int, Int>()
         backup.chapters?.forEach { chapter ->
             val oldId = chapter.id
@@ -198,12 +162,64 @@ class ScholarRepository(private val dao: ScholarDao) {
             oldToNewChapterId[oldId] = newId
         }
 
-        // 11. Insert Tasks
+        // 5. Insert Topics with remapped Subject IDs and Chapter IDs
+        val oldToNewTopicId = mutableMapOf<Int, Int>()
+        backup.topics.forEach { topic ->
+            val oldId = topic.id
+            val newSubjectId = oldToNewSubjectId[topic.subjectId] ?: topic.subjectId
+            val newChapterId = topic.chapterId?.let { oldToNewChapterId[it] } ?: topic.chapterId
+            val newId = dao.insertTopic(topic.copy(id = 0, subjectId = newSubjectId, chapterId = newChapterId)).toInt()
+            oldToNewTopicId[oldId] = newId
+        }
+
+        // 6. Insert Assignments with remapped Course IDs
+        val oldToNewAssignmentId = mutableMapOf<Int, Int>()
+        backup.assignments.forEach { assignment ->
+            val oldId = assignment.id
+            val newCourseId = oldToNewCourseId[assignment.courseId] ?: assignment.courseId
+            val newSubjectId = assignment.subjectId?.let { oldToNewSubjectId[it] } ?: assignment.subjectId
+            val newId = dao.insertAssignment(assignment.copy(id = 0, courseId = newCourseId, subjectId = newSubjectId)).toInt()
+            oldToNewAssignmentId[oldId] = newId
+        }
+
+        // 7. Insert Tasks with remapped dependencies
+        val oldToNewTaskId = mutableMapOf<Int, Int>()
         backup.tasks?.forEach { task ->
+            val oldId = task.id
             val newSubjectId = task.subjectId?.let { oldToNewSubjectId[it] } ?: task.subjectId
             val newChapterId = task.chapterId?.let { oldToNewChapterId[it] } ?: task.chapterId
+            val newTopicId = task.topicId?.let { oldToNewTopicId[it] } ?: task.topicId
             val newCourseId = task.courseId?.let { oldToNewCourseId[it] } ?: task.courseId
-            dao.insertTask(task.copy(id = 0, subjectId = newSubjectId, chapterId = newChapterId, courseId = newCourseId))
+            val newAssignmentId = task.assignmentId?.let { oldToNewAssignmentId[it] } ?: task.assignmentId
+            val newId = dao.insertTask(task.copy(id = 0, subjectId = newSubjectId, chapterId = newChapterId, topicId = newTopicId, courseId = newCourseId, assignmentId = newAssignmentId)).toInt()
+            oldToNewTaskId[oldId] = newId
+        }
+
+        // 8. Insert Pomodoro Sessions with remapped IDs
+        backup.pomodoro?.forEach { session ->
+            val newSubjectId = session.subjectId?.let { oldToNewSubjectId[it] } ?: session.subjectId
+            val newCourseId = session.courseId?.let { oldToNewCourseId[it] } ?: session.courseId
+            val newAssignmentId = session.assignmentId?.let { oldToNewAssignmentId[it] } ?: session.assignmentId
+            val newTaskId = session.taskId?.let { oldToNewTaskId[it] } ?: session.taskId
+            dao.insertPomodoroSession(session.copy(id = 0, subjectId = newSubjectId, courseId = newCourseId, assignmentId = newAssignmentId, taskId = newTaskId))
+        }
+
+        // 9. Insert Attendance Records with remapped Course IDs
+        backup.attendance?.forEach { record ->
+            val newCourseId = oldToNewCourseId[record.courseId] ?: record.courseId
+            dao.insertAttendanceRecord(record.copy(id = 0, courseId = newCourseId))
+        }
+
+        // 10. Insert Action Logs
+        backup.actionLogs?.forEach { log ->
+            dao.insertActionLog(log.copy(id = 0))
+        }
+
+        // 11. Insert Notes with mapped Course/Subject IDs
+        backup.notes?.forEach { note ->
+            val newCourseId = note.courseId?.let { oldToNewCourseId[it] } ?: note.courseId
+            val newSubjectId = note.subjectId?.let { oldToNewSubjectId[it] } ?: note.subjectId
+            dao.insertNote(note.copy(id = 0, courseId = newCourseId, subjectId = newSubjectId))
         }
 
         return backup.settings

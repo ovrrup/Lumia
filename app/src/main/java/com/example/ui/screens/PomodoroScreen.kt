@@ -1,4 +1,4 @@
-package com.example.ui.screens
+package ovrrup.lumia.ui.screens
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.NightlightRound
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material3.*
@@ -39,11 +40,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.rounded.ArrowDropDown
-import com.example.model.PracticeAssignment
+import ovrrup.lumia.model.PracticeAssignment
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmodel.ScholarViewModel) {
+fun PomodoroScreen(navController: NavController, viewModel: ovrrup.lumia.viewmodel.ScholarViewModel) {
     var timeLeft by remember { mutableStateOf(25 * 60) }
     var isRunning by remember { mutableStateOf(false) }
     var isAodMode by remember { mutableStateOf(false) }
@@ -63,6 +64,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
     var isPaused by remember { mutableStateOf(false) }
     var sessionsCompleted by remember { mutableStateOf(0) }
     var modeString by remember { mutableStateOf("WORK") }
+    var isExitButtonShown by remember { mutableStateOf(false) }
 
     val systemPomodoroAutoLog by viewModel.systemPomodoroAutoLog.collectAsStateWithLifecycle()
     val workDuration by viewModel.pomodoroWorkDuration.collectAsStateWithLifecycle()
@@ -73,41 +75,32 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
     
     var totalTime by remember { mutableStateOf(workDuration * 60) }
 
-    DisposableEffect(context) {
-        val receiver = object : android.content.BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: android.content.Intent?) {
-                when (intent?.action) {
-                    "PomodoroTick" -> {
-                        isRunning = true // active service
-                        timeLeft = intent.getIntExtra("timeLeft", 0)
-                        totalTime = intent.getIntExtra("originalTime", 25 * 60)
-                        modeString = intent.getStringExtra("mode") ?: "WORK"
-                        isPaused = intent.getBooleanExtra("isPaused", false)
-                        sessionsCompleted = intent.getIntExtra("sessionsCompleted", 0)
-                    }
-                }
-            }
-        }
-        val filter = android.content.IntentFilter().apply {
-            addAction("PomodoroTick")
-        }
-        androidx.core.content.ContextCompat.registerReceiver(context, receiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
-        
-        // Sync initial state if running
-        if (com.example.service.PomodoroService.isServiceRunning) {
+    val serviceState by ovrrup.lumia.service.PomodoroService.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(serviceState, workDuration) {
+        if (serviceState.isRunning) {
             isRunning = true
-            modeString = com.example.service.PomodoroService.currentStateStr
+            timeLeft = serviceState.timeLeft
+            totalTime = serviceState.originalTime
+            modeString = serviceState.modeString
+            isPaused = serviceState.isPaused
+            sessionsCompleted = serviceState.sessionsCompleted
+            selectedSubjectId = serviceState.subjectId
+            selectedCourseId = serviceState.courseId
+            selectedAssignmentId = serviceState.assignmentId
+            selectedTaskId = serviceState.taskId
         } else {
+            isRunning = false
             timeLeft = workDuration * 60
             totalTime = workDuration * 60
-        }
-
-        onDispose {
-            context.unregisterReceiver(receiver)
+            isPaused = false
+            sessionsCompleted = 0
+            modeString = "WORK"
+            isExitButtonShown = false
         }
     }
 
-    val isGlass = com.example.ui.theme.LocalGlassMode.current
+    val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
     val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle(emptyList())
 
     val aodTrueBlackOled by viewModel.aodTrueBlackOled.collectAsStateWithLifecycle()
@@ -117,6 +110,12 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
     val isDynamicBg by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
     val isGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
     val aodLockScreenSupport by viewModel.aodLockScreenSupport.collectAsStateWithLifecycle()
+
+    val aodTrueAodEnabled by viewModel.aodTrueAodEnabled.collectAsStateWithLifecycle()
+    val aodTrueAodMode by viewModel.aodTrueAodMode.collectAsStateWithLifecycle()
+    val aodSensitivity by viewModel.aodSensitivity.collectAsStateWithLifecycle()
+    val aodDimnessLevel by viewModel.aodDimnessLevel.collectAsStateWithLifecycle()
+    val aodLockTimeout by viewModel.aodLockTimeout.collectAsStateWithLifecycle()
 
     val isTrueBlack = remember(aodTrueBlackOled, aodAutoDeactivateTrueBlack, themeMode, isDynamicBg, isGlassUi) {
         aodTrueBlackOled && !(aodAutoDeactivateTrueBlack && (themeMode == "Light" || isDynamicBg || isGlassUi))
@@ -153,7 +152,40 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
         }
     }
 
-    if (isAodMode) {
+    LaunchedEffect(isAodMode, aodTrueAodEnabled, aodTrueAodMode, aodDimnessLevel, aodSensitivity, aodLockTimeout) {
+        if (isAodMode && aodTrueAodEnabled) {
+            val hasPerm = if (aodTrueAodMode == "overlay") {
+                android.provider.Settings.canDrawOverlays(context)
+            } else {
+                ovrrup.lumia.service.AodAccessibilityService.isServiceEnabled(context)
+            }
+            if (hasPerm) {
+                ovrrup.lumia.util.TrueAodManager.showAodOverlay(
+                    context = context,
+                    useAccessibility = (aodTrueAodMode == "accessibility"),
+                    dimnessLevel = aodDimnessLevel,
+                    sensitivity = aodSensitivity,
+                    lockTimeoutSeconds = if (aodTrueAodMode == "accessibility") aodLockTimeout else 0,
+                    onExit = {
+                        isAodMode = false
+                    }
+                )
+            } else {
+                android.widget.Toast.makeText(context, "Permission for True AOD not granted. Falling back to in-app AOD.", android.widget.Toast.LENGTH_LONG).show()
+            }
+        } else {
+            ovrrup.lumia.util.TrueAodManager.dismissAodOverlay()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            ovrrup.lumia.util.TrueAodManager.dismissAodOverlay()
+        }
+    }
+
+    val isTrueAodActive = isAodMode && aodTrueAodEnabled && (if (aodTrueAodMode == "overlay") android.provider.Settings.canDrawOverlays(context) else ovrrup.lumia.service.AodAccessibilityService.isServiceEnabled(context))
+    if (isAodMode && !isTrueAodActive) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -243,8 +275,8 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    com.example.ui.components.NotificationPermissionPanel()
-                    com.example.ui.components.ExactAlarmPermissionPanel()
+                    ovrrup.lumia.ui.components.NotificationPermissionPanel()
+                    ovrrup.lumia.ui.components.ExactAlarmPermissionPanel()
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -337,100 +369,176 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                     var lastClickTime by remember { mutableStateOf(0L) }
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        FloatingActionButton(
-                            onClick = { 
-                                val now = System.currentTimeMillis()
-                                if (isRunning) {
-                                    if (isPaused && now - lastClickTime < 500) {
-                                        // Double tap to exit when paused
-                                        isRunning = false
-                                        val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" }
-                                        context.startService(intent)
-                                    } else {
-                                        val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "PAUSE_RESUME" }
-                                        context.startService(intent)
-                                        lastClickTime = now
-                                    }
-                                } else {
-                                    isRunning = true
-                                    val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply {
-                                        action = "START"
-                                        putExtra("workDuration", workDuration * 60)
-                                        putExtra("shortBreakDuration", shortBreakDuration * 60)
-                                        putExtra("longBreakDuration", longBreakDuration * 60)
-                                        putExtra("periodSessions", periodSessions)
-                                        putExtra("maxPeriods", if (enablePeriodTarget) 1 else -1) // Simplified maxPeriods
-                                        selectedSubjectId?.let { putExtra("subjectId", it) }
-                                        selectedCourseId?.let { putExtra("courseId", it) }
-                                        selectedAssignmentId?.let { putExtra("assignmentId", it) }
-                                        selectedTaskId?.let { putExtra("taskId", it) }
-                                    }
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        context.startForegroundService(intent)
-                                    } else {
-                                        context.startService(intent)
-                                    }
-                                }
-                            },
-                            containerColor = if (isRunning && !isPaused) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(72.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isRunning && !isPaused) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                                contentDescription = "Play/Pause",
-                                modifier = Modifier.size(36.dp)
-                            )
-                        }
-                        
-                        // Skip Button
-                        if (isRunning) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             FloatingActionButton(
                                 onClick = { 
-                                    val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "SKIP" }
-                                    context.startService(intent)
+                                    val now = System.currentTimeMillis()
+                                    if (isRunning) {
+                                        if (isExitButtonShown) {
+                                            // Exit and Save study progress safely!
+                                            val studiedSeconds = totalTime - timeLeft
+                                            val studiedMinutes = if (studiedSeconds > 0) {
+                                                Math.max(1, (studiedSeconds + 30) / 60)
+                                            } else {
+                                                0
+                                            }
+                                            if (studiedMinutes > 0 && modeString == "WORK") {
+                                                viewModel.addPomodoroSession(
+                                                    durationMinutes = studiedMinutes,
+                                                    subjectId = selectedSubjectId,
+                                                    courseId = selectedCourseId,
+                                                    assignmentId = selectedAssignmentId,
+                                                    taskId = selectedTaskId
+                                                )
+                                                android.widget.Toast.makeText(context, "Saved session: $studiedMinutes min of focused study!", android.widget.Toast.LENGTH_LONG).show()
+                                            } else if (studiedMinutes == 0 && modeString == "WORK") {
+                                                android.widget.Toast.makeText(context, "Session too brief to log to history.", android.widget.Toast.LENGTH_SHORT).show()
+                                            }
+                                            isRunning = false
+                                            isExitButtonShown = false
+                                            val intent = android.content.Intent(context, ovrrup.lumia.service.PomodoroService::class.java).apply { action = "STOP" }
+                                            context.startService(intent)
+                                            timeLeft = workDuration * 60
+                                            totalTime = workDuration * 60
+                                        } else {
+                                            if (now - lastClickTime < 500) {
+                                                isExitButtonShown = true
+                                                android.widget.Toast.makeText(context, "Transformed! Click the Orange button to Save & Exit.", android.widget.Toast.LENGTH_SHORT).show()
+                                                lastClickTime = now
+                                            } else {
+                                                val intent = android.content.Intent(context, ovrrup.lumia.service.PomodoroService::class.java).apply { action = "PAUSE_RESUME" }
+                                                context.startService(intent)
+                                                lastClickTime = now
+                                            }
+                                        }
+                                    } else {
+                                        isRunning = true
+                                        isExitButtonShown = false
+                                        val intent = android.content.Intent(context, ovrrup.lumia.service.PomodoroService::class.java).apply {
+                                            action = "START"
+                                            putExtra("workDuration", workDuration * 60)
+                                            putExtra("shortBreakDuration", shortBreakDuration * 60)
+                                            putExtra("longBreakDuration", longBreakDuration * 60)
+                                            putExtra("periodSessions", periodSessions)
+                                            putExtra("maxPeriods", if (enablePeriodTarget) 1 else -1)
+                                            selectedSubjectId?.let { putExtra("subjectId", it) }
+                                            selectedCourseId?.let { putExtra("courseId", it) }
+                                            selectedAssignmentId?.let { putExtra("assignmentId", it) }
+                                            selectedTaskId?.let { putExtra("taskId", it) }
+                                        }
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            context.startForegroundService(intent)
+                                        } else {
+                                            context.startService(intent)
+                                        }
+                                    }
                                 },
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                containerColor = if (isExitButtonShown) {
+                                    Color(0xFFF97316)
+                                } else if (isRunning && !isPaused) {
+                                    MaterialTheme.colorScheme.errorContainer
+                                } else {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                },
                                 modifier = Modifier.size(72.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.SkipNext,
-                                    contentDescription = "Skip",
+                                    imageVector = if (isExitButtonShown) {
+                                        Icons.Rounded.CheckCircle
+                                    } else if (isRunning && !isPaused) {
+                                        Icons.Rounded.Pause
+                                    } else {
+                                        Icons.Rounded.PlayArrow
+                                    },
+                                    contentDescription = if (isExitButtonShown) "Save and Exit" else "Play/Pause",
+                                    modifier = Modifier.size(36.dp),
+                                    tint = if (isExitButtonShown) Color.White else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            
+                            // Skip Button
+                            if (isRunning) {
+                                FloatingActionButton(
+                                    onClick = { 
+                                        isExitButtonShown = false
+                                        val intent = android.content.Intent(context, ovrrup.lumia.service.PomodoroService::class.java).apply { action = "SKIP" }
+                                        context.startService(intent)
+                                    },
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.size(72.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.SkipNext,
+                                        contentDescription = "Skip",
+                                        modifier = Modifier.size(28.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            ovrrup.lumia.ui.components.BouncyFloatingActionButton(
+                                onClick = { 
+                                    isRunning = false
+                                    isExitButtonShown = false
+                                    val intent = android.content.Intent(context, ovrrup.lumia.service.PomodoroService::class.java).apply { action = "STOP" }
+                                    context.startService(intent)
+                                    timeLeft = workDuration * 60
+                                    totalTime = workDuration * 60
+                                },
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                modifier = Modifier.size(72.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Refresh,
+                                    contentDescription = "Reset",
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+
+                            ovrrup.lumia.ui.components.BouncyFloatingActionButton(
+                                onClick = { isAodMode = true },
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                modifier = Modifier.size(72.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.NightlightRound,
+                                    contentDescription = "Always On Display focus mode",
                                     modifier = Modifier.size(28.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = MaterialTheme.colorScheme.onTertiaryContainer
                                 )
                             }
                         }
 
-                        FloatingActionButton(
-                            onClick = { 
-                                isRunning = false
-                                val intent = android.content.Intent(context, com.example.service.PomodoroService::class.java).apply { action = "STOP" }
-                                context.startService(intent)
-                                timeLeft = workDuration * 60
-                                totalTime = workDuration * 60
-                            },
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            modifier = Modifier.size(72.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Refresh,
-                                contentDescription = "Reset",
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-
-                        FloatingActionButton(
-                            onClick = { isAodMode = true },
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            modifier = Modifier.size(72.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.NightlightRound,
-                                contentDescription = "Always On Display focus mode",
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
+                        if (isExitButtonShown) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Surface(
+                                color = Color(0xFFF97316).copy(alpha = 0.12f),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF97316).copy(alpha = 0.6f)),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFFF97316),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Double Tap Registered! Click the Orange check button to Save and Exit, writing study progress (${Math.max(1, (totalTime - timeLeft + 30) / 60)} min) safely to history.",
+                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -438,7 +546,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 // Link Session Block
-                com.example.ui.components.GlassCard(
+                ovrrup.lumia.ui.components.GlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
                 ) {
@@ -501,7 +609,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
 
             if (pomodoroSessions.isEmpty()) {
                 item {
-                    com.example.ui.components.GlassCard(
+                    ovrrup.lumia.ui.components.GlassCard(
                         modifier = Modifier.fillMaxWidth().height(100.dp),
                         shape = RoundedCornerShape(20.dp)
                     ) {
@@ -516,7 +624,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
                 }
             } else {
                 items(pomodoroSessions.sortedByDescending { it.dateMillis }.take(5)) { session ->
-                    com.example.ui.components.GlassCard(
+                    ovrrup.lumia.ui.components.GlassCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp)
                     ) {
@@ -566,7 +674,7 @@ fun PomodoroScreen(navController: NavController, viewModel: com.example.viewmode
 
 @Composable
 fun ModeButton(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Button(
+    ovrrup.lumia.ui.components.BouncyButton(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,

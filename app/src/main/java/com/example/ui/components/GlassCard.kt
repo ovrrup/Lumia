@@ -1,4 +1,4 @@
-package com.example.ui.components
+package ovrrup.lumia.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,11 +11,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.clip
-import com.example.ui.theme.glassCard
+import ovrrup.lumia.ui.theme.glassCard
 import androidx.compose.foundation.background
-import com.example.ui.theme.glassHero
-import com.example.ui.theme.LocalGlassMode
-import com.example.ui.theme.bouncyClick
+import ovrrup.lumia.ui.theme.glassHero
+import ovrrup.lumia.ui.theme.LocalGlassMode
+import ovrrup.lumia.ui.theme.bouncyClick
 
 @Composable
 fun GlassCard(
