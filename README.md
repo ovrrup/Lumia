@@ -6,7 +6,10 @@
   <img src="https://img.shields.io/badge/UI-Jetpack_Compose_/_M3-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose" />
   <img src="https://img.shields.io/badge/Database-SQLite_/_Room-00599C?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite Room" />
   <img src="https://img.shields.io/badge/License-GNU_GPLv3-red?style=for-the-badge" alt="GPLv3 License" />
-  <img src="https://img.shields.io/github/actions/workflow/status/ofeducationc/lumia/build-apk.yml?style=for-the-badge&label=Build_Pipeline" alt="Build Status" />
+</p>
+
+<p align="center">
+  [![Build APK](https://github.com/ovrrup/Lumia/actions/workflows/build-apk.yml/badge.svg)](https://github.com/ovrrup/Lumia/actions/workflows/build-apk.yml)
 </p>
 
 **Lumia** is an offline-first academic battle-station designed for students, self-learners, and those fighting the modern urge of checking notifications every 17 seconds. This application wraps course trackers, attendance calculators, task schedulers, statistical visualization charts, and a zero-compromise focus ecosystem into a single unified terminal.
@@ -110,12 +113,11 @@ Every time you push or trigger a Pull Request to your `main` / `master` reposito
 5. Renames the binary output to `Lumia.apk`.
 6. Saves the compiled application as a downloadable artifact.
 
-### How to download your build:
-1. Navigate to your GitHub repository in your web browser.
-2. Go to the **Actions** tab on the top menu bar.
-3. Click on the latest run in the list (e.g., *"Build APK"*).
-4. Scroll down to the **Artifacts** segment.
-5. Click **Lumia** to download the zip file, unzip, transfer to your phone, and install!
+### How to obtain the app:
+1. Navigate to the **Releases** section on the right-hand sidebar of the GitHub repository page (or click [Releases](https://github.com/ovrrup/Lumia/releases)).
+2. Under the latest release (e.g., `v1.4.0`), expand the **Assets** section if collapsed.
+3. Click on the compiled **Lumia.apk** asset file to download it.
+4. Transfer the downloaded APK file to your Android device and install it!
 
 ---
 

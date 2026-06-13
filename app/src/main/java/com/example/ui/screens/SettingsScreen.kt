@@ -3214,6 +3214,16 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    val currentVersion = remember {
+        try {
+            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            val vName = pInfo.versionName
+            if (vName != null && vName != "1.0.0" && vName != "1.0") vName else "1.4.0"
+        } catch (e: Exception) {
+            "1.4.0"
+        }
+    }
+
     // Preferences for Auto Update check
     val prefs = remember { context.getSharedPreferences("lumia_prefs", android.content.Context.MODE_PRIVATE) }
     var autoCheckEnabled by remember { mutableStateOf(prefs.getBoolean("auto_check_updates", true)) }
@@ -3249,8 +3259,9 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                         if (tagName != null) {
                             updateTagName = tagName
-                            val cleanTag = tagName.lowercase().replace("v", "").trim()
-                            if (cleanTag != "1.4.0") {
+                            val currentVersionClean = currentVersion.lowercase().replace("v", "").replace("-foss", "").trim()
+                            val cleanTag = tagName.lowercase().replace("v", "").replace("-foss", "").trim()
+                            if (cleanTag != currentVersionClean && cleanTag.isNotEmpty()) {
                                 updateState = "available"
                             } else {
                                 updateState = "latest"
@@ -3348,7 +3359,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Lumia", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-                    Text("v1.4.0-foss", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("v$currentVersion-foss", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = "A beautiful, 100% offline-first academic tracker and focus cockpit built with Material 3 design, local Room databases, LogDog diagnostic, and the True Always-On Display saving option.",
@@ -3429,27 +3440,52 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                         "available" -> {
                             Card(
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text("Update Available! ($updateTagName)", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                        Text("A newer formal release is ready on GitHub.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
-                                    }
-                                    IconButton(onClick = {
-                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ovrrup/Lumia/releases"))
-                                        try { context.startActivity(intent) } catch (e: Exception) {}
-                                    }) {
-                                        Icon(Icons.Rounded.Download, contentDescription = "Get Update", tint = MaterialTheme.colorScheme.primary)
+                                    Text(
+                                        text = "Update Available! ($updateTagName)",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Text(
+                                        text = "A new formal release is available. You can download the latest Lumia.apk directly from the GitHub Releases assets.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                    )
+                                    Button(
+                                        onClick = {
+                                            val intent = Intent(
+                                                Intent.ACTION_VIEW,
+                                                Uri.parse("https://github.com/ovrrup/Lumia/releases/latest")
+                                            )
+                                            try { context.startActivity(intent) } catch (e: Exception) {}
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                        ),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Download,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Go to GitHub Releases")
                                     }
                                 }
                             }
                         }
                         "latest" -> {
-                            Text("✨ Lumia FOSS is up-to-date (v1.4.0) with latest release branch.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                            Text("✨ Lumia FOSS is up-to-date (v$currentVersion) with latest release branch.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                         }
                         "error" -> {
                             Text("⚠️ Code status: Offline or DNS limitation. Standard local database remains highly optimized.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)

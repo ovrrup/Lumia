@@ -1,28 +1,47 @@
-name: Build APK
+name: Manual Release Publisher
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag Name (e.g., v1.4.0)'
+        required: true
+        default: 'v1.4.0'
+      release_title:
+        description: 'Release Title (e.g., Lumia v1.4.0)'
+        required: true
+        default: 'Lumia v1.4.0'
+      draft:
+        description: 'Publish as Draft'
+        type: boolean
+        required: false
+        default: false
+      prerelease:
+        description: 'Publish as Pre-Release'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
-  build:
+  build-and-release:
+    name: Build & Publish Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
-    - name: Checkout Repository
+    - name: Checkout Source Code
       uses: actions/checkout@v4
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
-        distribution: 'temurin'
+        distribution: 'zulu'
+        cache: gradle
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
 
     - name: Remove invalid macOS Icon files
       run: find app/src/main/res -type f -name "Icon*" -delete
@@ -63,9 +82,25 @@ jobs:
         echo "Listing reorganized release APKs:"
         ls -la
 
-    - name: Upload APKs to Artifacts
-      uses: actions/upload-artifact@v4
+    - name: Read Release Notes Path
+      id: release_notes
+      run: |
+        if [ -f "RELEASE_NOTES.md" ]; then
+          echo "notes_path=RELEASE_NOTES.md" >> "$GITHUB_OUTPUT"
+        else
+          # Fallback if file doesn't exist
+          echo "notes_path=" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Create or Update GitHub Release
+      uses: softprops/action-gh-release@v2
       with:
-        name: Lumia-Release-APKs
-        path: |
+        tag_name: ${{ github.event.inputs.tag_name }}
+        name: ${{ github.event.inputs.release_title }}
+        body_path: ${{ steps.release_notes.outputs.notes_path }}
+        draft: ${{ github.event.inputs.draft }}
+        prerelease: ${{ github.event.inputs.prerelease }}
+        files: |
           app/build/outputs/apk/release/Lumia*.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
