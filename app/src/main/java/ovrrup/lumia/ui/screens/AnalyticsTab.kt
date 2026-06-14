@@ -35,6 +35,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -193,101 +194,123 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
 
         if (showActionHistory) {
             item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
-                            .background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape),
+                            .size(32.dp)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.History,
                             contentDescription = "History",
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Action History",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
+                        text = "Unified Action History",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
             if (actionLogs.isEmpty()) {
-            item {
-                ovrrup.lumia.ui.components.GlassCard(
-                    modifier = Modifier.fillMaxWidth().height(200.dp),
-                    shape = RoundedCornerShape(32.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                item {
+                    ovrrup.lumia.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth().height(160.dp),
+                        shape = RoundedCornerShape(28.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f), CircleShape),
-                            contentAlignment = Alignment.Center
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Info,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                modifier = Modifier.size(36.dp)
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.size(32.dp)
                             )
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            "No actions yet.",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        } else {
-            items(actionLogs, key = { it.id }) { log ->
-                ovrrup.lumia.ui.components.GlassCard(
-                    modifier = Modifier.animateItem().fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(12.dp)
-                                .background(MaterialTheme.colorScheme.primary, CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(20.dp))
-                        Column(modifier = Modifier.weight(1f)) {
+                            Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = log.actionText,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            val date = DateFormat.format("MMM dd, yyyy  •  HH:mm", Date(log.timestampMillis)).toString()
-                            Text(
-                                text = date,
-                                style = MaterialTheme.typography.bodySmall,
+                                "No telemetry recorded.",
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 }
+            } else {
+                item {
+                    ovrrup.lumia.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(28.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                            // Only show last 25 logs to avoid UI pressure, full history can be managed in data settings
+                            actionLogs.take(25).forEachIndexed { index, log ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .background(
+                                                color = if (index == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                                shape = CircleShape
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = log.actionText,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = if (index == 0) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (index == 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        val date = DateFormat.format("MMM dd, HH:mm", Date(log.timestampMillis)).toString()
+                                        Text(
+                                            text = date,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        )
+                                    }
+                                }
+                                if (index < actionLogs.take(25).size - 1) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 20.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                                    )
+                                }
+                            }
+                            
+                            if (actionLogs.size > 25) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "+ ${actionLogs.size - 25} more items in local database",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
             }
-        }
         }
     }
     }

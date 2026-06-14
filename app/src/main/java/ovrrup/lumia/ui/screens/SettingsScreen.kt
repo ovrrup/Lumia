@@ -56,15 +56,14 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.School
-import androidx.compose.material.icons.rounded.MergeType
+import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.automirrored.rounded.ViewQuilt
+import androidx.compose.material.icons.automirrored.rounded.MergeType
 import androidx.compose.material.icons.rounded.DateRange
-import androidx.compose.material.icons.rounded.List
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.RecordVoiceOver
-import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.ViewQuilt
 import androidx.compose.material.icons.rounded.Accessibility
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Contrast
@@ -75,6 +74,7 @@ import androidx.compose.material.icons.rounded.InvertColors
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -1272,7 +1272,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                     title = "Display Action History",
                     subtitle = "Integrate detailed reactive logs list inside Analytics interface",
                     checked = showActionHistory,
-                    icon = Icons.Rounded.List,
+                    icon = Icons.AutoMirrored.Rounded.List,
                     onCheckedChange = { handleToggle(it, "Display Action History", "Synthesize analytics telemetry block containing audit records.") { isChecked -> viewModel.updateShowActionHistory(isChecked) } }
                 )
             }
@@ -1388,124 +1388,297 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         onDismissRequest = { showLogDogDialog = false },
                         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
                     ) {
-                        Surface(
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 32.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            color = androidx.compose.ui.graphics.Color(0xFF0F172A),
-                            contentColor = androidx.compose.ui.graphics.Color(0xFF38BDF8)
+                        ovrrup.lumia.ui.components.GlassCard(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 24.dp),
+                            shape = RoundedCornerShape(32.dp)
                         ) {
                             Column(modifier = Modifier.fillMaxSize()) {
+                                // Header
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color(0xFF1E293B)).padding(16.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFF38BDF8), modifier = Modifier.size(24.dp))
-                                        Spacer(Modifier.width(12.dp))
-                                        Text("LogDog Core Analyzer v2.0", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = androidx.compose.ui.graphics.Color.White)
+                                        Box(
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.RecordVoiceOver,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        Spacer(Modifier.width(16.dp))
+                                        Column {
+                                            Text(
+                                                "Diagnostic Logs",
+                                                style = MaterialTheme.typography.titleLarge,
+                                                fontWeight = FontWeight.Black,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                "LogDog Core Analyzer v1.0",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
-                                    IconButton(onClick = { showLogDogDialog = false }) {
-                                        Icon(Icons.Rounded.Close, contentDescription = "Close", tint = androidx.compose.ui.graphics.Color.White)
+                                    BouncyIconButton(onClick = { showLogDogDialog = false }) {
+                                        Icon(Icons.Rounded.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                                 
-                                Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 16.dp)
+                                        .verticalScroll(rememberScrollState())
+                                ) {
                                     if (isScanning) {
-                                        Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(300.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                CircularProgressIndicator(color = androidx.compose.ui.graphics.Color(0xFF38BDF8))
-                                                Spacer(Modifier.height(16.dp))
-                                                Text("Sniffing stack traces... parsing runtime metrics...", style = MaterialTheme.typography.bodyMedium, color = androidx.compose.ui.graphics.Color(0xFF94A3B8))
+                                                CircularProgressIndicator(
+                                                    strokeWidth = 4.dp,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                                Spacer(Modifier.height(24.dp))
+                                                Text(
+                                                    "Woof! Sniffing logs...",
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                                Text(
+                                                    "Parsing captured stack traces",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
                                             }
                                         }
                                     } else if (crashesList.isEmpty()) {
-                                        Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(300.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFF22C55E), modifier = Modifier.size(48.dp))
-                                                Spacer(Modifier.height(16.dp))
-                                                Text("System Stable. Zero fatal faults in kennel.", style = MaterialTheme.typography.bodyLarge, color = androidx.compose.ui.graphics.Color.White)
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(80.dp)
+                                                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        Icons.Rounded.CheckCircle,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                        modifier = Modifier.size(40.dp)
+                                                    )
+                                                }
+                                                Spacer(Modifier.height(24.dp))
+                                                Text(
+                                                    "Lumia is Healthy",
+                                                    style = MaterialTheme.typography.titleLarge,
+                                                    fontWeight = FontWeight.Black,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    "Zero fatal faults detected in the kennel.",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    textAlign = TextAlign.Center
+                                                )
                                             }
                                         }
                                     } else {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 16.dp, bottom = 12.dp),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text("FATAL EXCEPTIONS: ${crashesList.size}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFFF43F5E))
-                                            TextButton(
+                                            Text(
+                                                "CAPTURED TELEMETRY (${crashesList.size})",
+                                                style = MaterialTheme.typography.labelLarge,
+                                                fontWeight = FontWeight.Black,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            BouncyTextButton(
                                                 onClick = {
                                                     ovrrup.lumia.util.LogDog.clearCrashes(context)
                                                     crashesList = emptyList()
                                                     android.widget.Toast.makeText(context, "LogDog purged all telemetry.", android.widget.Toast.LENGTH_SHORT).show()
                                                 },
-                                                colors = ButtonDefaults.textButtonColors(contentColor = androidx.compose.ui.graphics.Color(0xFFEF4444))
+                                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                                             ) {
                                                 Icon(Icons.Rounded.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                                Text("PURGE LOGS")
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Purge Kernel", fontWeight = FontWeight.Bold)
                                             }
                                         }
                                         
                                         crashesList.forEachIndexed { index, crash ->
                                             val parsed = remember(crash) { ovrrup.lumia.util.LogDog.analyzeCrash(crash) }
                                             
-                                            Card(
-                                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                                                colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFF1E293B)),
-                                                shape = RoundedCornerShape(16.dp)
+                                            ovrrup.lumia.ui.components.GlassCard(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 8.dp),
+                                                shape = RoundedCornerShape(20.dp)
                                             ) {
                                                 Column(modifier = Modifier.padding(16.dp)) {
-                                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
                                                         val sevColor = when (parsed.severityLevel) {
-                                                            "Critical" -> androidx.compose.ui.graphics.Color(0xFFEF4444)
-                                                            "High" -> androidx.compose.ui.graphics.Color(0xFFF97316)
-                                                            else -> androidx.compose.ui.graphics.Color(0xFFEAB308)
+                                                            "Critical" -> MaterialTheme.colorScheme.error
+                                                            "High" -> MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                                            else -> MaterialTheme.colorScheme.primary
                                                         }
                                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                                            Box(modifier = Modifier.size(12.dp).background(sevColor, CircleShape))
-                                                            Spacer(Modifier.width(8.dp))
-                                                            Text("DUMP [${index + 1}] | ${parsed.severityLevel.uppercase()}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.White)
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(8.dp)
+                                                                    .background(sevColor, CircleShape)
+                                                            )
+                                                            Spacer(Modifier.width(10.dp))
+                                                            Text(
+                                                                "ERROR DUMP ${index + 1} • ${parsed.severityLevel.uppercase()}",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                fontWeight = FontWeight.Black,
+                                                                color = sevColor
+                                                            )
                                                         }
                                                         IconButton(
                                                             onClick = {
                                                                 clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(crash))
                                                                 android.widget.Toast.makeText(context, "Copied trace dump to clipboard!", android.widget.Toast.LENGTH_SHORT).show()
                                                             },
-                                                            modifier = Modifier.size(28.dp)
+                                                            modifier = Modifier.size(32.dp)
                                                         ) {
-                                                            Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy raw log", tint = androidx.compose.ui.graphics.Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
+                                                            Icon(
+                                                                Icons.Rounded.ContentCopy,
+                                                                contentDescription = "Copy raw log",
+                                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                modifier = Modifier.size(16.dp)
+                                                            )
                                                         }
                                                     }
                                                     
                                                     Spacer(modifier = Modifier.height(12.dp))
-                                                    Text("FAULT MODULE: ${parsed.likelyComponent.uppercase()}", style = MaterialTheme.typography.labelSmall, color = androidx.compose.ui.graphics.Color(0xFF94A3B8))
-                                                    Text(parsed.exceptionType, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFFF87171))
+                                                    Text(
+                                                        "Module: ${parsed.likelyComponent}",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                    Text(
+                                                        parsed.exceptionType,
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        fontWeight = FontWeight.Black,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
                                                     
-                                                    Spacer(modifier = Modifier.height(8.dp))
-                                                    Text("RAW MESSAGE:", style = MaterialTheme.typography.labelSmall, color = androidx.compose.ui.graphics.Color(0xFF94A3B8))
-                                                    Text(parsed.errorMessage, style = MaterialTheme.typography.bodySmall, color = androidx.compose.ui.graphics.Color.LightGray)
-                                                    
-                                                    Spacer(modifier = Modifier.height(8.dp))
-                                                    Text("POINTER:", style = MaterialTheme.typography.labelSmall, color = androidx.compose.ui.graphics.Color(0xFF94A3B8))
-                                                    Text(parsed.crashLocation, style = androidx.compose.ui.text.TextStyle(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, fontSize = 12.sp, color = androidx.compose.ui.graphics.Color(0xFF34D399)))
-                                                    
-                                                    if (parsed.isFrameworkBug) {
-                                                        Spacer(modifier = Modifier.height(6.dp))
-                                                        Text("⚠️ Framework-level crash detected. Trace pointer is outside your primary package.", style = MaterialTheme.typography.labelSmall, color = androidx.compose.ui.graphics.Color(0xFFEAB308))
+                                                    Spacer(modifier = Modifier.height(10.dp))
+                                                    Surface(
+                                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    ) {
+                                                        Column(modifier = Modifier.padding(12.dp)) {
+                                                            Text(
+                                                                "MESSAGE:",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
+                                                            Text(
+                                                                parsed.errorMessage,
+                                                                style = MaterialTheme.typography.bodySmall,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
+                                                            
+                                                            Spacer(modifier = Modifier.height(12.dp))
+                                                            Text(
+                                                                "STACK POINTER:",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
+                                                            Text(
+                                                                parsed.crashLocation,
+                                                                style = androidx.compose.ui.text.TextStyle(
+                                                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                                                    fontSize = 11.sp,
+                                                                    color = MaterialTheme.colorScheme.primary
+                                                                )
+                                                            )
+                                                        }
                                                     }
                                                     
-                                                    Spacer(modifier = Modifier.height(12.dp))
+                                                    if (parsed.isFrameworkBug) {
+                                                        Spacer(modifier = Modifier.height(12.dp))
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                                                                .padding(8.dp)
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Rounded.Warning,
+                                                                contentDescription = null,
+                                                                tint = MaterialTheme.colorScheme.error,
+                                                                modifier = Modifier.size(14.dp)
+                                                            )
+                                                            Spacer(Modifier.width(8.dp))
+                                                            Text(
+                                                                "Framework component fault detected.",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = MaterialTheme.colorScheme.error,
+                                                                fontWeight = FontWeight.Medium
+                                                            )
+                                                        }
+                                                    }
+                                                    
+                                                    Spacer(modifier = Modifier.height(16.dp))
                                                     Surface(
-                                                        color = androidx.compose.ui.graphics.Color(0xFF0F172A),
-                                                        shape = RoundedCornerShape(8.dp),
+                                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                                        shape = RoundedCornerShape(12.dp),
                                                         modifier = Modifier.fillMaxWidth()
                                                     ) {
                                                         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
-                                                            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFF38BDF8), modifier = Modifier.size(16.dp))
-                                                            Spacer(Modifier.width(8.dp))
-                                                            Text(parsed.suggestion, style = MaterialTheme.typography.bodySmall, color = androidx.compose.ui.graphics.Color.White)
+                                                            Icon(
+                                                                Icons.Rounded.Info, 
+                                                                contentDescription = null, 
+                                                                tint = MaterialTheme.colorScheme.primary, 
+                                                                modifier = Modifier.size(16.dp)
+                                                            )
+                                                            Spacer(Modifier.width(10.dp))
+                                                            Text(
+                                                                parsed.suggestion, 
+                                                                style = MaterialTheme.typography.bodySmall, 
+                                                                color = MaterialTheme.colorScheme.onSurface,
+                                                                fontWeight = FontWeight.Medium
+                                                            )
                                                         }
                                                     }
                                                 }
@@ -2075,7 +2248,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Rounded.ViewQuilt,
+                                            imageVector = Icons.AutoMirrored.Rounded.ViewQuilt,
                                             contentDescription = null,
                                             tint = if (isOverlaySelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(20.dp)
@@ -3211,7 +3384,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     title = "Fuse Subjects & Courses",
                     subtitle = "Embed subjects within courses to simplify navigation. Turn off to display 'Subjects' as a separate bottom tab.",
                     checked = fuseSubjectsCourses,
-                    icon = Icons.Rounded.MergeType,
+                    icon = Icons.AutoMirrored.Rounded.MergeType,
                     onCheckedChange = { viewModel.updateSystemFuseSubjectsCourses(it) }
                 )
 
@@ -3221,7 +3394,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     title = "Advanced Tasks & Linkages",
                     subtitle = "Enable complex task tracking, including multi-linking with courses and assignments, plus advanced sorting and cross-referencing.",
                     checked = advancedTasks,
-                    icon = Icons.Rounded.List,
+                    icon = Icons.AutoMirrored.Rounded.List,
                     onCheckedChange = { viewModel.updateSystemAdvancedTasks(it) }
                 )
             }
@@ -3277,7 +3450,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SettingsGroupCard(title = "Period Structure", icon = Icons.Rounded.List) {
+            SettingsGroupCard(title = "Period Structure", icon = Icons.AutoMirrored.Rounded.List) {
                 SettingsPremiumToggleItem(
                     title = "Enable Target Periods",
                     subtitle = "Allows restricting pomodoro loops to a fixed target instead of infinite repetetion.",
@@ -3678,22 +3851,6 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     )
                                     
-                                    // Conflict warning
-                                    Card(
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)),
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(
-                                                text = "Note: If installation fails with 'Package Conflict', please uninstall your current preview/debug version first. Official GitHub APKs are signed differently.",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onErrorContainer
-                                            )
-                                        }
-                                    }
                                     if (updateNotes.isNotEmpty()) {
                                         Surface(
                                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
