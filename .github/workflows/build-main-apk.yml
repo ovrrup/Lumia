@@ -40,15 +40,15 @@ jobs:
       run: |
         if [ -n "${{ secrets.RELEASE_KEYSTORE }}" ]; then
           echo "Decoding release keystore from secrets..."
-          echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > my-upload-key.jks
+          echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > lumia-key.jks
           echo "KEY_ALIAS=upload" >> $GITHUB_ENV
         elif [ -f "debug.keystore.base64" ]; then
           echo "Using persistent debug keystore for development build..."
-          base64 --decode debug.keystore.base64 > my-upload-key.jks
+          base64 --decode debug.keystore.base64 > lumia-key.jks
           echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
         else
           echo "Generating development release keystore..."
-          keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
+          keytool -genkey -v -keystore lumia-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
           echo "KEY_ALIAS=upload" >> $GITHUB_ENV
         fi
 
@@ -82,9 +82,15 @@ jobs:
         cd ../releaseCompressed/
         echo "Listing initial compressed release APKs:"
         ls -la
-        if [ -f "app-releaseCompressed-universal.apk" ]; then
+        if [ -f "app-universal-releaseCompressed.apk" ]; then
+          cp app-universal-releaseCompressed.apk ../release/Lumia-universal-compressed.apk
+          echo "Copied universal compressed APK to release folder (pattern 1)"
+        elif [ -f "app-releaseCompressed-universal.apk" ]; then
           cp app-releaseCompressed-universal.apk ../release/Lumia-universal-compressed.apk
-          echo "Copied universal compressed APK to release folder"
+          echo "Copied universal compressed APK to release folder (pattern 2)"
+        else
+          echo "WARNING: Could not find universal compressed APK! Listing files in releaseCompressed:"
+          ls -la
         fi
         
         cd ../release/

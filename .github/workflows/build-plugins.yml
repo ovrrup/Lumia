@@ -33,15 +33,15 @@ jobs:
       run: |
         if [ -n "${{ secrets.RELEASE_KEYSTORE }}" ]; then
           echo "Decoding release keystore from secrets..."
-          echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > my-upload-key.jks
+          echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > lumia-key.jks
           echo "KEY_ALIAS=upload" >> $GITHUB_ENV
         elif [ -f "debug.keystore.base64" ]; then
           echo "Using persistent debug keystore for development build..."
-          base64 --decode debug.keystore.base64 > my-upload-key.jks
+          base64 --decode debug.keystore.base64 > lumia-key.jks
           echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
         else
           echo "Generating development release keystore..."
-          keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
+          keytool -genkey -v -keystore lumia-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
           echo "KEY_ALIAS=upload" >> $GITHUB_ENV
         fi
 
@@ -54,8 +54,8 @@ jobs:
         gradle assembleRelease assembleReleaseCompressed --no-daemon -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=1024m" -Dkotlin.compiler.execution.strategy=in-process --no-parallel
         
         mkdir -p build/plugins/release
-        cp app/build/outputs/apk/release/*universal.apk build/plugins/release/Lumia-Sentinel.apk || true
-        cp app/build/outputs/apk/release/*universal.apk build/plugins/release/Lumia-Spectra.apk || true
+        cp app/build/outputs/apk/release/app-universal-release.apk build/plugins/release/Lumia-Sentinel.apk
+        cp app/build/outputs/apk/release/app-universal-release.apk build/plugins/release/Lumia-Spectra.apk
       env:
         JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
         STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
