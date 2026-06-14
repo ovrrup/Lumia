@@ -117,6 +117,9 @@ class MainActivity : ComponentActivity() {
             val effectiveDark = themeMode == "Dark" || (themeMode == "System" && isSystemDark)
 
             val navBarGlassOpacityValue by viewModel.navBarGlassOpacityValue.collectAsStateWithLifecycle()
+            val navBarGlassLinkedToMain by viewModel.navBarGlassLinkedToMain.collectAsStateWithLifecycle()
+            val navBarGlassBackdropStyle by viewModel.navBarGlassBackdropStyle.collectAsStateWithLifecycle()
+            val navBarGlassDynamic by viewModel.navBarGlassDynamic.collectAsStateWithLifecycle()
             androidx.compose.runtime.LaunchedEffect(effectiveDark, themeColor) {
                 viewModel.refreshNavBarGlassOpacity(themeColor, effectiveDark)
             }
@@ -144,6 +147,9 @@ class MainActivity : ComponentActivity() {
                 glassBackdropStyle = glassBackdropStyle,
                 glassOpacityValue = glassOpacityValue,
                 navBarGlassOpacityValue = navBarGlassOpacityValue,
+                navBarGlassLinkedToMain = navBarGlassLinkedToMain,
+                navBarGlassBackdropStyle = navBarGlassBackdropStyle,
+                navBarGlassDynamic = navBarGlassDynamic,
                 betterTexts = betaBetterTexts,
                 betterTextsPalette = betaBetterTextsPalette,
                 appAnimationMode = appAnimationMode,
@@ -188,6 +194,46 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val navController = rememberNavController()
+
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    androidx.compose.runtime.LaunchedEffect(Unit) {
+                        val prefs = context.getSharedPreferences("lumia_prefs", android.content.Context.MODE_PRIVATE)
+                        if (prefs.getBoolean("auto_check_updates", true)) {
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                try {
+                                    val url = java.net.URL("https://api.github.com/repos/ovrrup/Lumia/releases/latest")
+                                    val connection = url.openConnection() as java.net.HttpURLConnection
+                                    connection.requestMethod = "GET"
+                                    connection.setRequestProperty("User-Agent", "Lumia-FOSS-App")
+                                    connection.connectTimeout = 5000
+                                    connection.readTimeout = 5000
+                                    
+                                    if (connection.responseCode == 200) {
+                                        val responseText = connection.inputStream.bufferedReader().use { it.readText() }
+                                        val json = org.json.JSONObject(responseText)
+                                        val tagName = json.optString("tag_name", "")
+                                        val currentVersion = ovrrup.lumia.BuildConfig.VERSION_NAME
+                                        
+                                        if (tagName.isNotEmpty()) {
+                                            val cleanTag = tagName.lowercase().replace("v", "").replace("-foss", "").trim()
+                                            val cleanCurrent = currentVersion.lowercase().replace("v", "").replace("-foss", "").trim()
+                                            if (cleanTag != cleanCurrent && cleanTag.isNotEmpty()) {
+                                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                                    android.widget.Toast.makeText(
+                                                        context,
+                                                        "Update Available: $tagName. Check About settings.",
+                                                        android.widget.Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    // Ignore quietly in background
+                                }
+                            }
+                        }
+                    }
 
                     // Full-screen ambient gradient — sits behind ALL composables
                     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {

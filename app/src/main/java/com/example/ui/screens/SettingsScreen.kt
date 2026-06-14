@@ -65,6 +65,10 @@ import androidx.compose.material.icons.rounded.ViewQuilt
 import androidx.compose.material.icons.rounded.Accessibility
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Contrast
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.Straighten
+import androidx.compose.material.icons.rounded.BlurOn
+import androidx.compose.material.icons.rounded.InvertColors
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.*
@@ -578,6 +582,10 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 val navBarLabelMode by viewModel.navBarLabelMode.collectAsStateWithLifecycle()
                 val navBarGlassForceEnabled by viewModel.navBarGlassForceEnabled.collectAsStateWithLifecycle()
                 val navBarIndicatorAlpha by viewModel.navBarIndicatorAlpha.collectAsStateWithLifecycle()
+                val betaNavBarSizeControls by viewModel.betaNavBarSizeControls.collectAsStateWithLifecycle()
+                val navBarGlassLinkedToMain by viewModel.navBarGlassLinkedToMain.collectAsStateWithLifecycle()
+                val navBarGlassBackdropStyle by viewModel.navBarGlassBackdropStyle.collectAsStateWithLifecycle()
+                val navBarGlassDynamic by viewModel.navBarGlassDynamic.collectAsStateWithLifecycle()
 
                 // Layout Style choosing picker
                 SettingsSegmentedPicker(
@@ -617,80 +625,54 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     onCheckedChange = { viewModel.updateNavBarGlassForceEnabled(it) }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+                val isGlassTheme = ovrrup.lumia.ui.theme.LocalGlassMode.current
+                val isNavBarGlassActive = isGlassTheme || navBarGlassForceEnabled
 
-                // Height Slider
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Bar Panel Height",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
+                if (isNavBarGlassActive) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                    // Sync with Dynamic Glass UI Toggle
+                    SettingsPremiumToggleItem(
+                        title = "Sync with Global Glass Style",
+                        subtitle = "Link the bottom navigation bar color, style, and glass type directly to the system-wide Glass UI theme setting.",
+                        checked = navBarGlassLinkedToMain,
+                        icon = Icons.Rounded.Link,
+                        onCheckedChange = { viewModel.updateNavBarGlassLinkedToMain(it) }
+                    )
+
+                    if (!navBarGlassLinkedToMain) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                        // Navbar Glass Type segmented chooser
+                        SettingsSegmentedPicker(
+                            title = "Navbar Backdrop Style",
+                            subtitle = "Adjust the glass texture from solid translucent background to completely clear dynamic panel",
+                            options = listOf(
+                                Triple("Solid", "Solid Color", null),
+                                Triple("Translucent", "Frosted Glass", null),
+                                Triple("Clear", "Totally Clear", null)
+                            ),
+                            selected = navBarGlassBackdropStyle,
+                            onSelected = { viewModel.updateNavBarGlassBackdropStyle(it) }
                         )
-                        Text(
-                            text = "${navBarHeight.toInt()} dp",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.primary
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                        // Navbar Dynamic Color Tinting Toggle
+                        SettingsPremiumToggleItem(
+                            title = "Ambient Accent Tinting",
+                            subtitle = "Infuse primary theme color highlight directly into the navigation glass backplane rendering.",
+                            checked = navBarGlassDynamic,
+                            icon = Icons.Rounded.InvertColors,
+                            onCheckedChange = { viewModel.updateNavBarGlassDynamic(it) }
                         )
                     }
-                    Text(
-                        text = "Customize the absolute thickness of bottom panel",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-                    Slider(
-                        value = navBarHeight,
-                        onValueChange = { viewModel.updateNavBarHeight(it) },
-                        valueRange = 56f..96f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-
-                // Active item indicator pill opacity highlight
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Indicator Tint Alpha",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = "${(navBarIndicatorAlpha * 100).toInt()}%",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Text(
-                        text = "Calibrate the select-state container overlay opacity",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-                    Slider(
-                        value = navBarIndicatorAlpha,
-                        onValueChange = { viewModel.updateNavBarIndicatorAlpha(it) },
-                        valueRange = 0.0f..0.5f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                if (betaFloatingNav) {
+                if (betaNavBarSizeControls) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
 
-                    // Floating Dock Radius Customization
+                    // Height Slider
                     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -698,34 +680,34 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Pill Corner Radius",
+                                text = "Bar Panel Height",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "${navBarCornerRadius.toInt()} dp",
+                                text = "${navBarHeight.toInt()} dp",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
                         Text(
-                            text = "Control roundness bounding the suspended pill geometry",
+                            text = "Customize the absolute thickness of bottom panel",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 6.dp)
                         )
                         Slider(
-                            value = navBarCornerRadius,
-                            onValueChange = { viewModel.updateNavBarCornerRadius(it) },
-                            valueRange = 0f..48f,
+                            value = navBarHeight,
+                            onValueChange = { viewModel.updateNavBarHeight(it) },
+                            valueRange = 56f..96f,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
 
-                    // Horizontal margins customization
+                    // Active item indicator pill opacity highlight
                     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -733,64 +715,136 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Horizontal Deck Margin",
+                                text = "Indicator Tint Alpha",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "${navBarPaddingHorizontal.toInt()} dp",
+                                text = "${(navBarIndicatorAlpha * 100).toInt()}%",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
                         Text(
-                            text = "Expand or narrow down the width profile of bottom panel",
+                            text = "Calibrate the select-state container overlay opacity",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 6.dp)
                         )
                         Slider(
-                            value = navBarPaddingHorizontal,
-                            onValueChange = { viewModel.updateNavBarPaddingHorizontal(it) },
-                            valueRange = 0f..48f,
+                            value = navBarIndicatorAlpha,
+                            onValueChange = { viewModel.updateNavBarIndicatorAlpha(it) },
+                            valueRange = 0.0f..0.5f,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+                    if (betaFloatingNav) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
 
-                    // Bottom lift margin
-                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        // Floating Dock Radius Customization
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Pill Corner Radius",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "${navBarCornerRadius.toInt()} dp",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                             Text(
-                                text = "Bottom Lift Padding",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
+                                text = "Control roundness bounding the suspended pill geometry",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 6.dp)
                             )
-                            Text(
-                                text = "${navBarPaddingBottom.toInt()} dp",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.primary
+                            Slider(
+                                value = navBarCornerRadius,
+                                onValueChange = { viewModel.updateNavBarCornerRadius(it) },
+                                valueRange = 0f..48f,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
-                        Text(
-                            text = "Elevate the bottom action shelf distance off device screen trim",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 6.dp)
-                        )
-                        Slider(
-                            value = navBarPaddingBottom,
-                            onValueChange = { viewModel.updateNavBarPaddingBottom(it) },
-                            valueRange = 0f..48f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                        // Horizontal margins customization
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Horizontal Deck Margin",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "${navBarPaddingHorizontal.toInt()} dp",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Text(
+                                text = "Expand or narrow down the width profile of bottom panel",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
+                            Slider(
+                                value = navBarPaddingHorizontal,
+                                onValueChange = { viewModel.updateNavBarPaddingHorizontal(it) },
+                                valueRange = 0f..48f,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                        // Bottom lift margin
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Bottom Lift Padding",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "${navBarPaddingBottom.toInt()} dp",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Text(
+                                text = "Elevate the bottom action shelf distance off device screen trim",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
+                            Slider(
+                                value = navBarPaddingBottom,
+                                onValueChange = { viewModel.updateNavBarPaddingBottom(it) },
+                                valueRange = 0f..48f,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }
@@ -1095,15 +1149,15 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
             // 2. Display Hacks & System Settings
             SettingsGroupCard(title = "Display Settings & Hooks", icon = Icons.Rounded.Settings) {
                 val betaMinimalistMode by viewModel.betaMinimalistMode.collectAsStateWithLifecycle()
-                val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
+                val betaNavBarSizeControls by viewModel.betaNavBarSizeControls.collectAsStateWithLifecycle()
                 SettingsPremiumToggleItem(
-                    title = "Floating Action Bar",
-                    subtitle = "Floating layout styling for the primary bottom navigator bar",
-                    checked = betaFloatingNav,
-                    icon = Icons.Rounded.Settings,
+                    title = "Advanced NavBar Size Controls",
+                    subtitle = "Expose precise custom sizing and shape sliders for the bottom navigation bar.",
+                    checked = betaNavBarSizeControls,
+                    icon = Icons.Rounded.Straighten,
                     enabled = !betaMinimalistMode,
                     unavailableReason = "Locked by Minimalist Focus Mode.",
-                    onCheckedChange = { handleToggle(it, "Floating Action Bar", "Float the bottom navigation overlay panel.") { isChecked -> viewModel.updateBetaFloatingNav(isChecked) } }
+                    onCheckedChange = { handleToggle(it, "Advanced NavBar Size Controls", "Reveal precise geometry and padding sliders inside the design settings.") { isChecked -> viewModel.updateBetaNavBarSizeControls(isChecked) } }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
@@ -3232,6 +3286,8 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
     // Update Checker Status States: "idle", "checking", "available", "latest", "error"
     var updateState by remember { mutableStateOf("idle") }
     var updateTagName by remember { mutableStateOf("") }
+    var updateNotes by remember { mutableStateOf("") }
+    var updateApkUrl by remember { mutableStateOf("") }
     var updateError by remember { mutableStateOf("") }
 
     // Expandable details states
@@ -3253,23 +3309,47 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                 
                 if (connection.responseCode == 200) {
                     val responseText = connection.inputStream.bufferedReader().use { it.readText() }
-                    val regex = "\"tag_name\"\\s*:\\s*\"([^\"]+)\"".toRegex()
-                    val matchResult = regex.find(responseText)
-                    val tagName = matchResult?.groups?.get(1)?.value
                     
-                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        if (tagName != null) {
-                            updateTagName = tagName
-                            val currentVersionClean = currentVersion.lowercase().replace("v", "").replace("-foss", "").trim()
-                            val cleanTag = tagName.lowercase().replace("v", "").replace("-foss", "").trim()
-                            if (cleanTag != currentVersionClean && cleanTag.isNotEmpty()) {
-                                updateState = "available"
-                            } else {
-                                updateState = "latest"
+                    try {
+                        val json = org.json.JSONObject(responseText)
+                        val tagName = json.optString("tag_name", "")
+                        val body = json.optString("body", "Check GitHub for release details.")
+                        
+                        var apkUrl = ""
+                        val assets = json.optJSONArray("assets")
+                        if (assets != null) {
+                            for (i in 0 until assets.length()) {
+                                val asset = assets.optJSONObject(i)
+                                val name = asset?.optString("name", "") ?: ""
+                                if (name.endsWith(".apk")) {
+                                    apkUrl = asset?.optString("browser_download_url", "") ?: ""
+                                    break
+                                }
                             }
-                        } else {
+                        }
+                        
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            if (tagName.isNotEmpty()) {
+                                updateTagName = tagName
+                                updateNotes = body
+                                updateApkUrl = apkUrl
+                                
+                                val currentVersionClean = currentVersion.lowercase().replace("v", "").replace("-foss", "").trim()
+                                val cleanTag = tagName.lowercase().replace("v", "").replace("-foss", "").trim()
+                                if (cleanTag != currentVersionClean && cleanTag.isNotEmpty()) {
+                                    updateState = "available"
+                                } else {
+                                    updateState = "latest"
+                                }
+                            } else {
+                                updateState = "error"
+                                updateError = "Invalid release format."
+                            }
+                        }
+                    } catch (e: Exception) {
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                             updateState = "error"
-                            updateError = "Failed to parse release tag info."
+                            updateError = "Failed to parse release info."
                         }
                     }
                 } else {
@@ -3459,11 +3539,26 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     )
+                                    if (updateNotes.isNotEmpty()) {
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text(
+                                                text = updateNotes,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                modifier = Modifier.padding(12.dp)
+                                            )
+                                        }
+                                    }
                                     Button(
                                         onClick = {
+                                            val uriString = if (updateApkUrl.isNotEmpty()) updateApkUrl else "https://github.com/ovrrup/Lumia/releases/latest"
                                             val intent = Intent(
                                                 Intent.ACTION_VIEW,
-                                                Uri.parse("https://github.com/ovrrup/Lumia/releases/latest")
+                                                Uri.parse(uriString)
                                             )
                                             try { context.startActivity(intent) } catch (e: Exception) {}
                                         },

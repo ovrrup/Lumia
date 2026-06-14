@@ -229,6 +229,18 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _navBarGlassOpacityValue = MutableStateFlow(0.6f)
     val navBarGlassOpacityValue = _navBarGlassOpacityValue.asStateFlow()
 
+    private val _betaNavBarSizeControls = MutableStateFlow(prefs.getBoolean("beta_nav_bar_size_controls", false))
+    val betaNavBarSizeControls = _betaNavBarSizeControls.asStateFlow()
+
+    private val _navBarGlassLinkedToMain = MutableStateFlow(prefs.getBoolean("nav_bar_glass_linked_to_main", true))
+    val navBarGlassLinkedToMain = _navBarGlassLinkedToMain.asStateFlow()
+
+    private val _navBarGlassBackdropStyle = MutableStateFlow(prefs.getString("nav_bar_glass_backdrop_style", "Translucent") ?: "Translucent")
+    val navBarGlassBackdropStyle = _navBarGlassBackdropStyle.asStateFlow()
+
+    private val _navBarGlassDynamic = MutableStateFlow(prefs.getBoolean("nav_bar_glass_dynamic", true))
+    val navBarGlassDynamic = _navBarGlassDynamic.asStateFlow()
+
     private val _betaEnhancedHeader = MutableStateFlow(prefs.getBoolean("beta_enhanced_header", false))
     val betaEnhancedHeader = _betaEnhancedHeader.asStateFlow()
 
@@ -1093,6 +1105,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     editor.putString(key, value)
                     _glassBackdropStyle.value = value
                 }
+                "nav_bar_glass_backdrop_style" -> {
+                    editor.putString(key, value)
+                    _navBarGlassBackdropStyle.value = value
+                }
                 "glass_opacity_value" -> {
                     val floatVal = value.toFloatOrNull() ?: 0.6f
                     editor.putFloat(key, floatVal)
@@ -1159,6 +1175,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                             "system_advanced_tasks" -> _systemAdvancedTasks.value = boolVal
                             "system_pomodoro_auto_log" -> _systemPomodoroAutoLog.value = boolVal
                             "nav_bar_glass_force_enabled" -> _navBarGlassForceEnabled.value = boolVal
+                            "beta_nav_bar_size_controls" -> _betaNavBarSizeControls.value = boolVal
+                            "nav_bar_glass_linked_to_main" -> _navBarGlassLinkedToMain.value = boolVal
+                            "nav_bar_glass_dynamic" -> _navBarGlassDynamic.value = boolVal
                         }
                     }
                 }
@@ -1358,6 +1377,26 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateNavBarIndicatorAlpha(alpha: Float) {
         _navBarIndicatorAlpha.value = alpha
         prefs.edit().putFloat("nav_bar_indicator_alpha", alpha).apply()
+    }
+
+    fun updateBetaNavBarSizeControls(enabled: Boolean) {
+        _betaNavBarSizeControls.value = enabled
+        prefs.edit().putBoolean("beta_nav_bar_size_controls", enabled).apply()
+    }
+
+    fun updateNavBarGlassLinkedToMain(enabled: Boolean) {
+        _navBarGlassLinkedToMain.value = enabled
+        prefs.edit().putBoolean("nav_bar_glass_linked_to_main", enabled).apply()
+    }
+
+    fun updateNavBarGlassBackdropStyle(style: String) {
+        _navBarGlassBackdropStyle.value = style
+        prefs.edit().putString("nav_bar_glass_backdrop_style", style).apply()
+    }
+
+    fun updateNavBarGlassDynamic(enabled: Boolean) {
+        _navBarGlassDynamic.value = enabled
+        prefs.edit().putBoolean("nav_bar_glass_dynamic", enabled).apply()
     }
 
     fun updateBetaNotes(enabled: Boolean) {
@@ -1663,6 +1702,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             _betaGlassUi.value = false
             _betaGlassDynamic.value = true
             _betaFrostGlass.value = true
+            _betaNavBarSizeControls.value = false
+            _navBarGlassLinkedToMain.value = true
+            _navBarGlassBackdropStyle.value = "Translucent"
+            _navBarGlassDynamic.value = true
             _betaEnhancedHeader.value = false
             _betaMinimalistMode.value = false
             _betaDynamicBackground.value = false

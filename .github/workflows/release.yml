@@ -92,7 +92,7 @@ jobs:
         fi
 
     - name: Build Release APKs
-      run: gradle assembleRelease
+      run: gradle assembleRelease --no-daemon
       env:
         STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
         KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || 'android' }}

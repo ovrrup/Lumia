@@ -27,43 +27,36 @@ fun Modifier.liquidGlass(
     blurRadius: Float = 40f, // Kept for backwards compatibility
     isDark: Boolean = false, // Kept for backwards compatibility
     borderColor: Color = Color.White, // Kept for backwards compatibility
-    opacityOverride: Float? = null
+    opacityOverride: Float? = null,
+    backdropStyleOverride: String? = null
 ): Modifier = composed {
     val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
     val surfaceColor = MaterialTheme.colorScheme.surface
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     
-    val backdropStyle = LocalGlassBackdropStyle.current
+    val backdropStyle = backdropStyleOverride ?: LocalGlassBackdropStyle.current
     val opacitySetting = opacityOverride ?: LocalGlassOpacityValue.current
     
     val baseAlpha1 = if (isDarkTheme) (0.50f + (tintAlpha * 0.12f)) else (0.76f + (tintAlpha * 0.15f))
     val baseAlpha2 = if (isDarkTheme) (0.30f + (tintAlpha * 0.08f)) else (0.52f + (tintAlpha * 0.10f))
 
-    val finalAlpha1 = if (opacityOverride != null) {
-        baseAlpha1 * opacitySetting
-    } else {
-        when (backdropStyle) {
-            "Opaque" -> 1.0f
-            "Transparent" -> 0.01f
-            else -> baseAlpha1 * opacitySetting
-        }
+    val finalAlpha1 = when (backdropStyle) {
+        "Opaque", "Solid" -> 1.0f
+        "Transparent", "Clear" -> 0.00f
+        else -> baseAlpha1 * opacitySetting
     }
-    val finalAlpha2 = if (opacityOverride != null) {
-        baseAlpha2 * opacitySetting
-    } else {
-        when (backdropStyle) {
-            "Opaque" -> 1.0f
-            "Transparent" -> 0.00f
-            else -> baseAlpha2 * opacitySetting
-        }
+    val finalAlpha2 = when (backdropStyle) {
+        "Opaque", "Solid" -> 1.0f
+        "Transparent", "Clear" -> 0.00f
+        else -> baseAlpha2 * opacitySetting
     }
 
-    val backColor1 = if (backdropStyle == "Opaque") {
+    val backColor1 = if (backdropStyle == "Opaque" || backdropStyle == "Solid") {
         if (isDarkTheme) surfaceColor.mix(tintColor, 0.96f) else surfaceColor.mix(tintColor, 0.95f)
     } else {
         surfaceColor.mix(tintColor, if (isDarkTheme) 0.94f else 0.93f)
     }
-    val backColor2 = if (backdropStyle == "Opaque") {
+    val backColor2 = if (backdropStyle == "Opaque" || backdropStyle == "Solid") {
         if (isDarkTheme) surfaceColor.mix(tintColor, 0.98f) else surfaceColor.mix(tintColor, 0.97f)
     } else {
         surfaceColor.mix(tintColor, 0.97f)
@@ -159,9 +152,13 @@ fun Modifier.glassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = compo
 
 fun Modifier.navGlassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = composed {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
-    val dynamic = LocalGlassDynamic.current
+    
+    val isLinked = LocalNavBarGlassLinkedToMain.current
+    val dynamic = if (isLinked) LocalGlassDynamic.current else LocalNavBarGlassDynamic.current
+    val backdropStyle = if (isLinked) LocalGlassBackdropStyle.current else LocalNavBarGlassBackdropStyle.current
+    val customOpacity = if (isLinked) LocalGlassOpacityValue.current else LocalNavBarGlassOpacityValue.current
+    
     val tint = LocalGlassTint.current
-    val customOpacity = LocalNavBarGlassOpacityValue.current
     val tintColor = if (dynamic) {
         if (isDark) tint.mix(Color.Black, 0.10f) else tint.mix(Color.White, 0.15f)
     } else {
@@ -172,16 +169,20 @@ fun Modifier.navGlassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = co
         tintAlpha = if (isDark) 0.20f else 0.30f,
         isDark = isDark,
         tintColor = tintColor,
-        opacityOverride = customOpacity
+        opacityOverride = customOpacity,
+        backdropStyleOverride = backdropStyle
     )
 }
 
 fun Modifier.glassPill(shape: Shape = RoundedCornerShape(50.dp)): Modifier = composed {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
-    val dynamic = LocalGlassDynamic.current
-    val tint = LocalGlassTint.current
-    val customOpacity = LocalNavBarGlassOpacityValue.current
     
+    val isLinked = LocalNavBarGlassLinkedToMain.current
+    val dynamic = if (isLinked) LocalGlassDynamic.current else LocalNavBarGlassDynamic.current
+    val backdropStyle = if (isLinked) LocalGlassBackdropStyle.current else LocalNavBarGlassBackdropStyle.current
+    val customOpacity = if (isLinked) LocalGlassOpacityValue.current else LocalNavBarGlassOpacityValue.current
+    
+    val tint = LocalGlassTint.current
     val tintColor = if (dynamic) {
         if (isDark) tint.mix(Color.Black, 0.12f) else tint.mix(Color.White, 0.20f)
     } else {
@@ -193,6 +194,7 @@ fun Modifier.glassPill(shape: Shape = RoundedCornerShape(50.dp)): Modifier = com
         tintAlpha = if (isDark) 0.18f else 0.25f,
         isDark = isDark,
         tintColor = tintColor,
-        opacityOverride = customOpacity
+        opacityOverride = customOpacity,
+        backdropStyleOverride = backdropStyle
     )
 }

@@ -160,6 +160,9 @@ val LocalFrostGlass = androidx.compose.runtime.compositionLocalOf { true }
 val LocalGlassBackdropStyle = androidx.compose.runtime.compositionLocalOf { "Translucent" }
 val LocalGlassOpacityValue = androidx.compose.runtime.compositionLocalOf { 0.6f }
 val LocalNavBarGlassOpacityValue = androidx.compose.runtime.compositionLocalOf { 0.6f }
+val LocalNavBarGlassLinkedToMain = androidx.compose.runtime.compositionLocalOf { true }
+val LocalNavBarGlassBackdropStyle = androidx.compose.runtime.compositionLocalOf { "Translucent" }
+val LocalNavBarGlassDynamic = androidx.compose.runtime.compositionLocalOf { true }
 val LocalAppAnimationMode = androidx.compose.runtime.compositionLocalOf { "Normal" }
 val LocalMoreRounds = androidx.compose.runtime.compositionLocalOf { false }
 
@@ -179,6 +182,9 @@ fun ScholarTheme(
     glassBackdropStyle: String = "Translucent",
     glassOpacityValue: Float = 0.6f,
     navBarGlassOpacityValue: Float = 0.6f,
+    navBarGlassLinkedToMain: Boolean = true,
+    navBarGlassBackdropStyle: String = "Translucent",
+    navBarGlassDynamic: Boolean = true,
     betterTexts: Boolean = false,
     betterTextsPalette: Boolean = true,
     appAnimationMode: String = "Normal",
@@ -371,6 +377,9 @@ fun ScholarTheme(
         LocalGlassBackdropStyle provides glassBackdropStyle,
         LocalGlassOpacityValue provides glassOpacityValue,
         LocalNavBarGlassOpacityValue provides navBarGlassOpacityValue,
+        LocalNavBarGlassLinkedToMain provides navBarGlassLinkedToMain,
+        LocalNavBarGlassBackdropStyle provides navBarGlassBackdropStyle,
+        LocalNavBarGlassDynamic provides navBarGlassDynamic,
         LocalAppAnimationMode provides appAnimationMode,
         LocalMoreRounds provides moreRounds
     ) {
