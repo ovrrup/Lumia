@@ -3,12 +3,8 @@ name: Build Plugins
 on:
   push:
     branches: [ main, master ]
-    paths:
-      - 'plugins/**'
   pull_request:
     branches: [ main, master ]
-    paths:
-      - 'plugins/**'
   workflow_dispatch:
 
 jobs:
@@ -25,6 +21,9 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
@@ -35,12 +34,15 @@ jobs:
         if [ -n "${{ secrets.RELEASE_KEYSTORE }}" ]; then
           echo "Decoding release keystore from secrets..."
           echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > my-upload-key.jks
+          echo "KEY_ALIAS=upload" >> $GITHUB_ENV
         elif [ -f "debug.keystore.base64" ]; then
           echo "Using persistent debug keystore for development build..."
           base64 --decode debug.keystore.base64 > my-upload-key.jks
+          echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
         else
           echo "Generating development release keystore..."
           keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
+          echo "KEY_ALIAS=upload" >> $GITHUB_ENV
         fi
 
     - name: Build Plugins (Mock)
@@ -58,6 +60,7 @@ jobs:
         JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
         STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
         KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || 'android' }}
+        KEY_ALIAS: ${{ env.KEY_ALIAS }}
 
     - name: Upload Plugin APKs to Artifacts
       uses: actions/upload-artifact@v4

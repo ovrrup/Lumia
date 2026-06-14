@@ -90,12 +90,15 @@ jobs:
         if [ -n "${{ secrets.RELEASE_KEYSTORE }}" ]; then
           echo "Decoding release keystore from secrets..."
           echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > my-upload-key.jks
+          echo "KEY_ALIAS=upload" >> $GITHUB_ENV
         elif [ -f "debug.keystore.base64" ]; then
           echo "Using persistent debug keystore for consistent signing..."
           base64 --decode debug.keystore.base64 > my-upload-key.jks
+          echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
         else
           echo "Generating development release keystore..."
           keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
+          echo "KEY_ALIAS=upload" >> $GITHUB_ENV
         fi
 
     - name: Build Release APKs
@@ -104,6 +107,7 @@ jobs:
         JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
         STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
         KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || 'android' }}
+        KEY_ALIAS: ${{ env.KEY_ALIAS }}
 
     - name: Reorganize and Rename APKs
       run: |
