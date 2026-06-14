@@ -3163,6 +3163,7 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
             Spacer(modifier = Modifier.height(16.dp))
             ovrrup.lumia.ui.components.NotificationPermissionPanel()
             ovrrup.lumia.ui.components.ExactAlarmPermissionPanel()
+            ovrrup.lumia.ui.components.BatteryOptimizationPermissionPanel()
             
             SettingsGroupCard(title = "Notification Configuration", icon = Icons.Rounded.Notifications) {
                 SettingsPremiumToggleItem(

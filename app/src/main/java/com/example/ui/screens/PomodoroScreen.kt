@@ -277,6 +277,7 @@ fun PomodoroScreen(navController: NavController, viewModel: ovrrup.lumia.viewmod
                 item {
                     ovrrup.lumia.ui.components.NotificationPermissionPanel()
                     ovrrup.lumia.ui.components.ExactAlarmPermissionPanel()
+                    ovrrup.lumia.ui.components.BatteryOptimizationPermissionPanel()
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -426,6 +426,17 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
         )
     }
 
+    var batteryIgnoring by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val powerManager = context.getSystemService(android.content.Context.POWER_SERVICE) as? android.os.PowerManager
+                powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
+            } else {
+                true
+            }
+        )
+    }
+
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     // Overlay & Accessibility Permissions
     var overlayGranted by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
@@ -437,6 +448,12 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
                 alarmsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) alarmManager.canScheduleExactAlarms() else true
                 overlayGranted = Settings.canDrawOverlays(context)
                 accessibilityGranted = ovrrup.lumia.service.AodAccessibilityService.isServiceEnabled(context)
+                batteryIgnoring = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    val powerManager = context.getSystemService(android.content.Context.POWER_SERVICE) as? android.os.PowerManager
+                    powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
+                } else {
+                    true
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -533,6 +550,29 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
                         data = Uri.parse("package:${context.packageName}")
                     }
                     try { context.startActivity(intent) } catch (e: Exception) {}
+                }
+            }
+        )
+
+        // Battery Optimization Exemption
+        PermissionCard(
+            title = "Exempt Battery Limit",
+            description = "Crucial without GMS: Allow Lumia to launch exact local alerts and syncs when deep idling.",
+            icon = Icons.Rounded.Analytics, // Using an available rounded icon
+            isGranted = batteryIgnoring,
+            onRequest = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    try {
+                        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                            data = Uri.parse("package:${context.packageName}")
+                        }
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        try {
+                            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                            context.startActivity(intent)
+                        } catch (ex: Exception) {}
+                    }
                 }
             }
         )

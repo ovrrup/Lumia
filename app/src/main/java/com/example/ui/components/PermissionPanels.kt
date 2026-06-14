@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -126,6 +127,66 @@ fun ExactAlarmPermissionPanel() {
                         data = Uri.parse("package:${context.packageName}")
                     }
                     context.startActivity(intent)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun BatteryOptimizationPermissionPanel() {
+    val context = LocalContext.current
+    var hasExemption by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val powerManager = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+                powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
+            } else {
+                true
+            }
+        )
+    }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    val powerManager = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+                    hasExemption = powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    AnimatedVisibility(
+        visible = !hasExemption,
+        enter = expandVertically(),
+        exit = shrinkVertically()
+    ) {
+        PermissionPanel(
+            title = "Exempt Battery Optimization",
+            description = "Without Play Services to wake the device, Android pauses local alarms when idle. Disable optimizations to ensure reminders trigger exactly on time.",
+            icon = Icons.Rounded.Warning,
+            onClick = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    try {
+                        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                            data = Uri.parse("package:${context.packageName}")
+                        }
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        try {
+                            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                            context.startActivity(intent)
+                        } catch (ex: Exception) {
+                            android.util.Log.e("BatteryOptimization", "Failed to launch battery settings", ex)
+                        }
+                    }
                 }
             }
         )

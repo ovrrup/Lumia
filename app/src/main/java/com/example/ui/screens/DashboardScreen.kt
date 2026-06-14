@@ -624,6 +624,7 @@ fun HomeTab(
             item {
                 ovrrup.lumia.ui.components.NotificationPermissionPanel()
                 ovrrup.lumia.ui.components.ExactAlarmPermissionPanel()
+                ovrrup.lumia.ui.components.BatteryOptimizationPermissionPanel()
             }
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {

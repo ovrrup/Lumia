@@ -1,16 +1,19 @@
 name: Manual Release Publisher
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release Tag Name (e.g., v1.4.0)'
-        required: true
-        default: 'v1.4.0'
+        description: 'Release Tag Name (e.g., v1.4.0). If empty, auto-detects from app-config.properties'
+        required: false
+        default: ''
       release_title:
-        description: 'Release Title (e.g., Lumia v1.4.0)'
-        required: true
-        default: 'Lumia v1.4.0'
+        description: 'Release Title. If empty, uses "Lumia <tag>"'
+        required: false
+        default: ''
       draft:
         description: 'Publish as Draft'
         type: boolean
@@ -21,6 +24,8 @@ on:
         type: boolean
         required: false
         default: false
+  release:
+    types: [published]
 
 jobs:
   build-and-release:
@@ -32,6 +37,59 @@ jobs:
     steps:
     - name: Checkout Source Code
       uses: actions/checkout@v4
+
+    - name: Resolve Release Variables
+      id: vars
+      run: |
+        if [ "${{ github.event_name }}" = "release" ]; then
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          RELEASE_TITLE="${{ github.event.release.name }}"
+          if [ -z "$RELEASE_TITLE" ]; then
+            RELEASE_TITLE="Lumia $TAG_NAME"
+          fi
+          IS_DRAFT="${{ github.event.release.draft }}"
+          # Explicitly make sure the flags map to true/false string
+          if [ "$IS_DRAFT" = "true" ]; then IS_DRAFT_STR="true"; else IS_DRAFT_STR="false"; fi
+          
+          IS_PRERELEASE="${{ github.event.release.prerelease }}"
+          if [ "$IS_PRERELEASE" = "true" ]; then IS_PRERELEASE_STR="true"; else IS_PRERELEASE_STR="false"; fi
+        elif [ "${{ github.event_name }}" = "push" ]; then
+          # Pushed tag like v1.0.0
+          TAG_NAME="${{ github.ref_name }}"
+          RELEASE_TITLE="Lumia $TAG_NAME"
+          IS_DRAFT_STR="false"
+          IS_PRERELEASE_STR="false"
+        else
+          # Manual workflow dispatch
+          INPUT_TAG="${{ github.event.inputs.tag_name }}"
+          if [ -z "$INPUT_TAG" ]; then
+            # Parse version from app-config.properties
+            VERSION_NAME=$(grep "VERSION_NAME=" app/app-config.properties | cut -d'=' -f2 | tr -d '\r' | xargs)
+            TAG_NAME="v$VERSION_NAME"
+          else
+            TAG_NAME="$INPUT_TAG"
+          fi
+          
+          INPUT_TITLE="${{ github.event.inputs.release_title }}"
+          if [ -z "$INPUT_TITLE" ]; then
+            RELEASE_TITLE="Lumia $TAG_NAME"
+          else
+            RELEASE_TITLE="$INPUT_TITLE"
+          fi
+          
+          if [ "${{ github.event.inputs.draft }}" = "true" ]; then IS_DRAFT_STR="true"; else IS_DRAFT_STR="false"; fi
+          if [ "${{ github.event.inputs.prerelease }}" = "true" ]; then IS_PRERELEASE_STR="true"; else IS_PRERELEASE_STR="false"; fi
+        fi
+        
+        echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+        echo "RELEASE_TITLE=$RELEASE_TITLE" >> $GITHUB_ENV
+        echo "IS_DRAFT=$IS_DRAFT_STR" >> $GITHUB_ENV
+        echo "IS_PRERELEASE=$IS_PRERELEASE_STR" >> $GITHUB_ENV
+        
+        echo "Resolved Tag: $TAG_NAME"
+        echo "Resolved Title: $RELEASE_TITLE"
+        echo "Resolved Draft: $IS_DRAFT_STR"
+        echo "Resolved Pre-Release: $IS_PRERELEASE_STR"
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -95,11 +153,11 @@ jobs:
     - name: Create or Update GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ github.event.inputs.tag_name }}
-        name: ${{ github.event.inputs.release_title }}
+        tag_name: ${{ env.TAG_NAME }}
+        name: ${{ env.RELEASE_TITLE }}
         body_path: ${{ steps.release_notes.outputs.notes_path }}
-        draft: ${{ github.event.inputs.draft }}
-        prerelease: ${{ github.event.inputs.prerelease }}
+        draft: ${{ env.IS_DRAFT }}
+        prerelease: ${{ env.IS_PRERELEASE }}
         files: |
           app/build/outputs/apk/release/Lumia*.apk
       env:

@@ -97,6 +97,7 @@ fun SelfStudyTab(
             item {
                 ovrrup.lumia.ui.components.NotificationPermissionPanel()
                 ovrrup.lumia.ui.components.ExactAlarmPermissionPanel()
+                ovrrup.lumia.ui.components.BatteryOptimizationPermissionPanel()
             }
             item {
                 Text("Overview", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
