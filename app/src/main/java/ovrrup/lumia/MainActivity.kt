@@ -76,8 +76,8 @@ class MainActivity : ComponentActivity() {
         ovrrup.lumia.util.LogDog.setup(applicationContext)
 
         try {
-            val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(1, TimeUnit.DAYS)
-                .setInitialDelay(1, TimeUnit.HOURS)
+            val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(1L, TimeUnit.DAYS)
+                .setInitialDelay(1L, TimeUnit.HOURS)
                 .build()
             WorkManager.getInstance(this).enqueueUniquePeriodicWork(
                 "assignment_monitor",
