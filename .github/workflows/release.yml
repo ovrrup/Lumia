@@ -1,19 +1,8 @@
 name: Manual Release Publisher
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
-      tag_name:
-        description: 'Release Tag Name (e.g., v1.4.0). If empty, auto-detects from app-config.properties'
-        required: false
-        default: ''
-      release_title:
-        description: 'Release Title. If empty, uses "Lumia <tag>"'
-        required: false
-        default: ''
       draft:
         description: 'Publish as Draft'
         type: boolean
@@ -24,8 +13,6 @@ on:
         type: boolean
         required: false
         default: false
-  release:
-    types: [published]
 
 jobs:
   build-and-release:
@@ -41,55 +28,45 @@ jobs:
     - name: Resolve Release Variables
       id: vars
       run: |
-        if [ "${{ github.event_name }}" = "release" ]; then
-          TAG_NAME="${{ github.event.release.tag_name }}"
-          RELEASE_TITLE="${{ github.event.release.name }}"
-          if [ -z "$RELEASE_TITLE" ]; then
-            RELEASE_TITLE="Lumia $TAG_NAME"
-          fi
-          IS_DRAFT="${{ github.event.release.draft }}"
-          # Explicitly make sure the flags map to true/false string
-          if [ "$IS_DRAFT" = "true" ]; then IS_DRAFT_STR="true"; else IS_DRAFT_STR="false"; fi
-          
-          IS_PRERELEASE="${{ github.event.release.prerelease }}"
-          if [ "$IS_PRERELEASE" = "true" ]; then IS_PRERELEASE_STR="true"; else IS_PRERELEASE_STR="false"; fi
-        elif [ "${{ github.event_name }}" = "push" ]; then
-          # Pushed tag like v1.0.0
-          TAG_NAME="${{ github.ref_name }}"
-          RELEASE_TITLE="Lumia $TAG_NAME"
-          IS_DRAFT_STR="false"
-          IS_PRERELEASE_STR="false"
-        else
-          # Manual workflow dispatch
-          INPUT_TAG="${{ github.event.inputs.tag_name }}"
-          if [ -z "$INPUT_TAG" ]; then
-            # Parse version from app-config.properties
-            VERSION_NAME=$(grep "VERSION_NAME=" app/app-config.properties | cut -d'=' -f2 | tr -d '\r' | xargs)
-            TAG_NAME="v$VERSION_NAME"
-          else
-            TAG_NAME="$INPUT_TAG"
-          fi
-          
-          INPUT_TITLE="${{ github.event.inputs.release_title }}"
-          if [ -z "$INPUT_TITLE" ]; then
-            RELEASE_TITLE="Lumia $TAG_NAME"
-          else
-            RELEASE_TITLE="$INPUT_TITLE"
-          fi
-          
-          if [ "${{ github.event.inputs.draft }}" = "true" ]; then IS_DRAFT_STR="true"; else IS_DRAFT_STR="false"; fi
-          if [ "${{ github.event.inputs.prerelease }}" = "true" ]; then IS_PRERELEASE_STR="true"; else IS_PRERELEASE_STR="false"; fi
+        echo "Scanning app/app-config.properties..."
+        if [ ! -f "app/app-config.properties" ]; then
+          echo "ERROR: app/app-config.properties not found!"
+          exit 1
         fi
         
+        VERSION_NAME=$(grep "VERSION_NAME=" app/app-config.properties | cut -d'=' -f2 | tr -d '\r' | xargs)
+        VERSION_CODE=$(grep "VERSION_CODE=" app/app-config.properties | cut -d'=' -f2 | tr -d '\r' | xargs)
+        APPLICATION_ID=$(grep "APPLICATION_ID=" app/app-config.properties | cut -d'=' -f2 | tr -d '\r' | xargs)
+        
+        if [ -z "$VERSION_NAME" ]; then VERSION_NAME="1.0.0"; fi
+        if [ -z "$VERSION_CODE" ]; then VERSION_CODE="1"; fi
+        if [ -z "$APPLICATION_ID" ]; then APPLICATION_ID="ovrrup.lumia"; fi
+        
+        TAG_NAME="v$VERSION_NAME"
+        RELEASE_TITLE="Lumia v$VERSION_NAME (Build $VERSION_CODE)"
+        
+        IS_DRAFT="${{ github.event.inputs.draft }}"
+        IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
+        
+        # Write variables to environment
         echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
         echo "RELEASE_TITLE=$RELEASE_TITLE" >> $GITHUB_ENV
-        echo "IS_DRAFT=$IS_DRAFT_STR" >> $GITHUB_ENV
-        echo "IS_PRERELEASE=$IS_PRERELEASE_STR" >> $GITHUB_ENV
+        echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+        echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+        echo "APPLICATION_ID=$APPLICATION_ID" >> $GITHUB_ENV
+        echo "IS_DRAFT=$IS_DRAFT" >> $GITHUB_ENV
+        echo "IS_PRERELEASE=$IS_PRERELEASE" >> $GITHUB_ENV
         
-        echo "Resolved Tag: $TAG_NAME"
-        echo "Resolved Title: $RELEASE_TITLE"
-        echo "Resolved Draft: $IS_DRAFT_STR"
-        echo "Resolved Pre-Release: $IS_PRERELEASE_STR"
+        echo "=========================================="
+        echo "Resolved Variable Manifest:"
+        echo "  Application ID: $APPLICATION_ID"
+        echo "  Version Name:   $VERSION_NAME"
+        echo "  Version Code:   $VERSION_CODE"
+        echo "  Release Tag:    $TAG_NAME"
+        echo "  Release Title:  $RELEASE_TITLE"
+        echo "  Is Draft:       $IS_DRAFT"
+        echo "  Is Pre-release: $IS_PRERELEASE"
+        echo "=========================================="
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -140,25 +117,64 @@ jobs:
         echo "Listing reorganized release APKs:"
         ls -la
 
-    - name: Read Release Notes Path
-      id: release_notes
+    - name: Generate FOSS Verification Checksums & Description
+      id: description
       run: |
+        echo "Generating professional FOSS release description..."
+        
+        cat <<EOF > RELEASE_DESCRIPTION.md
+        # 📱 Lumia ${{ env.TAG_NAME }} (Build ${{ env.VERSION_CODE }})
+        
+        Independent open-source build constructed directly from official source code.
+        - **Package Name:** \`${{ env.APPLICATION_ID }}\`
+        - **Version Name:** \`${{ env.VERSION_NAME }}\`
+        - **Version Code:** \`${{ env.VERSION_CODE }}\`
+        
+        EOF
+        
         if [ -f "RELEASE_NOTES.md" ]; then
-          echo "notes_path=RELEASE_NOTES.md" >> "$GITHUB_OUTPUT"
+          echo "Appending user configured RELEASE_NOTES.md..."
+          cat RELEASE_NOTES.md >> RELEASE_DESCRIPTION.md
         else
-          # Fallback if file doesn't exist
-          echo "notes_path=" >> "$GITHUB_OUTPUT"
+          cat <<EOF >> RELEASE_DESCRIPTION.md
+        ## 🌟 What's New
+        - Stable release update of Lumia ${{ env.TAG_NAME }}.
+        EOF
         fi
+        
+        echo -e "\n## 🔒 App Security & Integrity Verification (GMS-Free)" >> RELEASE_DESCRIPTION.md
+        echo -e "Because Lumia runs completely independent of Google Play Services, you can verify your downloaded APK file's integrity using the SHA-256 hashes below:\n" >> RELEASE_DESCRIPTION.md
+        echo -e "| APK Asset Name | SHA-256 Checksum |" >> RELEASE_DESCRIPTION.md
+        echo -e "| --- | --- |" >> RELEASE_DESCRIPTION.md
+        
+        cd app/build/outputs/apk/release/
+        touch checksums.sha256
+        
+        for file in Lumia*.apk; do
+          if [ -f "$file" ]; then
+            sha=$(sha256sum "$file" | cut -d' ' -f1)
+            echo "| $file | \`$sha\` |" >> ../../../../RELEASE_DESCRIPTION.md
+            echo "$sha  $file" >> checksums.sha256
+          fi
+        done
+        
+        echo "Checksum file generated:"
+        cat checksums.sha256
+        cd ../../../../
+        
+        echo "Final RELEASE_DESCRIPTION.md content preview:"
+        cat RELEASE_DESCRIPTION.md
 
     - name: Create or Update GitHub Release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ env.TAG_NAME }}
         name: ${{ env.RELEASE_TITLE }}
-        body_path: ${{ steps.release_notes.outputs.notes_path }}
+        body_path: RELEASE_DESCRIPTION.md
         draft: ${{ env.IS_DRAFT }}
         prerelease: ${{ env.IS_PRERELEASE }}
         files: |
           app/build/outputs/apk/release/Lumia*.apk
+          app/build/outputs/apk/release/checksums.sha256
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
