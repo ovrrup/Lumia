@@ -1,12 +1,15 @@
 # Lumia Release Notes
 
 ## 🌟 v1.0.5 (Diagnostic & Analytics Harmonization) — June 2026
-This update focuses on structural refinement and UI performance, harmonizing the diagnostic tools with the core Lumia aesthetic.
+This update focuses on structural refinement, storage management, and background scheduling reliability, aligning Lumia's core utility engines with our signature high-fidelity styling.
 
+- **Storage & Resource Optimizer**: Integrated a dedicated local database and cache purger. Instantly compute active asset load across database logs, SQLite index sidecars, and temporary system cache buffers. Safely truncate SQLite WAL logs, run deep database VACUUMS, and reclaim cellular cache binaries straight from the Settings Hub.
+- **Sleep-Resilient Pomodoro Engine**: Hardened background interval timing reliability. Re-engineered the timer loop to sync with system-level wall clock changes (`System.currentTimeMillis()`) instead of purely relying on process delay increments. This ensures the app adapts seamlessly to Doze modes, screen-off suspensions, and intensive background throttles.
+- **Dedicated Heads-up Alarms**: Enabled WakeLock and VIBRATION architectures, decoupling completion alerts from the main low-importance foreground status container. Your interval transitions are now guaranteed to ring, vibrate, and pop up with high visibility via a separate, high-priority notifications alert channel.
 - **Redesigned LogDog Core**: Reverted the diagnostic handler to the **v1 layout architecture**. It now features the signature **GlassCard** styling, clearer monochrome iconography, and a more intuitive "sniffing" animation for stack trace analysis.
 - **Unified Action History**: Re-engineered the **Analytics Tab** to combat UI bloat. All telemetry and activity logs are now housed within a single, high-performance scrollable panel. This prevents layout fragmentation and significantly reduces system pressure when viewing extensive histories.
 - **Improved Data Management**: Optimized core telemetry parsing to handle thousands of historical records without impacting app responsiveness.
-- **Updater Streamlining**: Refined the in-app update experience by removing redundant package conflict warnings, providing a cleaner handoff for official signed releases.
+- **Updater Streamlining**: Refined the in-app update experience by removing redundant packaging conflict alert warnings, providing a cleaner handoff for official signed releases.
 - **General Stability**: Resolved several under-the-hood compilation warnings and missing UI component references.
 
 ---
