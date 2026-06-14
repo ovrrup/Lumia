@@ -20,6 +20,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+
 fun createLightScheme(
     primary: Color, primaryContainer: Color,
     secondary: Color, secondaryContainer: Color,
@@ -165,6 +169,7 @@ val LocalNavBarGlassBackdropStyle = androidx.compose.runtime.compositionLocalOf 
 val LocalNavBarGlassDynamic = androidx.compose.runtime.compositionLocalOf { true }
 val LocalAppAnimationMode = androidx.compose.runtime.compositionLocalOf { "Normal" }
 val LocalMoreRounds = androidx.compose.runtime.compositionLocalOf { false }
+val LocalMoreRoundsMode = androidx.compose.runtime.compositionLocalOf { "Pastel" }
 
 @Composable
 fun ScholarTheme(
@@ -189,6 +194,7 @@ fun ScholarTheme(
     betterTextsPalette: Boolean = true,
     appAnimationMode: String = "Normal",
     moreRounds: Boolean = false,
+    moreRoundsMode: String = "Pastel",
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
@@ -352,6 +358,15 @@ fun ScholarTheme(
         }
     }
 
+    // Apply More Rounds "Pastel" logic:
+    if (moreRounds && moreRoundsMode == "Pastel") {
+        colorScheme = colorScheme.copy(
+            primary = colorScheme.primary.mix(if (isDark) Color.White else Color.Black, 0.4f).copy(alpha = 0.9f),
+            secondary = colorScheme.secondary.mix(if (isDark) Color.White else Color.Black, 0.4f).copy(alpha = 0.9f),
+            tertiary = colorScheme.tertiary.mix(if (isDark) Color.White else Color.Black, 0.4f).copy(alpha = 0.9f)
+        )
+    }
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -381,14 +396,15 @@ fun ScholarTheme(
         LocalNavBarGlassBackdropStyle provides navBarGlassBackdropStyle,
         LocalNavBarGlassDynamic provides navBarGlassDynamic,
         LocalAppAnimationMode provides appAnimationMode,
-        LocalMoreRounds provides moreRounds
+        LocalMoreRounds provides moreRounds,
+        LocalMoreRoundsMode provides moreRoundsMode
     ) {
         val currentShapes = if (moreRounds) Shapes(
-            extraSmall = androidx.compose.foundation.shape.CircleShape,
-            small = androidx.compose.foundation.shape.CircleShape,
-            medium = Shapes.medium,
-            large = Shapes.large,
-            extraLarge = Shapes.extraLarge
+            extraSmall = RoundedCornerShape(4.dp),
+            small = RoundedCornerShape(8.dp),
+            medium = RoundedCornerShape(20.dp),
+            large = RoundedCornerShape(28.dp),
+            extraLarge = RoundedCornerShape(36.dp)
         ) else Shapes
         MaterialTheme(
             colorScheme = colorScheme,
@@ -402,12 +418,13 @@ fun ScholarTheme(
 @Composable
 fun Modifier.bouncyScale(interactionSource: androidx.compose.foundation.interaction.InteractionSource): Modifier {
     val animationMode = LocalAppAnimationMode.current
+    val moreRounds = LocalMoreRounds.current
     val isPressed by interactionSource.collectIsPressedAsState()
     
     val targetScale = if (isPressed) {
         when (animationMode) {
-            "Bouncy" -> 1.15f
-            "Dynamic" -> 1.08f
+            "Bouncy" -> if (moreRounds) 1.22f else 1.15f
+            "Dynamic" -> if (moreRounds) 1.12f else 1.08f
             else -> 1.02f
         }
     } else 1f
@@ -415,8 +432,8 @@ fun Modifier.bouncyScale(interactionSource: androidx.compose.foundation.interact
     val scale by animateFloatAsState(
         targetValue = targetScale,
         animationSpec = when (animationMode) {
-            "Bouncy" -> spring(dampingRatio = 0.35f, stiffness = 300f)
-            "Dynamic" -> spring(dampingRatio = 0.6f, stiffness = 600f)
+            "Bouncy" -> spring(dampingRatio = if (moreRounds) 0.3f else 0.35f, stiffness = if (moreRounds) 250f else 300f)
+            "Dynamic" -> spring(dampingRatio = if (moreRounds) 0.5f else 0.6f, stiffness = 600f)
             else -> spring(dampingRatio = 0.85f, stiffness = 1000f)
         },
         label = "bouncyScale"
@@ -431,6 +448,7 @@ fun Modifier.bouncyScale(interactionSource: androidx.compose.foundation.interact
 @Composable
 fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Modifier {
     val animationMode = LocalAppAnimationMode.current
+    val moreRounds = LocalMoreRounds.current
     if (!enabled) return this.clickable(enabled = false) {}
     
     val interactionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
@@ -438,8 +456,8 @@ fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Mod
     
     val targetScale = if (isPressed) {
         when (animationMode) {
-            "Bouncy" -> 1.15f
-            "Dynamic" -> 1.08f
+            "Bouncy" -> if (moreRounds) 1.22f else 1.15f
+            "Dynamic" -> if (moreRounds) 1.12f else 1.08f
             else -> 1.02f
         }
     } else 1f

@@ -44,7 +44,25 @@ class BootReceiver : BroadcastReceiver() {
                             }
                         }
                     }
-                    Log.d("BootReceiver", "Restored $scheduledCount assignments reminders successfully.")
+
+                    val tasks = db.scholarDao().exportAllTasks()
+                    for (task in tasks) {
+                        if (!task.isCompleted && task.dueDateMillis != null) {
+                            val alarmTime = task.dueDateMillis - (1000 * 60 * 60)
+                            if (alarmTime > now) {
+                                ReminderScheduler.scheduleReminderExact(
+                                    context = context,
+                                    assignmentId = task.id + 20000,
+                                    title = task.title,
+                                    desc = task.description,
+                                    interconnections = task.tags,
+                                    triggerTime = alarmTime
+                                )
+                                scheduledCount++
+                            }
+                        }
+                    }
+                    Log.d("BootReceiver", "Restored $scheduledCount reminders successfully.")
                 } catch (e: Exception) {
                     Log.e("BootReceiver", "Error restoring notifications on boot", e)
                 } finally {

@@ -1,11 +1,22 @@
 # Lumia Release Notes
 
-## 🌟 What's New in v1.0.2
-- **Unified Alert Aesthetics**: Synchronized all system notification icons with the monochrome launcher design and active theme color palette for a seamless Material 3 experience.
-- **Unified Storage Engine**: Consolidated internal settings into a centralized preference store (`lumia_prefs`), improving data consistency across background workers and the UI.
-- **Scholarship Engine Stability**: Resolved critical lifecycle issues in state management, ensuring reliable streak tracking and real-time dashboard updates.
-- **Refined Material 3 Layouts**: Optimized glass-morphism headers and list item rendering for improved depth and legibility across all adaptive display modes.
-- **OTA Engine Resilience**: Hardened the version checking logic against GitHub API rate limits and improved tag parsing for FOSS distributions.
+## 🌟 What's New in v1.0.4 (Elastic Buttons & Style Engine)
+- **Enhanced "More Rounds" Core**: Re-engineered the shape engine to support hierarchical corner radii, delivering a more organic and polished look across all UI tiers.
+- **Unified Bouncy Button System**: All buttons (Material, Text, Outlined, and Floating Action Buttons) now utilize the `Bouncy` physics engine for consistent tactile feedback.
+- **Liquid Glass Integration**: Buttons now intelligently adapt to the Liquid Glass engine, gaining soft translucency and dynamic depth when transparency modes are active.
+- **Advanced Rounded Modes**: Introduced **Pastel Mode** (original soft-focus high-contrast look) and **Glass Mode** (translucent liquid adaptation) as selective options within the enhanced rounds settings.
+
+## 🌟 What's New in v1.0.3 (Stability & Conflict Resolution)
+- **APK Conflict Awareness**: Added detailed in-app guidance for users installing FOSS versions over environment-specific previews to resolve "Package Conflict" errors.
+- **Dynamic Versioning Engine**: Decoupled version display from hardcoded values, now synchronizing directly with `BuildConfig` for accurate build telemetry.
+- **OTA Verification Hardening**: Improved the integrity check for downloaded update metadata to ensure seamless handoff to the browser for final APK acquisition.
+
+## 🌟 What's New in v1.0.2 (Unified Aesthetics & Persistence)
+- **Centralized Logic (The lumia_prefs migration)**: Consolidated all disparate internal settings stores into a singular, high-performance preference engine, eliminating state desync between background tasks and the UI.
+- **Unified Alert Aesthetics**: Synchronized every system notification channel with the monochrome launcher identity and dynamic theme palette for a cohesive Material 3 experience.
+- **Scholarship Stability**: Resolved critical lifecycle leaks in the streak tracking engine, ensuring your daily progress is captured accurately even across system restarts.
+- **Refined Adaptive Layouts**: Optimized glass-morphism headers and card rendering for improved depth-of-field and legibility in both expanded tablet and compact mobile modes.
+- **Rate-Limit Resilience**: Hardened the GitHub API fetching logic to prevent throttling during peak global traffic cycles.
 
 ## 🌟 What's New in v1.0.1
 - **Advanced Navigation Layout Panel**: Expanded bottom navigation configurator supporting interactive floating/padded layouts, sizing options, custom heights, and satin glass independent filters.

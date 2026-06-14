@@ -86,13 +86,16 @@ jobs:
         if [ -n "${{ secrets.RELEASE_KEYSTORE }}" ]; then
           echo "Decoding release keystore from secrets..."
           echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > my-upload-key.jks
+        elif [ -f "debug.keystore.base64" ]; then
+          echo "Using persistent debug keystore for consistent signing..."
+          base64 --decode debug.keystore.base64 > my-upload-key.jks
         else
           echo "Generating development release keystore..."
-          keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Android Release"
+          keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
         fi
 
     - name: Build Release APKs
-      run: gradle assembleRelease --no-daemon
+      run: gradle assembleRelease assembleReleaseCompressed --no-daemon -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=1024m" -Dkotlin.compiler.execution.strategy=in-process --no-parallel
       env:
         JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
         STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
@@ -100,12 +103,12 @@ jobs:
 
     - name: Reorganize and Rename APKs
       run: |
+        # Process standard release APKs (Uncompressed)
         cd app/build/outputs/apk/release/
         echo "Listing initial release APKs:"
         ls -la
         for file in *.apk; do
           if [ -f "$file" ]; then
-            # Replace prefix 'app' with 'Lumia' and suffix '-release' with empty
             new_name=$(echo "$file" | sed -e 's/^app/Lumia/' -e 's/-release//')
             mv "$file" "$new_name"
             echo "Renamed $file to $new_name"
@@ -115,6 +118,17 @@ jobs:
           cp Lumia-universal.apk Lumia.apk
           echo "Copied Lumia-universal.apk to Lumia.apk"
         fi
+        
+        # Process compressed release APKs
+        cd ../releaseCompressed/
+        echo "Listing initial compressed release APKs:"
+        ls -la
+        if [ -f "app-releaseCompressed-universal.apk" ]; then
+          cp app-releaseCompressed-universal.apk ../release/Lumia-universal-compressed.apk
+          echo "Copied universal compressed APK to release folder"
+        fi
+        
+        cd ../release/
         echo "Listing reorganized release APKs:"
         ls -la
 

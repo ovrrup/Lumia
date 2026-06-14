@@ -164,6 +164,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _moreRounds = MutableStateFlow(prefs.getBoolean("more_rounds", false))
     val moreRounds = _moreRounds.asStateFlow()
 
+    private val _moreRoundsMode = MutableStateFlow(prefs.getString("more_rounds_mode", "Pastel") ?: "Pastel")
+    val moreRoundsMode = _moreRoundsMode.asStateFlow()
+
     fun updateAppAnimationMode(mode: String) {
         if (mode == "Bouncy" && safetyPinEnabled.value && safetyPinConflictWarning.value && (_displayLayoutMode.value != "Immersive" || !_moreRounds.value)) {
             _safetyPinDialogData.value = SafetyPinDialogData(
@@ -206,6 +209,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         if (!enabled && _appAnimationMode.value == "Bouncy") {
             updateAppAnimationMode("Dynamic")
         }
+    }
+
+    fun updateMoreRoundsMode(mode: String) {
+        _moreRoundsMode.value = mode
+        prefs.edit().putString("more_rounds_mode", mode).apply()
     }
 
     private val _displayLayoutMode = MutableStateFlow(prefs.getString("display_layout_mode", "Immersive") ?: "Immersive")

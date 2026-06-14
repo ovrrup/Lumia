@@ -24,6 +24,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ovrrup.lumia.model.Course
+import ovrrup.lumia.ui.components.BouncyIconButton
+import ovrrup.lumia.ui.components.BouncyButton
+import ovrrup.lumia.ui.components.BouncyTextButton
+import ovrrup.lumia.ui.components.BouncyFloatingActionButton
 import ovrrup.lumia.ui.components.GlassCard
 import ovrrup.lumia.viewmodel.ScholarViewModel
 
@@ -150,7 +154,7 @@ fun CoursesTab(
                             }
                             
                             Box {
-                                IconButton(onClick = { expanded = true }) {
+                                BouncyIconButton(onClick = { expanded = true }) {
                                     Icon(Icons.Rounded.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 DropdownMenu(
@@ -299,7 +303,7 @@ fun CoursesTab(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                BouncyTextButton(onClick = {
                     if (name.isNotBlank()) {
                         courseToEdit?.copy(
                             name = name,
@@ -314,7 +318,7 @@ fun CoursesTab(
                 }) { Text("Save") }
             },
             dismissButton = {
-                TextButton(onClick = { courseToEdit = null }) { Text("Cancel") }
+                BouncyTextButton(onClick = { courseToEdit = null }) { Text("Cancel") }
             }
         )
     }

@@ -49,6 +49,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ovrrup.lumia.viewmodel.ScholarViewModel
 import java.util.Date
 import androidx.compose.material3.IconButtonDefaults
+import ovrrup.lumia.ui.components.BouncyIconButton
+import ovrrup.lumia.ui.components.BouncyButton
+import ovrrup.lumia.ui.components.BouncyTextButton
+import ovrrup.lumia.ui.components.BouncyFloatingActionButton
 import java.util.Calendar
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -522,7 +526,7 @@ fun PomodoroHeatmapChart(
                 )
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
+                    BouncyIconButton(
                         onClick = { 
                             val prevCal = calendarForMonth.clone() as Calendar
                             prevCal.set(Calendar.DAY_OF_MONTH, 1)
@@ -540,7 +544,7 @@ fun PomodoroHeatmapChart(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )
-                    IconButton(
+                    BouncyIconButton(
                         onClick = { 
                             val nextCal = calendarForMonth.clone() as Calendar
                             nextCal.set(Calendar.DAY_OF_MONTH, 1)

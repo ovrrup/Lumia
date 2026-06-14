@@ -16,6 +16,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import ovrrup.lumia.ui.components.BouncyFloatingActionButton
+import ovrrup.lumia.ui.components.BouncyIconButton
 import org.json.JSONArray
 import kotlinx.coroutines.launch
 
@@ -66,7 +68,7 @@ fun QuickNotesScreen(navController: NavController) {
             TopAppBar(
                 title = { Text("Quick Notes", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    BouncyIconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back")
                     }
                 },
@@ -74,7 +76,7 @@ fun QuickNotesScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
+            BouncyFloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Rounded.Add, "Add Note")
             }
         }

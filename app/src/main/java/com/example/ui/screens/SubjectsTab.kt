@@ -29,6 +29,12 @@ import ovrrup.lumia.model.Subject
 import ovrrup.lumia.ui.components.GlassCard
 import ovrrup.lumia.viewmodel.ScholarViewModel
 
+import ovrrup.lumia.ui.components.BouncyIconButton
+import ovrrup.lumia.ui.components.BouncyButton
+import ovrrup.lumia.ui.components.BouncyTextButton
+import ovrrup.lumia.ui.components.BouncyFloatingActionButton
+import ovrrup.lumia.ui.components.GlassCard
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubjectsTab(
@@ -46,13 +52,11 @@ fun SubjectsTab(
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
         floatingActionButton = {
-            val src = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-            androidx.compose.material3.FloatingActionButton(
+            BouncyFloatingActionButton(
                 onClick = onAddSubjectClick,
-                interactionSource = src,
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding()).bouncyScale(src)
+                modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding())
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = "Add Subject")
             }
@@ -128,7 +132,7 @@ fun SubjectsTab(
                                 )
                             }
                             Box {
-                                IconButton(onClick = { expanded = true }) {
+                                BouncyIconButton(onClick = { expanded = true }) {
                                     Icon(Icons.Rounded.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 DropdownMenu(
@@ -213,7 +217,7 @@ fun SubjectsTab(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                BouncyTextButton(onClick = {
                     if (name.isNotBlank()) {
                         subjectToEdit?.copy(
                             name = name,
@@ -224,7 +228,7 @@ fun SubjectsTab(
                 }) { Text("Save") }
             },
             dismissButton = {
-                TextButton(onClick = { subjectToEdit = null }) { Text("Cancel") }
+                BouncyTextButton(onClick = { subjectToEdit = null }) { Text("Cancel") }
             }
         )
     }

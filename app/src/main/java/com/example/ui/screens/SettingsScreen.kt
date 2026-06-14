@@ -12,7 +12,9 @@ import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Close
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -83,6 +85,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ovrrup.lumia.viewmodel.ScholarViewModel
+import ovrrup.lumia.ui.components.BouncyIconButton
+import ovrrup.lumia.ui.components.BouncyButton
+import ovrrup.lumia.ui.components.BouncyTextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,7 +118,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 CenterAlignedTopAppBar(
                     title = { Text("Settings Hub", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
                     navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
+                        BouncyIconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                         }
                     },
@@ -354,7 +359,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 CenterAlignedTopAppBar(
                     title = { Text("Appearance & Theme", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
                     navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
+                        BouncyIconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                         }
                     },
@@ -447,6 +452,33 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     icon = Icons.Rounded.CheckCircle,
                     onCheckedChange = { viewModel.updateMoreRounds(it) }
                 )
+
+                AnimatedVisibility(visible = moreRounds) {
+                    val moreRoundsMode by viewModel.moreRoundsMode.collectAsStateWithLifecycle()
+                    Column(modifier = Modifier.padding(top = 12.dp)) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(bottom = 12.dp))
+                        SettingsSegmentedPicker(
+                            title = "Enhanced Rounds Style",
+                            subtitle = "Select the visual approach for rounded components and buttons",
+                            options = listOf(
+                                Triple("Pastel", "Soft Pastel", Icons.Rounded.Palette),
+                                Triple("Glass", "Liquid Glass", Icons.Rounded.BlurOn)
+                            ),
+                            selected = moreRoundsMode,
+                            onSelected = { viewModel.updateMoreRoundsMode(it) }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (moreRoundsMode == "Pastel") 
+                                "Buttons will use high-contrast pastel colors with hidden outlines and deep elastic animations."
+                                else "Buttons will gain glass-like translucency and adapt dynamically to the active background.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
 
             // 2. Glass UI Engine Card (Animated entry)
@@ -1301,7 +1333,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                         Text("LogDog Core Analyzer v2.0", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = androidx.compose.ui.graphics.Color.White)
                                     }
                                     IconButton(onClick = { showLogDogDialog = false }) {
-                                        Icon(Icons.Rounded.CheckCircle, contentDescription = "Close", tint = androidx.compose.ui.graphics.Color.White)
+                                        Icon(Icons.Rounded.Close, contentDescription = "Close", tint = androidx.compose.ui.graphics.Color.White)
                                     }
                                 }
                                 
@@ -3298,10 +3330,9 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
 
     val currentVersion = remember {
         try {
-            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            pInfo.versionName ?: "1.0.2"
+            ovrrup.lumia.BuildConfig.VERSION_NAME
         } catch (e: Exception) {
-            "1.0.2"
+            "1.0.3"
         }
     }
 
@@ -3360,9 +3391,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 updateNotes = body
                                 updateApkUrl = apkUrl
                                 
-                                val currentVersionClean = currentVersion.lowercase().replace("v", "").replace("-foss", "").trim()
-                                val cleanTag = tagName.lowercase().replace("v", "").replace("-foss", "").trim()
-                                if (cleanTag != currentVersionClean && cleanTag.isNotEmpty()) {
+                                if (ovrrup.lumia.util.VersionUtils.isUpdateAvailable(currentVersion, tagName)) {
                                     updateState = "available"
                                 } else {
                                     updateState = "latest"
@@ -3565,6 +3594,23 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     )
+                                    
+                                    // Conflict warning
+                                    Card(
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(
+                                                text = "Note: If installation fails with 'Package Conflict', please uninstall your current preview/debug version first. Official GitHub APKs are signed differently.",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onErrorContainer
+                                            )
+                                        }
+                                    }
                                     if (updateNotes.isNotEmpty()) {
                                         Surface(
                                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),

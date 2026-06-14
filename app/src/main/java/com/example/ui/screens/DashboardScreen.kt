@@ -93,6 +93,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ovrrup.lumia.R
 import ovrrup.lumia.viewmodel.ScholarViewModel
+import ovrrup.lumia.ui.components.BouncyIconButton
+import ovrrup.lumia.ui.components.BouncyButton
+import ovrrup.lumia.ui.components.BouncyTextButton
+import ovrrup.lumia.ui.components.BouncyOutlinedButton
+import ovrrup.lumia.ui.components.BouncyFloatingActionButton
 import ovrrup.lumia.ui.components.GlassCard
 import ovrrup.lumia.ui.components.GlassHeroCard
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -105,6 +110,10 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.border
+
+import ovrrup.lumia.ui.components.BouncyIconButton
+import ovrrup.lumia.ui.components.BouncyButton
+import ovrrup.lumia.ui.components.BouncyTextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,19 +165,22 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     CenterAlignedTopAppBar(
                         title = { Text(titleText, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                         actions = {
+                            val moreRounds = ovrrup.lumia.ui.theme.LocalMoreRounds.current
+                            val moreRoundsMode = ovrrup.lumia.ui.theme.LocalMoreRoundsMode.current
+                            val isMrGlass = moreRounds && moreRoundsMode == "Glass"
                             androidx.compose.foundation.layout.Box(
                                 modifier = Modifier
                                     .padding(end = 16.dp)
                                     .size(44.dp)
-                                    .shadow(elevation = 8.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
-                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                                    .then(if (isMrGlass) Modifier else Modifier.shadow(elevation = 8.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
+                                    .then(if (isMrGlass) Modifier.liquidGlass(CircleShape, tintAlpha = 0.25f) else Modifier.background(MaterialTheme.colorScheme.primaryContainer, CircleShape))
                                     .clip(CircleShape)
                                     .bouncyClick(
                                         onClick = { navController.navigate("settings") }
                                     ),
                                 contentAlignment = androidx.compose.ui.Alignment.Center
                             ) {
-                                Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
+                                Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = if (isMrGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
                             }
                         },
                         scrollBehavior = scrollBehavior,
@@ -459,7 +471,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         AlertDialog(
                             onDismissRequest = { showTimePicker = false },
                             confirmButton = {
-                                TextButton(onClick = {
+                                BouncyTextButton(onClick = {
                                     val hour = timePickerState.hour
                                     val minute = timePickerState.minute
                                     val amPm = if (hour >= 12) "PM" else "AM"
@@ -469,7 +481,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 }) { Text("OK") }
                             },
                             dismissButton = {
-                                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                                BouncyTextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
                             },
                             text = {
                                 androidx.compose.material3.TimePicker(state = timePickerState)
@@ -477,7 +489,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         )
                     }
                     
-                    androidx.compose.material3.OutlinedButton(onClick = { showTimePicker = true }, modifier = Modifier.fillMaxWidth()) {
+                    BouncyOutlinedButton(onClick = { showTimePicker = true }, modifier = Modifier.fillMaxWidth()) {
                         Text(if (schedule.isEmpty()) "Select Schedule Time" else "Schedule: $schedule")
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -521,7 +533,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                BouncyTextButton(onClick = {
                     if (name.isNotBlank()) {
                         viewModel.addCourse(name, instructor, schedule, description, selectedSubjectId, tags)
                         showAddCourseDialog = false
@@ -529,7 +541,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }) { Text("Add") }
             },
             dismissButton = {
-                TextButton(onClick = { showAddCourseDialog = false }) { Text("Cancel") }
+                BouncyTextButton(onClick = { showAddCourseDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -559,7 +571,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                BouncyTextButton(onClick = {
                     if (name.isNotBlank()) {
                         viewModel.addSubject(name, tags)
                         showAddSubjectDialog = false
@@ -567,7 +579,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }) { Text("Add") }
             },
             dismissButton = {
-                TextButton(onClick = { showAddSubjectDialog = false }) { Text("Cancel") }
+                BouncyTextButton(onClick = { showAddSubjectDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -753,7 +765,7 @@ fun HomeTab(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("Upcoming Classes & Assignments", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            IconButton(
+                            BouncyIconButton(
                                 onClick = onAddCourseClick,
                                 modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
                             ) {
@@ -808,7 +820,7 @@ fun HomeTab(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("Upcoming Tasks", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
-                            IconButton(
+                            BouncyIconButton(
                                 onClick = onNavigateToTasks,
                                 modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f), CircleShape)
                             ) {

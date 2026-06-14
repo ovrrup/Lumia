@@ -21,6 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ovrrup.lumia.model.Task
+import ovrrup.lumia.ui.components.BouncyIconButton
+import ovrrup.lumia.ui.components.BouncyButton
+import ovrrup.lumia.ui.components.BouncyTextButton
+import ovrrup.lumia.ui.components.BouncyFloatingActionButton
 import ovrrup.lumia.ui.components.GlassCard
 import ovrrup.lumia.ui.theme.glassBar
 import ovrrup.lumia.viewmodel.ScholarViewModel
@@ -176,7 +180,7 @@ fun SelfStudyTab(
                     if (advancedTasks && tasks.isNotEmpty()) {
                         var expandSort by remember { mutableStateOf(false) }
                         Box {
-                            TextButton(onClick = { expandSort = true }) {
+                            BouncyTextButton(onClick = { expandSort = true }) {
                                 Text("Group: $groupBy")
                                 Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
                             }
@@ -471,7 +475,7 @@ fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit, mo
                     }
                 }
             }
-            IconButton(onClick = { viewModel.deleteTask(task) }) {
+                        BouncyIconButton(onClick = { viewModel.deleteTask(task) }) {
                 Icon(Icons.Rounded.Delete, contentDescription = "Delete Task", tint = MaterialTheme.colorScheme.error)
             }
         }

@@ -19,7 +19,11 @@ object LogDog {
             
             Log.e("LogDog", "Crash captured: $crashInfo")
             val prefs = context.getSharedPreferences("logdog_prefs", Context.MODE_PRIVATE)
-            val crashes = JSONArray(prefs.getString("crashes", "[]") ?: "[]")
+            val crashes = try {
+                JSONArray(prefs.getString("crashes", "[]") ?: "[]")
+            } catch (e: Exception) {
+                JSONArray()
+            }
             if (crashes.length() >= 5) crashes.remove(0)
             crashes.put(crashInfo)
             

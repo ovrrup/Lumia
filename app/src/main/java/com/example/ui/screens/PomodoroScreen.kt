@@ -41,6 +41,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import ovrrup.lumia.model.PracticeAssignment
+import ovrrup.lumia.ui.components.BouncyIconButton
+import ovrrup.lumia.ui.components.BouncyFloatingActionButton
+import ovrrup.lumia.ui.components.BouncyButton
+import ovrrup.lumia.ui.components.BouncyTextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -259,7 +263,7 @@ fun PomodoroScreen(navController: NavController, viewModel: ovrrup.lumia.viewmod
                 TopAppBar(
                     title = { Text("Pomodoro Timer", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
+                        BouncyIconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back")
                         }
                     },
@@ -376,7 +380,7 @@ fun PomodoroScreen(navController: NavController, viewModel: ovrrup.lumia.viewmod
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            FloatingActionButton(
+                            BouncyFloatingActionButton(
                                 onClick = { 
                                     val now = System.currentTimeMillis()
                                     if (isRunning) {
@@ -464,7 +468,7 @@ fun PomodoroScreen(navController: NavController, viewModel: ovrrup.lumia.viewmod
                             
                             // Skip Button
                             if (isRunning) {
-                                FloatingActionButton(
+                                BouncyFloatingActionButton(
                                     onClick = { 
                                         isExitButtonShown = false
                                         val intent = android.content.Intent(context, ovrrup.lumia.service.PomodoroService::class.java).apply { action = "SKIP" }

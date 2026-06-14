@@ -21,9 +21,9 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = appConfig.getProperty("APPLICATION_ID", "lumia.foss")
+    applicationId = appConfig.getProperty("APPLICATION_ID", "ovrrup.lumia")
     minSdk = 24
-    targetSdk = 36
+    targetSdk = 35
     versionCode = appConfig.getProperty("VERSION_CODE", "1").toInt()
     versionName = appConfig.getProperty("VERSION_NAME", "1.0")
 
@@ -59,8 +59,16 @@ android {
     release {
       isCrunchPngs = false
       isMinifyEnabled = false
+      isShrinkResources = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
+    }
+    create("releaseCompressed") {
+      initWith(getByName("release"))
+      isCrunchPngs = true
+      isMinifyEnabled = true
+      isShrinkResources = true
+      matchingFallbacks += listOf("release")
     }
     debug {
       signingConfig = signingConfigs.getByName("debugConfig")

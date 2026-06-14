@@ -57,6 +57,7 @@ import java.util.concurrent.TimeUnit
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Close
 
 class MainActivity : ComponentActivity() {
     private val viewModel: ScholarViewModel by viewModels()
@@ -73,6 +74,12 @@ class MainActivity : ComponentActivity() {
         }
 
         ovrrup.lumia.util.LogDog.setup(applicationContext)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+            }
+        }
         
         try {
             val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(1, TimeUnit.DAYS)
@@ -105,6 +112,7 @@ class MainActivity : ComponentActivity() {
             val glassOpacityValue by viewModel.glassOpacityValue.collectAsStateWithLifecycle()
             val appAnimationMode by viewModel.appAnimationMode.collectAsStateWithLifecycle()
             val moreRounds by viewModel.moreRounds.collectAsStateWithLifecycle()
+            val moreRoundsMode by viewModel.moreRoundsMode.collectAsStateWithLifecycle()
 
             val customPrimary by viewModel.customPrimary.collectAsStateWithLifecycle()
             val customPrimaryContainer by viewModel.customPrimaryContainer.collectAsStateWithLifecycle()
@@ -154,6 +162,7 @@ class MainActivity : ComponentActivity() {
                 betterTextsPalette = betaBetterTextsPalette,
                 appAnimationMode = appAnimationMode,
                 moreRounds = moreRounds,
+                moreRoundsMode = moreRoundsMode,
                 customPrimary = customPrimary,
                 customPrimaryContainer = customPrimaryContainer,
                 customBackground = customBackground,
@@ -212,17 +221,10 @@ class MainActivity : ComponentActivity() {
                                         val responseText = connection.inputStream.bufferedReader().use { it.readText() }
                                         val json = org.json.JSONObject(responseText)
                                         val tagName = json.optString("tag_name", "")
-                                        val currentVersion = try {
-                                            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                                            pInfo.versionName ?: "1.0.2"
-                                        } catch (e: Exception) {
-                                            "1.0.2"
-                                        }
+                                        val currentVersion = ovrrup.lumia.BuildConfig.VERSION_NAME
                                         
                                         if (tagName.isNotEmpty()) {
-                                            val cleanTag = tagName.lowercase().replace("v", "").replace("-foss", "").trim()
-                                            val cleanCurrent = currentVersion.lowercase().replace("v", "").replace("-foss", "").trim()
-                                            if (cleanTag != cleanCurrent && cleanTag.isNotEmpty()) {
+                                            if (ovrrup.lumia.util.VersionUtils.isUpdateAvailable(currentVersion, tagName)) {
                                                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                                                     android.widget.Toast.makeText(
                                                         context,

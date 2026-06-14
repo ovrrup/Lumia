@@ -43,6 +43,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ovrrup.lumia.viewmodel.ScholarViewModel
+import ovrrup.lumia.ui.components.BouncyIconButton
+import ovrrup.lumia.ui.components.BouncyButton
+import ovrrup.lumia.ui.components.BouncyTextButton
+import ovrrup.lumia.ui.components.BouncyOutlinedButton
+import ovrrup.lumia.ui.components.BouncyFloatingActionButton
 
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -215,7 +220,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 LargeTopAppBar(
                     title = { Text(course.name, fontWeight = FontWeight.Bold) },
                     navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
+                        BouncyIconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                         }
                     },
@@ -292,7 +297,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     }
                                     
                                     if (!fuseSubjectsCourses) {
-                                        androidx.compose.material3.IconButton(
+                                        BouncyIconButton(
                                             onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }
                                         ) {
                                             Icon(
@@ -302,7 +307,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                             )
                                         }
                                     } else {
-                                        androidx.compose.material3.IconButton(
+                                        BouncyIconButton(
                                             onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }
                                         ) {
                                             Icon(
@@ -364,7 +369,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     Spacer(Modifier.height(16.dp))
                                     Text("Embedded Subject Hub", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
                                     Spacer(Modifier.height(8.dp))
-                                    Button(onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }, modifier = Modifier.fillMaxWidth()) {
+                                    BouncyButton(onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }, modifier = Modifier.fillMaxWidth()) {
                                         Text("Open Subject Workspace")
                                     }
                                 }
@@ -383,7 +388,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 Spacer(Modifier.height(4.dp))
                                 Text("Fuse a subject to unlock synergy and topics.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.height(12.dp))
-                                OutlinedButton(onClick = { showLinkSubjectDialog = true }) {
+                                BouncyOutlinedButton(onClick = { showLinkSubjectDialog = true }) {
                                     Text("Link or Create Subject")
                                 }
                             }
@@ -406,7 +411,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         Column(modifier = Modifier.padding(24.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Text("Attendance Tracker", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                                IconButton(onClick = { isMonthlyView = !isMonthlyView; displayMonthOffset = 0 }) {
+                                BouncyIconButton(onClick = { isMonthlyView = !isMonthlyView; displayMonthOffset = 0 }) {
                                     Icon(
                                         imageVector = if (isMonthlyView) Icons.Rounded.ViewModule else Icons.Rounded.DateRange,
                                         contentDescription = "Toggle View",
@@ -435,11 +440,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    IconButton(onClick = { displayMonthOffset-- }) {
+                                    BouncyIconButton(onClick = { displayMonthOffset-- }) {
                                         Icon(Icons.Rounded.ChevronLeft, contentDescription = "Prev", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                     }
                                     Text(monthName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                                    IconButton(onClick = { displayMonthOffset++ }) {
+                                    BouncyIconButton(onClick = { displayMonthOffset++ }) {
                                         Icon(Icons.Rounded.ChevronRight, contentDescription = "Next", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                     }
                                 }
@@ -637,7 +642,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     }
                                     if (record != null) {
                                         Spacer(modifier = Modifier.height(16.dp))
-                                        TextButton(
+                                        BouncyTextButton(
                                             onClick = {
                                                 viewModel.deleteAttendanceRecord(record)
                                                 showAttendanceDialog = false
@@ -672,7 +677,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Button(
+                        BouncyButton(
                             onClick = { 
                                 noteToEdit = null
                                 noteText = ""
@@ -1271,7 +1276,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(
+                    BouncyOutlinedButton(
                         onClick = { showDatePicker = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -1281,7 +1286,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                BouncyTextButton(onClick = {
                     if (title.isNotBlank()) {
                         viewModel.addAssignment(courseId, title, desc, dueDateMillis, category.ifBlank { "Other" }, categoryColor, tags, selectedSubjectId)
                         showAddAssignmentDialog = false
@@ -1289,7 +1294,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 }) { Text("Add") }
             },
             dismissButton = {
-                TextButton(onClick = { showAddAssignmentDialog = false }) { Text("Cancel") }
+                BouncyTextButton(onClick = { showAddAssignmentDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -1487,7 +1492,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(
+                    BouncyOutlinedButton(
                         onClick = { showDatePicker = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -1497,7 +1502,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                BouncyTextButton(onClick = {
                     if (title.isNotBlank()) {
                         assignmentToEdit?.copy(
                                 title = title,
@@ -1513,7 +1518,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 }) { Text("Save") }
             },
             dismissButton = {
-                TextButton(onClick = { assignmentToEdit = null }) { Text("Cancel") }
+                BouncyTextButton(onClick = { assignmentToEdit = null }) { Text("Cancel") }
             }
         )
     }
@@ -1540,7 +1545,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                BouncyTextButton(onClick = {
                     if (noteText.isNotBlank()) {
                         val activeNote = noteToEdit
                         if (activeNote != null) {
@@ -1564,7 +1569,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 }) { Text("Save") }
             },
             dismissButton = {
-                TextButton(onClick = { showAddNoteDialog = false }) { Text("Cancel") }
+                BouncyTextButton(onClick = { showAddNoteDialog = false }) { Text("Cancel") }
             }
         )
     }
