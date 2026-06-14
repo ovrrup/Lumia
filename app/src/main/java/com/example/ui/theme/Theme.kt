@@ -195,6 +195,9 @@ fun ScholarTheme(
     appAnimationMode: String = "Normal",
     moreRounds: Boolean = false,
     moreRoundsMode: String = "Pastel",
+    betaDynamicTypography: Boolean = true,
+    manualFontFamily: String = "Nunito",
+    customFonts: List<ovrrup.lumia.model.CustomFont> = emptyList(),
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
@@ -384,6 +387,51 @@ fun ScholarTheme(
         }
     }
 
+    val currentTypography = androidx.compose.runtime.remember(
+        betaDynamicTypography, themeColor, isDark, manualFontFamily, customFonts
+    ) {
+        var selectedFont: androidx.compose.ui.text.font.FontFamily = NunitoFontFamily
+        
+        val activeCustomFont = if (betaDynamicTypography) {
+             customFonts.filter { it.isActive }.find { cf ->
+                val themeMatch = cf.conditionTheme == "Any" || cf.conditionTheme == themeColor
+                val modeMatch = cf.conditionMode == "Any" || (if (isDark) cf.conditionMode == "Dark" else cf.conditionMode == "Light")
+                themeMatch && modeMatch
+            }
+        } else null
+
+        if (activeCustomFont != null) {
+            selectedFont = androidx.compose.ui.text.font.FontFamily(
+                androidx.compose.ui.text.googlefonts.Font(
+                    googleFont = androidx.compose.ui.text.googlefonts.GoogleFont(activeCustomFont.fontName),
+                    fontProvider = provider
+                )
+            )
+        } else if (betaDynamicTypography) {
+            selectedFont = when (themeColor) {
+                "Ocean" -> NunitoFontFamily
+                "Emerald" -> PoppinsFontFamily
+                "Gold" -> QuicksandFontFamily
+                "Rose" -> NunitoFontFamily
+                "Sage" -> MontserratFontFamily
+                "Twilight" -> InterFontFamily
+                "Custom" -> MontserratFontFamily
+                "Dynamic" -> NunitoFontFamily
+                else -> NunitoFontFamily
+            }
+        } else {
+            selectedFont = when (manualFontFamily) {
+                "Nunito" -> NunitoFontFamily
+                "Quicksand" -> QuicksandFontFamily
+                "Poppins" -> PoppinsFontFamily
+                "Inter" -> InterFontFamily
+                "Montserrat" -> MontserratFontFamily
+                else -> NunitoFontFamily
+            }
+        }
+        getTypography(selectedFont)
+    }
+
     androidx.compose.runtime.CompositionLocalProvider(
         LocalGlassTint provides colorScheme.primary,
         LocalGlassMode provides glassMode,
@@ -408,7 +456,7 @@ fun ScholarTheme(
         ) else Shapes
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = Typography,
+            typography = currentTypography,
             shapes = currentShapes,
             content = content
         )

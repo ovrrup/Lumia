@@ -43,12 +43,19 @@ fun Modifier.liquidGlass(
     val finalAlpha1 = when (backdropStyle) {
         "Opaque", "Solid" -> 1.0f
         "Transparent", "Clear" -> 0.00f
-        else -> baseAlpha1 * opacitySetting
+        else -> {
+            // Refined blend: allow opacity to reach near-unity if set to 100%
+            val factor = (opacitySetting - 0.70f).coerceAtLeast(0f) / 0.30f
+            (baseAlpha1 + (1.0f - baseAlpha1) * factor) * opacitySetting
+        }
     }
     val finalAlpha2 = when (backdropStyle) {
         "Opaque", "Solid" -> 1.0f
         "Transparent", "Clear" -> 0.00f
-        else -> baseAlpha2 * opacitySetting
+        else -> {
+            val factor = (opacitySetting - 0.70f).coerceAtLeast(0f) / 0.30f
+            (baseAlpha2 + (1.0f - baseAlpha2) * factor) * opacitySetting
+        }
     }
 
     val backColor1 = if (backdropStyle == "Opaque" || backdropStyle == "Solid") {

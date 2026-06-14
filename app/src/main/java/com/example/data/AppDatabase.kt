@@ -14,8 +14,9 @@ import ovrrup.lumia.model.PomodoroSession
 import ovrrup.lumia.model.Note
 import ovrrup.lumia.model.Chapter
 import ovrrup.lumia.model.Task
+import ovrrup.lumia.model.CustomFont
 
-@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class, AttendanceRecord::class, PomodoroSession::class, Note::class, Chapter::class, Task::class], version = 15, exportSchema = false)
+@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class, AttendanceRecord::class, PomodoroSession::class, Note::class, Chapter::class, Task::class, CustomFont::class], version = 16, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scholarDao(): ScholarDao
 

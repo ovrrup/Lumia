@@ -46,6 +46,7 @@ import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.FontDownload
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.History
@@ -75,6 +76,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -88,6 +91,7 @@ import ovrrup.lumia.viewmodel.ScholarViewModel
 import ovrrup.lumia.ui.components.BouncyIconButton
 import ovrrup.lumia.ui.components.BouncyButton
 import ovrrup.lumia.ui.components.BouncyTextButton
+import ovrrup.lumia.ui.components.BouncyOutlinedButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,6 +102,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
+    val isAdvancedMode by viewModel.advancedSettingsEnabled.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
@@ -234,13 +239,61 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Personalization Card
+            // --- Experience Mode ---
+            SettingsGroupCard(
+                title = "Application Control",
+                icon = Icons.Rounded.Settings
+            ) {
+                SettingsPremiumToggleItem(
+                    title = "Advanced Designer Mode",
+                    subtitle = "Grant access to deep UI engine variables and granular layout sliders",
+                    checked = isAdvancedMode,
+                    icon = Icons.Rounded.Speed,
+                    onCheckedChange = { viewModel.updateAdvancedSettingsEnabled(it) }
+                )
+                
+                AnimatedVisibility(visible = isAdvancedMode) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 4.dp, end = 4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Rounded.Info, 
+                                contentDescription = null, 
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                "Advanced settings are now distributed across relevant categories below.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
             SettingsGroupCard(title = "Personalization", icon = Icons.Rounded.Palette) {
                 SettingsActionItemInCard(
                     title = "Appearance & Theme",
                     subtitle = "Themes, color palettes, and layout modifiers",
                     icon = Icons.Rounded.Palette,
                     onClick = { navController.navigate("settings/appearance") }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                SettingsActionItemInCard(
+                    title = "Typography & Fonts",
+                    subtitle = "Dynamic typography and custom font imports",
+                    icon = Icons.Rounded.FontDownload,
+                    onClick = { navController.navigate("settings/typography") }
                 )
             }
             
@@ -514,98 +567,67 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 onCheckedChange = { viewModel.updateBetaFrostGlass(it) }
                             )
 
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                            AnimatedVisibility(visible = viewModel.advancedSettingsEnabled.collectAsStateWithLifecycle().value) {
+                                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
-                            // Sub-segmented backdrop style
-                            SettingsSegmentedPicker(
-                                title = "Backdrop Density Style",
-                                subtitle = "Choose panel translucency characteristics",
-                                options = listOf(
-                                    Triple("Transparent", "Clear", null),
-                                    Triple("Translucent", "Satin", null),
-                                    Triple("Opaque", "Solid", null)
-                                ),
-                                selected = glassBackdropStyle,
-                                onSelected = { viewModel.updateGlassBackdropStyle(it) }
-                            )
+                                    // Sub-segmented backdrop style
+                                    SettingsSegmentedPicker(
+                                        title = "Backdrop Density Style",
+                                        subtitle = "Choose panel translucency characteristics",
+                                        options = listOf(
+                                            Triple("Transparent", "Clear", null),
+                                            Triple("Translucent", "Satin", null),
+                                            Triple("Opaque", "Solid", null)
+                                        ),
+                                        selected = glassBackdropStyle,
+                                        onSelected = { viewModel.updateGlassBackdropStyle(it) }
+                                    )
 
-                            // Slider for Translucent
-                            AnimatedVisibility(visible = glassBackdropStyle == "Translucent") {
-                                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "Frosted Layer Opacity",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                        Text(
-                                            text = "${(glassOpacityValue * 100).toInt()}%",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Black,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
+                                    // Slider for Translucent
+                                    AnimatedVisibility(visible = glassBackdropStyle == "Translucent") {
+                                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "Frosted Layer Opacity",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                                Text(
+                                                    text = "${(glassOpacityValue * 100).toInt()}%",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.Black,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                            Text(
+                                                text = "Calibrate the light passage density through frosted satin panes",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(bottom = 6.dp)
+                                            )
+                                            Slider(
+                                                value = glassOpacityValue,
+                                                onValueChange = { viewModel.updateGlassOpacityValue(it) },
+                                                valueRange = 0.1f..1.0f,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
                                     }
-                                    Text(
-                                        text = "Calibrate the light passage density through frosted satin panes",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(bottom = 6.dp)
-                                    )
-                                    Slider(
-                                        value = glassOpacityValue,
-                                        onValueChange = { viewModel.updateGlassOpacityValue(it) },
-                                        valueRange = 0.1f..1.0f,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
                                 }
                             }
                             
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                            
-                            // Nav Bar Glass Opacity
-                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "Nav Bar Glass Opacity",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "${(navBarGlassOpacityValue * 100).toInt()}%",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                Text(
-                                    text = "Control bottom bar glass opacity for current theme and light/dark mode",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(bottom = 6.dp)
-                                )
-                                val isSystemSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
-                                val effectiveDark = themeMode == "Dark" || (themeMode == "System" && isSystemSystemDark)
-                                Slider(
-                                    value = navBarGlassOpacityValue,
-                                    onValueChange = { viewModel.updateNavBarGlassOpacityValue(it, themeColor, effectiveDark) },
-                                    valueRange = 0.1f..1.0f,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
                         }
                     }
                 }
             }
 
-            // Advanced Navigation Panel Configuration Card
-            SettingsGroupCard(title = "Advanced Bottom Navigation", icon = Icons.Rounded.Settings) {
+            SettingsGroupCard(title = "Navigation Bar Layout", icon = Icons.Rounded.Settings) {
                 val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
                 val navBarHeight by viewModel.navBarHeight.collectAsStateWithLifecycle()
                 val navBarPaddingHorizontal by viewModel.navBarPaddingHorizontal.collectAsStateWithLifecycle()
@@ -646,236 +668,287 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     onSelected = { viewModel.updateNavBarLabelMode(it) }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-
-                // Toggle for forced glass navbar style
-                SettingsPremiumToggleItem(
-                    title = "Independent Glass Backdrop",
-                    subtitle = "Force glass satin backdrop overlay specifically on bottom bar even if global Frosted UI is off",
-                    checked = navBarGlassForceEnabled,
-                    icon = Icons.Rounded.Palette,
-                    onCheckedChange = { viewModel.updateNavBarGlassForceEnabled(it) }
-                )
-
-                val isGlassTheme = ovrrup.lumia.ui.theme.LocalGlassMode.current
-                val isNavBarGlassActive = isGlassTheme || navBarGlassForceEnabled
-
-                if (isNavBarGlassActive) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-
-                    // Sync with Dynamic Glass UI Toggle
-                    SettingsPremiumToggleItem(
-                        title = "Sync with Global Glass Style",
-                        subtitle = "Link the bottom navigation bar color, style, and glass type directly to the system-wide Glass UI theme setting.",
-                        checked = navBarGlassLinkedToMain,
-                        icon = Icons.Rounded.Link,
-                        onCheckedChange = { viewModel.updateNavBarGlassLinkedToMain(it) }
-                    )
-
-                    if (!navBarGlassLinkedToMain) {
+                AnimatedVisibility(visible = viewModel.advancedSettingsEnabled.collectAsStateWithLifecycle().value) {
+                    Column {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
 
-                        // Navbar Glass Type segmented chooser
-                        SettingsSegmentedPicker(
-                            title = "Navbar Backdrop Style",
-                            subtitle = "Adjust the glass texture from solid translucent background to completely clear dynamic panel",
-                            options = listOf(
-                                Triple("Solid", "Solid Color", null),
-                                Triple("Translucent", "Frosted Glass", null),
-                                Triple("Clear", "Totally Clear", null)
-                            ),
-                            selected = navBarGlassBackdropStyle,
-                            onSelected = { viewModel.updateNavBarGlassBackdropStyle(it) }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-
-                        // Navbar Dynamic Color Tinting Toggle
+                        // Toggle for forced glass navbar style
                         SettingsPremiumToggleItem(
-                            title = "Ambient Accent Tinting",
-                            subtitle = "Infuse primary theme color highlight directly into the navigation glass backplane rendering.",
-                            checked = navBarGlassDynamic,
-                            icon = Icons.Rounded.InvertColors,
-                            onCheckedChange = { viewModel.updateNavBarGlassDynamic(it) }
+                            title = "Independent Glass Backdrop",
+                            subtitle = "Force glass satin backdrop overlay specifically on bottom bar even if global Frosted UI is off",
+                            checked = navBarGlassForceEnabled,
+                            icon = Icons.Rounded.Palette,
+                            onCheckedChange = { viewModel.updateNavBarGlassForceEnabled(it) }
                         )
-                    }
-                }
 
-                if (betaNavBarSizeControls) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+                        val isGlassTheme = ovrrup.lumia.ui.theme.LocalGlassMode.current
+                        val isNavBarGlassActive = isGlassTheme || navBarGlassForceEnabled
 
-                    // Height Slider
-                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Bar Panel Height",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
+                        if (isNavBarGlassActive) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                            // Sync with Dynamic Glass UI Toggle
+                            SettingsPremiumToggleItem(
+                                title = "Sync with Global Glass Style",
+                                subtitle = "Link the bottom navigation bar color, style, and glass type directly to the system-wide Glass UI theme setting.",
+                                checked = navBarGlassLinkedToMain,
+                                icon = Icons.Rounded.Link,
+                                onCheckedChange = { viewModel.updateNavBarGlassLinkedToMain(it) }
                             )
-                            Text(
-                                text = "${navBarHeight.toInt()} dp",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Text(
-                            text = "Customize the absolute thickness of bottom panel",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 6.dp)
-                        )
-                        Slider(
-                            value = navBarHeight,
-                            onValueChange = { viewModel.updateNavBarHeight(it) },
-                            valueRange = 56f..96f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-
-                    // Active item indicator pill opacity highlight
-                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Indicator Tint Alpha",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = "${(navBarIndicatorAlpha * 100).toInt()}%",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Text(
-                            text = "Calibrate the select-state container overlay opacity",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 6.dp)
-                        )
-                        Slider(
-                            value = navBarIndicatorAlpha,
-                            onValueChange = { viewModel.updateNavBarIndicatorAlpha(it) },
-                            valueRange = 0.0f..0.5f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    if (betaFloatingNav) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-
-                        // Floating Dock Radius Customization
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            // Navigation Bar Specific Opacity (Refined)
+                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "Sub-Panel Transparency (Glass)",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (navBarGlassLinkedToMain) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "${(navBarGlassOpacityValue * 100).toInt()}%",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Black,
+                                        color = if (navBarGlassLinkedToMain) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Pill Corner Radius",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    text = "Adjust the glass backplane alpha independently. Text and icons remain at full opacity for readability.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (navBarGlassLinkedToMain) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 8.dp)
                                 )
-                                Text(
-                                    text = "${navBarCornerRadius.toInt()} dp",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Black,
-                                    color = MaterialTheme.colorScheme.primary
+                                Slider(
+                                    value = navBarGlassOpacityValue,
+                                    onValueChange = { 
+                                        viewModel.updateNavBarGlassOpacityValue(it, themeColor, themeMode == "Dark" || (themeMode == "System" && isSystemSystemDarkForOpacity)) 
+                                        if (navBarGlassLinkedToMain) viewModel.updateNavBarGlassLinkedToMain(false)
+                                    },
+                                    valueRange = 0.05f..1.0f,
+                                    modifier = Modifier.fillMaxWidth().animateContentSize(),
+                                    enabled = !navBarGlassLinkedToMain
+                                )
+                                if (navBarGlassLinkedToMain) {
+                                    Text(
+                                        text = "Currently linked to global 'Frosted UI' opacity. Decouple to customize.",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+
+                            if (!navBarGlassLinkedToMain) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                                // Navbar Glass Type segmented chooser
+                                SettingsSegmentedPicker(
+                                    title = "Navbar Backdrop Style",
+                                    subtitle = "Adjust the glass texture from solid translucent background to completely clear dynamic panel",
+                                    options = listOf(
+                                        Triple("Solid", "Solid Color", null),
+                                        Triple("Translucent", "Frosted Glass", null),
+                                        Triple("Clear", "Totally Clear", null)
+                                    ),
+                                    selected = navBarGlassBackdropStyle,
+                                    onSelected = { viewModel.updateNavBarGlassBackdropStyle(it) }
+                                )
+
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                                // Navbar Dynamic Color Tinting Toggle
+                                SettingsPremiumToggleItem(
+                                    title = "Ambient Accent Tinting",
+                                    subtitle = "Infuse primary theme color highlight directly into the navigation glass backplane rendering.",
+                                    checked = navBarGlassDynamic,
+                                    icon = Icons.Rounded.InvertColors,
+                                    onCheckedChange = { viewModel.updateNavBarGlassDynamic(it) }
                                 )
                             }
-                            Text(
-                                text = "Control roundness bounding the suspended pill geometry",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(bottom = 6.dp)
-                            )
-                            Slider(
-                                value = navBarCornerRadius,
-                                onValueChange = { viewModel.updateNavBarCornerRadius(it) },
-                                valueRange = 0f..48f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
                         }
 
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+                        if (betaNavBarSizeControls) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
 
-                        // Horizontal margins customization
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            // Height Slider
+                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Bar Panel Height",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "${navBarHeight.toInt()} dp",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                                 Text(
-                                    text = "Horizontal Deck Margin",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    text = "Customize the absolute thickness of bottom panel",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 6.dp)
                                 )
-                                Text(
-                                    text = "${navBarPaddingHorizontal.toInt()} dp",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Black,
-                                    color = MaterialTheme.colorScheme.primary
+                                Slider(
+                                    value = navBarHeight,
+                                    onValueChange = { viewModel.updateNavBarHeight(it) },
+                                    valueRange = 56f..96f,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
-                            Text(
-                                text = "Expand or narrow down the width profile of bottom panel",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(bottom = 6.dp)
-                            )
-                            Slider(
-                                value = navBarPaddingHorizontal,
-                                onValueChange = { viewModel.updateNavBarPaddingHorizontal(it) },
-                                valueRange = 0f..48f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
 
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
 
-                        // Bottom lift margin
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            // Active item indicator pill opacity highlight
+                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Indicator Tint Alpha",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "${(navBarIndicatorAlpha * 100).toInt()}%",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                                 Text(
-                                    text = "Bottom Lift Padding",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    text = "Calibrate the select-state container overlay opacity",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 6.dp)
                                 )
-                                Text(
-                                    text = "${navBarPaddingBottom.toInt()} dp",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Black,
-                                    color = MaterialTheme.colorScheme.primary
+                                Slider(
+                                    value = navBarIndicatorAlpha,
+                                    onValueChange = { viewModel.updateNavBarIndicatorAlpha(it) },
+                                    valueRange = 0.0f..0.5f,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
-                            Text(
-                                text = "Elevate the bottom action shelf distance off device screen trim",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(bottom = 6.dp)
-                            )
-                            Slider(
-                                value = navBarPaddingBottom,
-                                onValueChange = { viewModel.updateNavBarPaddingBottom(it) },
-                                valueRange = 0f..48f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+
+                            if (betaFloatingNav) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                                // Floating Dock Radius Customization
+                                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Pill Corner Radius",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = "${navBarCornerRadius.toInt()} dp",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Black,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    Text(
+                                        text = "Control roundness bounding the suspended pill geometry",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(bottom = 6.dp)
+                                    )
+                                    Slider(
+                                        value = navBarCornerRadius,
+                                        onValueChange = { viewModel.updateNavBarCornerRadius(it) },
+                                        valueRange = 0f..48f,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                                // Horizontal margins customization
+                                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Horizontal Deck Margin",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = "${navBarPaddingHorizontal.toInt()} dp",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Black,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    Text(
+                                        text = "Expand or narrow down the width profile of bottom panel",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(bottom = 6.dp)
+                                    )
+                                    Slider(
+                                        value = navBarPaddingHorizontal,
+                                        onValueChange = { viewModel.updateNavBarPaddingHorizontal(it) },
+                                        valueRange = 0f..48f,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                                // Bottom lift margin
+                                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Bottom Lift Padding",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = "${navBarPaddingBottom.toInt()} dp",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Black,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    Text(
+                                        text = "Elevate the bottom action shelf distance off device screen trim",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(bottom = 6.dp)
+                                    )
+                                    Slider(
+                                        value = navBarPaddingBottom,
+                                        onValueChange = { viewModel.updateNavBarPaddingBottom(it) },
+                                        valueRange = 0f..48f,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -2681,31 +2754,31 @@ fun SettingsGroupCard(
         
         if (isGlass) {
             ovrrup.lumia.ui.components.GlassCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp)
+                modifier = Modifier.fillMaxWidth().animateContentSize(),
+                shape = RoundedCornerShape(38.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(26.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     content()
                 }
             }
         } else {
             androidx.compose.material3.OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth().animateContentSize(),
+                shape = RoundedCornerShape(38.dp),
                 colors = CardDefaults.outlinedCardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
                 ),
                 border = androidx.compose.foundation.BorderStroke(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    width = 1.4.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
                 )
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(26.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     content()
                 }
@@ -2742,8 +2815,8 @@ fun SettingsPremiumToggleItem(
             if (icon != null) {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(14.dp))
                         .background(
                             if (checked && enabled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                             else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -2755,23 +2828,24 @@ fun SettingsPremiumToggleItem(
                         imageVector = icon,
                         contentDescription = null,
                         tint = if (checked && enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(16.dp))
             }
             
             Column(modifier = Modifier.alpha(alpha).padding(end = 8.dp)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 18.sp
                 )
                 if (!enabled && unavailableReason != null) {
                     Text(
@@ -2827,33 +2901,29 @@ fun <T> SettingsSegmentedPicker(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                .clip(RoundedCornerShape(18.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f))
                 .border(
                     width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(14.dp)
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                    shape = RoundedCornerShape(18.dp)
                 )
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             options.forEach { (value, label, icon) ->
                 val isSelected = value == selected
-                val bgSelected = MaterialTheme.colorScheme.primaryContainer
-                val borderSelected = MaterialTheme.colorScheme.primary
                 
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (isSelected) bgSelected else androidx.compose.ui.graphics.Color.Transparent)
-                        .border(
-                            width = if (isSelected) 1.dp else 0.dp,
-                            color = if (isSelected) borderSelected else androidx.compose.ui.graphics.Color.Transparent,
-                            shape = RoundedCornerShape(10.dp)
-                        )
+                        .clip(RoundedCornerShape(14.dp))
                         .clickable { onSelected(value) }
-                        .padding(vertical = 10.dp),
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                            else androidx.compose.ui.graphics.Color.Transparent
+                        )
+                        .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
@@ -3006,36 +3076,49 @@ fun SettingsActionItemInCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() }
-            .padding(vertical = 12.dp, horizontal = 4.dp),
+            .padding(vertical = 14.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(44.dp)
+                .clip(RoundedCornerShape(14.dp))
                 .background(
                     if (isDestructive) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                    else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
                 ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (isDestructive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.primary,
+                tint = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
             )
         }
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(18.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = contentColor)
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                color = contentColor
+            )
+            if (subtitle.isNotEmpty()) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 18.sp
+                )
+            }
         }
         Icon(
             imageVector = Icons.Rounded.ChevronRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             modifier = Modifier.size(20.dp)
         )
     }
@@ -3619,9 +3702,9 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                                         ) {
                                             Text(
                                                 text = updateNotes,
+                                                modifier = Modifier.padding(12.dp),
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                modifier = Modifier.padding(12.dp)
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
                                             )
                                         }
                                     }

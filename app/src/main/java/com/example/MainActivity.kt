@@ -75,12 +75,6 @@ class MainActivity : ComponentActivity() {
 
         ovrrup.lumia.util.LogDog.setup(applicationContext)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
-            }
-        }
-        
         try {
             val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(1, TimeUnit.DAYS)
                 .setInitialDelay(1, TimeUnit.HOURS)
@@ -113,6 +107,9 @@ class MainActivity : ComponentActivity() {
             val appAnimationMode by viewModel.appAnimationMode.collectAsStateWithLifecycle()
             val moreRounds by viewModel.moreRounds.collectAsStateWithLifecycle()
             val moreRoundsMode by viewModel.moreRoundsMode.collectAsStateWithLifecycle()
+            val betaDynamicTypography by viewModel.betaDynamicTypography.collectAsStateWithLifecycle()
+            val manualFontFamily by viewModel.manualFontFamily.collectAsStateWithLifecycle()
+            val customFonts by viewModel.customFonts.collectAsStateWithLifecycle()
 
             val customPrimary by viewModel.customPrimary.collectAsStateWithLifecycle()
             val customPrimaryContainer by viewModel.customPrimaryContainer.collectAsStateWithLifecycle()
@@ -163,6 +160,9 @@ class MainActivity : ComponentActivity() {
                 appAnimationMode = appAnimationMode,
                 moreRounds = moreRounds,
                 moreRoundsMode = moreRoundsMode,
+                betaDynamicTypography = betaDynamicTypography,
+                manualFontFamily = manualFontFamily,
+                customFonts = customFonts,
                 customPrimary = customPrimary,
                 customPrimaryContainer = customPrimaryContainer,
                 customBackground = customBackground,
@@ -417,6 +417,12 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("settings/notifications") {
                             ovrrup.lumia.ui.screens.NotificationsScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable("settings/typography") {
+                            ovrrup.lumia.ui.screens.TypographyScreen(
                                 navController = navController,
                                 viewModel = viewModel
                             )

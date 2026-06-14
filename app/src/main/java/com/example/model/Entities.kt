@@ -161,3 +161,15 @@ data class ScholarBackup(
     val chapters: List<Chapter>? = emptyList(),
     val tasks: List<Task>? = emptyList()
 ) : Serializable
+
+@Entity(tableName = "custom_fonts")
+@JsonClass(generateAdapter = true)
+data class CustomFont(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val name: String,
+    val fontName: String = "", // Google Font name
+    val isGoogleFont: Boolean = true,
+    val conditionTheme: String = "Any", // Theme it applies to (Any, Ocean, Emerald, etc.)
+    val conditionMode: String = "Any", // Light/Dark/Any
+    val isActive: Boolean = true
+) : Serializable

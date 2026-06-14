@@ -182,4 +182,16 @@ interface ScholarDao {
 
     @Query("DELETE FROM tasks")
     suspend fun clearTasks()
+
+    @Query("SELECT * FROM custom_fonts ORDER BY name ASC")
+    fun getAllCustomFonts(): Flow<List<ovrrup.lumia.model.CustomFont>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCustomFont(font: ovrrup.lumia.model.CustomFont): Long
+
+    @Update
+    suspend fun updateCustomFont(font: ovrrup.lumia.model.CustomFont)
+
+    @Delete
+    suspend fun deleteCustomFont(font: ovrrup.lumia.model.CustomFont)
 }

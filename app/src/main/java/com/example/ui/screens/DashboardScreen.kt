@@ -14,7 +14,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-                            import ovrrup.lumia.ui.theme.bouncyClick
+import ovrrup.lumia.ui.theme.bouncyClick
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -197,8 +197,8 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     val navItemColors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.primary,
                         selectedTextColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
+                        unselectedIconColor = if (useGlass) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                        unselectedTextColor = if (useGlass) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.92f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
                         indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = navBarIndicatorAlpha)
                     )
                     NavigationBar(
@@ -356,8 +356,8 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 val navItemColors = NavigationBarItemDefaults.colors(
                     selectedIconColor = if (useGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
                     selectedTextColor = if (useGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
-                    unselectedIconColor = if (useGlass) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.70f),
-                    unselectedTextColor = if (useGlass) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
+                    unselectedIconColor = if (useGlass) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.70f),
+                    unselectedTextColor = if (useGlass) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
                     indicatorColor = if (useGlass) MaterialTheme.colorScheme.primary.copy(alpha = navBarIndicatorAlpha) else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = navBarIndicatorAlpha)
                 )
                 NavigationBar(

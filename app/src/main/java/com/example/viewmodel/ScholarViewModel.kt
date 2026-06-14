@@ -570,8 +570,32 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaBetterTextsPalette = MutableStateFlow(prefs.getBoolean("beta_better_texts_palette", true))
     val betaBetterTextsPalette = _betaBetterTextsPalette.asStateFlow()
 
+    private val _betaDynamicTypography = MutableStateFlow(prefs.getBoolean("beta_dynamic_typography", true))
+    val betaDynamicTypography = _betaDynamicTypography.asStateFlow()
+
+    private val _manualFontFamily = MutableStateFlow(prefs.getString("manual_font_family", "Nunito") ?: "Nunito")
+    val manualFontFamily = _manualFontFamily.asStateFlow()
+
+    fun updateBetaDynamicTypography(enabled: Boolean) {
+        _betaDynamicTypography.value = enabled
+        prefs.edit().putBoolean("beta_dynamic_typography", enabled).apply()
+    }
+
+    fun updateManualFontFamily(font: String) {
+        _manualFontFamily.value = font
+        prefs.edit().putString("manual_font_family", font).apply()
+    }
+
     private val _safetyPinEnabled = MutableStateFlow(prefs.getBoolean("safety_pin_enabled", true))
     val safetyPinEnabled = _safetyPinEnabled.asStateFlow()
+
+    private val _advancedSettingsEnabled = MutableStateFlow(prefs.getBoolean("advanced_settings_enabled", false))
+    val advancedSettingsEnabled = _advancedSettingsEnabled.asStateFlow()
+
+    fun updateAdvancedSettingsEnabled(enabled: Boolean) {
+        _advancedSettingsEnabled.value = enabled
+        prefs.edit().putBoolean("advanced_settings_enabled", enabled).apply()
+    }
 
     private val _safetyPinConflictWarning = MutableStateFlow(prefs.getBoolean("safety_pin_conflict_warning", true))
     val safetyPinConflictWarning = _safetyPinConflictWarning.asStateFlow()
@@ -657,6 +681,38 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    val customFonts: StateFlow<List<ovrrup.lumia.model.CustomFont>> = repository.allCustomFonts.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun addCustomFont(name: String, fontName: String, conditionTheme: String = "Any", conditionMode: String = "Any") {
+        viewModelScope.launch {
+            repository.insertCustomFont(ovrrup.lumia.model.CustomFont(
+                name = name,
+                fontName = fontName,
+                conditionTheme = conditionTheme,
+                conditionMode = conditionMode,
+                isActive = true
+            ))
+            logAction("Imported font: $name")
+        }
+    }
+
+    fun updateCustomFont(font: ovrrup.lumia.model.CustomFont) {
+        viewModelScope.launch {
+            repository.updateCustomFont(font)
+        }
+    }
+
+    fun deleteCustomFont(font: ovrrup.lumia.model.CustomFont) {
+        viewModelScope.launch {
+            repository.deleteCustomFont(font)
+            logAction("Deleted font: ${font.name}")
+        }
+    }
 
     val actionLogs: StateFlow<List<ActionLog>> = repository.allActionLogs.stateIn(
         scope = viewModelScope,

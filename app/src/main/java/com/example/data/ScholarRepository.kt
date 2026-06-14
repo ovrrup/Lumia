@@ -68,6 +68,11 @@ class ScholarRepository(private val dao: ScholarDao) {
     suspend fun updateNote(note: ovrrup.lumia.model.Note) = dao.updateNote(note)
     suspend fun deleteNote(note: ovrrup.lumia.model.Note) = dao.deleteNote(note)
 
+    val allCustomFonts: Flow<List<ovrrup.lumia.model.CustomFont>> = dao.getAllCustomFonts()
+    suspend fun insertCustomFont(font: ovrrup.lumia.model.CustomFont) = dao.insertCustomFont(font)
+    suspend fun updateCustomFont(font: ovrrup.lumia.model.CustomFont) = dao.updateCustomFont(font)
+    suspend fun deleteCustomFont(font: ovrrup.lumia.model.CustomFont) = dao.deleteCustomFont(font)
+
     suspend fun clearAllData() {
         dao.clearCourses()
         dao.clearSubjects()
