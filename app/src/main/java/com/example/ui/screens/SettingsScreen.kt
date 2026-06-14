@@ -3272,10 +3272,9 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
     val currentVersion = remember {
         try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            val vName = pInfo.versionName
-            if (vName != null && vName != "1.0.0" && vName != "1.0") vName else "1.4.0"
+            pInfo.versionName ?: "1.0.1"
         } catch (e: Exception) {
-            "1.4.0"
+            "1.0.1"
         }
     }
 

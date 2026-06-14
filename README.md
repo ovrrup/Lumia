@@ -1,4 +1,4 @@
-# <img src="app/src/main/res/drawable/ic_notification_scholar.png" width="36" valign="middle"/> Lumia 
+# 🎓 Lumia 
 
 <p align="center">
   <img src="https://img.shields.io/badge/Kotlin-100%25-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin" />
@@ -9,7 +9,12 @@
 </p>
 
 <p align="center">
-  [![Build APK](https://github.com/ovrrup/Lumia/actions/workflows/build-apk.yml/badge.svg)](https://github.com/ovrrup/Lumia/actions/workflows/build-apk.yml)
+  <a href="https://github.com/ovrrup/Lumia/actions/workflows/build-apk.yml">
+    <img src="https://github.com/ovrrup/Lumia/actions/workflows/build-apk.yml/badge.svg" alt="Build APK" />
+  </a>
+  <a href="https://github.com/ovrrup/Lumia/releases/latest">
+    <img src="https://img.shields.io/github/v/release/ovrrup/Lumia?include_prereleases&style=flat-square&color=blue" alt="Latest Release" />
+  </a>
 </p>
 
 **Lumia** is an offline-first academic battle-station designed for students, self-learners, and those fighting the modern urge of checking notifications every 17 seconds. This application wraps course trackers, attendance calculators, task schedulers, statistical visualization charts, and a zero-compromise focus ecosystem into a single unified terminal.
@@ -23,7 +28,7 @@ Powered by a customized **True AOD (Always-On Display) study-screen overlay**, L
 ### 1. The Dashboard Control Center
 Lumia launches straight into your central visual hub:
 - **At-a-glance status checks:** See your class schedule for the current date, pending coursework tasks, and active deadlines.
-- **The Judgmental Streak Flame:** Maintains active streak logs. Keep your studying trend rising; otherwise, the flame dies, and Lumia’s statistics look disappointingly empty.
+- **The Judgmental Streak Flame (🔥):** Maintains active streak logs. Keep your studying trend rising; otherwise, the flame dies, and Lumia’s statistics look disappointingly empty.
 - **Fast Metrics:** Direct displays of average subjects completion indices, remaining files to read, and quick links to continue your last coursework node.
 
 ### 2. Deep Academic Trees (Courses & Subjects)
@@ -32,11 +37,7 @@ Track organized courses (e.g., *Computer Science (B.Sc.)* or *Pre-Med*) down to 
 - **Progress Tracking:** Interactive completed percentages rise dynamically as you check off topics, helping you study step-by-step.
 - **Attendance Registry:** Log class attendance records with fully visual percentage charts. No more manually guessing if you can afford to skip that 8:00 AM lecture.
 
-<p align="center">
-  <img src="app/src/main/res/drawable/ic_notification_streak.png" width="80" alt="Streak Asset"/>
-</p>
-
-### 3. Pomodoro Focus Engine & "True AOD" (The Ultimate Weapon)
+### 3. Pomodoro Focus Engine & "True AOD"
 This isn't a simple aesthetic countdown timer. Lumia features a dual-mode system overlay that blocks standard Android lock-panel updates to turn your phone into a pure hardware focus clock:
 * **The True AOD Interface:** Shows simple time elements, focus progress rings, dynamic study ticks, and pure black OLED-safe background configurations.
 * **Dual Integration Profiles:**
@@ -55,12 +56,11 @@ Visualize your scholarly dedication using built-in, native vector bar graphs, ch
 - Attendance ratios complete with Material 3 status tags showing safe vs critical attendance values.
 
 ### 5. Quick Notes Storage
-A localized scratchpad to quickly log fleeting research items, ideas, formulas, or coffee orders. Everything stays private, offline, and ready to edit or delete at a moments notice.
+A localized scratchpad to quickly log fleeting research items, ideas, formulas, or coffee orders. Everything stays private, offline, and ready to edit or delete at a moment's notice.
 
-### 6. LogDog (The Persistent Canine Diagnostic Agent 🐕)
-If something breaks under the hood, there is no need to connect to a desktop computer and run complicated development terminal configurations:
-- Lumia integrates **LogDog**, an internal crash handler that catches exceptions, formats stack traces, and compiles diagnostic files.
-- View and manage local repair suggestions directly inside the Lumia Settings Panel. It's a developer in your pocket!
+### 6. Over-The-Air (OTA) Updates & App Internals
+- **In-App Updater:** Automatically checks for new versions of Lumia on startup by securely fetching metadata from the official GitHub Release channel. You can update straight from the Settings panel.
+- **LogDog (The Persistent Canine Diagnostic Agent 🐕):** If something breaks under the hood, Lumia integrates an internal crash handler that catches exceptions, formats stack traces, and compiles diagnostic files. View and manage local repair suggestions directly inside the Lumia Settings Panel.
 
 ---
 
@@ -77,7 +77,7 @@ For formal clauses, view our dedicated **[Privacy Policy](PRIVACY.md)** and **[T
 
 ## 🛠️ Build & Development Guidelines
 
-Lumia has been polished to utilize modern Android patterns (Jetpack Compose, Kotlin Coroutines, and Room Architecture).
+Lumia has been heavily polished to utilize modern Android patterns (Jetpack Compose, Kotlin Coroutines, and Room Architecture).
 
 ### Compilation Checklist
 1. Ensure you have **Android Studio Koala or newer** installed.
@@ -100,24 +100,22 @@ After compilation, your build artifacts will reside in:
 
 ---
 
-## 🚀 GitHub Actions CI & Automatic Release Setup
+## 🚀 Downloading Lumia & Automatic Updates
 
-Lumia comes pre-configured with a continuous integration file in `.github/workflows/build-apk.yml`. 
+Lumia comes pre-configured with a continuous integration pipeline.
 
-### Automated Releases:
+### Setup Automated Releases
 Every time you push or trigger a Pull Request to your `main` / `master` repository branches:
 1. **GitHub Runner** launches an Ubuntu container.
 2. **Setup-Java** configures JDK 17 environments.
-3. Automatically generates temporary secure `debug` keystore signatures.
-4. Evaluates layout integrity, clean assets, and compiles Lumia.
-5. Renames the binary output to `Lumia.apk`.
-6. Saves the compiled application as a downloadable artifact.
+3. Evaluates layout integrity, clean assets, and compiles Lumia.
+4. Saves the compiled application as a downloadable artifact.
 
-### How to obtain the app:
+### How to Install the App
 1. Navigate to the **Releases** section on the right-hand sidebar of the GitHub repository page (or click [Releases](https://github.com/ovrrup/Lumia/releases)).
-2. Under the latest release (e.g., `v1.4.0`), expand the **Assets** section if collapsed.
-3. Click on the compiled **Lumia.apk** asset file to download it.
-4. Transfer the downloaded APK file to your Android device and install it!
+2. Under the latest release (e.g., `v1.0.1`), expand the **Assets** section if collapsed.
+3. Click on the compiled `.apk` asset file to download it.
+4. Transfer the downloaded APK file to your Android device and install it! You will receive notification overlays in the app when future updates are released.
 
 ---
 

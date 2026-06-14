@@ -29,6 +29,24 @@ data class PomodoroState(
     val taskId: Int? = null
 )
 
+class PomodoroActionReceiver : android.content.BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val action = intent.action ?: return
+        val serviceIntent = Intent(context, PomodoroService::class.java).apply { 
+            this.action = action 
+        }
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}
+
 class PomodoroService : Service() {
 
     companion object {
@@ -234,34 +252,52 @@ class PomodoroService : Service() {
             PomodoroMode.LONG_BREAK -> "Long Rest (Period Complete!)"
         }
 
-        val stopIntent = Intent(this, PomodoroService::class.java).apply { action = "STOP" }
-        val stopPending = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE)
+        val stopIntent = Intent(this, PomodoroActionReceiver::class.java).apply { action = "STOP" }
+        val stopPending = PendingIntent.getBroadcast(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
-        val pauseIntent = Intent(this, PomodoroService::class.java).apply { action = "PAUSE_RESUME" }
-        val pausePending = PendingIntent.getService(this, 1, pauseIntent, PendingIntent.FLAG_IMMUTABLE)
+        val pauseIntent = Intent(this, PomodoroActionReceiver::class.java).apply { action = "PAUSE_RESUME" }
+        val pausePending = PendingIntent.getBroadcast(this, 1, pauseIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
-        val skipIntent = Intent(this, PomodoroService::class.java).apply { action = "SKIP" }
-        val skipPending = PendingIntent.getService(this, 2, skipIntent, PendingIntent.FLAG_IMMUTABLE)
+        val skipIntent = Intent(this, PomodoroActionReceiver::class.java).apply { action = "SKIP" }
+        val skipPending = PendingIntent.getBroadcast(this, 2, skipIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
         val mainIntent = Intent(this, MainActivity::class.java).apply { 
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK 
         }
-        val mainPending = PendingIntent.getActivity(this, 0, mainIntent, PendingIntent.FLAG_IMMUTABLE)
+        val mainPending = PendingIntent.getActivity(this, 0, mainIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         
         // Progress bar in notification
         val progressMax = originalTime
         val progressNow = originalTime - time
+        
+        val notificationColor = when (currentMode) {
+            PomodoroMode.WORK -> 0xFF4285F4.toInt()
+            PomodoroMode.SHORT_BREAK -> 0xFF3DDC84.toInt()
+            PomodoroMode.LONG_BREAK -> 0xFFFABB05.toInt()
+        }
 
-        return NotificationCompat.Builder(this, "pomodoro_service")
+        val builder = NotificationCompat.Builder(this, "pomodoro_service")
             .setSmallIcon(R.drawable.ic_notification_scholar)
             .setContentTitle(title)
             .setContentText("Time remaining: $timeStr" + if (isPaused) " (PAUSED)" else "")
             .setProgress(progressMax, progressNow, false)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(mainPending)
-            .addAction(if (isPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause, if (isPaused) "Resume" else "Pause", pausePending)
+            .setOngoing(true)
+            .setColor(notificationColor)
+            .setUsesChronometer(!isPaused)
+            .setWhen(System.currentTimeMillis() + time * 1000L)
+            
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            builder.setChronometerCountDown(true)
+        }
+            
+        return builder.addAction(if (isPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause, if (isPaused) "Resume" else "Pause", pausePending)
             .addAction(android.R.drawable.ic_media_next, "Skip", skipPending)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Exit", stopPending)
+            .setStyle(androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0, 1, 2))
             .setOnlyAlertOnce(true)
             .build()
     }

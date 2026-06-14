@@ -140,6 +140,7 @@
         </activity-alias>
         
         <receiver android:name=".util.ReminderReceiver" android:exported="false" />
+        <receiver android:name=".service.PomodoroActionReceiver" android:exported="false" />
         
         <receiver 
             android:name=".util.BootReceiver" 

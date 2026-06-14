@@ -212,7 +212,12 @@ class MainActivity : ComponentActivity() {
                                         val responseText = connection.inputStream.bufferedReader().use { it.readText() }
                                         val json = org.json.JSONObject(responseText)
                                         val tagName = json.optString("tag_name", "")
-                                        val currentVersion = ovrrup.lumia.BuildConfig.VERSION_NAME
+                                        val currentVersion = try {
+                                            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                                            pInfo.versionName ?: "1.0.0"
+                                        } catch (e: Exception) {
+                                            "1.0.0"
+                                        }
                                         
                                         if (tagName.isNotEmpty()) {
                                             val cleanTag = tagName.lowercase().replace("v", "").replace("-foss", "").trim()
