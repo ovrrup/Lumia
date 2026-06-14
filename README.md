@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ovrrup/Lumia/actions/workflows/build-apk.yml">
-    <img src="https://github.com/ovrrup/Lumia/actions/workflows/build-apk.yml/badge.svg" alt="Build APK" />
+  <a href="https://github.com/ovrrup/Lumia/actions/workflows/build-main-apk.yml">
+    <img src="https://github.com/ovrrup/Lumia/actions/workflows/build-main-apk.yml/badge.svg" alt="Build Main APK" />
   </a>
   <a href="https://github.com/ovrrup/Lumia/releases/latest">
     <img src="https://img.shields.io/github/v/release/ovrrup/Lumia?include_prereleases&style=flat-square&color=blue" alt="Latest Release" />
@@ -106,10 +106,11 @@ Lumia comes pre-configured with a continuous integration pipeline.
 
 ### Setup Automated Releases
 Every time you push or trigger a Pull Request to your `main` / `master` repository branches:
-1. **GitHub Runner** launches an Ubuntu container.
+1. **GitHub Runner** launches an Ubuntu container for the **Main APK** and/or **Plugins**.
 2. **Setup-Java** configures JDK 17 environments.
-3. Evaluates layout integrity, clean assets, and compiles Lumia.
+3. Evaluates layout integrity, clean assets, and compiles Lumia components.
 4. Saves the compiled application as a downloadable artifact.
+5. Employs dedicated GitHub actions that securely handle **Release** publications separately for main APKs and Plugin architectures.
 
 ### How to Install the App
 1. Navigate to the **Releases** section on the right-hand sidebar of the GitHub repository page (or click [Releases](https://github.com/ovrrup/Lumia/releases)).

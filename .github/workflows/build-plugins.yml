@@ -1,0 +1,67 @@
+name: Build Plugins
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'plugins/**'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'plugins/**'
+  workflow_dispatch:
+
+jobs:
+  build-plugins:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: 9.3.1
+
+    - name: Setup Signing Key
+      run: |
+        if [ -n "${{ secrets.RELEASE_KEYSTORE }}" ]; then
+          echo "Decoding release keystore from secrets..."
+          echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > my-upload-key.jks
+        elif [ -f "debug.keystore.base64" ]; then
+          echo "Using persistent debug keystore for development build..."
+          base64 --decode debug.keystore.base64 > my-upload-key.jks
+        else
+          echo "Generating development release keystore..."
+          keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
+        fi
+
+    - name: Build Plugins (Mock)
+      run: |
+        # In a real multi-module setup, we would run:
+        # gradle :plugins:sentinel:assembleRelease :plugins:spectra:assembleRelease
+        
+        # Here we mock building the plugin APKs using the main application module for demonstration
+        gradle assembleRelease assembleReleaseCompressed --no-daemon -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=1024m" -Dkotlin.compiler.execution.strategy=in-process --no-parallel
+        
+        mkdir -p build/plugins/release
+        cp app/build/outputs/apk/release/*universal.apk build/plugins/release/Lumia-Sentinel.apk || true
+        cp app/build/outputs/apk/release/*universal.apk build/plugins/release/Lumia-Spectra.apk || true
+      env:
+        JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
+        STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
+        KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || 'android' }}
+
+    - name: Upload Plugin APKs to Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: Lumia-Plugin-APKs
+        path: |
+          build/plugins/release/*.apk

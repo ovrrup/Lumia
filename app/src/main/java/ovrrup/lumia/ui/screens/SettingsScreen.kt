@@ -58,6 +58,12 @@ import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.automirrored.rounded.ViewQuilt
+import androidx.compose.material.icons.rounded.Extension
+import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.runtime.mutableFloatStateOf
+import kotlinx.coroutines.delay
 import androidx.compose.material.icons.automirrored.rounded.MergeType
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Notifications
@@ -275,6 +281,62 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontWeight = FontWeight.Medium
                             )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Lumia Plugin Store Entrance Card
+            ovrrup.lumia.ui.components.GlassCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Extension,
+                                contentDescription = "Plugins",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Lumia Plugin Manager",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                "Integrate custom micro-APKs",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            )
+                        }
+                        BouncyButton(
+                            onClick = { navController.navigate("settings/plugins") },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                        ) {
+                            Text("Manage", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Black)
                         }
                     }
                 }
@@ -1358,20 +1420,44 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
                 // LogDog Card
                 var showLogDogDialog by remember { mutableStateOf(false) }
+                val isSentinelActive by viewModel.isSentinelActive.collectAsStateWithLifecycle()
                 ovrrup.lumia.ui.components.GlassCard(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text("LogDog Diagnostic Handler", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        SettingsActionItemInCard(
-                            title = "Trigger Analysis (Woof!)",
-                            subtitle = "Run code analysis and view last captured crash error data with a funny twist.",
-                            icon = Icons.Rounded.RecordVoiceOver,
-                            onClick = { 
-                                showLogDogDialog = true
+                        if (!isSentinelActive) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Lumia's advanced on-demand diagnostics require the Lumia Sentinel plugin. Activate the companion Micro-APK to query code analyzers and log telemetries.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            ovrrup.lumia.ui.components.BouncyButton(
+                                onClick = { navController.navigate("settings/plugins") },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                ),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Icon(Icons.Rounded.Extension, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Get Sentinel Plugin", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Black)
                             }
-                        )
+                        } else {
+                            SettingsActionItemInCard(
+                                title = "Trigger Analysis (Woof!)",
+                                subtitle = "Run code analysis and view last captured crash error data with a funny twist.",
+                                icon = Icons.Rounded.RecordVoiceOver,
+                                onClick = { 
+                                    showLogDogDialog = true
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -2217,6 +2303,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
     val aodSensitivity by viewModel.aodSensitivity.collectAsStateWithLifecycle()
     val aodDimnessLevel by viewModel.aodDimnessLevel.collectAsStateWithLifecycle()
     val aodLockTimeout by viewModel.aodLockTimeout.collectAsStateWithLifecycle()
+    val isSentinelActive by viewModel.isSentinelActive.collectAsStateWithLifecycle()
 
     val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
@@ -2314,9 +2401,62 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        "Pixel Burn-In Shift Interval",
+                if (!isSentinelActive) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Extension,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Lumia Sentinel Required",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Advanced screen-off Always-On display optimizations require the Lumia Sentinel dynamic micro-APK package.",
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        ovrrup.lumia.ui.components.BouncyButton(
+                            onClick = { navController.navigate("settings/plugins") },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Get Sentinel Plugin", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                } else {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Pixel Burn-In Shift Interval",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -2824,6 +2964,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                         }
                     }
                 }
+                }
             }
         }
     }
@@ -2841,6 +2982,7 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
     val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isSpectraActive by viewModel.isSpectraActive.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
@@ -2873,12 +3015,29 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-        ) {
+        if (!isSpectraActive) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(24.dp))
+                PluginRequiredCard(
+                    pluginName = "Spectra Canvas",
+                    pluginDescription = "advanced color sliders, dynamic custom themes, and custom typography engines from GitHub packages",
+                    onNavigateToHub = { navController.navigate("settings/plugins") }
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+            ) {
             SettingsCategoryHeading(title = "Auto-Generate Custom Palette", icon = Icons.Rounded.Palette)
             
             Text(
@@ -2975,6 +3134,7 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
+}
 }
 
 @Composable
@@ -3748,7 +3908,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
         try {
             ovrrup.lumia.BuildConfig.VERSION_NAME
         } catch (e: Exception) {
-            "1.0.3"
+            "1.0.5"
         }
     }
 
@@ -4182,6 +4342,448 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+fun PluginRequiredCard(
+    pluginName: String,
+    pluginDescription: String,
+    onNavigateToHub: () -> Unit
+) {
+    ovrrup.lumia.ui.components.GlassCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Extension,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "$pluginName Required",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "This advanced category is modularized. Activate the companion micro-APK to unlock $pluginDescription.",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                modifier = Modifier.padding(horizontal = 12.dp)
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            BouncyButton(
+                onClick = onNavigateToHub,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Get Plugin from Hub", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun PluginManagerScreen(navController: NavController, viewModel: ovrrup.lumia.viewmodel.ScholarViewModel) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isSpectraActive by viewModel.isSpectraActive.collectAsStateWithLifecycle()
+    val isSentinelActive by viewModel.isSentinelActive.collectAsStateWithLifecycle()
+    val spectraEmulated by viewModel.pluginSpectraEmulated.collectAsStateWithLifecycle()
+    val sentinelEmulated by viewModel.pluginSentinelEmulated.collectAsStateWithLifecycle()
+
+    var activeTab by remember { mutableStateOf(0) } // 0: Available, 1: Info & Workflows
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshPluginsState()
+    }
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            androidx.compose.material3.LargeTopAppBar(
+                title = {
+                    Column {
+                        Text("Lumia Plugin Hub", fontWeight = FontWeight.Black)
+                        Text("Dynamic micro-APK expansion manager", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(imageVector = Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = androidx.compose.material3.TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = Color.Transparent
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Segmented Tab Picker
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                    .padding(4.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(
+                            if (activeTab == 0) MaterialTheme.colorScheme.primary else Color.Transparent,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .clickable { activeTab = 0 }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Plugins Store",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = if (activeTab == 0) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(
+                            if (activeTab == 1) MaterialTheme.colorScheme.primary else Color.Transparent,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .clickable { activeTab = 1 }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Architecture Info",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = if (activeTab == 1) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (activeTab == 0) {
+                // Plugin A: Spectra Canvas
+                ovrrup.lumia.ui.components.GlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Palette,
+                                    contentDescription = "Spectra Icon",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Spectra Canvas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "v1.0.5",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                                Text("Aesthetic themes & custom typography engines", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text(
+                            "Unlocks advanced hex customization sliders, live dynamic Google Fonts compilation, premium font pairings, and unified visual accents.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                val statusBg = if (isSpectraActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+                                val statusColor = if (isSpectraActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                val statusText = if (isSpectraActive) "ACTIVE" else "INACTIVE"
+                                
+                                Box(
+                                    modifier = Modifier
+                                        .background(statusBg, RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(statusText, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Black, color = statusColor)
+                                }
+                                
+                                if (spectraEmulated) {
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("(Dev Mode)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                                }
+                            }
+
+                            Row {
+                                if (!isSpectraActive) {
+                                    BouncyButton(
+                                        onClick = {
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ovrrup/Lumia/releases/latest/download/Lumia-Spectra.apk"))
+                                            context.startActivity(intent)
+                                        },
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Text("Download APK", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+
+                                if (isSpectraActive) {
+                                    BouncyButton(
+                                        onClick = {
+                                            viewModel.toggleSpectraEmulation(false)
+                                            Toast.makeText(context, "Spectra Canvas Plugin detached.", Toast.LENGTH_SHORT).show()
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                                            contentColor = MaterialTheme.colorScheme.error
+                                        )
+                                    ) {
+                                        Text("Detach Plugin", fontWeight = FontWeight.Bold)
+                                    }
+                                } else {
+                                    Spacer(Modifier.width(8.dp))
+                                    BouncyButton(
+                                        onClick = {
+                                            viewModel.toggleSpectraEmulation(true)
+                                            Toast.makeText(context, "Spectra Canvas Emulation active!", Toast.LENGTH_SHORT).show()
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    ) {
+                                        Text("Simulate")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Plugin B: Lumia Sentinel
+                ovrrup.lumia.ui.components.GlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Shield,
+                                    contentDescription = "Sentinel Icon",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Lumia Sentinel", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "v1.0.5",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                                Text("Power, diagnostics & Always-On-Display telemetry", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text(
+                            "Unlocks screen-off True Always-On Display, LogDog developer diagnostics panels, custom physical lock bypass mechanisms, and automated kernel cleans.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                val statusBg = if (isSentinelActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+                                val statusColor = if (isSentinelActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                val statusText = if (isSentinelActive) "ACTIVE" else "INACTIVE"
+                                
+                                Box(
+                                    modifier = Modifier
+                                        .background(statusBg, RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(statusText, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Black, color = statusColor)
+                                }
+                                
+                                if (sentinelEmulated) {
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("(Dev Mode)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                                }
+                            }
+
+                            Row {
+                                if (!isSentinelActive) {
+                                    BouncyButton(
+                                        onClick = {
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ovrrup/Lumia/releases/latest/download/Lumia-Sentinel.apk"))
+                                            context.startActivity(intent)
+                                        },
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Text("Download APK", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+
+                                if (isSentinelActive) {
+                                    BouncyButton(
+                                        onClick = {
+                                            viewModel.toggleSentinelEmulation(false)
+                                            Toast.makeText(context, "Lumia Sentinel Plugin detached.", Toast.LENGTH_SHORT).show()
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                                            contentColor = MaterialTheme.colorScheme.error
+                                        )
+                                    ) {
+                                        Text("Detach Plugin", fontWeight = FontWeight.Bold)
+                                    }
+                                } else {
+                                    Spacer(Modifier.width(8.dp))
+                                    BouncyButton(
+                                        onClick = {
+                                            viewModel.toggleSentinelEmulation(true)
+                                            Toast.makeText(context, "Lumia Sentinel Emulation active!", Toast.LENGTH_SHORT).show()
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    ) {
+                                        Text("Simulate")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Tab 1: Architecture Info
+                ovrrup.lumia.ui.components.GlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            "Dantotsu-Style Dynamic Binding",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            "Lumia employs a modularized signature-bound plugin mechanism. By distributing extensive optional modules as separate sandboxed companion Micro-APKs, we allow the main core application to remain incredibly lightweight, clutter-free, and hyper-optimized.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text(
+                            "Workflows & GitHub Package Installer",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            "Our secure in-app installer works directly with GitHub Actions and dynamic repository release tags. When a plugin is triggered for download, the corresponding apk is retrieved from Github, checked for cryptographic signature parity, and handled by Android's System PackageInstaller. Once installed, Lumia instantly queries the package bounds via SharedPreferences IPC interfaces and unlocks advanced rendering paths.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
         }
     }
 }

@@ -1,4 +1,4 @@
-name: Manual Release Publisher
+name: Release Main APK
 
 on:
   workflow_dispatch:
