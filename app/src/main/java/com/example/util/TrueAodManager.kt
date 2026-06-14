@@ -89,13 +89,20 @@ object TrueAodManager {
         context: Context,
         useAccessibility: Boolean,
         dimnessLevel: Float, // e.g., 0.95f
-        sensitivity: String, // "highest", "medium", "secure"
+        sensitivity: String, // "highest", "medium", "secure", "motion"
+        motionSensitivity: Float = 1.2f,
         lockTimeoutSeconds: Int, // 30 seconds
         onExit: () -> Unit
     ) {
         if (composeView != null) return
 
-        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val overlayContext = if (useAccessibility) {
+            ovrrup.lumia.service.AodAccessibilityService.instance ?: context
+        } else {
+            context
+        }
+
+        val wm = overlayContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         windowManager = wm
 
         val localLifecycle = OverlayLifecycleOwner()
@@ -107,10 +114,14 @@ object TrueAodManager {
         val layoutParams = WindowManager.LayoutParams().apply {
             width = WindowManager.LayoutParams.MATCH_PARENT
             height = WindowManager.LayoutParams.MATCH_PARENT
-            type = if (useAccessibility) {
+            type = if (useAccessibility && overlayContext is android.accessibilityservice.AccessibilityService) {
                 WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
             } else {
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                } else {
+                    WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
+                }
             }
             flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
@@ -126,7 +137,7 @@ object TrueAodManager {
             gravity = Gravity.FILL
         }
 
-        val view = ComposeView(context).apply {
+        val view = ComposeView(overlayContext).apply {
             setViewTreeLifecycleOwner(localLifecycle)
             setViewTreeViewModelStoreOwner(localLifecycle)
             setViewTreeSavedStateRegistryOwner(localLifecycle)
@@ -135,6 +146,7 @@ object TrueAodManager {
                 TrueAodOverlayUi(
                     dimnessLevel = dimnessLevel,
                     sensitivity = sensitivity,
+                    motionSensitivity = motionSensitivity,
                     lockTimeoutSeconds = lockTimeoutSeconds,
                     onExitRequest = {
                         dismissAodOverlay()
@@ -171,6 +183,7 @@ object TrueAodManager {
 fun TrueAodOverlayUi(
     dimnessLevel: Float,
     sensitivity: String,
+    motionSensitivity: Float = 1.2f,
     lockTimeoutSeconds: Int,
     onExitRequest: () -> Unit
 ) {
@@ -246,12 +259,12 @@ fun TrueAodOverlayUi(
         }
     }
 
-    if (sensitivity == "motion") {
+    if (sensitivity == "motion" && motionSensitivity > 0f) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as android.hardware.SensorManager
         val linearSensor = remember { sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_LINEAR_ACCELERATION) }
         val accelSensor = remember { if (linearSensor == null) sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER) else null }
         
-        DisposableEffect(sensorManager, linearSensor, accelSensor) {
+        DisposableEffect(sensorManager, linearSensor, accelSensor, motionSensitivity) {
             var lastX = 0f
             var lastY = 0f
             var lastZ = 0f
@@ -264,8 +277,7 @@ fun TrueAodOverlayUi(
                         val y = event.values[1]
                         val z = event.values[2]
                         val acceleration = Math.sqrt((x * x + y * y + z * z).toDouble()).toFloat()
-                        // 1.2f is hyper-sensitive to any linear movement on high-end devices
-                        if (acceleration > 1.2f) {
+                        if (acceleration > motionSensitivity) {
                             onExitRequest()
                         }
                     } else if (event.sensor.type == android.hardware.Sensor.TYPE_ACCELEROMETER) {
@@ -277,8 +289,8 @@ fun TrueAodOverlayUi(
                             val dy = y - lastY
                             val dz = z - lastZ
                             val delta = Math.sqrt((dx * dx + dy * dy + dz * dz).toDouble()).toFloat()
-                            // 0.45f delta means a slight movement/nudge of the phone triggers the wake-up
-                            if (delta > 0.45f) {
+                            val accelThreshold = motionSensitivity * 0.375f
+                            if (delta > accelThreshold) {
                                 onExitRequest()
                             }
                         }

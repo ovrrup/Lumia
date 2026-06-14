@@ -277,7 +277,7 @@ class PomodoroService : Service() {
         }
 
         val builder = NotificationCompat.Builder(this, "pomodoro_service")
-            .setSmallIcon(R.drawable.ic_notification_scholar)
+            .setSmallIcon(ovrrup.lumia.util.NotificationHelper.getSmallIcon())
             .setContentTitle(title)
             .setContentText("Time remaining: $timeStr" + if (isPaused) " (PAUSED)" else "")
             .setProgress(progressMax, progressNow, false)
@@ -286,7 +286,7 @@ class PomodoroService : Service() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(mainPending)
             .setOngoing(true)
-            .setColor(notificationColor)
+            .setColor(ovrrup.lumia.util.NotificationHelper.getColor(this))
             .setUsesChronometer(!isPaused)
             .setWhen(System.currentTimeMillis() + time * 1000L)
             
@@ -348,7 +348,7 @@ class PomodoroService : Service() {
             taskId?.let { finishedIntent.putExtra("taskId", it) }
             sendBroadcast(finishedIntent)
             
-            val prefs = getSharedPreferences("scholar_prefs", Context.MODE_PRIVATE)
+            val prefs = getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
             val autoLog = prefs.getBoolean("system_pomodoro_auto_log", true)
             if (autoLog) {
                 scope.launch {

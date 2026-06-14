@@ -354,6 +354,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _aodSensitivity = MutableStateFlow(prefs.getString("aod_sensitivity", "highest") ?: "highest")
     val aodSensitivity = _aodSensitivity.asStateFlow()
 
+    private val _aodMotionSensitivity = MutableStateFlow(prefs.getFloat("aod_motion_sensitivity", 1.2f))
+    val aodMotionSensitivity = _aodMotionSensitivity.asStateFlow()
+
     private val _aodDimnessLevel = MutableStateFlow(prefs.getFloat("aod_dimness_level", 0.95f))
     val aodDimnessLevel = _aodDimnessLevel.asStateFlow()
 
@@ -378,6 +381,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateAodSensitivity(sensitivity: String) {
         _aodSensitivity.value = sensitivity
         prefs.edit().putString("aod_sensitivity", sensitivity).apply()
+    }
+
+    fun updateAodMotionSensitivity(sensitivity: Float) {
+        _aodMotionSensitivity.value = sensitivity
+        prefs.edit().putFloat("aod_motion_sensitivity", sensitivity).apply()
     }
 
     fun updateAodDimnessLevel(level: Float) {
@@ -1021,7 +1029,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     val formal = notifFormalTone.value
                     val title = if (formal) "Streak Maintained" else "Good Job Not Slacking!"
                     val msg = if (formal) "You have maintained your streak for $newStreak days." else "You actually did something today! Streak is now $newStreak."
-                    sendInstantNotification("scholar_streak_channel", 1004, title, msg, ovrrup.lumia.R.drawable.ic_notification_streak, android.graphics.Color.parseColor("#FF5722"))
+                    sendInstantNotification("scholar_streak_channel", 1004, title, msg, ovrrup.lumia.util.NotificationHelper.getSmallIcon(), ovrrup.lumia.util.NotificationHelper.getColor(getApplication()))
                 }
             }
             diff > 1L  -> {
@@ -1030,7 +1038,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     val formal = notifFormalTone.value
                     val title = if (formal) "Streak Broken" else "Whelp... You broke it."
                     val msg = if (formal) "Your last streak was broken. You are back to 1 day." else "I knew you couldn't keep it up. Back to day 1 for you."
-                    sendInstantNotification("scholar_streak_channel", 1005, title, msg, ovrrup.lumia.R.drawable.ic_notification_streak, android.graphics.Color.parseColor("#E91E63"))
+                    sendInstantNotification("scholar_streak_channel", 1005, title, msg, ovrrup.lumia.util.NotificationHelper.getSmallIcon(), ovrrup.lumia.util.NotificationHelper.getColor(getApplication()))
                 }
             }
         }

@@ -214,9 +214,9 @@ class MainActivity : ComponentActivity() {
                                         val tagName = json.optString("tag_name", "")
                                         val currentVersion = try {
                                             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                                            pInfo.versionName ?: "1.0.0"
+                                            pInfo.versionName ?: "1.0.2"
                                         } catch (e: Exception) {
-                                            "1.0.0"
+                                            "1.0.2"
                                         }
                                         
                                         if (tagName.isNotEmpty()) {

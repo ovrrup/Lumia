@@ -1931,8 +1931,6 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        val isAccessibilityRecommended = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
-                        
                         Column(
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -1982,19 +1980,6 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                     Column(modifier = Modifier.weight(1f)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text("System Overlay", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-                                            if (!isAccessibilityRecommended) {
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                SuggestionChip(
-                                                    onClick = {},
-                                                    label = { Text("Recommended", fontSize = 10.sp) },
-                                                    colors = SuggestionChipDefaults.suggestionChipColors(
-                                                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                                        labelColor = MaterialTheme.colorScheme.primary
-                                                    ),
-                                                    border = null,
-                                                    modifier = Modifier.height(20.dp)
-                                                )
-                                            }
                                         }
                                         Text(
                                             "Ideal for physical battery optimization and fast system responses.",
@@ -2002,7 +1987,6 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
-                                    RadioButton(selected = isOverlaySelected, onClick = { viewModel.updateAodTrueAodMode("overlay") })
                                 }
                             }
 
@@ -2044,19 +2028,6 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                     Column(modifier = Modifier.weight(1f)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text("Accessibility Overlay", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-                                            if (isAccessibilityRecommended) {
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                SuggestionChip(
-                                                    onClick = {},
-                                                    label = { Text("Recommended", fontSize = 10.sp) },
-                                                    colors = SuggestionChipDefaults.suggestionChipColors(
-                                                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                                        labelColor = MaterialTheme.colorScheme.primary
-                                                    ),
-                                                    border = null,
-                                                    modifier = Modifier.height(20.dp)
-                                                )
-                                            }
                                         }
                                         Text(
                                             "Safely render screen-saver behind system notification and secure lock controls.",
@@ -2064,7 +2035,6 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
-                                    RadioButton(selected = isAccessSelected, onClick = { viewModel.updateAodTrueAodMode("accessibility") })
                                 }
                             }
                         }
@@ -2284,7 +2254,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
                                         text = when (aodSensitivity) {
-                                            "motion" -> "Maximum: Accelerometer linear movement, tilt, shake, or single screen tap instantly wakes up Lumia."
+                                            "motion" -> "Maximum: Accelerometer movement or single screen tap instantly wakes up Lumia."
                                             "highest" -> "High sensitivity: Any single tap anywhere on the dark screen will instantly wake it up."
                                             "medium" -> "Balanced sensitivity: Restricts wake-up to intentional double-taps to fully avoid pocket triggers."
                                             "secure" -> "Fortified safety: Requires holding touch down anywhere for 1 second to unlock back."
@@ -2293,6 +2263,63 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
                                     )
+                                }
+                            }
+
+                            if (aodSensitivity == "motion") {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                val aodMotionSensitivity by viewModel.aodMotionSensitivity.collectAsStateWithLifecycle()
+                                Text(
+                                    text = "Motion Sensor Sensitivity",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Adjust the required movement threshold. Turn off to only use single-tap instead of accelerometer tracking.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                val motionOptions = listOf(
+                                    Pair(0.5f, "Very High"),
+                                    Pair(1.2f, "High"),
+                                    Pair(2.5f, "Medium"),
+                                    Pair(4.0f, "Low"),
+                                    Pair(0f, "Off (Tap only)")
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    motionOptions.forEach { (threshold, label) ->
+                                        val isSelected = aodMotionSensitivity == threshold
+                                        Card(
+                                            onClick = { viewModel.updateAodMotionSensitivity(threshold) },
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = if (isSelected) MaterialTheme.colorScheme.primary 
+                                                                 else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+                                            ),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 10.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = label.split(" ").firstOrNull() ?: label,
+                                                    fontWeight = FontWeight.Bold,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary 
+                                                            else MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -3272,9 +3299,9 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
     val currentVersion = remember {
         try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            pInfo.versionName ?: "1.0.1"
+            pInfo.versionName ?: "1.0.2"
         } catch (e: Exception) {
-            "1.0.1"
+            "1.0.2"
         }
     }
 

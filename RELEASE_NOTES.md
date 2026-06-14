@@ -1,5 +1,12 @@
 # Lumia Release Notes
 
+## 🌟 What's New in v1.0.2
+- **Unified Alert Aesthetics**: Synchronized all system notification icons with the monochrome launcher design and active theme color palette for a seamless Material 3 experience.
+- **Unified Storage Engine**: Consolidated internal settings into a centralized preference store (`lumia_prefs`), improving data consistency across background workers and the UI.
+- **Scholarship Engine Stability**: Resolved critical lifecycle issues in state management, ensuring reliable streak tracking and real-time dashboard updates.
+- **Refined Material 3 Layouts**: Optimized glass-morphism headers and list item rendering for improved depth and legibility across all adaptive display modes.
+- **OTA Engine Resilience**: Hardened the version checking logic against GitHub API rate limits and improved tag parsing for FOSS distributions.
+
 ## 🌟 What's New in v1.0.1
 - **Advanced Navigation Layout Panel**: Expanded bottom navigation configurator supporting interactive floating/padded layouts, sizing options, custom heights, and satin glass independent filters.
 - **Enhanced Adaptive Navigation Bar Aesthetics**: Tailor margin parameters, rounded corner styles, custom alpha levels, and item state colors on-the-fly.

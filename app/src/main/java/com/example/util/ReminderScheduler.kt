@@ -21,7 +21,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val action = intent.action
         val assignmentId = intent.getIntExtra("assignment_id", -1)
         
-        val prefs = context.getSharedPreferences("scholar_settings", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
         val formalTone = prefs.getBoolean("notif_formal_tone", true)
         val enableDeadlines = prefs.getBoolean("notif_enable_deadlines", true)
         
@@ -114,11 +114,11 @@ class ReminderReceiver : BroadcastReceiver() {
             .setSummaryText("Deadline Alert")
 
         val notification = NotificationCompat.Builder(context, "scholar_sync_channel")
-            .setSmallIcon(ovrrup.lumia.R.drawable.ic_notification_deadline)
+            .setSmallIcon(ovrrup.lumia.util.NotificationHelper.getSmallIcon())
             .setContentTitle(finalTitle)
             .setContentText(finalDesc)
             .setStyle(bigTextStyle)
-            .setColor(android.graphics.Color.parseColor("#E91E63"))
+            .setColor(ovrrup.lumia.util.NotificationHelper.getColor(context))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(mainPendingIntent)
             .addAction(android.R.drawable.ic_menu_edit, if (formalTone) "Mark Done" else "I Did It!", donePendingIntent)
@@ -143,7 +143,7 @@ object ReminderScheduler {
     }
 
     fun scheduleClassReminder(context: Context, classId: Int, title: String, desc: String, timestamp: Long) {
-        val prefs = context.getSharedPreferences("scholar_settings", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
         if (!prefs.getBoolean("notif_enable_classes", true)) return
         val triggerTime = timestamp - (1000 * 60 * 15) // 15 mins before class
         if (triggerTime > System.currentTimeMillis()) {

@@ -152,7 +152,7 @@ fun PomodoroScreen(navController: NavController, viewModel: ovrrup.lumia.viewmod
         }
     }
 
-    LaunchedEffect(isAodMode, aodTrueAodEnabled, aodTrueAodMode, aodDimnessLevel, aodSensitivity, aodLockTimeout) {
+    LaunchedEffect(isAodMode, aodTrueAodEnabled, aodTrueAodMode, aodDimnessLevel, aodSensitivity, aodLockTimeout, viewModel.aodMotionSensitivity.value) {
         if (isAodMode && aodTrueAodEnabled) {
             val hasPerm = if (aodTrueAodMode == "overlay") {
                 android.provider.Settings.canDrawOverlays(context)
@@ -165,6 +165,7 @@ fun PomodoroScreen(navController: NavController, viewModel: ovrrup.lumia.viewmod
                     useAccessibility = (aodTrueAodMode == "accessibility"),
                     dimnessLevel = aodDimnessLevel,
                     sensitivity = aodSensitivity,
+                    motionSensitivity = viewModel.aodMotionSensitivity.value,
                     lockTimeoutSeconds = if (aodTrueAodMode == "accessibility") aodLockTimeout else 0,
                     onExit = {
                         isAodMode = false

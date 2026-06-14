@@ -113,7 +113,7 @@ Every time you push or trigger a Pull Request to your `main` / `master` reposito
 
 ### How to Install the App
 1. Navigate to the **Releases** section on the right-hand sidebar of the GitHub repository page (or click [Releases](https://github.com/ovrrup/Lumia/releases)).
-2. Under the latest release (e.g., `v1.0.1`), expand the **Assets** section if collapsed.
+2. Under the latest release (e.g., `v1.0.2`), expand the **Assets** section if collapsed.
 3. Click on the compiled `.apk` asset file to download it.
 4. Transfer the downloaded APK file to your Android device and install it! You will receive notification overlays in the app when future updates are released.
 
