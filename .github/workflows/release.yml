@@ -92,7 +92,7 @@ jobs:
         fi
 
     - name: Build Release APKs
-      run: gradle assembleRelease --no-daemon
+      run: gradle assembleRelease -Djava.awt.headless=true --no-daemon
       env:
         STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
         KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || 'android' }}

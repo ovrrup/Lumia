@@ -36,7 +36,7 @@ Track organized courses (e.g., *Computer Science (B.Sc.)* or *Pre-Med*) down to 
   <img src="app/src/main/res/drawable/ic_notification_streak.png" width="80" alt="Streak Asset"/>
 </p>
 
-### 3. Pomodoro focus Engine & "True AOD" (The Ultimate Weapon)
+### 3. Pomodoro Focus Engine & "True AOD" (The Ultimate Weapon)
 This isn't a simple aesthetic countdown timer. Lumia features a dual-mode system overlay that blocks standard Android lock-panel updates to turn your phone into a pure hardware focus clock:
 * **The True AOD Interface:** Shows simple time elements, focus progress rings, dynamic study ticks, and pure black OLED-safe background configurations.
 * **Dual Integration Profiles:**
@@ -69,7 +69,7 @@ If something breaks under the hood, there is no need to connect to a desktop com
 Lumia believes that your study logs should never be a telemetry product:
 - **Zero Remote Calls:** No remote trackers, analytical frameworks, or advertising APIs.
 - **Local Databases:** SQLite Room database isolated inside highly secure local Android sandboxes.
-- **Offline Reliability:** Perfect for off-grid reading sessions, cellular-restricted campus basements, or flights.
+- **Offline Reliability:** Perfect for off-grid reading sessions, cellular-restricted campus basements, or flights. Network access is strictly restricted to occasionally checking for GitHub OTA app updates.
 
 For formal clauses, view our dedicated **[Privacy Policy](PRIVACY.md)** and **[Terms and Conditions](TERMS.md)**.
 
