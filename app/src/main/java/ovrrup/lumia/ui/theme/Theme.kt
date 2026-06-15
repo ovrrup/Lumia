@@ -180,6 +180,7 @@ fun ScholarTheme(
     customBackground: String = "",
     customSurface: String = "",
     customText: String = "",
+    appFontSelection: String = "Nunito",
     pureBlackMode: Boolean = false,
     glassMode: Boolean = false,
     glassDynamic: Boolean = true,
@@ -406,9 +407,22 @@ fun ScholarTheme(
             large = RoundedCornerShape(28.dp),
             extraLarge = RoundedCornerShape(36.dp)
         ) else Shapes
+        
+        val typographyToUse = when (appFontSelection) {
+            "Playfair & Lato" -> getTypography(fontNameStr = "Lato", headingFontNameStr = "Playfair Display")
+            "Josefin & Inter" -> getTypography(fontNameStr = "Inter", headingFontNameStr = "Josefin Sans")
+            "Archivo & Tenor" -> getTypography(fontNameStr = "Tenor Sans", headingFontNameStr = "Archivo")
+            "Syne & Inter" -> getTypography(fontNameStr = "Inter", headingFontNameStr = "Syne")
+            "Montserrat & Open Sans" -> getTypography(fontNameStr = "Open Sans", headingFontNameStr = "Montserrat")
+            "Yellowtail & Open Sans" -> getTypography(fontNameStr = "Open Sans", headingFontNameStr = "Yellowtail")
+            "Nunito" -> getTypography(fontNameStr = "Nunito")
+            "System Default" -> getTypography(fontNameStr = "System Default")
+            else -> Typography
+        }
+        
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = Typography,
+            typography = typographyToUse,
             shapes = currentShapes,
             content = content
         )
@@ -421,6 +435,19 @@ fun Modifier.bouncyScale(interactionSource: androidx.compose.foundation.interact
     val moreRounds = LocalMoreRounds.current
     val isPressed by interactionSource.collectIsPressedAsState()
     
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = androidx.compose.runtime.remember(context) { context.getSharedPreferences("lumia_prefs", android.content.Context.MODE_PRIVATE) }
+    
+    androidx.compose.runtime.LaunchedEffect(isPressed) {
+        if (isPressed) {
+            val uiSounds = prefs.getBoolean("ui_sounds_enabled", true)
+            val uiHaptics = prefs.getBoolean("ui_haptics_enabled", true)
+            if (uiSounds || uiHaptics) {
+                ovrrup.lumia.util.SoundManager.playClickSound(context, uiSounds, uiHaptics)
+            }
+        }
+    }
+
     val targetScale = if (isPressed) {
         when (animationMode) {
             "Bouncy" -> if (moreRounds) 1.22f else 1.15f

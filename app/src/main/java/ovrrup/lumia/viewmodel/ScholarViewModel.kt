@@ -60,6 +60,14 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _themeColor = MutableStateFlow(prefs.getString("theme_color", "Ocean") ?: "Ocean")
     val themeColor = _themeColor.asStateFlow()
 
+    private val _appFontSelection = MutableStateFlow(prefs.getString("app_font_selection", "Nunito") ?: "Nunito")
+    val appFontSelection = _appFontSelection.asStateFlow()
+
+    fun updateAppFontSelection(font: String) {
+        _appFontSelection.value = font
+        prefs.edit().putString("app_font_selection", font).apply()
+    }
+
     private val _customPrimary = MutableStateFlow(prefs.getString("custom_primary", "#3197D6") ?: "#3197D6")
     val customPrimary = _customPrimary.asStateFlow()
 
@@ -276,6 +284,15 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _systemPomodoroAutoLog = MutableStateFlow(prefs.getBoolean("system_pomodoro_auto_log", true))
     val systemPomodoroAutoLog = _systemPomodoroAutoLog.asStateFlow()
 
+    private val _pomodoroUseAlarmSound = MutableStateFlow(prefs.getBoolean("pomodoro_use_alarm_sound", false))
+    val pomodoroUseAlarmSound = _pomodoroUseAlarmSound.asStateFlow()
+
+    private val _uiSoundsEnabled = MutableStateFlow(prefs.getBoolean("ui_sounds_enabled", true))
+    val uiSoundsEnabled = _uiSoundsEnabled.asStateFlow()
+
+    private val _uiHapticsEnabled = MutableStateFlow(prefs.getBoolean("ui_haptics_enabled", true))
+    val uiHapticsEnabled = _uiHapticsEnabled.asStateFlow()
+
     private val _pomodoroWorkDuration = MutableStateFlow(prefs.getInt("pomodoro_work_duration", 25))
     val pomodoroWorkDuration = _pomodoroWorkDuration.asStateFlow()
 
@@ -465,6 +482,21 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("system_pomodoro_auto_log", enabled).apply()
     }
 
+    fun updatePomodoroUseAlarmSound(enabled: Boolean) {
+        _pomodoroUseAlarmSound.value = enabled
+        prefs.edit().putBoolean("pomodoro_use_alarm_sound", enabled).apply()
+    }
+
+    fun updateUiSoundsEnabled(enabled: Boolean) {
+        _uiSoundsEnabled.value = enabled
+        prefs.edit().putBoolean("ui_sounds_enabled", enabled).apply()
+    }
+
+    fun updateUiHapticsEnabled(enabled: Boolean) {
+        _uiHapticsEnabled.value = enabled
+        prefs.edit().putBoolean("ui_haptics_enabled", enabled).apply()
+    }
+
     fun updatePomodoroWorkDuration(duration: Int) {
         _pomodoroWorkDuration.value = duration
         prefs.edit().putInt("pomodoro_work_duration", duration).apply()
@@ -573,14 +605,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _safetyPinEnabled = MutableStateFlow(prefs.getBoolean("safety_pin_enabled", true))
     val safetyPinEnabled = _safetyPinEnabled.asStateFlow()
 
-    private val _advancedSettingsEnabled = MutableStateFlow(prefs.getBoolean("advanced_settings_enabled", false))
-    val advancedSettingsEnabled = _advancedSettingsEnabled.asStateFlow()
-
-    fun updateAdvancedSettingsEnabled(enabled: Boolean) {
-        _advancedSettingsEnabled.value = enabled
-        prefs.edit().putBoolean("advanced_settings_enabled", enabled).apply()
-    }
-
     private val _safetyPinConflictWarning = MutableStateFlow(prefs.getBoolean("safety_pin_conflict_warning", true))
     val safetyPinConflictWarning = _safetyPinConflictWarning.asStateFlow()
 
@@ -601,20 +625,32 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             override var value: SafetyPinDialogData?
                 get() = delegate.value
                 set(v) {
-                    if (v != null && delegate.value != null) return
-                    delegate.value = v
+                    if (v != null) {
+                        v.onConfirm()
+                    } else {
+                        delegate.value = null
+                    }
                 }
             override fun compareAndSet(expect: SafetyPinDialogData?, update: SafetyPinDialogData?): Boolean {
-                if (update != null && delegate.value != null) return false
+                if (update != null) {
+                    update.onConfirm()
+                    return true
+                }
                 return delegate.compareAndSet(expect, update)
             }
             override fun tryEmit(value: SafetyPinDialogData?): Boolean {
-                if (value != null && delegate.value != null) return false
+                if (value != null) {
+                    value.onConfirm()
+                    return true
+                }
                 return delegate.tryEmit(value)
             }
             override suspend fun emit(value: SafetyPinDialogData?) {
-                if (value != null && delegate.value != null) return
-                delegate.emit(value)
+                if (value != null) {
+                    value.onConfirm()
+                } else {
+                    delegate.emit(value)
+                }
             }
         }
     }
@@ -1041,21 +1077,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             diff == 1L -> {
                 val newStreak = _currentStreak.value + 1
                 updateStreak(newStreak)
-                if (notifEnableStreaks.value) {
-                    val formal = notifFormalTone.value
-                    val title = if (formal) "Streak Maintained" else "Good Job Not Slacking!"
-                    val msg = if (formal) "You have maintained your streak for $newStreak days." else "You actually did something today! Streak is now $newStreak."
-                    sendInstantNotification("scholar_streak_channel", 1004, title, msg, ovrrup.lumia.util.NotificationHelper.getSmallIcon(), ovrrup.lumia.util.NotificationHelper.getColor(getApplication()))
-                }
             }
             diff > 1L  -> {
                 updateStreak(1)  // streak broken
-                if (notifEnableStreaks.value && _currentStreak.value > 0) { // If there was a streak to break
-                    val formal = notifFormalTone.value
-                    val title = if (formal) "Streak Broken" else "Whelp... You broke it."
-                    val msg = if (formal) "Your last streak was broken. You are back to 1 day." else "I knew you couldn't keep it up. Back to day 1 for you."
-                    sendInstantNotification("scholar_streak_channel", 1005, title, msg, ovrrup.lumia.util.NotificationHelper.getSmallIcon(), ovrrup.lumia.util.NotificationHelper.getColor(getApplication()))
-                }
             }
         }
         prefs.edit().putString("last_action_date_str", today).apply()
@@ -1073,6 +1097,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
         val intent = android.content.Intent(application, ovrrup.lumia.MainActivity::class.java).apply { flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK }
         val pendingIntent = android.app.PendingIntent.getActivity(application, 0, intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+
+        val uiSounds = prefs.getBoolean("ui_sounds_enabled", true)
+        if (uiSounds) {
+            ovrrup.lumia.util.SoundManager.playSuccessMelody()
+        }
 
         val notification = androidx.core.app.NotificationCompat.Builder(application, channelId)
             .setSmallIcon(iconRes)
@@ -1103,12 +1132,29 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private fun loadSettings(settings: Map<String, String>?) {
         if (settings == null) return
         val editor = prefs.edit()
+        
+        // Dynamically save all settings
+        settings.forEach { (key, value) ->
+            val boolVal = value.toBooleanStrictOrNull()
+            val intVal = value.toIntOrNull()
+            val floatVal = value.toFloatOrNull()
+            
+            when {
+                boolVal != null -> editor.putBoolean(key, boolVal)
+                intVal != null -> editor.putInt(key, intVal)
+                floatVal != null -> editor.putFloat(key, floatVal)
+                else -> editor.putString(key, value)
+            }
+        }
+        editor.apply()
+        
+        // Update live state for known fields
         settings.forEach { (key, value) ->
             when (key) {
-                "theme_mode" -> { editor.putString(key, value); _themeMode.value = value }
-                "theme_color" -> { editor.putString(key, value); _themeColor.value = value }
+                "theme_mode" -> { _themeMode.value = value }
+                "theme_color" -> { _themeColor.value = value }
+                "app_font_selection" -> { _appFontSelection.value = value }
                 "custom_primary", "custom_primary_container", "custom_background", "custom_surface", "custom_text" -> {
-                    editor.putString(key, value)
                     when (key) {
                         "custom_primary" -> _customPrimary.value = value
                         "custom_primary_container" -> _customPrimaryContainer.value = value
@@ -1117,64 +1163,40 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                         "custom_text" -> _customText.value = value
                     }
                 }
-                "last_action_date_str" -> {
-                    editor.putString(key, value)
-                }
                 "current_streak" -> {
                     val intVal = value.toIntOrNull() ?: 0
-                    editor.putInt(key, intVal)
                     _currentStreak.value = intVal
                 }
                 "glass_backdrop_style" -> {
-                    editor.putString(key, value)
                     _glassBackdropStyle.value = value
                 }
                 "nav_bar_glass_backdrop_style" -> {
-                    editor.putString(key, value)
                     _navBarGlassBackdropStyle.value = value
                 }
                 "glass_opacity_value" -> {
                     val floatVal = value.toFloatOrNull() ?: 0.6f
-                    editor.putFloat(key, floatVal)
                     _glassOpacityValue.value = floatVal
                 }
                 "dynamic_bg_light_brightness" -> {
                     val floatVal = value.toFloatOrNull() ?: 0.75f
-                    editor.putFloat(key, floatVal)
                     _dynamicBgLightBrightness.value = floatVal
-                    // also fallback to currently active theme if it's there
-                    val activeTheme = (settings["theme_color"] ?: "Ocean").lowercase()
-                    editor.putFloat("dynamic_bg_light_brightness_$activeTheme", floatVal)
                 }
                 "dynamic_bg_dark_brightness" -> {
                     val floatVal = value.toFloatOrNull() ?: 0.45f
-                    editor.putFloat(key, floatVal)
                     _dynamicBgDarkBrightness.value = floatVal
-                    // also fallback to currently active theme if it's there
-                    val activeTheme = (settings["theme_color"] ?: "Ocean").lowercase()
-                    editor.putFloat("dynamic_bg_dark_brightness_$activeTheme", floatVal)
                 }
                 else -> {
-                    if (key.startsWith("dynamic_bg_light_brightness_")) {
-                        val floatVal = value.toFloatOrNull() ?: 0.75f
-                        editor.putFloat(key, floatVal)
-                    } else if (key.startsWith("dynamic_bg_dark_brightness_")) {
-                        val floatVal = value.toFloatOrNull() ?: 0.45f
-                        editor.putFloat(key, floatVal)
-                    } else if (key == "pomodoro_work_duration" || key == "pomodoro_short_break_duration" || key == "pomodoro_long_break_duration") {
+                    if (key == "pomodoro_work_duration" || key == "pomodoro_short_break_duration" || key == "pomodoro_long_break_duration") {
                         val intVal = value.toIntOrNull() ?: return@forEach
-                        editor.putInt(key, intVal)
                         when(key) {
                             "pomodoro_work_duration" -> _pomodoroWorkDuration.value = intVal
                             "pomodoro_short_break_duration" -> _pomodoroShortBreakDuration.value = intVal
                             "pomodoro_long_break_duration" -> _pomodoroLongBreakDuration.value = intVal
                         }
                     } else if (key == "display_layout_mode") {
-                        editor.putString(key, value)
                         _displayLayoutMode.value = value
                     } else {
                         val boolVal = value.toBooleanStrictOrNull() ?: return@forEach
-                        editor.putBoolean(key, boolVal)
                         when(key) {
                             "pure_black_mode" -> _pureBlackMode.value = boolVal
                             "beta_floating_nav" -> _betaFloatingNav.value = boolVal
@@ -1207,7 +1229,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
         }
-        editor.apply()
         refreshThemeBrightness()
     }
 
@@ -1261,41 +1282,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun updateThemeMode(mode: String) {
         if (safetyPinEnabled.value && safetyPinConflictWarning.value && mode == "Light" && _pureBlackMode.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Feature Conflict Detected",
-                description = "Switching to 'Light' theme conflicts with 'Pure Black Mode', which requires a dark theme to function. Proceeding will automatically disable 'Pure Black Mode'.",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _themeMode.value = mode
-                    prefs.edit().putString("theme_mode", mode).apply()
-                    updatePureBlackMode(false)
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
+            updatePureBlackMode(false)
         }
-
         if (mode == "Dark" && safetyPinEnabled.value && safetyPinRecommendations.value && !_pureBlackMode.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For the deepest contrast and battery savings on OLED screens, it is recommended to enable 'Pure Black Mode' with the Dark theme. Would you like to enable it?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _themeMode.value = mode
-                    prefs.edit().putString("theme_mode", mode).apply()
-                    updatePureBlackMode(true)
-                },
-                onIgnore = {
-                    _safetyPinDialogData.value = null
-                    _themeMode.value = mode
-                    prefs.edit().putString("theme_mode", mode).apply()
-                }
-            )
-            return
+            updatePureBlackMode(true)
         }
-
         _themeMode.value = mode
         prefs.edit().putString("theme_mode", mode).apply()
     }
@@ -1307,49 +1298,16 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val conflictsWithEnhancedHeader = _betaEnhancedHeader.value
 
         if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (conflictsWithDynamicBg || conflictsWithGlassUi || conflictsWithPalette || conflictsWithEnhancedHeader)) {
-            val opposingFeatures = mutableListOf<String>()
-            if (conflictsWithDynamicBg) opposingFeatures.add("'Dynamic Lighting Background'")
-            if (conflictsWithGlassUi) opposingFeatures.add("'Glass UI'")
-            if (conflictsWithPalette) opposingFeatures.add("'Use Palette Shades for Text'")
-            if (conflictsWithEnhancedHeader) opposingFeatures.add("'Enhanced Header'")
-            
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Feature Conflict Detected",
-                description = "The activation of 'Pure Black Mode' directly opposes the functionality of ${opposingFeatures.joinToString(" and ")}. Proceeding will automatically deactivate these opposing settings to maintain visual consistency and readability.",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _pureBlackMode.value = true
-                    prefs.edit().putBoolean("pure_black_mode", true).apply()
-                    if (conflictsWithDynamicBg) updateBetaDynamicBackground(false)
-                    if (conflictsWithGlassUi) updateBetaGlassUi(false)
-                    if (conflictsWithPalette) updateBetaBetterTextsPalette(false)
-                    if (conflictsWithEnhancedHeader) updateBetaEnhancedHeader(false)
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
+            if (conflictsWithDynamicBg) updateBetaDynamicBackground(false)
+            if (conflictsWithGlassUi) updateBetaGlassUi(false)
+            if (conflictsWithPalette) updateBetaBetterTextsPalette(false)
+            if (conflictsWithEnhancedHeader) updateBetaEnhancedHeader(false)
         }
 
         if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && _themeMode.value != "Dark") {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For the optimal experience of 'Pure Black Mode', it is highly recommended to switch your system theme to 'Dark'. The current setting limits the effectiveness of the pure black backgrounds.",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _pureBlackMode.value = true
-                    prefs.edit().putBoolean("pure_black_mode", true).apply()
-                    updateThemeMode("Dark")
-                },
-                onIgnore = {
-                    _safetyPinDialogData.value = null
-                    _pureBlackMode.value = true
-                    prefs.edit().putBoolean("pure_black_mode", true).apply()
-                }
-            )
-            return
+            updateThemeMode("Dark")
         }
+
         _pureBlackMode.value = enabled
         prefs.edit().putBoolean("pure_black_mode", enabled).apply()
     }

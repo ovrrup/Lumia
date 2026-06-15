@@ -100,7 +100,6 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
-    val isAdvancedMode by viewModel.advancedSettingsEnabled.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
@@ -236,49 +235,6 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-
-            // --- Experience Mode ---
-            SettingsGroupCard(
-                title = "Application Control",
-                icon = Icons.Rounded.Settings
-            ) {
-                SettingsPremiumToggleItem(
-                    title = "Advanced Designer Mode",
-                    subtitle = "Grant access to deep UI engine variables and granular layout sliders",
-                    checked = isAdvancedMode,
-                    icon = Icons.Rounded.Speed,
-                    onCheckedChange = { viewModel.updateAdvancedSettingsEnabled(it) }
-                )
-                
-                AnimatedVisibility(visible = isAdvancedMode) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 4.dp, end = 4.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Rounded.Info, 
-                                contentDescription = null, 
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            Text(
-                                "Advanced settings are now distributed across relevant categories below.",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
             SettingsGroupCard(title = "Personalization", icon = Icons.Rounded.Palette) {
                 SettingsActionItemInCard(
                     title = "Appearance & Theme",
@@ -328,6 +284,15 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     icon = Icons.Rounded.Notifications,
                     onClick = { navController.navigate("settings/notifications") }
                 )
+                
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsActionItemInCard(
+                    title = "Sounds & Haptics",
+                    subtitle = "App volume, feedback responses and alarms",
+                    icon = Icons.Rounded.PlayArrow,
+                    onClick = { navController.navigate("settings/sounds") }
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -375,6 +340,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val dynamicAppIcon by viewModel.dynamicAppIcon.collectAsStateWithLifecycle()
     val betaFrostGlass by viewModel.betaFrostGlass.collectAsStateWithLifecycle()
+    val appFontSelection by viewModel.appFontSelection.collectAsStateWithLifecycle()
+    var showFontSelectionDialog by remember { mutableStateOf(false) }
 
     val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
 
@@ -558,7 +525,6 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 onCheckedChange = { viewModel.updateBetaFrostGlass(it) }
                             )
 
-                            AnimatedVisibility(visible = viewModel.advancedSettingsEnabled.collectAsStateWithLifecycle().value) {
                                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
@@ -610,7 +576,6 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                         }
                                     }
                                 }
-                            }
                             
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                         }
@@ -659,7 +624,6 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     onSelected = { viewModel.updateNavBarLabelMode(it) }
                 )
 
-                AnimatedVisibility(visible = viewModel.advancedSettingsEnabled.collectAsStateWithLifecycle().value) {
                     Column {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
 
@@ -942,7 +906,6 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             }
                         }
                     }
-                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -1099,7 +1062,26 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             }
 
             // 5. Legibility & Typography Card
+            if (showFontSelectionDialog) {
+                AppFontSelectionDialog(
+                    currentSelection = appFontSelection,
+                    onDismiss = { showFontSelectionDialog = false },
+                    onSelect = { 
+                        viewModel.updateAppFontSelection(it)
+                        showFontSelectionDialog = false
+                    }
+                )
+            }
             SettingsGroupCard(title = "Legibility & Typography", icon = Icons.Rounded.Edit) {
+                SettingsActionItemInCard(
+                    title = "Application Typography",
+                    subtitle = "Currently using: $appFontSelection",
+                    icon = Icons.Rounded.Edit,
+                    onClick = { showFontSelectionDialog = true }
+                )
+                
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
+                
                 SettingsPremiumToggleItem(
                     title = "Better Texts Rendering",
                     subtitle = "Enhance text readability, high contrasts and aesthetic typography",
@@ -1784,8 +1766,26 @@ fun SettingsToggleItem(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column(modifier = Modifier.weight(1f).padding(end = 16.dp).alpha(if (enabled) 1f else 0.5f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            var showDescription by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                if (subtitle.isNotEmpty()) {
+                    IconButton(
+                        onClick = { showDescription = !showDescription },
+                        modifier = Modifier.size(24.dp).padding(start = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Info,
+                            contentDescription = "Info",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(visible = showDescription) {
+                Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+            }
             if (!enabled && unavailableReason != null) {
                 Text(
                     text = unavailableReason,
@@ -1830,8 +1830,26 @@ fun SettingsActionItem(title: String, subtitle: String, icon: androidx.compose.u
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = contentColor)
-            Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            var showDescription by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = contentColor)
+                if (subtitle.isNotEmpty()) {
+                    IconButton(
+                        onClick = { showDescription = !showDescription },
+                        modifier = Modifier.size(24.dp).padding(start = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Info,
+                            contentDescription = "Info",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(visible = showDescription) {
+                Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+            }
         }
         Icon(
             imageVector = Icons.Rounded.ChevronRight,
@@ -2826,18 +2844,37 @@ fun SettingsPremiumToggleItem(
             }
             
             Column(modifier = Modifier.alpha(alpha).padding(end = 8.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 18.sp
-                )
+                var showDescription by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (subtitle.isNotEmpty()) {
+                        IconButton(
+                            onClick = { showDescription = !showDescription },
+                            modifier = Modifier.size(24.dp).padding(start = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Info,
+                                contentDescription = "Info",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+                androidx.compose.animation.AnimatedVisibility(visible = showDescription) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
                 if (!enabled && unavailableReason != null) {
                     Text(
                         text = unavailableReason,
@@ -2873,18 +2910,34 @@ fun <T> SettingsSegmentedPicker(
             .padding(vertical = 4.dp, horizontal = 4.dp)
     ) {
         if (title.isNotEmpty()) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            if (subtitle.isNotEmpty()) {
+            var showDescription by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (subtitle.isNotEmpty()) {
+                    IconButton(
+                        onClick = { showDescription = !showDescription },
+                        modifier = Modifier.size(24.dp).padding(start = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Info,
+                            contentDescription = "Info",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(visible = showDescription) {
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp, top = 4.dp)
                 )
             }
         }
@@ -3091,18 +3144,35 @@ fun SettingsActionItemInCard(
         }
         Spacer(modifier = Modifier.width(18.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = contentColor
-            )
-            if (subtitle.isNotEmpty()) {
+            var showDescription by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = contentColor
+                )
+                if (subtitle.isNotEmpty()) {
+                    IconButton(
+                        onClick = { showDescription = !showDescription },
+                        modifier = Modifier.size(24.dp).padding(start = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Info,
+                            contentDescription = "Info",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(visible = showDescription) {
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 18.sp
+                    lineHeight = 18.sp,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
         }
@@ -3387,6 +3457,158 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
                     checked = notifEnableDailyDigest,
                     onCheckedChange = { viewModel.updateNotifEnableDailyDigest(it) }
                 )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SoundsAndHapticsScreen(navController: NavController, viewModel: ScholarViewModel) {
+    val uiSoundsEnabled by viewModel.uiSoundsEnabled.collectAsStateWithLifecycle()
+    val uiHapticsEnabled by viewModel.uiHapticsEnabled.collectAsStateWithLifecycle()
+    val pomodoroUseAlarmSound by viewModel.pomodoroUseAlarmSound.collectAsStateWithLifecycle()
+
+    val isGlass = ovrrup.lumia.ui.theme.LocalGlassMode.current
+    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
+
+    Scaffold(
+        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        topBar = {
+            androidx.compose.foundation.layout.Box {
+                if (betaEnhancedHeader || isGlass) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
+                    )
+                    androidx.compose.material3.HorizontalDivider(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    )
+                }
+                CenterAlignedTopAppBar(
+                    title = { Text("Sounds & Haptics", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        scrolledContainerColor = androidx.compose.ui.graphics.Color.Transparent
+                    ),
+                )
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Multichoice Segmented Button replacement
+            val interactionOptions = listOf("None", "Sounds", "Haptics", "Both")
+            val selectedIndex = if (uiSoundsEnabled && uiHapticsEnabled) 3 else if (uiHapticsEnabled) 2 else if (uiSoundsEnabled) 1 else 0
+
+            SettingsGroupCard(title = "UI Interaction Feedback", icon = Icons.Rounded.Notifications) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Interaction Mode",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Feedback for taps, clicks, and page transitions",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        interactionOptions.forEachIndexed { index, title ->
+                            val isSelected = selectedIndex == index
+                            androidx.compose.material3.Surface(
+                                modifier = Modifier.weight(1f),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                                onClick = {
+                                    when (index) {
+                                        0 -> { viewModel.updateUiSoundsEnabled(false); viewModel.updateUiHapticsEnabled(false) }
+                                        1 -> { viewModel.updateUiSoundsEnabled(true); viewModel.updateUiHapticsEnabled(false) }
+                                        2 -> { viewModel.updateUiSoundsEnabled(false); viewModel.updateUiHapticsEnabled(true) }
+                                        3 -> { viewModel.updateUiSoundsEnabled(true); viewModel.updateUiHapticsEnabled(true) }
+                                    }
+                                }
+                            ) {
+                                Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val pomodoroOptions = listOf("Beep & Vibrate", "Alarm Tone")
+            val selectedPomodoroIndex = if (pomodoroUseAlarmSound) 1 else 0
+
+            SettingsGroupCard(title = "Pomodoro Timer", icon = Icons.Rounded.Timer) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Completion Tone Style",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Customize how the app notifies you when a Pomodoro session finishes",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        pomodoroOptions.forEachIndexed { index, title ->
+                            val isSelected = selectedPomodoroIndex == index
+                            androidx.compose.material3.Surface(
+                                modifier = Modifier.weight(1f),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                                onClick = {
+                                    viewModel.updatePomodoroUseAlarmSound(index == 1)
+                                }
+                            ) {
+                                Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -3859,4 +4081,74 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
         }
     }
 }
+
+@Composable
+fun AppFontSelectionDialog(
+    currentSelection: String,
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit
+) {
+    val fonts = listOf(
+        "System Default",
+        "Nunito",
+        "Playfair & Lato",
+        "Josefin & Inter",
+        "Archivo & Tenor",
+        "Syne & Inter",
+        "Montserrat & Open Sans",
+        "Yellowtail & Open Sans"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Select Typography",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        text = {
+            androidx.compose.foundation.lazy.LazyColumn(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(fonts.size) { index ->
+                    val font = fonts[index]
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onSelect(font) }
+                            .padding(vertical = 14.dp, horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = currentSelection == font,
+                            onClick = { onSelect(font) },
+                            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = font,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = MaterialTheme.colorScheme.primary)
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        iconContentColor = MaterialTheme.colorScheme.primary,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(24.dp)
+    )
+}
+
 

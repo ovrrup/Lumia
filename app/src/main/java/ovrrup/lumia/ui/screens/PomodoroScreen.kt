@@ -71,6 +71,8 @@ fun PomodoroScreen(navController: NavController, viewModel: ovrrup.lumia.viewmod
     var isExitButtonShown by remember { mutableStateOf(false) }
 
     val systemPomodoroAutoLog by viewModel.systemPomodoroAutoLog.collectAsStateWithLifecycle()
+    val uiSoundsEnabled by viewModel.uiSoundsEnabled.collectAsStateWithLifecycle()
+    val uiHapticsEnabled by viewModel.uiHapticsEnabled.collectAsStateWithLifecycle()
     val workDuration by viewModel.pomodoroWorkDuration.collectAsStateWithLifecycle()
     val shortBreakDuration by viewModel.pomodoroShortBreakDuration.collectAsStateWithLifecycle()
     val longBreakDuration by viewModel.pomodoroLongBreakDuration.collectAsStateWithLifecycle()
@@ -424,6 +426,9 @@ fun PomodoroScreen(navController: NavController, viewModel: ovrrup.lumia.viewmod
                                     } else {
                                         isRunning = true
                                         isExitButtonShown = false
+                                        if (uiSoundsEnabled || uiHapticsEnabled) {
+                                            ovrrup.lumia.util.SoundManager.playPomodoroStart(context, uiSoundsEnabled, uiHapticsEnabled)
+                                        }
                                         val intent = android.content.Intent(context, ovrrup.lumia.service.PomodoroService::class.java).apply {
                                             action = "START"
                                             putExtra("workDuration", workDuration * 60)

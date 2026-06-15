@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
     private val _crashData = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ovrrup.lumia.util.SoundManager.init()
         
         // Handle crash restarts
         val crashData = intent.getStringExtra("FATAL_CRASH_DATA")
@@ -75,12 +76,6 @@ class MainActivity : ComponentActivity() {
 
         ovrrup.lumia.util.LogDog.setup(applicationContext)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
-            }
-        }
-        
         try {
             val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(1, TimeUnit.DAYS)
                 .setInitialDelay(1, TimeUnit.HOURS)
@@ -119,6 +114,7 @@ class MainActivity : ComponentActivity() {
             val customBackground by viewModel.customBackground.collectAsStateWithLifecycle()
             val customSurface by viewModel.customSurface.collectAsStateWithLifecycle()
             val customText by viewModel.customText.collectAsStateWithLifecycle()
+            val appFontSelection by viewModel.appFontSelection.collectAsStateWithLifecycle()
             val isOnboardingCompleted by viewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
 
             val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
@@ -148,6 +144,7 @@ class MainActivity : ComponentActivity() {
             ScholarTheme(
                 themeMode = themeMode,
                 themeColor = themeColor,
+                appFontSelection = appFontSelection,
                 pureBlackMode = pureBlackMode,
                 glassMode = betaGlassUi,
                 glassDynamic = betaGlassDynamic,
@@ -203,6 +200,21 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val navController = rememberNavController()
+                    val uiSoundsEnabled by viewModel.uiSoundsEnabled.collectAsStateWithLifecycle()
+                    val uiHapticsEnabled by viewModel.uiHapticsEnabled.collectAsStateWithLifecycle()
+                    
+                    val contextLocal = androidx.compose.ui.platform.LocalContext.current
+                    androidx.compose.runtime.DisposableEffect(navController, uiSoundsEnabled, uiHapticsEnabled) {
+                        val listener = androidx.navigation.NavController.OnDestinationChangedListener { _, _, _ ->
+                            if (uiSoundsEnabled || uiHapticsEnabled) {
+                                ovrrup.lumia.util.SoundManager.playTransitionSound(contextLocal, uiSoundsEnabled, uiHapticsEnabled)
+                            }
+                        }
+                        navController.addOnDestinationChangedListener(listener)
+                        onDispose {
+                            navController.removeOnDestinationChangedListener(listener)
+                        }
+                    }
 
                     val context = androidx.compose.ui.platform.LocalContext.current
                     androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -421,6 +433,12 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel
                             )
                         }
+                        composable("settings/sounds") {
+                            ovrrup.lumia.ui.screens.SoundsAndHapticsScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
                         composable("settings/about") {
                             ovrrup.lumia.ui.screens.AboutAppScreen(
                                 navController = navController,
@@ -470,5 +488,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ovrrup.lumia.util.SoundManager.release()
     }
 }

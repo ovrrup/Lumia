@@ -1,5 +1,11 @@
 # Lumia Release Notes
 
+## 🌟 What's New in v1.0.5 (Sounds & Haptics)
+- **Advanced Feedback Engine**: Introduced a comprehensive Sounds & Haptics settings panel to customize UI interaction feedback.
+- **Granular Controls**: Independently toggle interface sounds, haptic feedback, or combine both for an enriched tactile experience across the app.
+- **Pomodoro Audio Customization**: You can now choose between a subtle beep & vibrate or the system default alarm tone when completing a Pomodoro session.
+- **Polished Transition Acoustics**: Added short, non-intrusive auditory cues and subtle vibrations for taps, button presses, and page transitions to enhance the tactile feel.
+
 ## 🌟 What's New in v1.0.4 (Elastic Buttons & Style Engine)
 - **Enhanced "More Rounds" Core**: Re-engineered the shape engine to support hierarchical corner radii, delivering a more organic and polished look across all UI tiers.
 - **Unified Bouncy Button System**: All buttons (Material, Text, Outlined, and Floating Action Buttons) now utilize the `Bouncy` physics engine for consistent tactile feedback.
