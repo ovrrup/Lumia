@@ -114,11 +114,11 @@ class ReminderReceiver : BroadcastReceiver() {
             .setSummaryText("Deadline Alert")
 
         val notification = NotificationCompat.Builder(context, "scholar_sync_channel")
-            .setSmallIcon(ovrrup.lumia.R.drawable.ic_notification_deadline)
+            .setSmallIcon(ovrrup.lumia.util.NotificationHelper.getSmallIcon())
             .setContentTitle(finalTitle)
             .setContentText(finalDesc)
             .setStyle(bigTextStyle)
-            .setColor(android.graphics.Color.parseColor("#E91E63"))
+            .setColor(ovrrup.lumia.util.NotificationHelper.getColor(context))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(mainPendingIntent)
             .addAction(android.R.drawable.ic_menu_edit, if (formalTone) "Mark Done" else "I Did It!", donePendingIntent)

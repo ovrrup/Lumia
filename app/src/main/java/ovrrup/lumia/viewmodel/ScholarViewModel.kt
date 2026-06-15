@@ -1070,11 +1070,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
 
         val notification = androidx.core.app.NotificationCompat.Builder(application, channelId)
-            .setSmallIcon(iconRes)
+            .setSmallIcon(ovrrup.lumia.util.NotificationHelper.getSmallIcon())
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(text))
-            .setColor(color)
+            .setColor(ovrrup.lumia.util.NotificationHelper.getColor(application))
             .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)

@@ -61,7 +61,7 @@ class AssignmentMonitorWorker(
             if (enableClasses) {
                 val title = if (formalTone) "Daily Attendance Tracker" else "Class Attendance Reminder!"
                 val desc = if (formalTone) "Please ensure your attendance is updated for all courses today." else "Skipped any classes today? Go update your attendance board before I tell your parents!"
-                sendNotification("scholar_monitor_channel", 1003, title, desc, ovrrup.lumia.R.drawable.ic_notification_scholar, android.graphics.Color.parseColor("#3F51B5"))
+                sendNotification("scholar_monitor_channel", 1003, title, desc, ovrrup.lumia.util.NotificationHelper.getSmallIcon(), ovrrup.lumia.util.NotificationHelper.getColor(context))
             }
             
             return Result.success()
@@ -86,7 +86,7 @@ class AssignmentMonitorWorker(
                         // At risk of breaking the streak tomorrow if not continued
                         val title = if (formalTone) "Maintain Your Streak" else "Don't Break the Streak!"
                         val msg = if (formalTone) "Your current streak is $currentStreak days. Study today to keep it going." else "You've survived $currentStreak days! Don't be lazy today to ruin it!"
-                        sendNotification("scholar_streak_channel", 1002, title, msg, ovrrup.lumia.R.drawable.ic_notification_streak, android.graphics.Color.parseColor("#FF5722"))
+                        sendNotification("scholar_streak_channel", 1002, title, msg, ovrrup.lumia.util.NotificationHelper.getSmallIcon(), ovrrup.lumia.util.NotificationHelper.getColor(context))
                     }
                 }
             } catch (e: Exception) { }
@@ -176,11 +176,11 @@ class AssignmentMonitorWorker(
         }
 
         val notification = NotificationCompat.Builder(context, "scholar_monitor_channel")
-            .setSmallIcon(ovrrup.lumia.R.drawable.ic_notification_scholar)
+            .setSmallIcon(ovrrup.lumia.util.NotificationHelper.getSmallIcon())
             .setContentTitle(title)
             .setContentText(desc)
             .setStyle(inboxStyle)
-            .setColor(android.graphics.Color.parseColor("#FF9800"))
+            .setColor(ovrrup.lumia.util.NotificationHelper.getColor(context))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
