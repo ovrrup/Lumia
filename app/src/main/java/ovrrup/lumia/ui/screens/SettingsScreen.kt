@@ -1257,7 +1257,11 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DataManagementScreen(navController: NavController, viewModel: ScholarViewModel) {
+fun DataManagementScreen(
+    navController: NavController,
+    viewModel: ScholarViewModel,
+    initialShowLogs: Boolean = false
+) {
     val status by viewModel.importExportStatus.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showResetDialog by remember { mutableStateOf(false) }
@@ -1330,7 +1334,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             val pomodoroSessionsCount by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
 
                 // LogDog Card
-                var showLogDogDialog by remember { mutableStateOf(false) }
+                var showLogDogDialog by remember(initialShowLogs) { mutableStateOf(initialShowLogs) }
                 ovrrup.lumia.ui.components.GlassCard(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     shape = RoundedCornerShape(24.dp)

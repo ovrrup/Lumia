@@ -53,12 +53,19 @@ fun CoursesTab(
                             .matchParentSize()
                             .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                     )
+                    // Sleek divider line for clean separation and anchoring
+                    androidx.compose.material3.HorizontalDivider(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    )
                 }
                 CenterAlignedTopAppBar(
                     title = { Text("Your Courses", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                     scrollBehavior = scrollBehavior,
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface.copy(alpha=0.5f)
+                        containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                     )
                 )
             }

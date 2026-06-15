@@ -544,29 +544,29 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val packageName = getApplication<Application>().packageName
 
         val aliases = listOf(
-            "ovrrup.lumia.DefaultAlias",
-            "ovrrup.lumia.AliasEmerald",
-            "ovrrup.lumia.AliasGold",
-            "ovrrup.lumia.AliasRose",
-            "ovrrup.lumia.AliasSage",
-            "ovrrup.lumia.AliasTwilight",
-            "ovrrup.lumia.AliasCustom",
-            "ovrrup.lumia.AliasDynamic"
+            "$packageName.DefaultAlias",
+            "$packageName.AliasEmerald",
+            "$packageName.AliasGold",
+            "$packageName.AliasRose",
+            "$packageName.AliasSage",
+            "$packageName.AliasTwilight",
+            "$packageName.AliasCustom",
+            "$packageName.AliasDynamic"
         )
 
         val targetAliasName = if (!enabled) {
-            "ovrrup.lumia.DefaultAlias"
+            "$packageName.DefaultAlias"
         } else {
             when (themeColor) {
-                "Ocean" -> "ovrrup.lumia.DefaultAlias"
-                "Emerald" -> "ovrrup.lumia.AliasEmerald"
-                "Gold" -> "ovrrup.lumia.AliasGold"
-                "Rose" -> "ovrrup.lumia.AliasRose"
-                "Sage" -> "ovrrup.lumia.AliasSage"
-                "Twilight" -> "ovrrup.lumia.AliasTwilight"
-                "Custom" -> "ovrrup.lumia.AliasCustom"
-                "Dynamic" -> "ovrrup.lumia.AliasDynamic"
-                else -> "ovrrup.lumia.DefaultAlias"
+                "Ocean" -> "$packageName.DefaultAlias"
+                "Emerald" -> "$packageName.AliasEmerald"
+                "Gold" -> "$packageName.AliasGold"
+                "Rose" -> "$packageName.AliasRose"
+                "Sage" -> "$packageName.AliasSage"
+                "Twilight" -> "$packageName.AliasTwilight"
+                "Custom" -> "$packageName.AliasCustom"
+                "Dynamic" -> "$packageName.AliasDynamic"
+                else -> "$packageName.DefaultAlias"
             }
         }
 
@@ -585,7 +585,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             try {
                 aliases.forEach { alias ->
                     val compName = android.content.ComponentName(packageName, alias)
-                    val targetSetting = if (alias == "ovrrup.lumia.DefaultAlias") {
+                    val targetSetting = if (alias == "$packageName.DefaultAlias") {
                         android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                     } else {
                         android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED
