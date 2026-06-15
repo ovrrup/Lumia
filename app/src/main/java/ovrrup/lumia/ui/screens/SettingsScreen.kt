@@ -55,15 +55,15 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.School
-import androidx.compose.material.icons.rounded.MergeType
+import androidx.compose.material.icons.automirrored.rounded.MergeType
 import androidx.compose.material.icons.rounded.DateRange
-import androidx.compose.material.icons.rounded.List
+import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.ViewQuilt
+import androidx.compose.material.icons.automirrored.rounded.ViewQuilt
 import androidx.compose.material.icons.rounded.Accessibility
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Contrast
@@ -1245,7 +1245,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                     title = "Display Action History",
                     subtitle = "Integrate detailed reactive logs list inside Analytics interface",
                     checked = showActionHistory,
-                    icon = Icons.Rounded.List,
+                    icon = Icons.AutoMirrored.Rounded.List,
                     onCheckedChange = { handleToggle(it, "Display Action History", "Synthesize analytics telemetry block containing audit records.") { isChecked -> viewModel.updateShowActionHistory(isChecked) } }
                 )
             }
@@ -2084,7 +2084,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Rounded.ViewQuilt,
+                                            imageVector = Icons.AutoMirrored.Rounded.ViewQuilt,
                                             contentDescription = null,
                                             tint = if (isOverlaySelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(20.dp)
@@ -3272,7 +3272,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     title = "Fuse Subjects & Courses",
                     subtitle = "Embed subjects within courses to simplify navigation. Turn off to display 'Subjects' as a separate bottom tab.",
                     checked = fuseSubjectsCourses,
-                    icon = Icons.Rounded.MergeType,
+                    icon = Icons.AutoMirrored.Rounded.MergeType,
                     onCheckedChange = { viewModel.updateSystemFuseSubjectsCourses(it) }
                 )
 
@@ -3282,7 +3282,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     title = "Advanced Tasks & Linkages",
                     subtitle = "Enable complex task tracking, including multi-linking with courses and assignments, plus advanced sorting and cross-referencing.",
                     checked = advancedTasks,
-                    icon = Icons.Rounded.List,
+                    icon = Icons.AutoMirrored.Rounded.List,
                     onCheckedChange = { viewModel.updateSystemAdvancedTasks(it) }
                 )
             }
@@ -3338,7 +3338,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SettingsGroupCard(title = "Period Structure", icon = Icons.Rounded.List) {
+            SettingsGroupCard(title = "Period Structure", icon = Icons.AutoMirrored.Rounded.List) {
                 SettingsPremiumToggleItem(
                     title = "Enable Target Periods",
                     subtitle = "Allows restricting pomodoro loops to a fixed target instead of infinite repetetion.",
