@@ -40,8 +40,9 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.delay
 import ovrrup.lumia.service.PomodoroService
 import ovrrup.lumia.service.AodAccessibilityService
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @SuppressLint("StaticFieldLeak")
 object TrueAodManager {
@@ -189,13 +190,13 @@ fun TrueAodOverlayUi(
     onExitRequest: () -> Unit
 ) {
     val serviceState by PomodoroService.state.collectAsState()
-    val timeFormat = remember { DateTimeFormatter.ofPattern("HH:mm") }
-    var currentTimeStr by remember { mutableStateOf(LocalTime.now().format(timeFormat)) }
+    val timeFormat = remember { java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()) }
+    var currentTimeStr by remember { mutableStateOf(timeFormat.format(java.util.Calendar.getInstance().time)) }
 
     // Tick real time
     LaunchedEffect(Unit) {
         while (true) {
-            currentTimeStr = LocalTime.now().format(timeFormat)
+            currentTimeStr = timeFormat.format(java.util.Calendar.getInstance().time)
             delay(1000)
         }
     }

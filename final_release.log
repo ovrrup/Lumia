@@ -1,4 +1,9 @@
-Reusing configuration cache.
+Calculating task graph as configuration cache cannot be reused because file 'app/build.gradle.kts' has changed.
+
+> Configure project :app
+WARNING: The option setting 'android.disallowKotlinSourceSets=false' is experimental.
+The current default is 'true'.
+
 > Task :app:preBuild UP-TO-DATE
 > Task :app:generateReleaseAssets UP-TO-DATE
 > Task :app:preReleaseBuild UP-TO-DATE
@@ -10,55 +15,52 @@ Reusing configuration cache.
 > Task :app:javaPreCompileRelease UP-TO-DATE
 > Task :app:checkReleaseDuplicateClasses UP-TO-DATE
 > Task :app:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :app:mergeReleaseNativeLibs UP-TO-DATE
 > Task :app:checkReleaseAarMetadata UP-TO-DATE
 > Task :app:mergeReleaseResources UP-TO-DATE
 > Task :app:extractDeepLinksRelease UP-TO-DATE
-> Task :app:createReleaseCompatibleScreenManifests UP-TO-DATE
-> Task :app:mergeReleaseNativeLibs UP-TO-DATE
-> Task :app:processReleaseMainManifest UP-TO-DATE
-> Task :app:desugarReleaseFileDependencies UP-TO-DATE
 > Task :app:stripReleaseDebugSymbols UP-TO-DATE
-> Task :app:mergeReleaseStartupProfile UP-TO-DATE
+> Task :app:createReleaseCompatibleScreenManifests UP-TO-DATE
 > Task :app:extractReleaseNativeSymbolTables UP-TO-DATE
-> Task :app:processReleaseManifest UP-TO-DATE
+> Task :app:desugarReleaseFileDependencies UP-TO-DATE
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:mergeReleaseStartupProfile UP-TO-DATE
+> Task :app:processReleaseMainManifest UP-TO-DATE
+> Task :app:processReleaseManifest UP-TO-DATE
 > Task :app:processReleaseManifestForPackage UP-TO-DATE
-> Task :app:mergeReleaseArtProfile UP-TO-DATE
 > Task :app:mergeReleaseAssets UP-TO-DATE
-> Task :app:processReleaseNavigationResources UP-TO-DATE
-> Task :app:extractReleaseVersionControlInfo UP-TO-DATE
 > Task :app:compressReleaseAssets UP-TO-DATE
-> Task :app:compileReleaseNavigationResources UP-TO-DATE
+> Task :app:extractReleaseVersionControlInfo UP-TO-DATE
+> Task :app:processReleaseNavigationResources UP-TO-DATE
 > Task :app:parseReleaseLocalResources UP-TO-DATE
-> Task :app:validateSigningRelease UP-TO-DATE
-> Task :app:generateReleaseRFile UP-TO-DATE
 > Task :app:collectReleaseDependencies UP-TO-DATE
+> Task :app:generateReleaseRFile UP-TO-DATE
+> Task :app:compileReleaseNavigationResources UP-TO-DATE
+> Task :app:kspReleaseKotlin UP-TO-DATE
+> Task :app:processReleaseResources UP-TO-DATE
+> Task :app:optimizeReleaseResources UP-TO-DATE
 > Task :app:sdkReleaseDependencyData UP-TO-DATE
+> Task :app:validateSigningRelease UP-TO-DATE
 > Task :app:writeReleaseAppMetadata UP-TO-DATE
 > Task :app:writeReleaseSigningConfigVersions UP-TO-DATE
-> Task :app:processReleaseResources UP-TO-DATE
 > Task :app:mergeExtDexRelease UP-TO-DATE
-> Task :app:optimizeReleaseResources UP-TO-DATE
-> Task :app:kspReleaseKotlin
-
-> Task :app:compileReleaseKotlin
-w: file:///app/applet/app/src/main/java/ovrrup/lumia/util/TrueAodManager.kt:124:48 'static field TYPE_SYSTEM_ALERT: Int' is deprecated. Deprecated in Java.
-
+> Task :app:mergeReleaseArtProfile UP-TO-DATE
+> Task :app:compileReleaseKotlin UP-TO-DATE
 > Task :app:processReleaseJavaRes UP-TO-DATE
-> Task :app:mergeReleaseJavaResource UP-TO-DATE
 > Task :app:compileReleaseJavaWithJavac UP-TO-DATE
-> Task :app:generateReleaseLintVitalReportModel
-> Task :app:dexBuilderRelease
+> Task :app:mergeReleaseJavaResource UP-TO-DATE
+> Task :app:dexBuilderRelease UP-TO-DATE
+> Task :app:mergeDexRelease UP-TO-DATE
 > Task :app:mergeReleaseGlobalSynthetics UP-TO-DATE
-> Task :app:mergeDexRelease
-> Task :app:compileReleaseArtProfile
+> Task :app:compileReleaseArtProfile UP-TO-DATE
+> Task :app:generateReleaseLintVitalReportModel
 > Task :app:lintVitalAnalyzeRelease
-> Task :app:lintVitalReportRelease UP-TO-DATE
+> Task :app:lintVitalReportRelease
 > Task :app:lintVitalRelease
-> Task :app:packageRelease
-> Task :app:assembleRelease
+> Task :app:packageRelease UP-TO-DATE
+> Task :app:assembleRelease UP-TO-DATE
 > Task :app:createReleaseApkListingFileRedirect UP-TO-DATE
 
-BUILD SUCCESSFUL in 53s
-51 actionable tasks: 9 executed, 42 up-to-date
-Configuration cache entry reused.
+BUILD SUCCESSFUL in 27s
+51 actionable tasks: 4 executed, 47 up-to-date
+Configuration cache entry stored.
