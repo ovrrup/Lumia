@@ -73,6 +73,8 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val actionLogs by viewModel.actionLogs.collectAsStateWithLifecycle()
     val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
+    val notes by viewModel.notes.collectAsStateWithLifecycle()
+    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     
     val totalAssignments = assignments.size
     val completedAssignments = assignments.count { it.isCompleted }
@@ -89,6 +91,65 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
         "Light" -> false
         else -> systemInDark
     }
+
+    // Fully responsive and accurate stats derived from state with zero cached stale values!
+    val sessionsTodayCount = remember(pomodoroSessions) {
+        androidx.compose.runtime.derivedStateOf {
+            val todayStart = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            pomodoroSessions.count { it.dateMillis >= todayStart }
+        }
+    }.value
+
+    val totalFocusMinutesToday = remember(pomodoroSessions) {
+        androidx.compose.runtime.derivedStateOf {
+            val todayStart = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            pomodoroSessions.filter { it.dateMillis >= todayStart }.sumOf { it.durationMinutes }
+        }
+    }.value
+
+    val notesCount = remember(notes) {
+        androidx.compose.runtime.derivedStateOf { notes.size }
+    }.value
+
+    val activeTasksCount = remember(tasks) {
+        androidx.compose.runtime.derivedStateOf { tasks.count { !it.isCompleted } }
+    }.value
+
+    // Interactive, dynamic and beautiful AI coach commentary (Lumia "says")
+    val coachCommentary = remember(sessionsTodayCount, totalFocusMinutesToday, activeTasksCount, notesCount, completedAssignments, totalAssignments) {
+        androidx.compose.runtime.derivedStateOf {
+            when {
+                sessionsTodayCount == 0 && activeTasksCount > 0 -> {
+                    "Lumia Coach says: Today is a fresh setup! You have some active tasks pending. Slicing one into a quick 15-minute Pomodoro is an unbeatable way to spark momentum."
+                }
+                sessionsTodayCount == 0 -> {
+                    "Lumia Coach says: Your mind thrives on focus blocks! Start your first Pomodoro session whenever you're ready to lay down some study miles."
+                }
+                sessionsTodayCount in 1..2 -> {
+                    "Lumia Coach says: Fantastic start! You've logged $totalFocusMinutesToday minutes of deep, focused work today. Keep standard, regular intervals to protect your energy."
+                }
+                sessionsTodayCount >= 3 -> {
+                    "Lumia Coach says: Amazing! You are in deep study flow. Today you've accomplished $totalFocusMinutesToday minutes of focus. Remember to take a nice 10-minute rest!"
+                }
+                activeTasksCount == 0 && notesCount > 0 -> {
+                    "Lumia Coach says: Look at that! Your daily checklist is completely clear. Reviewing your $notesCount study notes is a top-tier strategy for retention."
+                }
+                else -> {
+                    "Lumia Coach says: Consistency beats intensity. Every minor focus round gets you closer to mastering your course materials!"
+                }
+            }
+        }
+    }.value
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -115,21 +176,101 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
             )
         }
 
+        // Lumia AI Companion Commentary Card (Lumia "says")
+        item {
+            androidx.compose.material3.ElevatedCard(
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp)
+                ),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Rounded.Info,
+                            contentDescription = "Lumia Coach",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "Lumia Buddy Insights",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = coachCommentary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+                        )
+                    }
+                }
+            }
+        }
+
         item {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // NEW: Study Sessions Today counter
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                // NEW: Study Sessions Today counter & Focus minutes card row
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Study Sessions Today", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                        Text(
-                            text = viewModel.getSessionsTodayCount().toString(),
-                            style = MaterialTheme.typography.displayMedium,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("Sessions Today", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = sessionsTodayCount.toString(),
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("Total Focus Today", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "${totalFocusMinutesToday}m",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
                 }
 
@@ -139,13 +280,14 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
                         modifier = Modifier.weight(1f)
                     ) {
                         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                             Text("Total Notes", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                            Text(
-                                text = viewModel.getNotesCount().toString(),
+                             Text("Total Notes", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSecondaryContainer, fontWeight = FontWeight.Bold)
+                             Spacer(modifier = Modifier.height(8.dp))
+                             Text(
+                                text = notesCount.toString(),
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
+                             )
                         }
                     }
                     Card(
@@ -153,13 +295,14 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
                         modifier = Modifier.weight(1f)
                     ) {
                         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                             Text("Active Tasks", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                            Text(
-                                text = viewModel.getActiveTasksCount().toString(),
+                             Text("Active Tasks", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onTertiaryContainer, fontWeight = FontWeight.Bold)
+                             Spacer(modifier = Modifier.height(8.dp))
+                             Text(
+                                text = activeTasksCount.toString(),
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
+                             )
                         }
                     }
                 }

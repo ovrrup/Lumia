@@ -433,12 +433,6 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel
                             )
                         }
-                        composable("settings/plugins") {
-                            ovrrup.lumia.ui.screens.PluginManagerScreen(
-                                navController = navController,
-                                viewModel = viewModel
-                            )
-                        }
                     }
                     
                     val crashDataState by _crashData.collectAsStateWithLifecycle()

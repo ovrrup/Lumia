@@ -30,6 +30,15 @@ interface ScholarDao {
     @Query("SELECT * FROM subjects")
     fun getAllSubjects(): Flow<List<Subject>>
 
+    @Query("SELECT * FROM topics")
+    fun getAllTopics(): Flow<List<Topic>>
+
+    @Query("SELECT * FROM chapters")
+    fun getAllChapters(): Flow<List<Chapter>>
+
+    @Query("SELECT * FROM attendance_records")
+    fun getAllAttendanceRecords(): Flow<List<AttendanceRecord>>
+
     @Query("SELECT * FROM topics WHERE subjectId = :subjectId")
     fun getTopicsForSubject(subjectId: Int): Flow<List<Topic>>
 

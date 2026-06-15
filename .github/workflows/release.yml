@@ -1,4 +1,4 @@
-name: Release Main APK
+name: Release Lumia APK
 
 on:
   workflow_dispatch:

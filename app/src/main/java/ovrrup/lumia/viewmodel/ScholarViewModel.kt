@@ -646,6 +646,18 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _currentStreak = MutableStateFlow(prefs.getInt("current_streak", 0))
     val currentStreak = _currentStreak.asStateFlow()
 
+    private val _isSpectraActive = MutableStateFlow(false)
+    val isSpectraActive = _isSpectraActive.asStateFlow()
+
+    private val _isSentinelActive = MutableStateFlow(false)
+    val isSentinelActive = _isSentinelActive.asStateFlow()
+
+    private val _pluginSpectraEmulated = MutableStateFlow(prefs.getBoolean("plugin_spectra_emulated", false))
+    val pluginSpectraEmulated = _pluginSpectraEmulated.asStateFlow()
+
+    private val _pluginSentinelEmulated = MutableStateFlow(prefs.getBoolean("plugin_sentinel_emulated", false))
+    val pluginSentinelEmulated = _pluginSentinelEmulated.asStateFlow()
+
     init {
         val database = AppDatabase.getDatabase(application)
         repository = ScholarRepository(database.scholarDao())
@@ -1844,28 +1856,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         _optimizationResult.value = null
     }
 
-    private val _isSpectraActive = MutableStateFlow(false)
-    val isSpectraActive = _isSpectraActive.asStateFlow()
-
-    private val _isSentinelActive = MutableStateFlow(false)
-    val isSentinelActive = _isSentinelActive.asStateFlow()
-
-    private val _pluginSpectraEmulated = MutableStateFlow(prefs.getBoolean("plugin_spectra_emulated", false))
-    val pluginSpectraEmulated = _pluginSpectraEmulated.asStateFlow()
-
-    private val _pluginSentinelEmulated = MutableStateFlow(prefs.getBoolean("plugin_sentinel_emulated", false))
-    val pluginSentinelEmulated = _pluginSentinelEmulated.asStateFlow()
-
     fun refreshPluginsState() {
-        val hasSpectraPackage = isPackageInstalled("ovrrup.lumia.plugin.spectra")
-        val emulatedSpectra = prefs.getBoolean("plugin_spectra_emulated", false)
-        _isSpectraActive.value = hasSpectraPackage || emulatedSpectra
-        _pluginSpectraEmulated.value = emulatedSpectra
+        _isSpectraActive.value = true
+        _pluginSpectraEmulated.value = false
 
-        val hasSentinelPackage = isPackageInstalled("ovrrup.lumia.plugin.sentinel")
-        val emulatedSentinel = prefs.getBoolean("plugin_sentinel_emulated", false)
-        _isSentinelActive.value = hasSentinelPackage || emulatedSentinel
-        _pluginSentinelEmulated.value = emulatedSentinel
+        _isSentinelActive.value = true
+        _pluginSentinelEmulated.value = false
     }
 
     fun toggleSpectraEmulation(enabled: Boolean) {

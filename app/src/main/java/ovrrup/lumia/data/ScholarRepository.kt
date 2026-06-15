@@ -110,9 +110,12 @@ class ScholarRepository(private val scholarDao: ScholarDao) {
         val payload = BackupPayload(
             courses = scholarDao.getAllCourses().first(),
             subjects = scholarDao.getAllSubjects().first(),
+            topics = scholarDao.getAllTopics().first(),
+            chapters = scholarDao.getAllChapters().first(),
             customFonts = scholarDao.getAllCustomFonts().first(),
             pomodoroSessions = scholarDao.getAllPomodoroSessions().first(),
             notes = scholarDao.getAllNotes().first(),
+            attendanceRecords = scholarDao.getAllAttendanceRecords().first(),
             actionLogs = scholarDao.getAllActionLogs().first(),
             tasks = scholarDao.getAllTasks().first(),
             assignments = scholarDao.getAllAssignments().first(),

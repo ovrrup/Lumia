@@ -36,13 +36,21 @@ class PomodoroActionReceiver : android.content.BroadcastReceiver() {
             this.action = action 
         }
         try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent)
-            } else {
-                context.startService(serviceIntent)
-            }
+            // Since the service is already running as a foreground service when notification actions are interactable,
+            // we should deliver the actions/commands via context.startService() rather than startForegroundService().
+            // This completely avoids "did not then call Service.startForeground()" crash on Android 8.0+
+            // because startService() doesn't enforce that startForeground() must be called.
+            context.startService(serviceIntent)
         } catch (e: Exception) {
-            e.printStackTrace()
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    context.startForegroundService(serviceIntent)
+                } else {
+                    context.startService(serviceIntent)
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
         }
     }
 }
@@ -142,6 +150,7 @@ class PomodoroService : Service() {
     private var periodSessions = 4
     private var maxPeriods = -1
     private var periodsCompleted = 0
+    private var isPartialSavedForCurrentInterval = false
 
     private var wakeLock: android.os.PowerManager.WakeLock? = null
 
@@ -255,7 +264,42 @@ class PomodoroService : Service() {
         }
     }
 
+    private fun saveCompletedFocusTime() {
+        if (currentMode != PomodoroMode.WORK) return
+        if (isPartialSavedForCurrentInterval) return
+
+        val secondsFocused = originalTime - timeLeft
+        // Only save if they focused for at least 5 seconds, to avoid saving empty sessions
+        if (secondsFocused >= 5) {
+            isPartialSavedForCurrentInterval = true
+            val minutesFocused = maxOf(1, secondsFocused / 60)
+            
+            // Save to DB
+            scope.launch {
+                try {
+                    val db = ovrrup.lumia.data.AppDatabase.getDatabase(applicationContext)
+                    db.scholarDao().insertPomodoroSession(
+                        ovrrup.lumia.model.PomodoroSession(
+                            dateMillis = System.currentTimeMillis(),
+                            durationMinutes = minutesFocused,
+                            subjectId = subjectId,
+                            courseId = courseId,
+                            assignmentId = assignmentId,
+                            taskId = taskId
+                        )
+                    )
+                    db.scholarDao().insertActionLog(
+                        ovrrup.lumia.model.ActionLog(actionText = "Saved Pomodoro Session ($minutesFocused min, stopped target: ${originalTime / 60} min)")
+                    )
+                } catch (e: Exception) {
+                    android.util.Log.e("PomodoroService", "Failed to save partial pomodoro session", e)
+                }
+            }
+        }
+    }
+
     override fun onDestroy() {
+        saveCompletedFocusTime()
         super.onDestroy()
         isServiceRunning = false
         job?.cancel()
@@ -269,6 +313,7 @@ class PomodoroService : Service() {
         isServiceRunning = true
 
         if (action == "STOP") {
+            saveCompletedFocusTime()
             stopSelf()
             return START_NOT_STICKY
         }
@@ -283,6 +328,7 @@ class PomodoroService : Service() {
         }
         
         if (action == "SKIP") {
+            saveCompletedFocusTime()
             job?.cancel()
             finishSession(skipped = true)
             return START_NOT_STICKY
@@ -321,6 +367,7 @@ class PomodoroService : Service() {
         timeLeft = originalTime
         isPaused = false
         currentStateStr = currentMode.name
+        isPartialSavedForCurrentInterval = false
         syncToState()
         startTimer()
     }
@@ -335,7 +382,11 @@ class PomodoroService : Service() {
         }
 
         val notification = buildNotification(timeLeft)
-        startForeground(2002, notification)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(2002, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(2002, notification)
+        }
     }
 
     private fun buildNotification(time: Int): android.app.Notification {
@@ -444,6 +495,7 @@ class PomodoroService : Service() {
         val finishedMode = currentMode
         // Send finished log broadcast if work
         if (currentMode == PomodoroMode.WORK && !skipped) {
+            isPartialSavedForCurrentInterval = true
             val finishedIntent = Intent("PomodoroLogSession").apply { setPackage(packageName) }
             finishedIntent.putExtra("isWork", true)
             finishedIntent.putExtra("originalTime", originalTime)
@@ -453,28 +505,24 @@ class PomodoroService : Service() {
             taskId?.let { finishedIntent.putExtra("taskId", it) }
             sendBroadcast(finishedIntent)
             
-            val prefs = getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
-            val autoLog = prefs.getBoolean("system_pomodoro_auto_log", true)
-            if (autoLog) {
-                scope.launch {
-                    try {
-                        val db = ovrrup.lumia.data.AppDatabase.getDatabase(applicationContext)
-                        db.scholarDao().insertPomodoroSession(
-                            ovrrup.lumia.model.PomodoroSession(
-                                dateMillis = System.currentTimeMillis(),
-                                durationMinutes = originalTime / 60,
-                                subjectId = subjectId,
-                                courseId = courseId,
-                                assignmentId = assignmentId,
-                                taskId = taskId
-                            )
+            scope.launch {
+                try {
+                    val db = ovrrup.lumia.data.AppDatabase.getDatabase(applicationContext)
+                    db.scholarDao().insertPomodoroSession(
+                        ovrrup.lumia.model.PomodoroSession(
+                            dateMillis = System.currentTimeMillis(),
+                            durationMinutes = originalTime / 60,
+                            subjectId = subjectId,
+                            courseId = courseId,
+                            assignmentId = assignmentId,
+                            taskId = taskId
                         )
-                        db.scholarDao().insertActionLog(
-                            ovrrup.lumia.model.ActionLog(actionText = "Completed Pomodoro Session (${originalTime / 60} min)")
-                        )
-                    } catch (e: Exception) {
-                        android.util.Log.e("PomodoroService", "Failed to auto-log pomodoro session", e)
-                    }
+                    )
+                    db.scholarDao().insertActionLog(
+                        ovrrup.lumia.model.ActionLog(actionText = "Completed Pomodoro Session (${originalTime / 60} min)")
+                    )
+                } catch (e: Exception) {
+                    android.util.Log.e("PomodoroService", "Failed to auto-log pomodoro session", e)
                 }
             }
         }
