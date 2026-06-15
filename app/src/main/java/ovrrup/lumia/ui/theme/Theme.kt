@@ -277,31 +277,36 @@ fun ScholarTheme(
         }
     }
 
-    if (isDark && pureBlackMode) {
-        colorScheme = colorScheme.copy(
-            background = Color.Black,
-            surface = Color(0xCC000000),
-            surfaceVariant = Color(0xFF1E1E1E)
-        )
-    }
-
     // Apply highly polished and harmonious Material 3 tones:
     // We use a subtle blend of background with primary (2% on primary color, 98% base) for an elegant, non-muddy backdrop.
     // Each component container mixes with its own respective core hue (primaryContainer with primary, secondaryContainer with secondary, etc.)
     // to preserve unique branding and prevent monocolor dilution, while creating soft cohesiveness.
     colorScheme = colorScheme.copy(
-        background = if (isDark && pureBlackMode) Color.Black else colorScheme.background.mix(colorScheme.primary, 0.98f),
-        surface = if (isDark && pureBlackMode) Color(0xCC000000) else colorScheme.surface.mix(colorScheme.primary, 0.97f),
+        background = colorScheme.background.mix(colorScheme.primary, 0.98f),
+        surface = colorScheme.surface.mix(colorScheme.primary, 0.97f),
         surfaceVariant = colorScheme.surfaceVariant.mix(colorScheme.secondary, 0.95f),
         primaryContainer = colorScheme.primaryContainer.mix(colorScheme.primary, 0.93f),
         secondaryContainer = colorScheme.secondaryContainer.mix(colorScheme.secondary, 0.93f),
         tertiaryContainer = colorScheme.tertiaryContainer.mix(colorScheme.tertiary, 0.93f),
-        surfaceContainer = if (isDark && pureBlackMode) Color(0xFF121212) else colorScheme.surface.mix(colorScheme.primary, 0.92f),
-        surfaceContainerLow = if (isDark && pureBlackMode) Color(0xFF0A0A0A) else colorScheme.surface.mix(colorScheme.primary, 0.95f),
-        surfaceContainerHigh = if (isDark && pureBlackMode) Color(0xFF1E1E1E) else colorScheme.surface.mix(colorScheme.primary, 0.88f),
-        surfaceContainerLowest = if (isDark && pureBlackMode) Color.Black else colorScheme.surface.mix(colorScheme.primary, 0.99f),
-        surfaceContainerHighest = if (isDark && pureBlackMode) Color(0xFF282828) else colorScheme.surface.mix(colorScheme.primary, 0.83f)
+        surfaceContainer = colorScheme.surface.mix(colorScheme.primary, 0.92f),
+        surfaceContainerLow = colorScheme.surface.mix(colorScheme.primary, 0.95f),
+        surfaceContainerHigh = colorScheme.surface.mix(colorScheme.primary, 0.88f),
+        surfaceContainerLowest = colorScheme.surface.mix(colorScheme.primary, 0.99f),
+        surfaceContainerHighest = colorScheme.surface.mix(colorScheme.primary, 0.83f)
     )
+
+    if (isDark && pureBlackMode) {
+        colorScheme = colorScheme.copy(
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceContainerLowest = Color.Black,
+            surfaceContainerLow = Color(0xFF050505),
+            surfaceContainer = Color(0xFF0A0A0A),
+            surfaceContainerHigh = Color(0xFF141414),
+            surfaceContainerHighest = Color(0xFF1C1C1C),
+            surfaceVariant = Color(0xFF121212)
+        )
+    }
 
     if (betterTexts) {
         val baseTextSourceColor = if (themeColor == "Custom" && customText.isNotBlank()) {
@@ -408,16 +413,25 @@ fun ScholarTheme(
             extraLarge = RoundedCornerShape(36.dp)
         ) else Shapes
         
+        val isGms = androidx.compose.runtime.remember(context) {
+            try {
+                context.packageManager.getPackageInfo("com.google.android.gms", 0)
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+
         val typographyToUse = when (appFontSelection) {
-            "Playfair & Lato" -> getTypography(fontNameStr = "Lato", headingFontNameStr = "Playfair Display")
-            "Josefin & Inter" -> getTypography(fontNameStr = "Inter", headingFontNameStr = "Josefin Sans")
-            "Archivo & Tenor" -> getTypography(fontNameStr = "Tenor Sans", headingFontNameStr = "Archivo")
-            "Syne & Inter" -> getTypography(fontNameStr = "Inter", headingFontNameStr = "Syne")
-            "Montserrat & Open Sans" -> getTypography(fontNameStr = "Open Sans", headingFontNameStr = "Montserrat")
-            "Yellowtail & Open Sans" -> getTypography(fontNameStr = "Open Sans", headingFontNameStr = "Yellowtail")
-            "Nunito" -> getTypography(fontNameStr = "Nunito")
-            "System Default" -> getTypography(fontNameStr = "System Default")
-            else -> Typography
+            "Playfair & Lato" -> getTypography(fontNameStr = "Lato", headingFontNameStr = "Playfair Display", isGms = isGms)
+            "Josefin & Inter" -> getTypography(fontNameStr = "Inter", headingFontNameStr = "Josefin Sans", isGms = isGms)
+            "Archivo & Tenor" -> getTypography(fontNameStr = "Tenor Sans", headingFontNameStr = "Archivo", isGms = isGms)
+            "Syne & Inter" -> getTypography(fontNameStr = "Inter", headingFontNameStr = "Syne", isGms = isGms)
+            "Montserrat & Open Sans" -> getTypography(fontNameStr = "Open Sans", headingFontNameStr = "Montserrat", isGms = isGms)
+            "Yellowtail & Open Sans" -> getTypography(fontNameStr = "Open Sans", headingFontNameStr = "Yellowtail", isGms = isGms)
+            "Nunito" -> getTypography(fontNameStr = "Nunito", isGms = isGms)
+            "System Default" -> getTypography(fontNameStr = "System Default", isGms = isGms)
+            else -> getTypography(fontNameStr = "System Default", isGms = isGms)
         }
         
         MaterialTheme(

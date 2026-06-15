@@ -166,7 +166,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaNotes = MutableStateFlow(prefs.getBoolean("beta_notes", false))
     val betaNotes = _betaNotes.asStateFlow()
 
-    private val _appAnimationMode = MutableStateFlow(prefs.getString("app_animation_mode", "Normal") ?: "Normal")
+    private val _appAnimationMode = MutableStateFlow(prefs.getString("app_animation_mode", "Dynamic") ?: "Dynamic")
     val appAnimationMode = _appAnimationMode.asStateFlow()
 
     private val _moreRounds = MutableStateFlow(prefs.getBoolean("more_rounds", false))

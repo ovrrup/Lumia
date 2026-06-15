@@ -312,7 +312,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Button(
+                        ovrrup.lumia.ui.components.BouncyButton(
                             onClick = { 
                                 noteToEdit = null
                                 noteText = ""
@@ -428,7 +428,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             color = MaterialTheme.colorScheme.primary
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilledTonalButton(
+                            ovrrup.lumia.ui.components.BouncyOutlinedButton(
                                 onClick = { showAddChapter = true },
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                 modifier = Modifier.height(36.dp)
@@ -437,7 +437,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 Spacer(Modifier.width(4.dp))
                                 Text("Chapter", style = MaterialTheme.typography.labelMedium)
                             }
-                            Button(
+                            ovrrup.lumia.ui.components.BouncyButton(
                                 onClick = { showAddTopic = true },
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                 modifier = Modifier.height(36.dp)

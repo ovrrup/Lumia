@@ -415,15 +415,10 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel
                             )
                         }
-                        composable(
-                            "settings/data?show_logs={show_logs}",
-                            arguments = listOf(navArgument("show_logs") { type = NavType.BoolType; defaultValue = false })
-                        ) { backStackEntry ->
-                            val showLogs = backStackEntry.arguments?.getBoolean("show_logs") ?: false
+                        composable("settings/data") {
                             ovrrup.lumia.ui.screens.DataManagementScreen(
                                 navController = navController,
-                                viewModel = viewModel,
-                                initialShowLogs = showLogs
+                                viewModel = viewModel
                             )
                         }
                         composable("settings/system") {
@@ -483,8 +478,7 @@ class MainActivity : ComponentActivity() {
                             dismissButton = {
                                 androidx.compose.material3.TextButton(onClick = {
                                     _crashData.value = null
-                                    navController.navigate("settings/data?show_logs=true")
-                                }) { Text("View Full Logs") }
+                                }) { Text("Dismiss") }
                             }
                         )
                     }

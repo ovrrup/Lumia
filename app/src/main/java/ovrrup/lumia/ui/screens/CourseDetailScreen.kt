@@ -364,7 +364,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     Spacer(Modifier.height(16.dp))
                                     Text("Embedded Subject Hub", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
                                     Spacer(Modifier.height(8.dp))
-                                    Button(onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }, modifier = Modifier.fillMaxWidth()) {
+                                    ovrrup.lumia.ui.components.BouncyButton(onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }, modifier = Modifier.fillMaxWidth()) {
                                         Text("Open Subject Workspace")
                                     }
                                 }
@@ -672,7 +672,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Button(
+                        ovrrup.lumia.ui.components.BouncyButton(
                             onClick = { 
                                 noteToEdit = null
                                 noteText = ""

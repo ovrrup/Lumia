@@ -74,7 +74,7 @@ fun QuickNotesScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
+            ovrrup.lumia.ui.components.BouncyFloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Rounded.Add, "Add Note")
             }
         }

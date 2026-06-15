@@ -73,13 +73,14 @@ fun SubjectsTab(
             }
         },
         floatingActionButton = {
+            val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
             val src = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-            androidx.compose.material3.FloatingActionButton(
+            ovrrup.lumia.ui.components.BouncyFloatingActionButton(
                 onClick = onAddSubjectClick,
                 interactionSource = src,
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding()).bouncyScale(src)
+                modifier = Modifier.padding(bottom = if (betaFloatingNav) 112.dp else 0.dp)
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = "Add Subject")
             }

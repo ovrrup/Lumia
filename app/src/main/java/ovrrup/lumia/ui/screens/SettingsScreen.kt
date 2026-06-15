@@ -443,14 +443,15 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 val moreRounds by viewModel.moreRounds.collectAsStateWithLifecycle()
 
                 SettingsSegmentedPicker(
-                    title = "Application Animation Quality",
-                    subtitle = "Changes the responsiveness and bounce traits across panels and gestures.",
+                    title = "Application Animation Quality (Under Construction)",
+                    subtitle = "Changes the responsiveness and bounce traits across panels and gestures. Currently disabled.",
                     options = listOf(
                         Triple("Normal", "Normal", null),
                         Triple("Dynamic", "Dynamic", null),
                         Triple("Bouncy", "Bouncy", Icons.Rounded.Star)
                     ),
                     selected = appAnimationMode,
+                    enabled = false,
                     onSelected = { viewModel.updateAppAnimationMode(it) }
                 )
 
@@ -1259,8 +1260,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
 @Composable
 fun DataManagementScreen(
     navController: NavController,
-    viewModel: ScholarViewModel,
-    initialShowLogs: Boolean = false
+    viewModel: ScholarViewModel
 ) {
     val status by viewModel.importExportStatus.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -1333,167 +1333,6 @@ fun DataManagementScreen(
             val subjectsCount by viewModel.subjects.collectAsStateWithLifecycle()
             val pomodoroSessionsCount by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
 
-                // LogDog Card
-                var showLogDogDialog by remember(initialShowLogs) { mutableStateOf(initialShowLogs) }
-                ovrrup.lumia.ui.components.GlassCard(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Text("LogDog Diagnostic Handler", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        SettingsActionItemInCard(
-                            title = "Trigger Analysis (Woof!)",
-                            subtitle = "Run code analysis and view last captured crash error data with a funny twist.",
-                            icon = Icons.Rounded.RecordVoiceOver,
-                            onClick = { 
-                                showLogDogDialog = true
-                            }
-                        )
-                    }
-                }
-
-                if (showLogDogDialog) {
-                    var isScanning by remember { mutableStateOf(true) }
-                    LaunchedEffect(Unit) {
-                        kotlinx.coroutines.delay(1200)
-                        isScanning = false
-                    }
-                    var crashesList by remember { mutableStateOf(ovrrup.lumia.util.LogDog.getCrashes(context)) }
-                    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
-                    
-                    androidx.compose.ui.window.Dialog(
-                        onDismissRequest = { showLogDogDialog = false },
-                        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
-                    ) {
-                        Surface(
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 32.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            color = androidx.compose.ui.graphics.Color(0xFF0F172A),
-                            contentColor = androidx.compose.ui.graphics.Color(0xFF38BDF8)
-                        ) {
-                            Column(modifier = Modifier.fillMaxSize()) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color(0xFF1E293B)).padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFF38BDF8), modifier = Modifier.size(24.dp))
-                                        Spacer(Modifier.width(12.dp))
-                                        Text("LogDog Core Analyzer v2.0", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = androidx.compose.ui.graphics.Color.White)
-                                    }
-                                    IconButton(onClick = { showLogDogDialog = false }) {
-                                        Icon(Icons.Rounded.Close, contentDescription = "Close", tint = androidx.compose.ui.graphics.Color.White)
-                                    }
-                                }
-                                
-                                Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
-                                    if (isScanning) {
-                                        Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                CircularProgressIndicator(color = androidx.compose.ui.graphics.Color(0xFF38BDF8))
-                                                Spacer(Modifier.height(16.dp))
-                                                Text("Sniffing stack traces... parsing runtime metrics...", style = MaterialTheme.typography.bodyMedium, color = androidx.compose.ui.graphics.Color(0xFF94A3B8))
-                                            }
-                                        }
-                                    } else if (crashesList.isEmpty()) {
-                                        Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFF22C55E), modifier = Modifier.size(48.dp))
-                                                Spacer(Modifier.height(16.dp))
-                                                Text("System Stable. Zero fatal faults in kennel.", style = MaterialTheme.typography.bodyLarge, color = androidx.compose.ui.graphics.Color.White)
-                                            }
-                                        }
-                                    } else {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text("FATAL EXCEPTIONS: ${crashesList.size}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFFF43F5E))
-                                            TextButton(
-                                                onClick = {
-                                                    ovrrup.lumia.util.LogDog.clearCrashes(context)
-                                                    crashesList = emptyList()
-                                                    android.widget.Toast.makeText(context, "LogDog purged all telemetry.", android.widget.Toast.LENGTH_SHORT).show()
-                                                },
-                                                colors = ButtonDefaults.textButtonColors(contentColor = androidx.compose.ui.graphics.Color(0xFFEF4444))
-                                            ) {
-                                                Icon(Icons.Rounded.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                                Text("PURGE LOGS")
-                                            }
-                                        }
-                                        
-                                        crashesList.forEachIndexed { index, crash ->
-                                            val parsed = remember(crash) { ovrrup.lumia.util.LogDog.analyzeCrash(crash) }
-                                            
-                                            Card(
-                                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                                                colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFF1E293B)),
-                                                shape = RoundedCornerShape(16.dp)
-                                            ) {
-                                                Column(modifier = Modifier.padding(16.dp)) {
-                                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                                        val sevColor = when (parsed.severityLevel) {
-                                                            "Critical" -> androidx.compose.ui.graphics.Color(0xFFEF4444)
-                                                            "High" -> androidx.compose.ui.graphics.Color(0xFFF97316)
-                                                            else -> androidx.compose.ui.graphics.Color(0xFFEAB308)
-                                                        }
-                                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                                            Box(modifier = Modifier.size(12.dp).background(sevColor, CircleShape))
-                                                            Spacer(Modifier.width(8.dp))
-                                                            Text("DUMP [${index + 1}] | ${parsed.severityLevel.uppercase()}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.White)
-                                                        }
-                                                        IconButton(
-                                                            onClick = {
-                                                                clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(crash))
-                                                                android.widget.Toast.makeText(context, "Copied trace dump to clipboard!", android.widget.Toast.LENGTH_SHORT).show()
-                                                            },
-                                                            modifier = Modifier.size(28.dp)
-                                                        ) {
-                                                            Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy raw log", tint = androidx.compose.ui.graphics.Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
-                                                        }
-                                                    }
-                                                    
-                                                    Spacer(modifier = Modifier.height(12.dp))
-                                                    Text("FAULT MODULE: ${parsed.likelyComponent.uppercase()}", style = MaterialTheme.typography.labelSmall, color = androidx.compose.ui.graphics.Color(0xFF94A3B8))
-                                                    Text(parsed.exceptionType, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFFF87171))
-                                                    
-                                                    Spacer(modifier = Modifier.height(8.dp))
-                                                    Text("RAW MESSAGE:", style = MaterialTheme.typography.labelSmall, color = androidx.compose.ui.graphics.Color(0xFF94A3B8))
-                                                    Text(parsed.errorMessage, style = MaterialTheme.typography.bodySmall, color = androidx.compose.ui.graphics.Color.LightGray)
-                                                    
-                                                    Spacer(modifier = Modifier.height(8.dp))
-                                                    Text("POINTER:", style = MaterialTheme.typography.labelSmall, color = androidx.compose.ui.graphics.Color(0xFF94A3B8))
-                                                    Text(parsed.crashLocation, style = androidx.compose.ui.text.TextStyle(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, fontSize = 12.sp, color = androidx.compose.ui.graphics.Color(0xFF34D399)))
-                                                    
-                                                    if (parsed.isFrameworkBug) {
-                                                        Spacer(modifier = Modifier.height(6.dp))
-                                                        Text("⚠️ Framework-level crash detected. Trace pointer is outside your primary package.", style = MaterialTheme.typography.labelSmall, color = androidx.compose.ui.graphics.Color(0xFFEAB308))
-                                                    }
-                                                    
-                                                    Spacer(modifier = Modifier.height(12.dp))
-                                                    Surface(
-                                                        color = androidx.compose.ui.graphics.Color(0xFF0F172A),
-                                                        shape = RoundedCornerShape(8.dp),
-                                                        modifier = Modifier.fillMaxWidth()
-                                                    ) {
-                                                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
-                                                            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFF38BDF8), modifier = Modifier.size(16.dp))
-                                                            Spacer(Modifier.width(8.dp))
-                                                            Text(parsed.suggestion, style = MaterialTheme.typography.bodySmall, color = androidx.compose.ui.graphics.Color.White)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
                 ovrrup.lumia.ui.components.GlassCard(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     shape = RoundedCornerShape(24.dp)
@@ -2906,12 +2745,14 @@ fun <T> SettingsSegmentedPicker(
     subtitle: String,
     options: List<Triple<T, String, androidx.compose.ui.graphics.vector.ImageVector?>>,
     selected: T,
+    enabled: Boolean = true,
     onSelected: (T) -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp, horizontal = 4.dp)
+            .alpha(if (enabled) 1f else 0.5f)
     ) {
         if (title.isNotEmpty()) {
             var showDescription by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -2966,7 +2807,7 @@ fun <T> SettingsSegmentedPicker(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(14.dp))
-                        .clickable { onSelected(value) }
+                        .clickable(enabled = enabled) { onSelected(value) }
                         .background(
                             if (isSelected) MaterialTheme.colorScheme.primaryContainer
                             else androidx.compose.ui.graphics.Color.Transparent

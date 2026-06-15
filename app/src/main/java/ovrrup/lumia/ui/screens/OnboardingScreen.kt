@@ -133,7 +133,7 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                 }
 
                 // Next / Get Started Button
-                Button(
+                ovrrup.lumia.ui.components.BouncyButton(
                     onClick = {
                         if (pagerState.currentPage < 4) {
                             coroutineScope.launch {

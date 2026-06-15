@@ -18,12 +18,6 @@ object LogDog {
             """.trimIndent()
             
             Log.e("LogDog", "Crash captured: $crashInfo")
-            val prefs = context.getSharedPreferences("logdog_prefs", Context.MODE_PRIVATE)
-            val crashes = JSONArray(prefs.getString("crashes", "[]") ?: "[]")
-            if (crashes.length() >= 5) crashes.remove(0)
-            crashes.put(crashInfo)
-            
-            prefs.edit().putString("crashes", crashes.toString()).apply()
             
             // Gracefully restart and show panel
             val intent = android.content.Intent(context, ovrrup.lumia.MainActivity::class.java).apply {
@@ -36,13 +30,6 @@ object LogDog {
         }
     }
     
-    fun getCrashes(context: Context): List<String> {
-        val json = context.getSharedPreferences("logdog_prefs", Context.MODE_PRIVATE)
-            .getString("crashes", "[]") ?: "[]"
-        val crashes = JSONArray(json)
-        return (0 until crashes.length()).map { crashes.getString(it) }.reversed()
-    }
-
     fun analyze(crash: String): String {
         val parsed = analyzeCrash(crash)
         return "Cause: ${parsed.exceptionType} - ${parsed.errorMessage}\nLocation: ${parsed.crashLocation}"
@@ -163,12 +150,5 @@ object LogDog {
             severityLevel = severityLevel,
             likelyComponent = likelyComponent
         )
-    }
-
-    fun clearCrashes(context: Context) {
-        context.getSharedPreferences("logdog_prefs", Context.MODE_PRIVATE)
-            .edit()
-            .remove("crashes")
-            .apply()
     }
 }
