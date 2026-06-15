@@ -1,6 +1,5 @@
 import java.util.Properties
 import java.io.FileInputStream
-import java.util.Base64
 
 plugins {
   alias(libs.plugins.android.application)
@@ -14,20 +13,6 @@ val appConfig = Properties().apply {
     val configFile = project.file("app-config.properties")
     if (configFile.exists()) {
         load(FileInputStream(configFile))
-    }
-}
-
-// Automatically restore the persistent debug.keystore from its base64 backup if missing
-val debugKeystoreFile = project.file("${rootDir}/debug.keystore")
-val base64File = project.file("${rootDir}/debug.keystore.base64")
-if (!debugKeystoreFile.exists() && base64File.exists()) {
-    try {
-        val base64Content = base64File.readText().replace("\\s".toRegex(), "")
-        val decoded = Base64.getDecoder().decode(base64Content)
-        debugKeystoreFile.writeBytes(decoded)
-        println("Successfully restored debug.keystore from base64 backup.")
-    } catch (e: Exception) {
-        System.err.println("Failed to restore debug.keystore from base64 backup: ${e.message}")
     }
 }
 
@@ -56,20 +41,11 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/lumia-key.jks"
-      val keystoreFile = file(keystorePath)
-      if (keystoreFile.exists()) {
-        storeFile = keystoreFile
-        storePassword = System.getenv("STORE_PASSWORD") ?: "android"
-        keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
-        keyPassword = System.getenv("KEY_PASSWORD") ?: "android"
-      } else {
-        // Fallback to our reconstructed persistent debug keystore to allow successful local and CI builds
-        storeFile = file("${rootDir}/debug.keystore")
-        storePassword = "android"
-        keyAlias = "androiddebugkey"
-        keyPassword = "android"
-      }
+      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
+      storeFile = file(keystorePath)
+      storePassword = System.getenv("STORE_PASSWORD")
+      keyAlias = "upload"
+      keyPassword = System.getenv("KEY_PASSWORD")
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")

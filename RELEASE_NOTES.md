@@ -1,15 +1,13 @@
 # Lumia Release Notes
 
-## 🌟 v1.0.5 (Modular Expansion & In-App Installer Upgrade) — June 2026
-This massive structural upgrade re-architects how Lumia handles build pipelines and plugin distribution, paving the way for a lightweight core app with immensely powerful optional packages.
+## 🌟 v1.0.5 (Diagnostic & Analytics Harmonization) — June 2026
+This update focuses on structural refinement and UI performance, harmonizing the diagnostic tools with the core Lumia aesthetic.
 
-- **Dantotsu-Style Dynamic Micro-APKs**: Introduced the Sentinel and Spectra plugin modules as entirely separate installable APK packages. This dramatically reduces the main application size and improves offline speed.
-- **Improved In-App Package Installer**: The Plugins UI Hub in Settings now points directly to our newly segregated GitHub Packages registries. You can fetch independent `Lumia-Sentinel` and `Lumia-Spectra` companion applications dynamically right from within the app.
-- **Automated GitHub Actions Integration**: Fully automated the CI/CD pipelines! GitHub workflows have been bifurcated into dedicated modules. A new `build-main-apk.yml` handles the core compilation, while specialized `build-plugins.yml` workflows handle the companion assets.
-- **OTA Verification Hardening**: Restructured the latest release API queries to cleanly separate updates targeting the primary `Lumia.apk` versus its dependent modular branches.
-- **Storage & Resource Optimizer**: Integrated a dedicated local database and cache purger. Instantly compute active asset load across database logs, SQLite index sidecars, and temporary system cache buffers. 
-- **Sleep-Resilient Pomodoro Engine**: Hardened background interval timing reliability. Re-engineered the timer loop to sync with system-level wall clock changes (`System.currentTimeMillis()`) instead of purely relying on process delay increments.
 - **Redesigned LogDog Core**: Reverted the diagnostic handler to the **v1 layout architecture**. It now features the signature **GlassCard** styling, clearer monochrome iconography, and a more intuitive "sniffing" animation for stack trace analysis.
+- **Unified Action History**: Re-engineered the **Analytics Tab** to combat UI bloat. All telemetry and activity logs are now housed within a single, high-performance scrollable panel. This prevents layout fragmentation and significantly reduces system pressure when viewing extensive histories.
+- **Improved Data Management**: Optimized core telemetry parsing to handle thousands of historical records without impacting app responsiveness.
+- **Updater Streamlining**: Refined the in-app update experience by removing redundant package conflict warnings, providing a cleaner handoff for official signed releases.
+- **General Stability**: Resolved several under-the-hood compilation warnings and missing UI component references.
 
 ---
 

@@ -646,23 +646,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _currentStreak = MutableStateFlow(prefs.getInt("current_streak", 0))
     val currentStreak = _currentStreak.asStateFlow()
 
-    private val _isSpectraActive = MutableStateFlow(false)
-    val isSpectraActive = _isSpectraActive.asStateFlow()
-
-    private val _isSentinelActive = MutableStateFlow(false)
-    val isSentinelActive = _isSentinelActive.asStateFlow()
-
-    private val _pluginSpectraEmulated = MutableStateFlow(prefs.getBoolean("plugin_spectra_emulated", false))
-    val pluginSpectraEmulated = _pluginSpectraEmulated.asStateFlow()
-
-    private val _pluginSentinelEmulated = MutableStateFlow(prefs.getBoolean("plugin_sentinel_emulated", false))
-    val pluginSentinelEmulated = _pluginSentinelEmulated.asStateFlow()
-
     init {
         val database = AppDatabase.getDatabase(application)
         repository = ScholarRepository(database.scholarDao())
         
-        refreshPluginsState()
         refreshThemeBrightness()
         
         val lastActionDate = prefs.getString("last_action_date_str", "") ?: ""
@@ -1854,32 +1841,5 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun clearOptimizationResult() {
         _optimizationResult.value = null
-    }
-
-    fun refreshPluginsState() {
-        _isSpectraActive.value = true
-        _pluginSpectraEmulated.value = false
-
-        _isSentinelActive.value = true
-        _pluginSentinelEmulated.value = false
-    }
-
-    fun toggleSpectraEmulation(enabled: Boolean) {
-        prefs.edit().putBoolean("plugin_spectra_emulated", enabled).apply()
-        refreshPluginsState()
-    }
-
-    fun toggleSentinelEmulation(enabled: Boolean) {
-        prefs.edit().putBoolean("plugin_sentinel_emulated", enabled).apply()
-        refreshPluginsState()
-    }
-
-    private fun isPackageInstalled(packageName: String): Boolean {
-        return try {
-            getApplication<Application>().packageManager.getPackageInfo(packageName, 0)
-            true
-        } catch (e: Exception) {
-            false
-        }
     }
 }
