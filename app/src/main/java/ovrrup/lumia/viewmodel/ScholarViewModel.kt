@@ -619,41 +619,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val onIgnore: () -> Unit
     )
 
-    private val _safetyPinDialogData = run {
-        val delegate = MutableStateFlow<SafetyPinDialogData?>(null)
-        object : MutableStateFlow<SafetyPinDialogData?> by delegate {
-            override var value: SafetyPinDialogData?
-                get() = delegate.value
-                set(v) {
-                    if (v != null) {
-                        v.onConfirm()
-                    } else {
-                        delegate.value = null
-                    }
-                }
-            override fun compareAndSet(expect: SafetyPinDialogData?, update: SafetyPinDialogData?): Boolean {
-                if (update != null) {
-                    update.onConfirm()
-                    return true
-                }
-                return delegate.compareAndSet(expect, update)
-            }
-            override fun tryEmit(value: SafetyPinDialogData?): Boolean {
-                if (value != null) {
-                    value.onConfirm()
-                    return true
-                }
-                return delegate.tryEmit(value)
-            }
-            override suspend fun emit(value: SafetyPinDialogData?) {
-                if (value != null) {
-                    value.onConfirm()
-                } else {
-                    delegate.emit(value)
-                }
-            }
-        }
-    }
+    private val _safetyPinDialogData = MutableStateFlow<SafetyPinDialogData?>(null)
     val safetyPinDialogData = _safetyPinDialogData.asStateFlow()
 
     fun dismissSafetyPinDialog() {
