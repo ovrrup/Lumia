@@ -7,6 +7,8 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -90,6 +92,11 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     val subjectAssignments = remember(allAssignments, subjectId) {
         allAssignments.filter { it.subjectId == subjectId }
     }
+
+    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
+    var showAddQuickTask by remember { mutableStateOf(false) }
+    var quickTaskChapterId by remember { mutableStateOf<Int?>(null) }
+    var quickTaskTopicId by remember { mutableStateOf<Int?>(null) }
 
     var showAddNoteDialog by remember { mutableStateOf(false) }
     var noteToEdit by remember { mutableStateOf<ovrrup.lumia.model.Note?>(null) }
@@ -518,6 +525,13 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                             }
                                         }
                                         Row(verticalAlignment = Alignment.CenterVertically) {
+                                            IconButton(onClick = {
+                                                quickTaskChapterId = chapter.id
+                                                quickTaskTopicId = null
+                                                showAddQuickTask = true
+                                            }) {
+                                                Icon(Icons.Rounded.Add, "Add Quick Task of Chapter", tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(20.dp))
+                                            }
                                             IconButton(onClick = { chapterToEdit = chapter; showAddChapter = true }) {
                                                 Icon(Icons.Rounded.Edit, "Edit Chapter", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                                             }
@@ -541,6 +555,48 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.primary
                                         )
+                                    }
+
+                                    val chapterTasks = tasks.filter { it.subjectId == subjectId && it.chapterId == chapter.id }
+                                    if (chapterTasks.isNotEmpty()) {
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = "Chapter Level Tasks:",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.secondary
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        chapterTasks.forEach { task ->
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+                                            ) {
+                                                Checkbox(
+                                                    checked = task.isCompleted,
+                                                    onCheckedChange = { viewModel.toggleTaskCompleted(task) },
+                                                    modifier = Modifier.size(32.dp).padding(end = 4.dp)
+                                                )
+                                                Text(
+                                                    text = task.title,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = if (task.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                                                    textDecoration = if (task.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                if (task.dueDateMillis != null) {
+                                                     val df = java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault())
+                                                     Text(
+                                                         text = df.format(java.util.Date(task.dueDateMillis)),
+                                                         style = MaterialTheme.typography.labelSmall,
+                                                         color = MaterialTheme.colorScheme.error,
+                                                         fontWeight = FontWeight.Bold
+                                                     )
+                                                 }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -594,6 +650,36 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                                     )
                                                 }
+                                                val topicTasks = tasks.filter { it.subjectId == subjectId && it.topicId == topic.id }
+                                                if (topicTasks.isNotEmpty()) {
+                                                    Spacer(modifier = Modifier.height(4.dp))
+                                                    topicTasks.forEach { task ->
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
+                                                        ) {
+                                                            Checkbox(
+                                                                checked = task.isCompleted,
+                                                                onCheckedChange = { viewModel.toggleTaskCompleted(task) },
+                                                                modifier = Modifier.size(24.dp).padding(end = 4.dp)
+                                                            )
+                                                            Text(
+                                                                text = task.title,
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = if (task.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                                                                textDecoration = if (task.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                                                                modifier = Modifier.weight(1f)
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            IconButton(onClick = {
+                                                quickTaskChapterId = topic.chapterId
+                                                quickTaskTopicId = topic.id
+                                                showAddQuickTask = true
+                                            }) {
+                                                Icon(Icons.Rounded.Add, contentDescription = "Add Topic Task", tint = MaterialTheme.colorScheme.primary)
                                             }
                                             IconButton(onClick = { viewModel.deleteTopic(topic) }) {
                                                 Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
@@ -648,6 +734,36 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                             )
                                         }
+                                        val topicTasks = tasks.filter { it.subjectId == subjectId && it.topicId == topic.id }
+                                        if (topicTasks.isNotEmpty()) {
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            topicTasks.forEach { task ->
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
+                                                ) {
+                                                    Checkbox(
+                                                        checked = task.isCompleted,
+                                                        onCheckedChange = { viewModel.toggleTaskCompleted(task) },
+                                                        modifier = Modifier.size(24.dp).padding(end = 4.dp)
+                                                    )
+                                                    Text(
+                                                        text = task.title,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = if (task.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                                                        textDecoration = if (task.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                    IconButton(onClick = {
+                                        quickTaskChapterId = topic.chapterId
+                                        quickTaskTopicId = topic.id
+                                        showAddQuickTask = true
+                                    }) {
+                                        Icon(Icons.Rounded.Add, contentDescription = "Add Topic Task", tint = MaterialTheme.colorScheme.primary)
                                     }
                                     IconButton(onClick = { viewModel.deleteTopic(topic) }) {
                                         Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
@@ -831,6 +947,108 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             },
             dismissButton = {
                 TextButton(onClick = { showAddNoteDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showAddQuickTask) {
+        var taskTitle by remember { mutableStateOf("") }
+        var taskDesc by remember { mutableStateOf("") }
+        var taskPriority by remember { mutableStateOf(0) }
+        var taskDueDateMillis by remember { mutableStateOf<Long?>(null) }
+        var showDateDialog by remember { mutableStateOf(false) }
+
+        if (showDateDialog) {
+            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
+            DatePickerDialog(
+                onDismissRequest = { showDateDialog = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        taskDueDateMillis = datePickerState.selectedDateMillis
+                        showDateDialog = false
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDateDialog = false }) { Text("Cancel") }
+                }
+            ) {
+                DatePicker(state = datePickerState, showModeToggle = false)
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { showAddQuickTask = false },
+            title = { Text("Add Live Learning Task") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                    OutlinedTextField(
+                        value = taskTitle,
+                        onValueChange = { taskTitle = it },
+                        label = { Text("Task Title") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = taskDesc,
+                        onValueChange = { taskDesc = it },
+                        label = { Text("Description (Optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Due Date:", style = MaterialTheme.typography.labelMedium)
+                        TextButton(onClick = { showDateDialog = true }) {
+                            val df = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+                            Text(if (taskDueDateMillis != null) df.format(java.util.Date(taskDueDateMillis!!)) else "Click to set")
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text("Priority:", style = MaterialTheme.typography.labelMedium)
+                    Spacer(Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(selected = taskPriority == 0, onClick = { taskPriority = 0 }, label = { Text("Low") })
+                        FilterChip(selected = taskPriority == 1, onClick = { taskPriority = 1 }, label = { Text("Medium") })
+                        FilterChip(selected = taskPriority == 2, onClick = { taskPriority = 2 }, label = { Text("High") })
+                    }
+                    
+                    Spacer(Modifier.height(12.dp))
+                    val chName = chapters.find { it.id == quickTaskChapterId }?.name
+                    val tpName = topics.find { it.id == quickTaskTopicId }?.title
+                    if (chName != null || tpName != null) {
+                        Text("Constructing connection inside:", style = MaterialTheme.typography.labelSmall)
+                        if (chName != null) {
+                            Text("📁 Chapter: $chName", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                        }
+                        if (tpName != null) {
+                            Text("📝 Concept/Topic: $tpName", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (taskTitle.isNotBlank()) {
+                        viewModel.addTask(
+                            ovrrup.lumia.model.Task(
+                                title = taskTitle,
+                                description = taskDesc,
+                                subjectId = subjectId,
+                                chapterId = quickTaskChapterId,
+                                topicId = quickTaskTopicId,
+                                priority = taskPriority,
+                                dueDateMillis = taskDueDateMillis
+                            )
+                        )
+                        showAddQuickTask = false
+                    }
+                }) { Text("Create") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddQuickTask = false }) { Text("Cancel") }
             }
         )
     }

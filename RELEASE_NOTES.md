@@ -1,10 +1,11 @@
 # Lumia Release Notes
 
-## 🌟 What's New in v1.0.5 (Sounds & Haptics)
-- **Advanced Feedback Engine**: Introduced a comprehensive Sounds & Haptics settings panel to customize UI interaction feedback.
-- **Granular Controls**: Independently toggle interface sounds, haptic feedback, or combine both for an enriched tactile experience across the app.
-- **Pomodoro Audio Customization**: You can now choose between a subtle beep & vibrate or the system default alarm tone when completing a Pomodoro session.
-- **Polished Transition Acoustics**: Added short, non-intrusive auditory cues and subtle vibrations for taps, button presses, and page transitions to enhance the tactile feel.
+## 🌟 What's New in v1.0.5 (Deep Interlinking & Haptics)
+- **Deeper Scholar Entity Connections**: Fully integrated Tasks with Subjects, Chapters, Topics, and Courses at both the database and visual layers, creating a seamless, interconnected learning workspace.
+- **Hierarchical Live Task Linking**: The Task planner now dynamically prompts custom suggestions to link Tasks to corresponding Chapters and Concepts (Topics) of the selected Subject in real-time.
+- **Direct Study Action Controls**: Subject Detail screens now layout associated Chapter-level & Topic-level tasks, with direct interactive checkboxes to complete tasks on-the-fly.
+- **Quick Learning Tasks**: Easily create pre-linked study tasks directly within any specific Chapter or Topic container, complete with real-time UI synchronization.
+- **Tactile Acoustics & Feedback**: Introduced standard haptic configurations, custom sounds, and vibrating options for focus notifications to keep your study sessions highly responsive.
 
 ## 🌟 What's New in v1.0.4 (Elastic Buttons & Style Engine)
 - **Enhanced "More Rounds" Core**: Re-engineered the shape engine to support hierarchical corner radii, delivering a more organic and polished look across all UI tiers.

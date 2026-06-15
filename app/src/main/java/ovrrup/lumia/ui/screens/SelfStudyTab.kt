@@ -270,9 +270,36 @@ fun SelfStudyTab(
         var dueDateMillis by remember { mutableStateOf(taskToEdit?.dueDateMillis) }
         var showDatePicker by remember { mutableStateOf(false) }
         
-        // We can add advanced fields in a real app, here we stick to basic and some interconnections
         val subjects by viewModel.subjects.collectAsStateWithLifecycle()
         var selectedSubjectId by remember { mutableStateOf<Int?>(taskToEdit?.subjectId) }
+        
+        var selectedChapterId by remember { mutableStateOf<Int?>(taskToEdit?.chapterId) }
+        var selectedTopicId by remember { mutableStateOf<Int?>(taskToEdit?.topicId) }
+
+        // Dynamic reactive collection of chapters and topics based on selection
+        val selectedSubjectChapters = remember(selectedSubjectId) {
+            if (selectedSubjectId != null) {
+                viewModel.getChaptersForSubject(selectedSubjectId!!)
+            } else {
+                kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+            }
+        }.collectAsStateWithLifecycle(emptyList()).value
+
+        val selectedSubjectTopics = remember(selectedSubjectId) {
+            if (selectedSubjectId != null) {
+                viewModel.getTopicsForSubject(selectedSubjectId!!)
+            } else {
+                kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+            }
+        }.collectAsStateWithLifecycle(emptyList()).value
+
+        // Auto-reset linking levels if subject changes
+        LaunchedEffect(selectedSubjectId) {
+            if (selectedSubjectId != taskToEdit?.subjectId) {
+                selectedChapterId = null
+                selectedTopicId = null
+            }
+        }
         
         val courses by viewModel.courses.collectAsStateWithLifecycle()
         var selectedCourseId by remember { mutableStateOf<Int?>(taskToEdit?.courseId) }
@@ -392,6 +419,42 @@ fun SelfStudyTab(
                             FilterChip(selected = selectedSubjectId == subj.id, onClick = { selectedSubjectId = subj.id }, label = { Text(subj.name) })
                         }
                     }
+
+                    if (selectedSubjectId != null && selectedSubjectChapters.isNotEmpty()) {
+                        Spacer(Modifier.height(12.dp))
+                        Text("Link with Chapter:", style = MaterialTheme.typography.labelMedium)
+                        Spacer(Modifier.height(4.dp))
+                        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            item {
+                                FilterChip(selected = selectedChapterId == null, onClick = { selectedChapterId = null; selectedTopicId = null }, label = { Text("None") })
+                            }
+                            items(selectedSubjectChapters) { chapter ->
+                                FilterChip(selected = selectedChapterId == chapter.id, onClick = { selectedChapterId = chapter.id }, label = { Text(chapter.name) })
+                            }
+                        }
+                    }
+
+                    if (selectedSubjectId != null && selectedSubjectTopics.isNotEmpty()) {
+                        val displayTopics = if (selectedChapterId != null) {
+                            selectedSubjectTopics.filter { it.chapterId == selectedChapterId }
+                        } else {
+                            selectedSubjectTopics
+                        }
+                        if (displayTopics.isNotEmpty()) {
+                            Spacer(Modifier.height(12.dp))
+                            Text("Link with Concept/Topic:", style = MaterialTheme.typography.labelMedium)
+                            Spacer(Modifier.height(4.dp))
+                            androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                item {
+                                    FilterChip(selected = selectedTopicId == null, onClick = { selectedTopicId = null }, label = { Text("None") })
+                                }
+                                items(displayTopics) { topic ->
+                                    FilterChip(selected = selectedTopicId == topic.id, onClick = { selectedTopicId = topic.id }, label = { Text(topic.title) })
+                                }
+                            }
+                        }
+                    }
+
                     if (advancedTasks) {
                         Spacer(Modifier.height(12.dp))
                         Text("Link with Course:", style = MaterialTheme.typography.labelMedium)
@@ -420,9 +483,31 @@ fun SelfStudyTab(
                 TextButton(onClick = {
                     if (title.isNotBlank()) {
                         if (isEdit) {
-                            taskToEdit?.copy(title = title, description = description, subjectId = selectedSubjectId, courseId = selectedCourseId, assignmentId = selectedAssignmentId, tags = tags, priority = priority, dueDateMillis = dueDateMillis)?.let { viewModel.updateTask(it) }
+                            taskToEdit?.copy(
+                                title = title, 
+                                description = description, 
+                                subjectId = selectedSubjectId, 
+                                chapterId = selectedChapterId,
+                                topicId = selectedTopicId,
+                                courseId = selectedCourseId, 
+                                assignmentId = selectedAssignmentId, 
+                                tags = tags, 
+                                priority = priority, 
+                                dueDateMillis = dueDateMillis
+                            )?.let { viewModel.updateTask(it) }
                         } else {
-                            viewModel.addTask(Task(title = title, description = description, subjectId = selectedSubjectId, courseId = selectedCourseId, assignmentId = selectedAssignmentId, tags = tags, priority = priority, dueDateMillis = dueDateMillis))
+                            viewModel.addTask(Task(
+                                title = title, 
+                                description = description, 
+                                subjectId = selectedSubjectId, 
+                                chapterId = selectedChapterId,
+                                topicId = selectedTopicId,
+                                courseId = selectedCourseId, 
+                                assignmentId = selectedAssignmentId, 
+                                tags = tags, 
+                                priority = priority, 
+                                dueDateMillis = dueDateMillis
+                            ))
                         }
                         showAddTaskDialog = false
                         taskToEdit = null
@@ -439,8 +524,28 @@ fun SelfStudyTab(
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit, modifier: Modifier = Modifier) {
+    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+    val courses by viewModel.courses.collectAsStateWithLifecycle()
+    val subject = remember(subjects, task.subjectId) { subjects.find { it.id == task.subjectId } }
+    val course = remember(courses, task.courseId) { courses.find { it.id == task.courseId } }
+
+    val chaptersFlow = remember(task.subjectId) {
+        if (task.subjectId != null) viewModel.getChaptersForSubject(task.subjectId)
+        else kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+    }
+    val chapters by chaptersFlow.collectAsStateWithLifecycle(emptyList())
+    val chapter = remember(chapters, task.chapterId) { chapters.find { it.id == task.chapterId } }
+
+    val topicsFlow = remember(task.subjectId) {
+        if (task.subjectId != null) viewModel.getTopicsForSubject(task.subjectId)
+        else kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+    }
+    val topics by topicsFlow.collectAsStateWithLifecycle(emptyList())
+    val topic = remember(topics, task.topicId) { topics.find { it.id == task.topicId } }
+
     GlassCard(onClick = onEdit, modifier = modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
@@ -483,17 +588,41 @@ fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit, mo
                     }
                 }
                 
-                if (task.subjectId != null || task.courseId != null || task.assignmentId != null) {
-                    Spacer(Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Link, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.width(4.dp))
-                        val linkText = listOfNotNull(
-                            if (task.subjectId != null) "Subject" else null,
-                            if (task.courseId != null) "Course" else null,
-                            if (task.assignmentId != null) "Assignment" else null
-                        ).joinToString(", ")
-                        Text("$linkText Linked", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                if (subject != null || course != null || chapter != null || topic != null) {
+                    Spacer(Modifier.height(8.dp))
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (subject != null) {
+                            SuggestionChip(
+                                onClick = {},
+                                label = { Text("Subject: ${subject.name}", style = MaterialTheme.typography.labelSmall) },
+                                icon = { Icon(Icons.Rounded.MenuBook, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                            )
+                        }
+                        if (course != null) {
+                            SuggestionChip(
+                                onClick = {},
+                                label = { Text("Course: ${course.name}", style = MaterialTheme.typography.labelSmall) },
+                                icon = { Icon(Icons.Rounded.LibraryBooks, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                            )
+                        }
+                        if (chapter != null) {
+                            SuggestionChip(
+                                onClick = {},
+                                label = { Text("Chapter: ${chapter.name}", style = MaterialTheme.typography.labelSmall) },
+                                icon = { Icon(Icons.Rounded.Bookmarks, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                            )
+                        }
+                        if (topic != null) {
+                            SuggestionChip(
+                                onClick = {},
+                                label = { Text("Concept: ${topic.title}", style = MaterialTheme.typography.labelSmall) },
+                                icon = { Icon(Icons.Rounded.Label, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                            )
+                        }
                     }
                 }
             }
