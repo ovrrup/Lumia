@@ -17,7 +17,7 @@ val appConfig = Properties().apply {
 }
 
 android {
-  namespace = "ovrrup.lumia"
+  namespace = appConfig.getProperty("NAMESPACE", "com.example")
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {

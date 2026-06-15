@@ -1,0 +1,1756 @@
+package ovrrup.lumia.viewmodel
+
+import android.app.Application
+import android.content.Context
+import android.net.Uri
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import ovrrup.lumia.data.AppDatabase
+import ovrrup.lumia.data.ScholarRepository
+import ovrrup.lumia.model.Course
+import ovrrup.lumia.model.PracticeAssignment
+import ovrrup.lumia.model.Subject
+import ovrrup.lumia.model.Topic
+import ovrrup.lumia.model.ActionLog
+import ovrrup.lumia.model.Chapter
+import ovrrup.lumia.model.Task
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Calendar
+
+class ScholarViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository: ScholarRepository
+    
+    private val prefs = application.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
+
+    private val initiallyCompleted = run {
+        var completed = prefs.getBoolean("onboarding_completed", false)
+        val wasInstalledBefore = prefs.getBoolean("was_installed_before", false)
+        if (!wasInstalledBefore) {
+            val dbFile = application.getDatabasePath("scholar_sync_database")
+            val isUpdate = prefs.all.filterKeys { it != "was_installed_before" && it != "onboarding_completed" }.isNotEmpty() || dbFile.exists()
+            if (isUpdate) {
+                completed = true
+                prefs.edit().putBoolean("onboarding_completed", true).putBoolean("was_installed_before", true).apply()
+            } else {
+                prefs.edit().putBoolean("was_installed_before", true).apply()
+            }
+        }
+        completed
+    }
+
+    private val _isOnboardingCompleted = MutableStateFlow(initiallyCompleted)
+    val isOnboardingCompleted = _isOnboardingCompleted.asStateFlow()
+
+    fun completeOnboarding() {
+        _isOnboardingCompleted.value = true
+        prefs.edit().putBoolean("onboarding_completed", true).apply()
+    }
+
+    private val _themeMode = MutableStateFlow(prefs.getString("theme_mode", "System") ?: "System")
+    val themeMode = _themeMode.asStateFlow()
+
+    private val _themeColor = MutableStateFlow(prefs.getString("theme_color", "Ocean") ?: "Ocean")
+    val themeColor = _themeColor.asStateFlow()
+
+    private val _customPrimary = MutableStateFlow(prefs.getString("custom_primary", "#3197D6") ?: "#3197D6")
+    val customPrimary = _customPrimary.asStateFlow()
+
+    private val _customPrimaryContainer = MutableStateFlow(prefs.getString("custom_primary_container", "#DAF1FF") ?: "#DAF1FF")
+    val customPrimaryContainer = _customPrimaryContainer.asStateFlow()
+
+    private val _customBackground = MutableStateFlow(prefs.getString("custom_background", "#FAFAFA") ?: "#FAFAFA")
+    val customBackground = _customBackground.asStateFlow()
+
+    private val _customSurface = MutableStateFlow(prefs.getString("custom_surface", "#FFFFFF") ?: "#FFFFFF")
+    val customSurface = _customSurface.asStateFlow()
+
+    private val _customText = MutableStateFlow(prefs.getString("custom_text", "#1A1C1A") ?: "#1A1C1A")
+    val customText = _customText.asStateFlow()
+
+    fun updateCustomColor(key: String, hex: String) {
+        when(key) {
+           "primary" -> _customPrimary.value = hex
+           "primary_container" -> _customPrimaryContainer.value = hex
+           "background" -> _customBackground.value = hex
+           "surface" -> _customSurface.value = hex
+           "text" -> _customText.value = hex
+        }
+        prefs.edit().putString("custom_$key", hex).apply()
+    }
+
+    fun generatePaletteFromPrimaryHex(hex: String) {
+        val cleanHex = if (hex.startsWith("#")) hex else "#$hex"
+        try {
+            val colorInt = android.graphics.Color.parseColor(cleanHex)
+            val hsv = FloatArray(3)
+            android.graphics.Color.colorToHSV(colorInt, hsv) // Hue: 0-360, Sat: 0-1, Val: 0-1
+            
+            // 1. Primary is already set
+            updateCustomColor("primary", cleanHex)
+            
+            // 2. Generate PrimaryContainer (high light, medium-low saturation)
+            val pcHsv = floatArrayOf(hsv[0], Math.min(1.0f, hsv[1] * 0.35f), 0.94f)
+            val pcColor = android.graphics.Color.HSVToColor(pcHsv)
+            val pcHex = String.format("#%06X", 0xFFFFFF and pcColor)
+            updateCustomColor("primary_container", pcHex)
+            
+            // 3. Generate Ambient background (extremely low saturation, high brightness)
+            val bgHsv = floatArrayOf(hsv[0], Math.min(1.0f, hsv[1] * 0.05f), 0.98f)
+            val bgColor = android.graphics.Color.HSVToColor(bgHsv)
+            val bgHex = String.format("#%06X", 0xFFFFFF and bgColor)
+            updateCustomColor("background", bgHex)
+            
+            // 4. Generate Surface (almost pure white, extremely low saturation)
+            val sfHsv = floatArrayOf(hsv[0], Math.min(1.0f, hsv[1] * 0.03f), 1.00f)
+            val sfColor = android.graphics.Color.HSVToColor(sfHsv)
+            val sfHex = String.format("#%06X", 0xFFFFFF and sfColor)
+            updateCustomColor("surface", sfHex)
+            
+            // 5. Generate Text (deep brand color, high saturation weight, extremely dark value)
+            val txtHsv = floatArrayOf(hsv[0], Math.min(1.0f, hsv[1] * 0.30f), 0.12f)
+            val txtColor = android.graphics.Color.HSVToColor(txtHsv)
+            val txtHex = String.format("#%06X", 0xFFFFFF and txtColor)
+            updateCustomColor("text", txtHex)
+
+            // Auto-select "Custom" theme color
+            updateThemeColor("Custom")
+            
+        } catch(e: Exception) {
+            // Safe fallback so formatting typos while editing the input field do not cause crashes
+        }
+    }
+
+    private val _pureBlackMode = MutableStateFlow(prefs.getBoolean("pure_black_mode", false))
+    val pureBlackMode = _pureBlackMode.asStateFlow()
+
+    private val _betaFloatingNav = MutableStateFlow(prefs.getBoolean("beta_floating_nav", false))
+    val betaFloatingNav = _betaFloatingNav.asStateFlow()
+
+    private val _navBarHeight = MutableStateFlow(prefs.getFloat("nav_bar_height", 80f))
+    val navBarHeight = _navBarHeight.asStateFlow()
+
+    private val _navBarPaddingHorizontal = MutableStateFlow(prefs.getFloat("nav_bar_padding_horizontal", 24f))
+    val navBarPaddingHorizontal = _navBarPaddingHorizontal.asStateFlow()
+
+    private val _navBarPaddingBottom = MutableStateFlow(prefs.getFloat("nav_bar_padding_bottom", 24f))
+    val navBarPaddingBottom = _navBarPaddingBottom.asStateFlow()
+
+    private val _navBarCornerRadius = MutableStateFlow(prefs.getFloat("nav_bar_corner_radius", 32f))
+    val navBarCornerRadius = _navBarCornerRadius.asStateFlow()
+
+    private val _navBarLabelMode = MutableStateFlow(prefs.getString("nav_bar_label_mode", "Always") ?: "Always")
+    val navBarLabelMode = _navBarLabelMode.asStateFlow()
+
+    private val _navBarGlassForceEnabled = MutableStateFlow(prefs.getBoolean("nav_bar_glass_force_enabled", false))
+    val navBarGlassForceEnabled = _navBarGlassForceEnabled.asStateFlow()
+
+    private val _navBarIndicatorAlpha = MutableStateFlow(prefs.getFloat("nav_bar_indicator_alpha", 0.15f))
+    val navBarIndicatorAlpha = _navBarIndicatorAlpha.asStateFlow()
+
+    private val _betaNotes = MutableStateFlow(prefs.getBoolean("beta_notes", false))
+    val betaNotes = _betaNotes.asStateFlow()
+
+    private val _appAnimationMode = MutableStateFlow(prefs.getString("app_animation_mode", "Normal") ?: "Normal")
+    val appAnimationMode = _appAnimationMode.asStateFlow()
+
+    private val _moreRounds = MutableStateFlow(prefs.getBoolean("more_rounds", false))
+    val moreRounds = _moreRounds.asStateFlow()
+
+    private val _moreRoundsMode = MutableStateFlow(prefs.getString("more_rounds_mode", "Pastel") ?: "Pastel")
+    val moreRoundsMode = _moreRoundsMode.asStateFlow()
+
+    fun updateAppAnimationMode(mode: String) {
+        if (mode == "Bouncy" && safetyPinEnabled.value && safetyPinConflictWarning.value && (_displayLayoutMode.value != "Immersive" || !_moreRounds.value)) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Bouncy Animations Warning",
+                description = "Bouncy animations require 'Immersive' layout mode and 'More Rounds' feature to be enabled. Proceed with enabling these requirements automatically?",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    updateDisplayLayoutMode("Immersive")
+                    updateMoreRounds(true)
+                    _appAnimationMode.value = "Bouncy"
+                    prefs.edit().putString("app_animation_mode", "Bouncy").apply()
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        _appAnimationMode.value = mode
+        prefs.edit().putString("app_animation_mode", mode).apply()
+    }
+
+    fun updateMoreRounds(enabled: Boolean) {
+        if (!enabled && _appAnimationMode.value == "Bouncy" && safetyPinEnabled.value && safetyPinConflictWarning.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Required by Bouncy Animations",
+                description = "Disabling 'More Rounds' will also disable 'Bouncy' animations and revert to 'Dynamic'. Proceed?",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _moreRounds.value = false
+                    prefs.edit().putBoolean("more_rounds", false).apply()
+                    updateAppAnimationMode("Dynamic")
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        _moreRounds.value = enabled
+        prefs.edit().putBoolean("more_rounds", enabled).apply()
+        if (!enabled && _appAnimationMode.value == "Bouncy") {
+            updateAppAnimationMode("Dynamic")
+        }
+    }
+
+    fun updateMoreRoundsMode(mode: String) {
+        _moreRoundsMode.value = mode
+        prefs.edit().putString("more_rounds_mode", mode).apply()
+    }
+
+    private val _displayLayoutMode = MutableStateFlow(prefs.getString("display_layout_mode", "Immersive") ?: "Immersive")
+    val displayLayoutMode = _displayLayoutMode.asStateFlow()
+
+    private val _betaGlassUi = MutableStateFlow(prefs.getBoolean("beta_glass_ui", false))
+    val betaGlassUi = _betaGlassUi.asStateFlow()
+
+    private val _betaGlassDynamic = MutableStateFlow(prefs.getBoolean("beta_glass_dynamic", true))
+    val betaGlassDynamic = _betaGlassDynamic.asStateFlow()
+
+    private val _betaFrostGlass = MutableStateFlow(prefs.getBoolean("beta_frost_glass", true))
+    val betaFrostGlass = _betaFrostGlass.asStateFlow()
+
+    private val _glassBackdropStyle = MutableStateFlow(prefs.getString("glass_backdrop_style", "Translucent") ?: "Translucent")
+    val glassBackdropStyle = _glassBackdropStyle.asStateFlow()
+
+    private val _glassOpacityValue = MutableStateFlow(prefs.getFloat("glass_opacity_value", 0.6f))
+    val glassOpacityValue = _glassOpacityValue.asStateFlow()
+
+    private val _navBarGlassOpacityValue = MutableStateFlow(0.6f)
+    val navBarGlassOpacityValue = _navBarGlassOpacityValue.asStateFlow()
+
+    private val _betaNavBarSizeControls = MutableStateFlow(prefs.getBoolean("beta_nav_bar_size_controls", false))
+    val betaNavBarSizeControls = _betaNavBarSizeControls.asStateFlow()
+
+    private val _navBarGlassLinkedToMain = MutableStateFlow(prefs.getBoolean("nav_bar_glass_linked_to_main", true))
+    val navBarGlassLinkedToMain = _navBarGlassLinkedToMain.asStateFlow()
+
+    private val _navBarGlassBackdropStyle = MutableStateFlow(prefs.getString("nav_bar_glass_backdrop_style", "Translucent") ?: "Translucent")
+    val navBarGlassBackdropStyle = _navBarGlassBackdropStyle.asStateFlow()
+
+    private val _navBarGlassDynamic = MutableStateFlow(prefs.getBoolean("nav_bar_glass_dynamic", true))
+    val navBarGlassDynamic = _navBarGlassDynamic.asStateFlow()
+
+    private val _betaEnhancedHeader = MutableStateFlow(prefs.getBoolean("beta_enhanced_header", false))
+    val betaEnhancedHeader = _betaEnhancedHeader.asStateFlow()
+
+    private val _betaMinimalistMode = MutableStateFlow(prefs.getBoolean("beta_minimalist_mode", false))
+    val betaMinimalistMode = _betaMinimalistMode.asStateFlow()
+
+    private val _betaDynamicBackground = MutableStateFlow(prefs.getBoolean("beta_dynamic_background", false))
+    val betaDynamicBackground = _betaDynamicBackground.asStateFlow()
+
+    private val _systemAutoLinkByName = MutableStateFlow(prefs.getBoolean("system_auto_link_by_name", true))
+    val systemAutoLinkByName = _systemAutoLinkByName.asStateFlow()
+
+    private val _systemEnableSynergy = MutableStateFlow(prefs.getBoolean("system_enable_synergy", true))
+    val systemEnableSynergy = _systemEnableSynergy.asStateFlow()
+
+    private val _systemAutoCreateSubject = MutableStateFlow(prefs.getBoolean("system_auto_create_subject", false))
+    val systemAutoCreateSubject = _systemAutoCreateSubject.asStateFlow()
+
+    private val _systemFuseSubjectsCourses = MutableStateFlow(prefs.getBoolean("system_fuse_subjects_courses", true))
+    val systemFuseSubjectsCourses = _systemFuseSubjectsCourses.asStateFlow()
+
+    private val _systemAdvancedTasks = MutableStateFlow(prefs.getBoolean("system_advanced_tasks", true))
+    val systemAdvancedTasks = _systemAdvancedTasks.asStateFlow()
+    
+    private val _systemPomodoroAutoLog = MutableStateFlow(prefs.getBoolean("system_pomodoro_auto_log", true))
+    val systemPomodoroAutoLog = _systemPomodoroAutoLog.asStateFlow()
+
+    private val _pomodoroWorkDuration = MutableStateFlow(prefs.getInt("pomodoro_work_duration", 25))
+    val pomodoroWorkDuration = _pomodoroWorkDuration.asStateFlow()
+
+    private val _pomodoroShortBreakDuration = MutableStateFlow(prefs.getInt("pomodoro_short_break_duration", 5))
+    val pomodoroShortBreakDuration = _pomodoroShortBreakDuration.asStateFlow()
+
+    private val _pomodoroLongBreakDuration = MutableStateFlow(prefs.getInt("pomodoro_long_break_duration", 15))
+    val pomodoroLongBreakDuration = _pomodoroLongBreakDuration.asStateFlow()
+
+    private val _pomodoroPeriodSessions = MutableStateFlow(prefs.getInt("pomodoro_period_sessions", 4))
+    val pomodoroPeriodSessions = _pomodoroPeriodSessions.asStateFlow()
+    
+    private val _pomodoroEnablePeriodTarget = MutableStateFlow(prefs.getBoolean("pomodoro_enable_period_target", false))
+    val pomodoroEnablePeriodTarget = _pomodoroEnablePeriodTarget.asStateFlow()
+
+    fun updatePomodoroPeriodSessions(sessions: Int) {
+        _pomodoroPeriodSessions.value = sessions
+        prefs.edit().putInt("pomodoro_period_sessions", sessions).apply()
+    }
+
+    fun updatePomodoroEnablePeriodTarget(enabled: Boolean) {
+        _pomodoroEnablePeriodTarget.value = enabled
+        prefs.edit().putBoolean("pomodoro_enable_period_target", enabled).apply()
+    }
+
+    private val _notifFormalTone = MutableStateFlow(prefs.getBoolean("notif_formal_tone", true))
+    val notifFormalTone = _notifFormalTone.asStateFlow()
+
+    private val _notifEnableDeadlines = MutableStateFlow(prefs.getBoolean("notif_enable_deadlines", true))
+    val notifEnableDeadlines = _notifEnableDeadlines.asStateFlow()
+
+    private val _notifEnableStreaks = MutableStateFlow(prefs.getBoolean("notif_enable_streaks", true))
+    val notifEnableStreaks = _notifEnableStreaks.asStateFlow()
+
+    private val _notifEnableClasses = MutableStateFlow(prefs.getBoolean("notif_enable_classes", true))
+    val notifEnableClasses = _notifEnableClasses.asStateFlow()
+
+    private val _notifEnableDailyDigest = MutableStateFlow(prefs.getBoolean("notif_enable_daily_digest", true))
+    val notifEnableDailyDigest = _notifEnableDailyDigest.asStateFlow()
+
+    fun updateNotifFormalTone(enabled: Boolean) {
+        _notifFormalTone.value = enabled
+        prefs.edit().putBoolean("notif_formal_tone", enabled).apply()
+    }
+
+    fun updateNotifEnableDeadlines(enabled: Boolean) {
+        _notifEnableDeadlines.value = enabled
+        prefs.edit().putBoolean("notif_enable_deadlines", enabled).apply()
+    }
+
+    fun updateNotifEnableStreaks(enabled: Boolean) {
+        _notifEnableStreaks.value = enabled
+        prefs.edit().putBoolean("notif_enable_streaks", enabled).apply()
+    }
+
+    fun updateNotifEnableClasses(enabled: Boolean) {
+        _notifEnableClasses.value = enabled
+        prefs.edit().putBoolean("notif_enable_classes", enabled).apply()
+    }
+
+    fun updateNotifEnableDailyDigest(enabled: Boolean) {
+        _notifEnableDailyDigest.value = enabled
+        prefs.edit().putBoolean("notif_enable_daily_digest", enabled).apply()
+    }
+
+    private val _aodTrueBlackOled = MutableStateFlow(prefs.getBoolean("aod_true_black_oled", true))
+    val aodTrueBlackOled = _aodTrueBlackOled.asStateFlow()
+
+    private val _aodAutoDeactivateTrueBlack = MutableStateFlow(prefs.getBoolean("aod_auto_deactivate_true_black", true))
+    val aodAutoDeactivateTrueBlack = _aodAutoDeactivateTrueBlack.asStateFlow()
+
+    private val _aodBurnInShiftSpeed = MutableStateFlow(prefs.getInt("aod_burn_in_shift_speed", 10)) // in seconds
+    val aodBurnInShiftSpeed = _aodBurnInShiftSpeed.asStateFlow()
+    
+    private val _aodLockScreenSupport = MutableStateFlow(prefs.getBoolean("aod_lock_screen_support", false))
+    val aodLockScreenSupport = _aodLockScreenSupport.asStateFlow()
+
+    private val _aodTrueAodEnabled = MutableStateFlow(prefs.getBoolean("aod_true_aod_enabled", false))
+    val aodTrueAodEnabled = _aodTrueAodEnabled.asStateFlow()
+
+    private val _aodTrueAodMode = MutableStateFlow(prefs.getString("aod_true_aod_mode", "overlay") ?: "overlay")
+    val aodTrueAodMode = _aodTrueAodMode.asStateFlow()
+
+    private val _aodSensitivity = MutableStateFlow(prefs.getString("aod_sensitivity", "highest") ?: "highest")
+    val aodSensitivity = _aodSensitivity.asStateFlow()
+
+    private val _aodMotionSensitivity = MutableStateFlow(prefs.getFloat("aod_motion_sensitivity", 1.2f))
+    val aodMotionSensitivity = _aodMotionSensitivity.asStateFlow()
+
+    private val _aodDimnessLevel = MutableStateFlow(prefs.getFloat("aod_dimness_level", 0.95f))
+    val aodDimnessLevel = _aodDimnessLevel.asStateFlow()
+
+    private val _aodLockTimeout = MutableStateFlow(prefs.getInt("aod_lock_timeout", 30))
+    val aodLockTimeout = _aodLockTimeout.asStateFlow()
+
+    fun updateAodLockScreenSupport(enabled: Boolean) {
+        _aodLockScreenSupport.value = enabled
+        prefs.edit().putBoolean("aod_lock_screen_support", enabled).apply()
+    }
+
+    fun updateAodTrueAodEnabled(enabled: Boolean) {
+        _aodTrueAodEnabled.value = enabled
+        prefs.edit().putBoolean("aod_true_aod_enabled", enabled).apply()
+    }
+
+    fun updateAodTrueAodMode(mode: String) {
+        _aodTrueAodMode.value = mode
+        prefs.edit().putString("aod_true_aod_mode", mode).apply()
+    }
+
+    fun updateAodSensitivity(sensitivity: String) {
+        _aodSensitivity.value = sensitivity
+        prefs.edit().putString("aod_sensitivity", sensitivity).apply()
+    }
+
+    fun updateAodMotionSensitivity(sensitivity: Float) {
+        _aodMotionSensitivity.value = sensitivity
+        prefs.edit().putFloat("aod_motion_sensitivity", sensitivity).apply()
+    }
+
+    fun updateAodDimnessLevel(level: Float) {
+        _aodDimnessLevel.value = level
+        prefs.edit().putFloat("aod_dimness_level", level).apply()
+    }
+
+    fun updateAodLockTimeout(seconds: Int) {
+        _aodLockTimeout.value = seconds
+        prefs.edit().putInt("aod_lock_timeout", seconds).apply()
+    }
+
+    fun updateAodTrueBlackOled(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_themeMode.value == "Light" || _betaGlassUi.value || _betaDynamicBackground.value)) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "AOD Style Warning",
+                description = "Enabling 'True Black OLED' mode during Light theme, Dynamic wallpapers, or Glass UI can lead to strong contrast transitions when AOD focus opens or exits. Consider allowing auto-deactivation instead.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _aodTrueBlackOled.value = true
+                    prefs.edit().putBoolean("aod_true_black_oled", true).apply()
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        _aodTrueBlackOled.value = enabled
+        prefs.edit().putBoolean("aod_true_black_oled", enabled).apply()
+    }
+
+    fun updateAodAutoDeactivateTrueBlack(enabled: Boolean) {
+        _aodAutoDeactivateTrueBlack.value = enabled
+        prefs.edit().putBoolean("aod_auto_deactivate_true_black", enabled).apply()
+    }
+
+    fun updateAodBurnInShiftSpeed(speed: Int) {
+        _aodBurnInShiftSpeed.value = speed
+        prefs.edit().putInt("aod_burn_in_shift_speed", speed).apply()
+    }
+
+    fun updateSystemAutoLinkByName(enabled: Boolean) {
+        _systemAutoLinkByName.value = enabled
+        prefs.edit().putBoolean("system_auto_link_by_name", enabled).apply()
+    }
+
+    fun updateSystemEnableSynergy(enabled: Boolean) {
+        _systemEnableSynergy.value = enabled
+        prefs.edit().putBoolean("system_enable_synergy", enabled).apply()
+    }
+
+    fun updateSystemAutoCreateSubject(enabled: Boolean) {
+        _systemAutoCreateSubject.value = enabled
+        prefs.edit().putBoolean("system_auto_create_subject", enabled).apply()
+    }
+
+    fun updateSystemFuseSubjectsCourses(enabled: Boolean) {
+        _systemFuseSubjectsCourses.value = enabled
+        prefs.edit().putBoolean("system_fuse_subjects_courses", enabled).apply()
+    }
+
+    fun updateSystemAdvancedTasks(enabled: Boolean) {
+        _systemAdvancedTasks.value = enabled
+        prefs.edit().putBoolean("system_advanced_tasks", enabled).apply()
+    }
+
+    fun updateSystemPomodoroAutoLog(enabled: Boolean) {
+        _systemPomodoroAutoLog.value = enabled
+        prefs.edit().putBoolean("system_pomodoro_auto_log", enabled).apply()
+    }
+
+    fun updatePomodoroWorkDuration(duration: Int) {
+        _pomodoroWorkDuration.value = duration
+        prefs.edit().putInt("pomodoro_work_duration", duration).apply()
+    }
+
+    fun updatePomodoroShortBreakDuration(duration: Int) {
+        _pomodoroShortBreakDuration.value = duration
+        prefs.edit().putInt("pomodoro_short_break_duration", duration).apply()
+    }
+
+    fun updatePomodoroLongBreakDuration(duration: Int) {
+        _pomodoroLongBreakDuration.value = duration
+        prefs.edit().putInt("pomodoro_long_break_duration", duration).apply()
+    }
+
+    private val _dynamicBgLightBrightness = MutableStateFlow(
+        prefs.getFloat("dynamic_bg_light_brightness_${(prefs.getString("theme_color", "Ocean") ?: "Ocean").lowercase()}", 0.75f)
+    )
+    val dynamicBgLightBrightness = _dynamicBgLightBrightness.asStateFlow()
+
+    private val _dynamicBgDarkBrightness = MutableStateFlow(
+        prefs.getFloat("dynamic_bg_dark_brightness_${(prefs.getString("theme_color", "Ocean") ?: "Ocean").lowercase()}", 0.45f)
+    )
+    val dynamicBgDarkBrightness = _dynamicBgDarkBrightness.asStateFlow()
+
+    fun refreshThemeBrightness() {
+        val theme = _themeColor.value
+        _dynamicBgLightBrightness.value = prefs.getFloat("dynamic_bg_light_brightness_${theme.lowercase()}", 0.75f)
+        _dynamicBgDarkBrightness.value = prefs.getFloat("dynamic_bg_dark_brightness_${theme.lowercase()}", 0.45f)
+    }
+
+    private val _dynamicAppIcon = MutableStateFlow(prefs.getBoolean("dynamic_app_icon", false))
+    val dynamicAppIcon = _dynamicAppIcon.asStateFlow()
+
+    fun updateDynamicAppIcon(enabled: Boolean) {
+        _dynamicAppIcon.value = enabled
+        prefs.edit().putBoolean("dynamic_app_icon", enabled).apply()
+        applyThemeBasedAppIcon(_themeColor.value)
+        android.widget.Toast.makeText(getApplication(), "Icon changing... Launcher may take a moment to reflect changes or might require a home screen refresh.", android.widget.Toast.LENGTH_LONG).show()
+    }
+
+    private fun applyThemeBasedAppIcon(themeColor: String) {
+        val enabled = _dynamicAppIcon.value
+        val pm = getApplication<Application>().packageManager
+        val packageName = getApplication<Application>().packageName
+
+        val aliases = listOf(
+            "ovrrup.lumia.DefaultAlias",
+            "ovrrup.lumia.AliasEmerald",
+            "ovrrup.lumia.AliasGold",
+            "ovrrup.lumia.AliasRose",
+            "ovrrup.lumia.AliasSage",
+            "ovrrup.lumia.AliasTwilight",
+            "ovrrup.lumia.AliasCustom",
+            "ovrrup.lumia.AliasDynamic"
+        )
+
+        val targetAliasName = if (!enabled) {
+            "ovrrup.lumia.DefaultAlias"
+        } else {
+            when (themeColor) {
+                "Ocean" -> "ovrrup.lumia.DefaultAlias"
+                "Emerald" -> "ovrrup.lumia.AliasEmerald"
+                "Gold" -> "ovrrup.lumia.AliasGold"
+                "Rose" -> "ovrrup.lumia.AliasRose"
+                "Sage" -> "ovrrup.lumia.AliasSage"
+                "Twilight" -> "ovrrup.lumia.AliasTwilight"
+                "Custom" -> "ovrrup.lumia.AliasCustom"
+                "Dynamic" -> "ovrrup.lumia.AliasDynamic"
+                else -> "ovrrup.lumia.DefaultAlias"
+            }
+        }
+
+        try {
+            aliases.forEach { alias ->
+                val compName = android.content.ComponentName(packageName, alias)
+                val targetSetting = if (alias == targetAliasName) {
+                    android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                } else {
+                    android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                }
+                pm.setComponentEnabledSetting(compName, targetSetting, android.content.pm.PackageManager.DONT_KILL_APP)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ScholarViewModel", "Exception toggling dynamic app icon aliases. Restoring defaults.", e)
+            try {
+                aliases.forEach { alias ->
+                    val compName = android.content.ComponentName(packageName, alias)
+                    val targetSetting = if (alias == "ovrrup.lumia.DefaultAlias") {
+                        android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                    } else {
+                        android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                    }
+                    pm.setComponentEnabledSetting(compName, targetSetting, android.content.pm.PackageManager.DONT_KILL_APP)
+                }
+            } catch (ex: Exception) {}
+        }
+    }
+
+    private val _betaBetterTexts = MutableStateFlow(prefs.getBoolean("beta_better_texts", false))
+    val betaBetterTexts = _betaBetterTexts.asStateFlow()
+
+    private val _betaBetterTextsPalette = MutableStateFlow(prefs.getBoolean("beta_better_texts_palette", true))
+    val betaBetterTextsPalette = _betaBetterTextsPalette.asStateFlow()
+
+    private val _safetyPinEnabled = MutableStateFlow(prefs.getBoolean("safety_pin_enabled", true))
+    val safetyPinEnabled = _safetyPinEnabled.asStateFlow()
+
+    private val _advancedSettingsEnabled = MutableStateFlow(prefs.getBoolean("advanced_settings_enabled", false))
+    val advancedSettingsEnabled = _advancedSettingsEnabled.asStateFlow()
+
+    fun updateAdvancedSettingsEnabled(enabled: Boolean) {
+        _advancedSettingsEnabled.value = enabled
+        prefs.edit().putBoolean("advanced_settings_enabled", enabled).apply()
+    }
+
+    private val _safetyPinConflictWarning = MutableStateFlow(prefs.getBoolean("safety_pin_conflict_warning", true))
+    val safetyPinConflictWarning = _safetyPinConflictWarning.asStateFlow()
+
+    private val _safetyPinRecommendations = MutableStateFlow(prefs.getBoolean("safety_pin_recommendations", true))
+    val safetyPinRecommendations = _safetyPinRecommendations.asStateFlow()
+
+    data class SafetyPinDialogData(
+        val title: String,
+        val description: String,
+        val isConflict: Boolean,
+        val onConfirm: () -> Unit,
+        val onIgnore: () -> Unit
+    )
+
+    private val _safetyPinDialogData = run {
+        val delegate = MutableStateFlow<SafetyPinDialogData?>(null)
+        object : MutableStateFlow<SafetyPinDialogData?> by delegate {
+            override var value: SafetyPinDialogData?
+                get() = delegate.value
+                set(v) {
+                    if (v != null && delegate.value != null) return
+                    delegate.value = v
+                }
+            override fun compareAndSet(expect: SafetyPinDialogData?, update: SafetyPinDialogData?): Boolean {
+                if (update != null && delegate.value != null) return false
+                return delegate.compareAndSet(expect, update)
+            }
+            override fun tryEmit(value: SafetyPinDialogData?): Boolean {
+                if (value != null && delegate.value != null) return false
+                return delegate.tryEmit(value)
+            }
+            override suspend fun emit(value: SafetyPinDialogData?) {
+                if (value != null && delegate.value != null) return
+                delegate.emit(value)
+            }
+        }
+    }
+    val safetyPinDialogData = _safetyPinDialogData.asStateFlow()
+
+    fun dismissSafetyPinDialog() {
+        _safetyPinDialogData.value = null
+    }
+
+    private val _showActionHistory = MutableStateFlow(prefs.getBoolean("show_action_history", true))
+    val showActionHistory = _showActionHistory.asStateFlow()
+
+    private val _currentStreak = MutableStateFlow(prefs.getInt("current_streak", 0))
+    val currentStreak = _currentStreak.asStateFlow()
+
+    init {
+        val database = AppDatabase.getDatabase(application)
+        repository = ScholarRepository(database.scholarDao())
+        
+        refreshThemeBrightness()
+        
+        val lastActionDate = prefs.getString("last_action_date_str", "") ?: ""
+        if (lastActionDate.isNotEmpty()) {
+            val today = todayDateString()
+            if (lastActionDate != today) {
+                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                try {
+                    val lastDate = sdf.parse(lastActionDate)
+                    if (lastDate != null) {
+                        val diff = (sdf.parse(today)!!.time - lastDate.time) / 86400000L
+                        if (diff > 1L) {
+                            updateStreak(0)
+                        }
+                    }
+                } catch(e: Exception) {}
+            }
+        }
+    }
+
+    val courses: StateFlow<List<Course>> = repository.allCourses.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val assignments: StateFlow<List<PracticeAssignment>> = repository.allAssignments.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val actionLogs: StateFlow<List<ActionLog>> = repository.allActionLogs.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val tasks: StateFlow<List<Task>> = repository.allTasks.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val pomodoroSessions: StateFlow<List<ovrrup.lumia.model.PomodoroSession>> = repository.allPomodoroSessions.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun getSessionsTodayCount(): Int {
+        val todayStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        return pomodoroSessions.value.count { it.dateMillis >= todayStart }
+    }
+
+    fun getNotesCount(): Int = notes.value.size
+    
+    fun getActiveTasksCount(): Int = tasks.value.count { !it.isCompleted }
+
+    val notes: StateFlow<List<ovrrup.lumia.model.Note>> = repository.allNotes.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val subjects: StateFlow<List<Subject>> = repository.allSubjects.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    private val topicFlowCache = HashMap<Int, StateFlow<List<Topic>>>()
+    
+    fun getTopicsForSubject(subjectId: Int): StateFlow<List<Topic>> {
+        return topicFlowCache.getOrPut(subjectId) {
+            repository.getTopicsForSubject(subjectId).stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+        }
+    }
+
+    private val assignmentsFlowCache = HashMap<Int, StateFlow<List<PracticeAssignment>>>()
+    private val chaptersFlowCache = HashMap<Int, StateFlow<List<Chapter>>>()
+
+    fun getChaptersForSubject(subjectId: Int): StateFlow<List<Chapter>> {
+        return chaptersFlowCache.getOrPut(subjectId) {
+            repository.getChaptersForSubject(subjectId).stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+        }
+    }
+
+    fun getAssignmentsForCourse(courseId: Int): StateFlow<List<PracticeAssignment>> {
+        return assignmentsFlowCache.getOrPut(courseId) {
+            repository.getAssignmentsForCourse(courseId).stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+        }
+    }
+
+    private val attendanceFlowCache = HashMap<Int, StateFlow<List<ovrrup.lumia.model.AttendanceRecord>>>()
+
+    fun getAttendanceForCourse(courseId: Int): StateFlow<List<ovrrup.lumia.model.AttendanceRecord>> {
+        return attendanceFlowCache.getOrPut(courseId) {
+            repository.getAttendanceForCourse(courseId).stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+        }
+    }
+
+    fun addAttendanceRecord(courseId: Int, dateMillis: Long, status: String) {
+        viewModelScope.launch {
+            val normalized = java.util.Calendar.getInstance().apply {
+                timeInMillis = dateMillis
+                set(java.util.Calendar.HOUR_OF_DAY, 0)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            repository.insertAttendanceRecord(ovrrup.lumia.model.AttendanceRecord(courseId = courseId, dateMillis = normalized, status = status))
+        }
+    }
+
+    fun addPomodoroSession(durationMinutes: Int, subjectId: Int? = null, courseId: Int? = null, assignmentId: Int? = null, taskId: Int? = null) {
+        viewModelScope.launch {
+            repository.insertPomodoroSession(ovrrup.lumia.model.PomodoroSession(
+                dateMillis = System.currentTimeMillis(),
+                durationMinutes = durationMinutes,
+                subjectId = subjectId,
+                courseId = courseId,
+                assignmentId = assignmentId,
+                taskId = taskId
+            ))
+            logAction("Completed Pomodoro Session ($durationMinutes min)")
+        }
+    }
+
+    fun addNote(content: String, courseId: Int? = null, subjectId: Int? = null, tag: String = "") {
+        viewModelScope.launch {
+            repository.insertNote(ovrrup.lumia.model.Note(
+                content = content,
+                dateMillis = System.currentTimeMillis(),
+                courseId = courseId,
+                subjectId = subjectId,
+                tag = tag
+            ))
+            logAction("Added Note: ${content.take(20)}...")
+        }
+    }
+
+    fun updateNote(note: ovrrup.lumia.model.Note) {
+        viewModelScope.launch {
+            repository.updateNote(note)
+        }
+    }
+
+    fun deleteNote(note: ovrrup.lumia.model.Note) {
+        viewModelScope.launch {
+            repository.deleteNote(note)
+        }
+    }
+
+    fun updateAttendanceRecord(record: ovrrup.lumia.model.AttendanceRecord) {
+        viewModelScope.launch {
+            repository.updateAttendanceRecord(record)
+        }
+    }
+
+    fun deleteAttendanceRecord(record: ovrrup.lumia.model.AttendanceRecord) {
+        viewModelScope.launch {
+            repository.deleteAttendanceRecord(record)
+        }
+    }
+
+    fun addCourse(name: String, instructor: String, schedule: String, description: String, subjectId: Int? = null, tags: String = "") {
+        viewModelScope.launch {
+            var finalSubjectId = subjectId
+            if (finalSubjectId == null && _systemAutoCreateSubject.value) {
+                val subId = repository.insertSubject(Subject(name = name))
+                finalSubjectId = subId.toInt()
+            }
+            repository.insertCourse(Course(name = name, instructor = instructor, schedule = schedule, description = description, subjectId = finalSubjectId, tags = tags))
+            logAction("Added course: $name")
+        }
+    }
+
+    fun deleteCourse(course: Course) {
+        viewModelScope.launch {
+            repository.deleteCourse(course)
+            logAction("Deleted course: ${course.name}")
+        }
+    }
+
+    fun updateCourse(course: Course) {
+        viewModelScope.launch {
+            repository.updateCourse(course)
+            logAction("Updated course: ${course.name}")
+        }
+    }
+
+    fun addSubject(name: String, tags: String = "") {
+        viewModelScope.launch {
+            repository.insertSubject(Subject(name = name, tags = tags))
+            logAction("Added subject: $name")
+        }
+    }
+
+    fun deleteSubject(subject: Subject) {
+        viewModelScope.launch {
+            repository.deleteSubject(subject)
+            logAction("Deleted subject: ${subject.name}")
+        }
+    }
+
+    fun updateSubject(subject: Subject) {
+        viewModelScope.launch {
+            repository.updateSubject(subject)
+            logAction("Updated subject: ${subject.name}")
+        }
+    }
+
+    fun addTopic(subjectId: Int, title: String, tags: String = "", chapterId: Int? = null) {
+        viewModelScope.launch {
+            repository.insertTopic(Topic(subjectId = subjectId, title = title, tags = tags, chapterId = chapterId))
+            logAction("Added topic: $title")
+        }
+    }
+
+    fun toggleTopicCompleted(topic: Topic) {
+        viewModelScope.launch {
+            val newlyCompleted = !topic.isCompleted
+            repository.updateTopic(topic.copy(isCompleted = newlyCompleted))
+            val actionText = if (newlyCompleted) "Completed topic: ${topic.title}" else "Unmarked topic: ${topic.title}"
+            logAction(actionText)
+            if (newlyCompleted) checkAndUpdateStreak()
+        }
+    }
+
+    fun deleteTopic(topic: Topic) {
+        viewModelScope.launch {
+            repository.deleteTopic(topic)
+            logAction("Deleted topic: ${topic.title}")
+        }
+    }
+
+    fun addChapter(name: String, subjectId: Int, description: String = "", tags: String = "") {
+        viewModelScope.launch {
+            repository.insertChapter(Chapter(name = name, subjectId = subjectId, description = description, tags = tags))
+            logAction("Added chapter: $name")
+        }
+    }
+
+    fun updateChapter(chapter: Chapter) {
+        viewModelScope.launch {
+            repository.updateChapter(chapter)
+            logAction("Updated chapter: ${chapter.name}")
+        }
+    }
+
+    fun deleteChapter(chapter: Chapter) {
+        viewModelScope.launch {
+            repository.deleteChapter(chapter)
+            logAction("Deleted chapter: ${chapter.name}")
+        }
+    }
+
+    fun addTask(task: Task) {
+        viewModelScope.launch {
+            val newId = repository.insertTask(task).toInt()
+            if (task.dueDateMillis != null) {
+                val context = getApplication<Application>().applicationContext
+                val links = mutableListOf<String>()
+                if (task.subjectId != null) links.add("Subject")
+                if (task.courseId != null) links.add("Course")
+                if (task.assignmentId != null) links.add("Assignment")
+                if (task.tags.isNotBlank()) links.add("Tags: ${task.tags}")
+                ovrrup.lumia.util.ReminderScheduler.scheduleReminder(
+                    context, newId + 20000,
+                    "Task: ${task.title}",
+                    task.description,
+                    links.joinToString(", "),
+                    task.dueDateMillis
+                )
+            }
+            logAction("Added task: ${task.title}")
+        }
+    }
+
+    fun toggleTaskCompleted(task: Task) {
+        viewModelScope.launch {
+            val newlyCompleted = !task.isCompleted
+            repository.updateTask(task.copy(isCompleted = newlyCompleted))
+            val actionText = if (newlyCompleted) "Completed task: ${task.title}" else "Unmarked task: ${task.title}"
+            logAction(actionText)
+            if (newlyCompleted) {
+                checkAndUpdateStreak()
+            }
+        }
+    }
+
+    fun updateTask(task: Task) {
+        viewModelScope.launch {
+            repository.updateTask(task)
+            logAction("Updated task: ${task.title}")
+        }
+    }
+
+    fun updateTasksOrder(tasks: List<Task>) {
+        viewModelScope.launch {
+            repository.updateTasks(tasks)
+        }
+    }
+
+    fun deleteTask(task: Task) {
+        viewModelScope.launch {
+            repository.deleteTask(task)
+            logAction("Deleted task: ${task.title}")
+        }
+    }
+
+    fun addAssignment(courseId: Int, title: String, desc: String, dueDate: Long, category: String = "Homework", categoryColor: String = "#3197D6", tags: String = "", subjectId: Int? = null) {
+        viewModelScope.launch {
+            val newId = repository.insertAssignment(PracticeAssignment(courseId = courseId, title = title, description = desc, dueDateMillis = dueDate, category = category, categoryColor = categoryColor, tags = tags, subjectId = subjectId)).toInt()
+            val context = getApplication<Application>().applicationContext
+            var interconnections = "Course: " + (courses.value.find { it.id == courseId }?.name ?: "Unknown")
+            if (tags.isNotBlank()) interconnections += ", Tags: $tags"
+            ovrrup.lumia.util.ReminderScheduler.scheduleReminder(context, newId, title, desc, interconnections, dueDate)
+            logAction("Added assignment: $title ($category)")
+        }
+    }
+
+    fun toggleAssignmentCompleted(assignment: PracticeAssignment) {
+        viewModelScope.launch {
+            val newlyCompleted = !assignment.isCompleted
+            repository.updateAssignment(assignment.copy(isCompleted = newlyCompleted))
+            val actionText = if (newlyCompleted) "Completed assignment: ${assignment.title}" else "Unmarked assignment: ${assignment.title}"
+            logAction(actionText)
+            if (newlyCompleted) checkAndUpdateStreak()
+        }
+    }
+
+    fun deleteAssignment(assignment: PracticeAssignment) {
+        viewModelScope.launch {
+            repository.deleteAssignment(assignment)
+        }
+    }
+
+    fun updateAssignmentDetails(assignment: PracticeAssignment) {
+        viewModelScope.launch {
+            repository.updateAssignment(assignment)
+            logAction("Updated assignment: ${assignment.title}")
+        }
+    }
+
+    fun updateAssignmentsOrder(assignments: List<PracticeAssignment>) {
+        viewModelScope.launch {
+            repository.updateAssignments(assignments)
+        }
+    }
+
+    // Export/Import
+    private val _importExportStatus = MutableStateFlow<String?>(null)
+    val importExportStatus = _importExportStatus.asStateFlow()
+
+    private fun logAction(action: String) {
+        viewModelScope.launch {
+            repository.insertActionLog(ActionLog(actionText = action))
+        }
+    }
+
+    private fun todayDateString(): String =
+        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+            .format(java.util.Date())
+
+    private fun checkAndUpdateStreak() {
+        val lastActionDate = prefs.getString("last_action_date_str", "") ?: ""
+        val today = todayDateString()
+
+        if (lastActionDate.isEmpty()) {
+            updateStreak(1)
+            prefs.edit().putString("last_action_date_str", today).apply()
+            return
+        }
+
+        if (lastActionDate == today) return  // already counted today
+
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val lastDate = sdf.parse(lastActionDate) ?: return
+        val diff = (sdf.parse(today)!!.time - lastDate.time) / 86400000L
+
+        when {
+            diff == 1L -> {
+                val newStreak = _currentStreak.value + 1
+                updateStreak(newStreak)
+                if (notifEnableStreaks.value) {
+                    val formal = notifFormalTone.value
+                    val title = if (formal) "Streak Maintained" else "Good Job Not Slacking!"
+                    val msg = if (formal) "You have maintained your streak for $newStreak days." else "You actually did something today! Streak is now $newStreak."
+                    sendInstantNotification("scholar_streak_channel", 1004, title, msg, ovrrup.lumia.util.NotificationHelper.getSmallIcon(), ovrrup.lumia.util.NotificationHelper.getColor(getApplication()))
+                }
+            }
+            diff > 1L  -> {
+                updateStreak(1)  // streak broken
+                if (notifEnableStreaks.value && _currentStreak.value > 0) { // If there was a streak to break
+                    val formal = notifFormalTone.value
+                    val title = if (formal) "Streak Broken" else "Whelp... You broke it."
+                    val msg = if (formal) "Your last streak was broken. You are back to 1 day." else "I knew you couldn't keep it up. Back to day 1 for you."
+                    sendInstantNotification("scholar_streak_channel", 1005, title, msg, ovrrup.lumia.util.NotificationHelper.getSmallIcon(), ovrrup.lumia.util.NotificationHelper.getColor(getApplication()))
+                }
+            }
+        }
+        prefs.edit().putString("last_action_date_str", today).apply()
+    }
+
+    private fun sendInstantNotification(channelId: String, notifId: Int, title: String, text: String, iconRes: Int, color: Int) {
+        val application = getApplication<Application>()
+        val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(channelId, "Scholar System Alerts", android.app.NotificationManager.IMPORTANCE_DEFAULT).apply {
+                enableLights(true)
+                lightColor = color
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+        val intent = android.content.Intent(application, ovrrup.lumia.MainActivity::class.java).apply { flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK }
+        val pendingIntent = android.app.PendingIntent.getActivity(application, 0, intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+
+        val notification = androidx.core.app.NotificationCompat.Builder(application, channelId)
+            .setSmallIcon(iconRes)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(text))
+            .setColor(color)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+        notificationManager.notify(notifId, notification)
+    }
+
+    private fun updateStreak(streak: Int) {
+        _currentStreak.value = streak
+        prefs.edit().putInt("current_streak", streak).apply()
+    }
+
+    private fun gatherSettings(): Map<String, String> {
+        val map = mutableMapOf<String, String>()
+        prefs.all.forEach { (key, value) ->
+            map[key] = value.toString()
+        }
+        return map
+    }
+
+    private fun loadSettings(settings: Map<String, String>?) {
+        if (settings == null) return
+        val editor = prefs.edit()
+        settings.forEach { (key, value) ->
+            when (key) {
+                "theme_mode" -> { editor.putString(key, value); _themeMode.value = value }
+                "theme_color" -> { editor.putString(key, value); _themeColor.value = value }
+                "custom_primary", "custom_primary_container", "custom_background", "custom_surface", "custom_text" -> {
+                    editor.putString(key, value)
+                    when (key) {
+                        "custom_primary" -> _customPrimary.value = value
+                        "custom_primary_container" -> _customPrimaryContainer.value = value
+                        "custom_background" -> _customBackground.value = value
+                        "custom_surface" -> _customSurface.value = value
+                        "custom_text" -> _customText.value = value
+                    }
+                }
+                "last_action_date_str" -> {
+                    editor.putString(key, value)
+                }
+                "current_streak" -> {
+                    val intVal = value.toIntOrNull() ?: 0
+                    editor.putInt(key, intVal)
+                    _currentStreak.value = intVal
+                }
+                "glass_backdrop_style" -> {
+                    editor.putString(key, value)
+                    _glassBackdropStyle.value = value
+                }
+                "nav_bar_glass_backdrop_style" -> {
+                    editor.putString(key, value)
+                    _navBarGlassBackdropStyle.value = value
+                }
+                "glass_opacity_value" -> {
+                    val floatVal = value.toFloatOrNull() ?: 0.6f
+                    editor.putFloat(key, floatVal)
+                    _glassOpacityValue.value = floatVal
+                }
+                "dynamic_bg_light_brightness" -> {
+                    val floatVal = value.toFloatOrNull() ?: 0.75f
+                    editor.putFloat(key, floatVal)
+                    _dynamicBgLightBrightness.value = floatVal
+                    // also fallback to currently active theme if it's there
+                    val activeTheme = (settings["theme_color"] ?: "Ocean").lowercase()
+                    editor.putFloat("dynamic_bg_light_brightness_$activeTheme", floatVal)
+                }
+                "dynamic_bg_dark_brightness" -> {
+                    val floatVal = value.toFloatOrNull() ?: 0.45f
+                    editor.putFloat(key, floatVal)
+                    _dynamicBgDarkBrightness.value = floatVal
+                    // also fallback to currently active theme if it's there
+                    val activeTheme = (settings["theme_color"] ?: "Ocean").lowercase()
+                    editor.putFloat("dynamic_bg_dark_brightness_$activeTheme", floatVal)
+                }
+                else -> {
+                    if (key.startsWith("dynamic_bg_light_brightness_")) {
+                        val floatVal = value.toFloatOrNull() ?: 0.75f
+                        editor.putFloat(key, floatVal)
+                    } else if (key.startsWith("dynamic_bg_dark_brightness_")) {
+                        val floatVal = value.toFloatOrNull() ?: 0.45f
+                        editor.putFloat(key, floatVal)
+                    } else if (key == "pomodoro_work_duration" || key == "pomodoro_short_break_duration" || key == "pomodoro_long_break_duration") {
+                        val intVal = value.toIntOrNull() ?: return@forEach
+                        editor.putInt(key, intVal)
+                        when(key) {
+                            "pomodoro_work_duration" -> _pomodoroWorkDuration.value = intVal
+                            "pomodoro_short_break_duration" -> _pomodoroShortBreakDuration.value = intVal
+                            "pomodoro_long_break_duration" -> _pomodoroLongBreakDuration.value = intVal
+                        }
+                    } else if (key == "display_layout_mode") {
+                        editor.putString(key, value)
+                        _displayLayoutMode.value = value
+                    } else {
+                        val boolVal = value.toBooleanStrictOrNull() ?: return@forEach
+                        editor.putBoolean(key, boolVal)
+                        when(key) {
+                            "pure_black_mode" -> _pureBlackMode.value = boolVal
+                            "beta_floating_nav" -> _betaFloatingNav.value = boolVal
+                            "beta_notes" -> _betaNotes.value = boolVal
+                            "beta_glass_ui" -> _betaGlassUi.value = boolVal
+                            "beta_glass_dynamic" -> _betaGlassDynamic.value = boolVal
+                            "beta_frost_glass" -> _betaFrostGlass.value = boolVal
+                            "beta_enhanced_header" -> _betaEnhancedHeader.value = boolVal
+                            "beta_minimalist_mode" -> _betaMinimalistMode.value = boolVal
+                            "beta_dynamic_background" -> _betaDynamicBackground.value = boolVal
+                            "dynamic_app_icon" -> _dynamicAppIcon.value = boolVal
+                            "beta_better_texts" -> _betaBetterTexts.value = boolVal
+                            "beta_better_texts_palette" -> _betaBetterTextsPalette.value = boolVal
+                            "safety_pin_enabled" -> _safetyPinEnabled.value = boolVal
+                            "safety_pin_conflict_warning" -> _safetyPinConflictWarning.value = boolVal
+                            "safety_pin_recommendations" -> _safetyPinRecommendations.value = boolVal
+                            "show_action_history" -> _showActionHistory.value = boolVal
+                            "system_auto_link_by_name" -> _systemAutoLinkByName.value = boolVal
+                            "system_enable_synergy" -> _systemEnableSynergy.value = boolVal
+                            "system_auto_create_subject" -> _systemAutoCreateSubject.value = boolVal
+                            "system_fuse_subjects_courses" -> _systemFuseSubjectsCourses.value = boolVal
+                            "system_advanced_tasks" -> _systemAdvancedTasks.value = boolVal
+                            "system_pomodoro_auto_log" -> _systemPomodoroAutoLog.value = boolVal
+                            "nav_bar_glass_force_enabled" -> _navBarGlassForceEnabled.value = boolVal
+                            "beta_nav_bar_size_controls" -> _betaNavBarSizeControls.value = boolVal
+                            "nav_bar_glass_linked_to_main" -> _navBarGlassLinkedToMain.value = boolVal
+                            "nav_bar_glass_dynamic" -> _navBarGlassDynamic.value = boolVal
+                        }
+                    }
+                }
+            }
+        }
+        editor.apply()
+        refreshThemeBrightness()
+    }
+
+    fun exportData(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val settings = gatherSettings()
+                getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
+                    repository.exportDataToStream(os, settings)
+                }
+                _importExportStatus.value = "Secure backup binary package exported successfully ✔"
+            } catch (e: Exception) {
+                _importExportStatus.value = "Export failed: ${e.message}"
+            }
+        }
+    }
+
+    fun importData(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                var settings: Map<String, String>? = null
+                getApplication<Application>().contentResolver.openInputStream(uri)?.use { ins ->
+                    settings = repository.importDataFromStream(ins)
+                }
+                loadSettings(settings)
+                _importExportStatus.value = "Secure backup package imported and restored successfully ✔"
+            } catch (e: Exception) {
+                _importExportStatus.value = "Import failed: Invalid file or wrong format"
+            }
+        }
+    }
+
+    fun clearStatus() {
+        _importExportStatus.value = null
+    }
+
+    fun updateSafetyPinEnabled(enabled: Boolean) {
+        _safetyPinEnabled.value = enabled
+        prefs.edit().putBoolean("safety_pin_enabled", enabled).apply()
+    }
+
+    fun updateSafetyPinConflictWarning(enabled: Boolean) {
+        _safetyPinConflictWarning.value = enabled
+        prefs.edit().putBoolean("safety_pin_conflict_warning", enabled).apply()
+    }
+
+    fun updateSafetyPinRecommendations(enabled: Boolean) {
+        _safetyPinRecommendations.value = enabled
+        prefs.edit().putBoolean("safety_pin_recommendations", enabled).apply()
+    }
+
+    fun updateThemeMode(mode: String) {
+        if (safetyPinEnabled.value && safetyPinConflictWarning.value && mode == "Light" && _pureBlackMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "Switching to 'Light' theme conflicts with 'Pure Black Mode', which requires a dark theme to function. Proceeding will automatically disable 'Pure Black Mode'.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _themeMode.value = mode
+                    prefs.edit().putString("theme_mode", mode).apply()
+                    updatePureBlackMode(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+
+        if (mode == "Dark" && safetyPinEnabled.value && safetyPinRecommendations.value && !_pureBlackMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For the deepest contrast and battery savings on OLED screens, it is recommended to enable 'Pure Black Mode' with the Dark theme. Would you like to enable it?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _themeMode.value = mode
+                    prefs.edit().putString("theme_mode", mode).apply()
+                    updatePureBlackMode(true)
+                },
+                onIgnore = {
+                    _safetyPinDialogData.value = null
+                    _themeMode.value = mode
+                    prefs.edit().putString("theme_mode", mode).apply()
+                }
+            )
+            return
+        }
+
+        _themeMode.value = mode
+        prefs.edit().putString("theme_mode", mode).apply()
+    }
+
+    fun updatePureBlackMode(enabled: Boolean) {
+        val conflictsWithDynamicBg = _betaDynamicBackground.value
+        val conflictsWithGlassUi = _betaGlassUi.value
+        val conflictsWithPalette = _betaBetterTextsPalette.value
+        val conflictsWithEnhancedHeader = _betaEnhancedHeader.value
+
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (conflictsWithDynamicBg || conflictsWithGlassUi || conflictsWithPalette || conflictsWithEnhancedHeader)) {
+            val opposingFeatures = mutableListOf<String>()
+            if (conflictsWithDynamicBg) opposingFeatures.add("'Dynamic Lighting Background'")
+            if (conflictsWithGlassUi) opposingFeatures.add("'Glass UI'")
+            if (conflictsWithPalette) opposingFeatures.add("'Use Palette Shades for Text'")
+            if (conflictsWithEnhancedHeader) opposingFeatures.add("'Enhanced Header'")
+            
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Pure Black Mode' directly opposes the functionality of ${opposingFeatures.joinToString(" and ")}. Proceeding will automatically deactivate these opposing settings to maintain visual consistency and readability.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _pureBlackMode.value = true
+                    prefs.edit().putBoolean("pure_black_mode", true).apply()
+                    if (conflictsWithDynamicBg) updateBetaDynamicBackground(false)
+                    if (conflictsWithGlassUi) updateBetaGlassUi(false)
+                    if (conflictsWithPalette) updateBetaBetterTextsPalette(false)
+                    if (conflictsWithEnhancedHeader) updateBetaEnhancedHeader(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && _themeMode.value != "Dark") {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For the optimal experience of 'Pure Black Mode', it is highly recommended to switch your system theme to 'Dark'. The current setting limits the effectiveness of the pure black backgrounds.",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _pureBlackMode.value = true
+                    prefs.edit().putBoolean("pure_black_mode", true).apply()
+                    updateThemeMode("Dark")
+                },
+                onIgnore = {
+                    _safetyPinDialogData.value = null
+                    _pureBlackMode.value = true
+                    prefs.edit().putBoolean("pure_black_mode", true).apply()
+                }
+            )
+            return
+        }
+        _pureBlackMode.value = enabled
+        prefs.edit().putBoolean("pure_black_mode", enabled).apply()
+    }
+
+    fun updateThemeColor(color: String) {
+        _themeColor.value = color
+        prefs.edit().putString("theme_color", color).apply()
+        refreshThemeBrightness()
+        if (_dynamicAppIcon.value) {
+            applyThemeBasedAppIcon(color)
+        }
+    }
+
+    fun updateBetaFloatingNav(enabled: Boolean) {
+        _betaFloatingNav.value = enabled
+        prefs.edit().putBoolean("beta_floating_nav", enabled).apply()
+    }
+
+    fun updateNavBarHeight(height: Float) {
+        _navBarHeight.value = height
+        prefs.edit().putFloat("nav_bar_height", height).apply()
+    }
+
+    fun updateNavBarPaddingHorizontal(padding: Float) {
+        _navBarPaddingHorizontal.value = padding
+        prefs.edit().putFloat("nav_bar_padding_horizontal", padding).apply()
+    }
+
+    fun updateNavBarPaddingBottom(padding: Float) {
+        _navBarPaddingBottom.value = padding
+        prefs.edit().putFloat("nav_bar_padding_bottom", padding).apply()
+    }
+
+    fun updateNavBarCornerRadius(radius: Float) {
+        _navBarCornerRadius.value = radius
+        prefs.edit().putFloat("nav_bar_corner_radius", radius).apply()
+    }
+
+    fun updateNavBarLabelMode(mode: String) {
+        _navBarLabelMode.value = mode
+        prefs.edit().putString("nav_bar_label_mode", mode).apply()
+    }
+
+    fun updateNavBarGlassForceEnabled(enabled: Boolean) {
+        _navBarGlassForceEnabled.value = enabled
+        prefs.edit().putBoolean("nav_bar_glass_force_enabled", enabled).apply()
+    }
+
+    fun updateNavBarIndicatorAlpha(alpha: Float) {
+        _navBarIndicatorAlpha.value = alpha
+        prefs.edit().putFloat("nav_bar_indicator_alpha", alpha).apply()
+    }
+
+    fun updateBetaNavBarSizeControls(enabled: Boolean) {
+        _betaNavBarSizeControls.value = enabled
+        prefs.edit().putBoolean("beta_nav_bar_size_controls", enabled).apply()
+    }
+
+    fun updateNavBarGlassLinkedToMain(enabled: Boolean) {
+        _navBarGlassLinkedToMain.value = enabled
+        prefs.edit().putBoolean("nav_bar_glass_linked_to_main", enabled).apply()
+    }
+
+    fun updateNavBarGlassBackdropStyle(style: String) {
+        _navBarGlassBackdropStyle.value = style
+        prefs.edit().putString("nav_bar_glass_backdrop_style", style).apply()
+    }
+
+    fun updateNavBarGlassDynamic(enabled: Boolean) {
+        _navBarGlassDynamic.value = enabled
+        prefs.edit().putBoolean("nav_bar_glass_dynamic", enabled).apply()
+    }
+
+    fun updateBetaNotes(enabled: Boolean) {
+        _betaNotes.value = enabled
+        prefs.edit().putBoolean("beta_notes", enabled).apply()
+    }
+
+    fun updateDisplayLayoutMode(mode: String) {
+        if (mode != "Immersive" && _appAnimationMode.value == "Bouncy" && safetyPinEnabled.value && safetyPinConflictWarning.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Required by Bouncy Animations",
+                description = "Changing from 'Immersive' mode will also disable 'Bouncy' animations and revert to 'Dynamic'. Proceed?",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _displayLayoutMode.value = mode
+                    prefs.edit().putString("display_layout_mode", mode).apply()
+                    updateAppAnimationMode("Dynamic")
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        _displayLayoutMode.value = mode
+        prefs.edit().putString("display_layout_mode", mode).apply()
+        if (mode != "Immersive" && _appAnimationMode.value == "Bouncy") {
+            updateAppAnimationMode("Dynamic")
+        }
+    }
+
+    fun updateBetaMinimalistMode(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaGlassUi.value || _betaDynamicBackground.value || _betaEnhancedHeader.value || _betaFloatingNav.value || _betaBetterTexts.value || _displayLayoutMode.value != "Immersive" || _appAnimationMode.value != "Minimal" || _moreRounds.value)) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "Activating 'Minimalist Mode' will force-disable 'Glass UI', 'Dynamic Lighting', 'Enhanced Header', 'Floating Action Bar', 'Better Texts', bouncy animations, and rounded UI components, locking them to drastically reduce visual clutter. Additionally, 'Immersive Mode' will be turned ON. Proceed?",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaMinimalistMode.value = true
+                    prefs.edit().putBoolean("beta_minimalist_mode", true).apply()
+                    if (_betaGlassUi.value) updateBetaGlassUi(false)
+                    if (_betaDynamicBackground.value) updateBetaDynamicBackground(false)
+                    if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
+                    if (_betaFloatingNav.value) updateBetaFloatingNav(false)
+                    if (_betaBetterTexts.value) updateBetaBetterTexts(false)
+                    if (_moreRounds.value) updateMoreRounds(false)
+                    if (_appAnimationMode.value != "Minimal") updateAppAnimationMode("Minimal")
+                    if (_displayLayoutMode.value != "Immersive") updateDisplayLayoutMode("Immersive")
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        
+        _betaMinimalistMode.value = enabled
+        prefs.edit().putBoolean("beta_minimalist_mode", enabled).apply()
+        
+        if (enabled && !_safetyPinEnabled.value) {
+            if (_betaGlassUi.value) updateBetaGlassUi(false)
+            if (_betaDynamicBackground.value) updateBetaDynamicBackground(false)
+            if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
+            if (_betaFloatingNav.value) updateBetaFloatingNav(false)
+            if (_betaBetterTexts.value) updateBetaBetterTexts(false)
+            if (_displayLayoutMode.value != "Immersive") updateDisplayLayoutMode("Immersive")
+        }
+    }
+
+    fun updateBetaGlassUi(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Glass UI' directly opposes the functionality of 'Pure Black Mode'. Glass UI requires background colors to create frosted translucency. Proceeding will automatically deactivate 'Pure Black Mode'.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaGlassUi.value = true
+                    prefs.edit().putBoolean("beta_glass_ui", true).apply()
+                    updatePureBlackMode(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && (!_betaDynamicBackground.value || !_betaFloatingNav.value || !_betaBetterTexts.value || !_betaEnhancedHeader.value)) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For an enhanced visual experience, it is highly recommended to activate 'Dynamic Lighting Background', 'Floating Action Bar', 'Better Texts', and 'Enhanced Header' alongside 'Glass UI'. Would you like to apply these complementary settings?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaGlassUi.value = true
+                    prefs.edit().putBoolean("beta_glass_ui", true).apply()
+                    updateBetaDynamicBackground(true)
+                    updateBetaFloatingNav(true)
+                    updateBetaBetterTexts(true)
+                    updateBetaEnhancedHeader(true)
+                },
+                onIgnore = { 
+                    _safetyPinDialogData.value = null
+                    _betaGlassUi.value = true
+                    prefs.edit().putBoolean("beta_glass_ui", true).apply()
+                }
+            )
+            return
+        }
+        _betaGlassUi.value = enabled
+        prefs.edit().putBoolean("beta_glass_ui", enabled).apply()
+    }
+
+    fun updateBetaGlassDynamic(enabled: Boolean) {
+        _betaGlassDynamic.value = enabled
+        prefs.edit().putBoolean("beta_glass_dynamic", enabled).apply()
+    }
+
+    fun updateBetaFrostGlass(enabled: Boolean) {
+        _betaFrostGlass.value = enabled
+        prefs.edit().putBoolean("beta_frost_glass", enabled).apply()
+    }
+
+    fun updateGlassBackdropStyle(style: String) {
+        _glassBackdropStyle.value = style
+        prefs.edit().putString("glass_backdrop_style", style).apply()
+    }
+
+    fun updateGlassOpacityValue(value: Float) {
+        _glassOpacityValue.value = value
+        prefs.edit().putFloat("glass_opacity_value", value).apply()
+    }
+
+    fun updateNavBarGlassOpacityValue(value: Float, alias: String, isDark: Boolean) {
+        val key = "nav_glass_opacity_${alias}_${if (isDark) "dark" else "light"}"
+        _navBarGlassOpacityValue.value = value
+        prefs.edit().putFloat(key, value).apply()
+    }
+
+    fun refreshNavBarGlassOpacity(alias: String, isDark: Boolean) {
+        val key = "nav_glass_opacity_${alias}_${if (isDark) "dark" else "light"}"
+        _navBarGlassOpacityValue.value = prefs.getFloat(key, 0.6f)
+    }
+
+    fun updateBetaEnhancedHeader(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Enhanced Header' directly opposes the functionality of 'Pure Black Mode'. Enhanced Header requires background colors to create frosted translucency. Proceeding will automatically deactivate 'Pure Black Mode'.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaEnhancedHeader.value = true
+                    prefs.edit().putBoolean("beta_enhanced_header", true).apply()
+                    updatePureBlackMode(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaGlassUi.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For the best visual fidelity when using 'Enhanced Header', it is highly recommended to activate 'Glass UI'. This combination creates a stunning translucent effect. Would you like to enable it?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaEnhancedHeader.value = true
+                    prefs.edit().putBoolean("beta_enhanced_header", true).apply()
+                    updateBetaGlassUi(true)
+                },
+                onIgnore = { 
+                    _safetyPinDialogData.value = null
+                    _betaEnhancedHeader.value = true
+                    prefs.edit().putBoolean("beta_enhanced_header", true).apply()
+                }
+            )
+            return
+        }
+
+        _betaEnhancedHeader.value = enabled
+        prefs.edit().putBoolean("beta_enhanced_header", enabled).apply()
+    }
+
+    fun updateBetaDynamicBackground(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Dynamic Lighting Background' contradicts the core purpose of 'Pure Black Mode' by introducing lit pixels and gradients. Proceeding will automatically deactivate 'Pure Black Mode' to maintain visual consistency.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaDynamicBackground.value = true
+                    prefs.edit().putBoolean("beta_dynamic_background", true).apply()
+                    updatePureBlackMode(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaGlassUi.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "For the best visual fidelity when using 'Dynamic Lighting Background', it is highly recommended to activate 'Glass UI'. This combination creates a stunning translucent depth effect. Would you like to enable it?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaDynamicBackground.value = true
+                    prefs.edit().putBoolean("beta_dynamic_background", true).apply()
+                    updateBetaGlassUi(true)
+                },
+                onIgnore = { 
+                    _safetyPinDialogData.value = null
+                    _betaDynamicBackground.value = true
+                    prefs.edit().putBoolean("beta_dynamic_background", true).apply()
+                }
+            )
+            return
+        }
+
+        _betaDynamicBackground.value = enabled
+        prefs.edit().putBoolean("beta_dynamic_background", enabled).apply()
+    }
+
+    fun updateDynamicBgLightBrightness(value: Float) {
+        val theme = _themeColor.value
+        prefs.edit().putFloat("dynamic_bg_light_brightness_${theme.lowercase()}", value).apply()
+        _dynamicBgLightBrightness.value = value
+    }
+
+    fun updateDynamicBgDarkBrightness(value: Float) {
+        val theme = _themeColor.value
+        prefs.edit().putFloat("dynamic_bg_dark_brightness_${theme.lowercase()}", value).apply()
+        _dynamicBgDarkBrightness.value = value
+    }
+
+    fun updateBetaBetterTexts(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaBetterTextsPalette.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "To fully experience 'Better Texts', it is recommended to also enable 'Use Palette Shades for Text'. This provides a softer, more cohesive look matching your selected theme color. Would you like to enable it?",
+                isConflict = false,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaBetterTexts.value = true
+                    prefs.edit().putBoolean("beta_better_texts", true).apply()
+                    updateBetaBetterTextsPalette(true)
+                },
+                onIgnore = {
+                    _safetyPinDialogData.value = null
+                    _betaBetterTexts.value = true
+                    prefs.edit().putBoolean("beta_better_texts", true).apply()
+                 }
+            )
+            return
+        }
+        _betaBetterTexts.value = enabled
+        prefs.edit().putBoolean("beta_better_texts", enabled).apply()
+    }
+
+    fun updateBetaBetterTextsPalette(enabled: Boolean) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Feature Conflict Detected",
+                description = "The activation of 'Use Palette Shades for Text' directly opposes the high contrast functionality required by 'Pure Black Mode'. Proceeding will automatically deactivate 'Pure Black Mode' to maintain text readability.",
+                isConflict = true,
+                onConfirm = {
+                    _safetyPinDialogData.value = null
+                    _betaBetterTextsPalette.value = true
+                    prefs.edit().putBoolean("beta_better_texts_palette", true).apply()
+                    updatePureBlackMode(false)
+                },
+                onIgnore = { _safetyPinDialogData.value = null }
+            )
+            return
+        }
+        _betaBetterTextsPalette.value = enabled
+        prefs.edit().putBoolean("beta_better_texts_palette", enabled).apply()
+    }
+
+    fun updateShowActionHistory(enabled: Boolean) {
+        _showActionHistory.value = enabled
+        prefs.edit().putBoolean("show_action_history", enabled).apply()
+    }
+
+    fun clearAllData() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.clearAllData()
+            repository.clearActionLogs()
+
+            prefs.edit().clear().apply()
+
+            _themeMode.value = "System"
+            _themeColor.value = "Ocean"
+            _customPrimary.value = "#3197D6"
+            _customPrimaryContainer.value = "#DAF1FF"
+            _customBackground.value = "#FAFAFA"
+            _customSurface.value = "#FFFFFF"
+            _customText.value = "#1A1C1A"
+            _pureBlackMode.value = false
+            _betaFloatingNav.value = false
+            _betaNotes.value = false
+            _displayLayoutMode.value = "Immersive"
+            _betaGlassUi.value = false
+            _betaGlassDynamic.value = true
+            _betaFrostGlass.value = true
+            _betaNavBarSizeControls.value = false
+            _navBarGlassLinkedToMain.value = true
+            _navBarGlassBackdropStyle.value = "Translucent"
+            _navBarGlassDynamic.value = true
+            _betaEnhancedHeader.value = false
+            _betaMinimalistMode.value = false
+            _betaDynamicBackground.value = false
+            refreshThemeBrightness()
+            _dynamicAppIcon.value = false
+            _betaBetterTexts.value = false
+            _betaBetterTextsPalette.value = true
+            _safetyPinEnabled.value = true
+            _safetyPinConflictWarning.value = true
+            _safetyPinRecommendations.value = true
+            _showActionHistory.value = true
+            _systemAutoLinkByName.value = true
+            _systemEnableSynergy.value = true
+            _systemAutoCreateSubject.value = false
+            _systemFuseSubjectsCourses.value = true
+            _systemAdvancedTasks.value = true
+            _systemPomodoroAutoLog.value = true
+            _currentStreak.value = 0
+
+            repository.insertActionLog(ActionLog(actionText = "Cleared all application data and settings"))
+            _importExportStatus.value = "All data and settings erased successfully"
+        }
+    }
+}
