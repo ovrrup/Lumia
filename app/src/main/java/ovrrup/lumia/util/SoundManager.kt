@@ -20,7 +20,7 @@ object SoundManager {
     
     fun init() {
         if (toneGenerator == null) {
-            toneGenerator = ToneGenerator(AudioManager.STREAM_SYSTEM, ToneGenerator.MAX_VOLUME)
+            toneGenerator = ToneGenerator(AudioManager.STREAM_SYSTEM, 60)
         }
     }
 
@@ -35,7 +35,10 @@ object SoundManager {
     }
     
     fun playClickSound(context: Context, playSound: Boolean, playHaptic: Boolean) {
-        if (playSound) toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP, 25)
+        if (playSound) {
+            // Tactile light analog click that sounds pleasant and satisfies premium tap feel
+            toneGenerator?.startTone(ToneGenerator.TONE_CDMA_KEYPAD_VOLUME_KEY_LITE, 20)
+        }
         if (playHaptic) {
             val vibrator = getVibrator(context)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -50,7 +53,14 @@ object SoundManager {
     }
 
     fun playTransitionSound(context: Context, playSound: Boolean, playHaptic: Boolean) {
-        if (playSound) toneGenerator?.startTone(ToneGenerator.TONE_PROP_PROMPT, 50)
+        if (playSound) {
+            // Satisfying and gentle dual analog micro-ticks for screen navigation transitions
+            CoroutineScope(Dispatchers.Default).launch {
+                toneGenerator?.startTone(ToneGenerator.TONE_CDMA_KEYPAD_VOLUME_KEY_LITE, 15)
+                delay(60)
+                toneGenerator?.startTone(ToneGenerator.TONE_CDMA_KEYPAD_VOLUME_KEY_LITE, 15)
+            }
+        }
         if (playHaptic) {
             val vibrator = getVibrator(context)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -66,10 +76,11 @@ object SoundManager {
 
     fun playPomodoroStart(context: Context, playSound: Boolean, playHaptic: Boolean) {
         if (playSound) {
+            // Beautiful soft alert chimes to start the focus session on an ambient note
             CoroutineScope(Dispatchers.Default).launch {
-                toneGenerator?.startTone(ToneGenerator.TONE_PROP_PROMPT, 100)
-                delay(150)
-                toneGenerator?.startTone(ToneGenerator.TONE_PROP_ACK, 150)
+                toneGenerator?.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 60)
+                delay(120)
+                toneGenerator?.startTone(ToneGenerator.TONE_CDMA_ALERT_INCALL_LITE, 80)
             }
         }
         if (playHaptic) {

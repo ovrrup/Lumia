@@ -56,15 +56,15 @@ fun createDarkScheme(
     onSurfaceText: Color = Color(0xFFE2E2E2)
 ) = darkColorScheme(
     primary = primary, onPrimary = Color(0xFF101010),
-    primaryContainer = primaryContainer, onPrimaryContainer = Color.White.mix(primaryContainer, 0.85f),
+    primaryContainer = primaryContainer, onPrimaryContainer = Color.White.mix(primary, 0.15f),
     secondary = secondary, onSecondary = Color(0xFF101010),
-    secondaryContainer = secondaryContainer, onSecondaryContainer = Color.White.mix(secondaryContainer, 0.85f),
+    secondaryContainer = secondaryContainer, onSecondaryContainer = Color.White.mix(secondary, 0.15f),
     tertiary = tertiary, onTertiary = Color(0xFF101010),
-    tertiaryContainer = tertiaryContainer, onTertiaryContainer = Color.White.mix(tertiaryContainer, 0.85f),
+    tertiaryContainer = tertiaryContainer, onTertiaryContainer = Color.White.mix(tertiary, 0.15f),
     background = bg, onBackground = onSurfaceText,
     surface = surface, onSurface = onSurfaceText,
-    surfaceVariant = Color(0xFF2E2E2E).mix(bg, 0.5f), onSurfaceVariant = onSurfaceText.mix(bg, 0.35f),
-    outline = Color(0xFF8E918F).mix(bg, 0.5f), outlineVariant = Color(0xFF444746).mix(bg, 0.5f),
+    surfaceVariant = Color(0xFF2E2E2E).mix(bg, 0.5f), onSurfaceVariant = onSurfaceText.mix(bg, 0.82f),
+    outline = Color(0xFF8E918F).mix(bg, 0.80f), outlineVariant = Color(0xFF444746).mix(bg, 0.80f),
     error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
     errorContainer = Color(0xFF93000A), onErrorContainer = Color(0xFFFFDAD6),
     surfaceTint = primary
@@ -253,7 +253,7 @@ fun ScholarTheme(
                 }
 
                 val txt = if (isDark) {
-                    if (txtInLum <= 0.6f) p.mix(Color.White, 0.88f) else txtIn
+                    if (txtInLum <= 0.6f) Color.White.mix(p, 0.88f) else txtIn
                 } else {
                     if (txtInLum >= 0.4f) p.mix(Color.Black, 0.15f) else txtIn
                 }

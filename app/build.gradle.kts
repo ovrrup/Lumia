@@ -1,5 +1,9 @@
 import java.util.Properties
 import java.io.FileInputStream
+import java.net.URL
+import java.io.File
+import java.net.URI
+import java.util.regex.Pattern
 
 plugins {
   alias(libs.plugins.android.application)
@@ -158,4 +162,72 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.tooling)
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
+}
+
+tasks.register("downloadFonts") {
+    notCompatibleWithConfigurationCache("Loads fonts dynamically from Google Fonts CSS API")
+    val destDir = File("src/main/res/font").absoluteFile
+    outputs.dir(destDir)
+    doLast {
+        if (!destDir.exists()) {
+            destDir.mkdirs()
+        }
+        val fontsToDownload = listOf(
+            Triple("nunito_regular.ttf", "Nunito", "400"),
+            Triple("nunito_bold.ttf", "Nunito", "700"),
+            Triple("lato_regular.ttf", "Lato", "400"),
+            Triple("lato_bold.ttf", "Lato", "700"),
+            Triple("opensans_regular.ttf", "Open Sans", "400"),
+            Triple("opensans_bold.ttf", "Open Sans", "700"),
+            Triple("inter_regular.ttf", "Inter", "400"),
+            Triple("inter_bold.ttf", "Inter", "700"),
+            Triple("tenorsans_regular.ttf", "Tenor Sans", "400"),
+            Triple("playfairdisplay_regular.ttf", "Playfair Display", "400"),
+            Triple("playfairdisplay_bold.ttf", "Playfair Display", "700"),
+            Triple("josefinsans_regular.ttf", "Josefin Sans", "400"),
+            Triple("josefinsans_bold.ttf", "Josefin Sans", "700"),
+            Triple("archivo_regular.ttf", "Archivo", "400"),
+            Triple("archivo_bold.ttf", "Archivo", "700"),
+            Triple("syne_regular.ttf", "Syne", "400"),
+            Triple("syne_bold.ttf", "Syne", "700"),
+            Triple("montserrat_regular.ttf", "Montserrat", "400"),
+            Triple("montserrat_bold.ttf", "Montserrat", "700"),
+            Triple("yellowtail_regular.ttf", "Yellowtail", "400")
+        )
+        for ((fileName, family, weight) in fontsToDownload) {
+            val file = File(destDir, fileName)
+            if (!file.exists()) {
+                println("Fetching URL for $family ($weight)...")
+                kotlin.runCatching {
+                    val familyParam = family.replace(" ", "+")
+                    val cssUrl = "https://fonts.googleapis.com/css?family=$familyParam:$weight"
+                    val conn = URI(cssUrl).toURL().openConnection()
+                    conn.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)")
+                    val cssContent = conn.getInputStream().use { input ->
+                        input.bufferedReader().use { reader -> reader.readText() }
+                    }
+                    val pattern = Pattern.compile("url\\((https://fonts.gstatic.com/[^\\)]+)\\)")
+                    val matcher = pattern.matcher(cssContent)
+                    if (matcher.find()) {
+                        val ttfUrl = matcher.group(1)
+                        println("Downloading $fileName from $ttfUrl...")
+                        val fontStream = URI(ttfUrl).toURL().openConnection()
+                        fontStream.getInputStream().use { fontInput ->
+                            file.outputStream().use { fontOutput ->
+                                fontInput.copyTo(fontOutput)
+                            }
+                        }
+                    } else {
+                        println("No TTF URL found in CSS for $family ($weight). Content was: $cssContent")
+                    }
+                }.onFailure { e ->
+                    println("Failed to download $family ($weight): ${e.message}")
+                }
+            }
+        }
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn("downloadFonts")
 }
