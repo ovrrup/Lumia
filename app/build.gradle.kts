@@ -164,13 +164,15 @@ dependencies {
   "ksp"(libs.moshi.kotlin.codegen)
 }
 
-tasks.register("downloadFonts") {
-    notCompatibleWithConfigurationCache("Loads fonts dynamically from Google Fonts CSS API")
-    val destDir = File("src/main/res/font").absoluteFile
-    outputs.dir(destDir)
-    doLast {
-        if (!destDir.exists()) {
-            destDir.mkdirs()
+abstract class DownloadFontsTask : DefaultTask() {
+    @get:OutputDirectory
+    abstract val destDir: DirectoryProperty
+
+    @TaskAction
+    fun download() {
+        val outputDir = destDir.get().asFile
+        if (!outputDir.exists()) {
+            outputDir.mkdirs()
         }
         val fontsToDownload = listOf(
             Triple("nunito_regular.ttf", "Nunito", "400"),
@@ -195,37 +197,41 @@ tasks.register("downloadFonts") {
             Triple("yellowtail_regular.ttf", "Yellowtail", "400")
         )
         for ((fileName, family, weight) in fontsToDownload) {
-            val file = File(destDir, fileName)
+            val file = File(outputDir, fileName)
             if (!file.exists()) {
                 println("Fetching URL for $family ($weight)...")
-                kotlin.runCatching {
+                try {
                     val familyParam = family.replace(" ", "+")
                     val cssUrl = "https://fonts.googleapis.com/css?family=$familyParam:$weight"
                     val conn = URI(cssUrl).toURL().openConnection()
                     conn.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)")
-                    val cssContent = conn.getInputStream().use { input ->
-                        input.bufferedReader().use { reader -> reader.readText() }
-                    }
+                    val inputStream = conn.getInputStream()
+                    val cssContent = inputStream.bufferedReader().readText()
+                    inputStream.close()
                     val pattern = Pattern.compile("url\\((https://fonts.gstatic.com/[^\\)]+)\\)")
                     val matcher = pattern.matcher(cssContent)
                     if (matcher.find()) {
                         val ttfUrl = matcher.group(1)
                         println("Downloading $fileName from $ttfUrl...")
                         val fontStream = URI(ttfUrl).toURL().openConnection()
-                        fontStream.getInputStream().use { fontInput ->
-                            file.outputStream().use { fontOutput ->
-                                fontInput.copyTo(fontOutput)
-                            }
-                        }
+                        val fontInput = fontStream.getInputStream()
+                        val fontOutput = file.outputStream()
+                        fontInput.copyTo(fontOutput)
+                        fontInput.close()
+                        fontOutput.close()
                     } else {
                         println("No TTF URL found in CSS for $family ($weight). Content was: $cssContent")
                     }
-                }.onFailure { e ->
+                } catch (e: Exception) {
                     println("Failed to download $family ($weight): ${e.message}")
                 }
             }
         }
     }
+}
+
+tasks.register<DownloadFontsTask>("downloadFonts") {
+    destDir.set(layout.projectDirectory.dir("src/main/res/font"))
 }
 
 tasks.named("preBuild") {

@@ -20,7 +20,12 @@ object SoundManager {
     
     fun init() {
         if (toneGenerator == null) {
-            toneGenerator = ToneGenerator(AudioManager.STREAM_SYSTEM, 60)
+            try {
+                toneGenerator = ToneGenerator(AudioManager.STREAM_SYSTEM, 60)
+            } catch (e: Exception) {
+                android.util.Log.e("SoundManager", "Failed to initialize ToneGenerator", e)
+                toneGenerator = null
+            }
         }
     }
 

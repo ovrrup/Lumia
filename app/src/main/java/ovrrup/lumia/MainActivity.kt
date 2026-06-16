@@ -65,7 +65,13 @@ class MainActivity : ComponentActivity() {
     private val _crashData = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        ovrrup.lumia.util.SoundManager.init()
+        ovrrup.lumia.util.LogDog.setup(applicationContext)
+        
+        try {
+            ovrrup.lumia.util.SoundManager.init()
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "SoundManager init failed", e)
+        }
         
         // Handle crash restarts
         val crashData = intent.getStringExtra("FATAL_CRASH_DATA")
@@ -73,8 +79,6 @@ class MainActivity : ComponentActivity() {
             _crashData.value = crashData
             intent.removeExtra("FATAL_CRASH_DATA")
         }
-
-        ovrrup.lumia.util.LogDog.setup(applicationContext)
 
         try {
             val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(1, TimeUnit.DAYS)
