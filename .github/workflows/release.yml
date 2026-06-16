@@ -40,7 +40,7 @@ jobs:
         
         if [ -z "$VERSION_NAME" ]; then VERSION_NAME="1.0.0"; fi
         if [ -z "$VERSION_CODE" ]; then VERSION_CODE="1"; fi
-        if [ -z "$APPLICATION_ID" ]; then APPLICATION_ID="ovrrup.lumia"; fi
+        if [ -z "$APPLICATION_ID" ]; then APPLICATION_ID="lumia.tracker"; fi
         
         TAG_NAME="v$VERSION_NAME"
         RELEASE_TITLE="Lumia v$VERSION_NAME (Build $VERSION_CODE)"

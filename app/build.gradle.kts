@@ -17,11 +17,11 @@ val appConfig = Properties().apply {
 }
 
 android {
-  namespace = appConfig.getProperty("NAMESPACE", "com.example")
+  namespace = appConfig.getProperty("NAMESPACE", "lumia.tracker")
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = appConfig.getProperty("APPLICATION_ID", "ovrrup.lumia")
+    applicationId = appConfig.getProperty("APPLICATION_ID", "lumia.tracker")
     minSdk = 24
     targetSdk = 35
     versionCode = appConfig.getProperty("VERSION_CODE", "1").toInt()
@@ -150,3 +150,4 @@ dependencies {
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
 }
+
