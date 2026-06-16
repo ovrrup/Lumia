@@ -1,12 +1,5 @@
 # Lumia Release Notes
 
-## 🌟 What's New in v1.0.5 (Deep Interlinking & Haptics)
-- **Deeper Scholar Entity Connections**: Fully integrated Tasks with Subjects, Chapters, Topics, and Courses at both the database and visual layers, creating a seamless, interconnected learning workspace.
-- **Hierarchical Live Task Linking**: The Task planner now dynamically prompts custom suggestions to link Tasks to corresponding Chapters and Concepts (Topics) of the selected Subject in real-time.
-- **Direct Study Action Controls**: Subject Detail screens now layout associated Chapter-level & Topic-level tasks, with direct interactive checkboxes to complete tasks on-the-fly.
-- **Quick Learning Tasks**: Easily create pre-linked study tasks directly within any specific Chapter or Topic container, complete with real-time UI synchronization.
-- **Tactile Acoustics & Feedback**: Introduced standard haptic configurations, custom sounds, and vibrating options for focus notifications to keep your study sessions highly responsive.
-
 ## 🌟 What's New in v1.0.4 (Elastic Buttons & Style Engine)
 - **Enhanced "More Rounds" Core**: Re-engineered the shape engine to support hierarchical corner radii, delivering a more organic and polished look across all UI tiers.
 - **Unified Bouncy Button System**: All buttons (Material, Text, Outlined, and Floating Action Buttons) now utilize the `Bouncy` physics engine for consistent tactile feedback.

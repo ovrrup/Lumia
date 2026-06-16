@@ -85,13 +85,13 @@ jobs:
       run: |
         if [ -n "${{ secrets.RELEASE_KEYSTORE }}" ]; then
           echo "Decoding release keystore from secrets..."
-          echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > lumia-key.jks
+          echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > my-upload-key.jks
         elif [ -f "debug.keystore.base64" ]; then
           echo "Using persistent debug keystore for consistent signing..."
-          base64 --decode debug.keystore.base64 > lumia-key.jks
+          base64 --decode debug.keystore.base64 > my-upload-key.jks
         else
           echo "Generating development release keystore..."
-          keytool -genkey -v -keystore lumia-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
+          keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
         fi
 
     - name: Build Release APKs

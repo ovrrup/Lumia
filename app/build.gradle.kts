@@ -1,9 +1,5 @@
 import java.util.Properties
 import java.io.FileInputStream
-import java.net.URL
-import java.io.File
-import java.net.URI
-import java.util.regex.Pattern
 
 plugins {
   alias(libs.plugins.android.application)
@@ -45,20 +41,11 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/lumia-key.jks"
-      val keystoreFile = file(keystorePath)
-      if (keystoreFile.exists()) {
-        storeFile = keystoreFile
-        storePassword = System.getenv("STORE_PASSWORD")
-        keyAlias = "upload"
-        keyPassword = System.getenv("KEY_PASSWORD")
-      } else {
-        // Fallback to debug keystore for AI Studio environment
-        storeFile = file("${rootDir}/debug.keystore")
-        storePassword = "android"
-        keyAlias = "androiddebugkey"
-        keyPassword = "android"
-      }
+      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
+      storeFile = file(keystorePath)
+      storePassword = System.getenv("STORE_PASSWORD")
+      keyAlias = "upload"
+      keyPassword = System.getenv("KEY_PASSWORD")
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -162,78 +149,4 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.tooling)
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
-}
-
-abstract class DownloadFontsTask : DefaultTask() {
-    @get:OutputDirectory
-    abstract val destDir: DirectoryProperty
-
-    @TaskAction
-    fun download() {
-        val outputDir = destDir.get().asFile
-        if (!outputDir.exists()) {
-            outputDir.mkdirs()
-        }
-        val fontsToDownload = listOf(
-            Triple("nunito_regular.ttf", "Nunito", "400"),
-            Triple("nunito_bold.ttf", "Nunito", "700"),
-            Triple("lato_regular.ttf", "Lato", "400"),
-            Triple("lato_bold.ttf", "Lato", "700"),
-            Triple("opensans_regular.ttf", "Open Sans", "400"),
-            Triple("opensans_bold.ttf", "Open Sans", "700"),
-            Triple("inter_regular.ttf", "Inter", "400"),
-            Triple("inter_bold.ttf", "Inter", "700"),
-            Triple("tenorsans_regular.ttf", "Tenor Sans", "400"),
-            Triple("playfairdisplay_regular.ttf", "Playfair Display", "400"),
-            Triple("playfairdisplay_bold.ttf", "Playfair Display", "700"),
-            Triple("josefinsans_regular.ttf", "Josefin Sans", "400"),
-            Triple("josefinsans_bold.ttf", "Josefin Sans", "700"),
-            Triple("archivo_regular.ttf", "Archivo", "400"),
-            Triple("archivo_bold.ttf", "Archivo", "700"),
-            Triple("syne_regular.ttf", "Syne", "400"),
-            Triple("syne_bold.ttf", "Syne", "700"),
-            Triple("montserrat_regular.ttf", "Montserrat", "400"),
-            Triple("montserrat_bold.ttf", "Montserrat", "700"),
-            Triple("yellowtail_regular.ttf", "Yellowtail", "400")
-        )
-        for ((fileName, family, weight) in fontsToDownload) {
-            val file = File(outputDir, fileName)
-            if (!file.exists()) {
-                println("Fetching URL for $family ($weight)...")
-                try {
-                    val familyParam = family.replace(" ", "+")
-                    val cssUrl = "https://fonts.googleapis.com/css?family=$familyParam:$weight"
-                    val conn = URI(cssUrl).toURL().openConnection()
-                    conn.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)")
-                    val inputStream = conn.getInputStream()
-                    val cssContent = inputStream.bufferedReader().readText()
-                    inputStream.close()
-                    val pattern = Pattern.compile("url\\((https://fonts.gstatic.com/[^\\)]+)\\)")
-                    val matcher = pattern.matcher(cssContent)
-                    if (matcher.find()) {
-                        val ttfUrl = matcher.group(1)
-                        println("Downloading $fileName from $ttfUrl...")
-                        val fontStream = URI(ttfUrl).toURL().openConnection()
-                        val fontInput = fontStream.getInputStream()
-                        val fontOutput = file.outputStream()
-                        fontInput.copyTo(fontOutput)
-                        fontInput.close()
-                        fontOutput.close()
-                    } else {
-                        println("No TTF URL found in CSS for $family ($weight). Content was: $cssContent")
-                    }
-                } catch (e: Exception) {
-                    println("Failed to download $family ($weight): ${e.message}")
-                }
-            }
-        }
-    }
-}
-
-tasks.register<DownloadFontsTask>("downloadFonts") {
-    destDir.set(layout.projectDirectory.dir("src/main/res/font"))
-}
-
-tasks.named("preBuild") {
-    dependsOn("downloadFonts")
 }
