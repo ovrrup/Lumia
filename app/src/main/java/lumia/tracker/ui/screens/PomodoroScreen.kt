@@ -720,12 +720,35 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
     }
 
     if (serviceState.isAlarmActive) {
-        val completedMode = serviceState.modeString
+        val endedMode = serviceState.endedModeStr.ifBlank { "WORK" }
+        val nextMode = serviceState.modeString
+        
+        val titleText = when {
+            endedMode == "WORK" && nextMode == "LONG_BREAK" -> "Deep Focus Period Complete!"
+            endedMode == "WORK" -> "Focus Session Completed!"
+            endedMode == "SHORT_BREAK" -> "Short Break Finished!"
+            endedMode == "LONG_BREAK" -> "Long Break Finished!"
+            else -> "Timer Completed!"
+        }
+        
+        val bodyText = when {
+            endedMode == "WORK" && nextMode == "LONG_BREAK" -> 
+                "Incredible dedication! You have successfully completed this entire focus period. You've earned a longer, well-deserved break to fully recharge your energy."
+            endedMode == "WORK" -> 
+                "Spectacular job! Your focused work session is over. It's time to rest your eyes, stand up, stretch, and let your mind unwind for a bit."
+            endedMode == "SHORT_BREAK" -> 
+                "Break time is up! Hope you feel refreshed and relaxed. Let's redirect our focus and crush the next study block together!"
+            endedMode == "LONG_BREAK" -> 
+                "Welcome back! Your extended downtime is complete, and your mind is fully restored. Let's step back into deep focus mode and make amazing progress!"
+            else -> 
+                "Fantastic effort! Your focus timer has completed."
+        }
+
         AlertDialog(
             onDismissRequest = { },
             title = {
                 Text(
-                    text = if (completedMode == "WORK") "Focus Session Completed!" else "Rest Break Finished!",
+                    text = titleText,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
                     color = MaterialTheme.colorScheme.primary
@@ -733,9 +756,7 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
             },
             text = {
                 Text(
-                    text = if (completedMode == "WORK") 
-                        "Fantastic effort! Your focus timer has completed. Ready to stop the alarm and take a rest?"
-                        else "Rest is complete! Ready to stop the alarm and tackle your next focus session?",
+                    text = bodyText,
                     style = MaterialTheme.typography.bodyMedium
                 )
             },

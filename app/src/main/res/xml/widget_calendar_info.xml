@@ -3,6 +3,6 @@
     android:minWidth="180dp"
     android:minHeight="110dp"
     android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/scholar_widget"
+    android:initialLayout="@layout/widget_calendar"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />

@@ -13,6 +13,7 @@ import lumia.tracker.MainActivity
 import lumia.tracker.R
 import kotlinx.coroutines.*
 import android.widget.RemoteViews
+import lumia.tracker.util.ScholarPomodoroWidgetProvider
 
 enum class PomodoroMode { WORK, SHORT_BREAK, LONG_BREAK }
 
@@ -27,7 +28,8 @@ data class PomodoroState(
     val courseId: Int? = null,
     val assignmentId: Int? = null,
     val taskId: Int? = null,
-    val isAlarmActive: Boolean = false
+    val isAlarmActive: Boolean = false,
+    val endedModeStr: String = ""
 )
 
 class PomodoroActionReceiver : android.content.BroadcastReceiver() {
@@ -128,6 +130,7 @@ class PomodoroService : Service() {
     private var isPaused = false
     
     private var isAlarmActive = false
+    private var endedModeStr = ""
     private var mediaPlayer: android.media.MediaPlayer? = null
     
     // Period tracking
@@ -202,9 +205,11 @@ class PomodoroService : Service() {
                 courseId = courseId,
                 assignmentId = assignmentId,
                 taskId = taskId,
-                isAlarmActive = isAlarmActive
+                isAlarmActive = isAlarmActive,
+                endedModeStr = endedModeStr
             )
         }
+        updatePomodoroWidget()
     }
 
     override fun onDestroy() {
@@ -229,6 +234,7 @@ class PomodoroService : Service() {
         if (action == "STOP_ALARM") {
             stopAlarmSound()
             isAlarmActive = false
+            endedModeStr = ""
             syncToState()
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(2002, buildNotification(timeLeft))
@@ -395,6 +401,7 @@ class PomodoroService : Service() {
         broadcastIntent.putExtra("isPaused", isPaused)
         broadcastIntent.putExtra("sessionsCompleted", sessionsCompleted)
         sendBroadcast(broadcastIntent)
+        updatePomodoroWidget()
     }
 
     private fun startTimer() {
@@ -423,6 +430,7 @@ class PomodoroService : Service() {
     
     private fun finishSession(skipped: Boolean) {
         val completedMode = currentMode
+        endedModeStr = if (!skipped) completedMode.name else ""
 
         if (!skipped) {
             isAlarmActive = true
@@ -440,14 +448,15 @@ class PomodoroService : Service() {
             taskId?.let { finishedIntent.putExtra("taskId", it) }
             sendBroadcast(finishedIntent)
             
-            // Unconditional database save
-            scope.launch {
+            // Unconditional database save on Dispatchers.IO
+            scope.launch(Dispatchers.IO) {
                 try {
                     val db = lumia.tracker.data.AppDatabase.getDatabase(applicationContext)
+                    val mins = Math.max(1, originalTime / 60)
                     db.scholarDao().insertPomodoroSession(
                         lumia.tracker.model.PomodoroSession(
                             dateMillis = System.currentTimeMillis(),
-                            durationMinutes = originalTime / 60,
+                            durationMinutes = mins,
                             subjectId = subjectId,
                             courseId = courseId,
                             assignmentId = assignmentId,
@@ -455,8 +464,9 @@ class PomodoroService : Service() {
                         )
                     )
                     db.scholarDao().insertActionLog(
-                        lumia.tracker.model.ActionLog(actionText = "Completed Pomodoro Session (${originalTime / 60} min)")
+                        lumia.tracker.model.ActionLog(actionText = "Completed Pomodoro Session ($mins min)")
                     )
+                    android.util.Log.d("PomodoroService", "SAVED AUTOMATIC FOCUS SESSION: $mins mins")
                 } catch (e: Exception) {
                     android.util.Log.e("PomodoroService", "Failed to auto-log pomodoro session", e)
                 }
@@ -484,6 +494,23 @@ class PomodoroService : Service() {
         }
         
         startCurrentMode(startPaused = !skipped)
+    }
+
+    private fun updatePomodoroWidget() {
+        try {
+            val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(applicationContext)
+            val componentName = android.content.ComponentName(applicationContext, lumia.tracker.util.ScholarPomodoroWidgetProvider::class.java)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            if (appWidgetIds.isNotEmpty()) {
+                val intent = Intent(applicationContext, lumia.tracker.util.ScholarPomodoroWidgetProvider::class.java).apply {
+                    action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+                }
+                sendBroadcast(intent)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

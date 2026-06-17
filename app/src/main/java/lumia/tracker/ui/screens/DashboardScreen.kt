@@ -11,6 +11,10 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -312,13 +316,28 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         } else {
                             tween<androidx.compose.ui.unit.IntOffset>(300, easing = LinearOutSlowInEasing)
                         }
+                        val scaleSpec = if (appAnimationMode == "Bouncy") {
+                            spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
+                        } else if (appAnimationMode == "Dynamic") {
+                            spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                        } else {
+                            tween<Float>(300, easing = LinearOutSlowInEasing)
+                        }
                         if (targetState > initialState) {
-                            (androidx.compose.animation.slideInHorizontally(animationSpec = spec) { width -> width } + androidx.compose.animation.fadeIn()).togetherWith(
-                                androidx.compose.animation.slideOutHorizontally(animationSpec = spec) { width -> -width } + androidx.compose.animation.fadeOut()
+                            (androidx.compose.animation.slideInHorizontally(animationSpec = spec) { width -> width / 3 } + 
+                             fadeIn(animationSpec = tween(220)) + 
+                             scaleIn(initialScale = 0.95f, animationSpec = scaleSpec)).togetherWith(
+                                androidx.compose.animation.slideOutHorizontally(animationSpec = spec) { width -> -width / 3 } + 
+                                fadeOut(animationSpec = tween(220)) + 
+                                scaleOut(targetScale = 0.95f, animationSpec = scaleSpec)
                             )
                         } else {
-                            (androidx.compose.animation.slideInHorizontally(animationSpec = spec) { width -> -width } + androidx.compose.animation.fadeIn()).togetherWith(
-                                androidx.compose.animation.slideOutHorizontally(animationSpec = spec) { width -> width } + androidx.compose.animation.fadeOut()
+                            (androidx.compose.animation.slideInHorizontally(animationSpec = spec) { width -> -width / 3 } + 
+                             fadeIn(animationSpec = tween(220)) + 
+                             scaleIn(initialScale = 0.95f, animationSpec = scaleSpec)).togetherWith(
+                                androidx.compose.animation.slideOutHorizontally(animationSpec = spec) { width -> width / 3 } + 
+                                fadeOut(animationSpec = tween(220)) + 
+                                scaleOut(targetScale = 0.95f, animationSpec = scaleSpec)
                             )
                         }
                     },
@@ -781,7 +800,7 @@ fun HomeTab(
                 top = bottomPadding.calculateTopPadding() + 16.dp,
                 bottom = bottomPadding.calculateBottomPadding() + 32.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
             item {
                 lumia.tracker.ui.components.NotificationPermissionPanel()

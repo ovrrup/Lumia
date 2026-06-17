@@ -399,6 +399,14 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 // Attendance Card
                 item {
                     val attendanceRecords by viewModel.getAttendanceForCourse(courseId).collectAsStateWithLifecycle()
+                    val attendanceByDay = androidx.compose.runtime.remember(attendanceRecords) {
+                        attendanceRecords.associateBy { rec ->
+                            val cal = java.util.Calendar.getInstance().apply { timeInMillis = rec.dateMillis }
+                            val year = cal.get(java.util.Calendar.YEAR)
+                            val dayOfYear = cal.get(java.util.Calendar.DAY_OF_YEAR)
+                            "$year-$dayOfYear"
+                        }
+                    }
                     var selectedDate by remember { mutableStateOf(System.currentTimeMillis()) }
                     var showAttendanceDialog by remember { mutableStateOf(false) }
                     var isMonthlyView by remember { mutableStateOf(false) }
@@ -474,11 +482,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                                 val displayDay = renderDay
                                                 renderDay++
                                                 
-                                                val record = attendanceRecords.find { rec ->
-                                                    val recCal = java.util.Calendar.getInstance().apply { timeInMillis = rec.dateMillis }
-                                                    recCal.get(java.util.Calendar.YEAR) == dateCal.get(java.util.Calendar.YEAR) &&
-                                                    recCal.get(java.util.Calendar.DAY_OF_YEAR) == dateCal.get(java.util.Calendar.DAY_OF_YEAR)
-                                                }
+                                                val renderKey = "${dateCal.get(java.util.Calendar.YEAR)}-${dateCal.get(java.util.Calendar.DAY_OF_YEAR)}"
+            val record = attendanceByDay[renderKey]
                                                 val statusColor = when (record?.status) {
                                                     "Present" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
                                                     "Absent" -> androidx.compose.ui.graphics.Color(0xFFF44336)
@@ -536,11 +541,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                         val dayOfWeek = java.text.SimpleDateFormat("E", java.util.Locale.getDefault()).format(dateCal.time)
                                         val dayOfMonth = java.text.SimpleDateFormat("d", java.util.Locale.getDefault()).format(dateCal.time)
                                         
-                                        val record = attendanceRecords.find { rec ->
-                                            val recCal = java.util.Calendar.getInstance().apply { timeInMillis = rec.dateMillis }
-                                            recCal.get(java.util.Calendar.YEAR) == dateCal.get(java.util.Calendar.YEAR) &&
-                                            recCal.get(java.util.Calendar.DAY_OF_YEAR) == dateCal.get(java.util.Calendar.DAY_OF_YEAR)
-                                        }
+                                        val renderKey = "${dateCal.get(java.util.Calendar.YEAR)}-${dateCal.get(java.util.Calendar.DAY_OF_YEAR)}"
+            val record = attendanceByDay[renderKey]
                                         val statusColor = when (record?.status) {
                                             "Present" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
                                             "Absent" -> androidx.compose.ui.graphics.Color(0xFFF44336)
@@ -605,11 +607,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
                     if (showAttendanceDialog) {
                         val selCal = java.util.Calendar.getInstance().apply { timeInMillis = selectedDate }
-                        val record = attendanceRecords.find { rec ->
-                            val recCal = java.util.Calendar.getInstance().apply { timeInMillis = rec.dateMillis }
-                            recCal.get(java.util.Calendar.YEAR) == selCal.get(java.util.Calendar.YEAR) &&
-                            recCal.get(java.util.Calendar.DAY_OF_YEAR) == selCal.get(java.util.Calendar.DAY_OF_YEAR)
-                        }
+                        val renderKey = "${selCal.get(java.util.Calendar.YEAR)}-${selCal.get(java.util.Calendar.DAY_OF_YEAR)}"
+            val record = attendanceByDay[renderKey]
                         val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
                         AlertDialog(
                             onDismissRequest = { showAttendanceDialog = false },
