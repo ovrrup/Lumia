@@ -210,9 +210,10 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
                         indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = navBarIndicatorAlpha)
                     )
+                    val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                     NavigationBar(
                         modifier = Modifier
-                            .height(navBarHeight.dp)
+                            .height(navBarHeight.dp + bottomInset)
                             .then(if (useGlass) Modifier.navGlassBar(androidx.compose.foundation.shape.RoundedCornerShape(topStart = navBarCornerRadius.dp, topEnd = navBarCornerRadius.dp)) else Modifier),
                         containerColor = if (useGlass) MaterialTheme.colorScheme.surface.copy(alpha = 0.92f) else MaterialTheme.colorScheme.surface,
                     ) {

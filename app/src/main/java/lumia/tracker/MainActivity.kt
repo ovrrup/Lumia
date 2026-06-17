@@ -63,6 +63,12 @@ class MainActivity : ComponentActivity() {
     private val viewModel: ScholarViewModel by viewModels()
 
     private val _crashData = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -197,6 +203,19 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val navController = rememberNavController()
+
+                    val act = androidx.compose.ui.platform.LocalContext.current as? MainActivity
+                    androidx.compose.runtime.LaunchedEffect(act?.intent) {
+                        act?.intent?.let { intent ->
+                            if (intent.action == "ACTION_OPEN_POMODORO" || intent.getBooleanExtra("OPEN_POMODORO", false)) {
+                                navController.navigate("pomodoro") {
+                                    launchSingleTop = true
+                                }
+                                intent.removeExtra("OPEN_POMODORO")
+                                intent.action = null
+                            }
+                        }
+                    }
 
                     val context = androidx.compose.ui.platform.LocalContext.current
                     androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -461,10 +480,14 @@ class MainActivity : ComponentActivity() {
                                 androidx.compose.material3.Button(onClick = { _crashData.value = null }) { Text("Good Boy") }
                             },
                             dismissButton = {
+                                val context = androidx.compose.ui.platform.LocalContext.current
                                 androidx.compose.material3.TextButton(onClick = {
+                                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                    val clip = android.content.ClipData.newPlainText("Crash Log", crashDataState)
+                                    clipboard.setPrimaryClip(clip)
+                                    android.widget.Toast.makeText(context, "Copied log to clipboard!", android.widget.Toast.LENGTH_SHORT).show()
                                     _crashData.value = null
-                                    navController.navigate("settings/beta") // or wherever logs are shown
-                                }) { Text("View Full Logs") }
+                                }) { Text("Copy Log") }
                             }
                         )
                     }

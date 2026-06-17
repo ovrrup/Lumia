@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CalendarMonth
@@ -49,10 +50,13 @@ fun CalendarTab(
             divider = {},
             containerColor = Color.Transparent,
             indicator = { tabPositions ->
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[daysOfWeek.indexOf(selectedDay).coerceIn(0, 6)]),
-                    color = MaterialTheme.colorScheme.primary
-                )
+                val index = daysOfWeek.indexOf(selectedDay).coerceIn(0, 6)
+                if (index >= 0 && index < tabPositions.size) {
+                    TabRowDefaults.SecondaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[index]),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         ) {
             daysOfWeek.forEach { day ->
@@ -119,7 +123,7 @@ fun CalendarTab(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                items(sortedCoursesForDay, key = { "cal_course_${it.id}" }) { course ->
+                itemsIndexed(sortedCoursesForDay, key = { index, course -> "cal_course_${course.id}_$index" }) { _, course ->
                     val defaultPrimary = MaterialTheme.colorScheme.primary
                     val colorCourse = remember(course.colorHex) {
                         try {

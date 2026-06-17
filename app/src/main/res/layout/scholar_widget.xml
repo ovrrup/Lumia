@@ -28,7 +28,8 @@
     <LinearLayout
         android:id="@+id/widget_items_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="vertical">
 
         <TextView
@@ -69,5 +70,33 @@
             android:layout_marginTop="6dp"
             android:visibility="gone" />
             
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#334155"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp" />
+
+    <LinearLayout
+        android:id="@+id/widget_pomodoro_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:background="@drawable/widget_button_background"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⏱️ Start Focus Session"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="12sp" />
     </LinearLayout>
 </LinearLayout>

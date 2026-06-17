@@ -23,6 +23,34 @@ class ScholarWidgetProvider : AppWidgetProvider() {
     private fun updateWidget(context: Context, appWidgetManager: AppWidgetManager, widgetId: Int) {
         val views = RemoteViews(context.packageName, R.layout.scholar_widget)
 
+        // 1. PendingIntent to open the main app
+        val mainIntent = android.content.Intent(context, lumia.tracker.MainActivity::class.java).apply {
+            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val mainPendingIntent = android.app.PendingIntent.getActivity(
+            context,
+            0,
+            mainIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.widget_title, mainPendingIntent)
+        views.setOnClickPendingIntent(R.id.widget_subtitle, mainPendingIntent)
+        views.setOnClickPendingIntent(R.id.widget_items_container, mainPendingIntent)
+
+        // 2. PendingIntent to open Pomodoro Screen directly
+        val pomodoroIntent = android.content.Intent(context, lumia.tracker.MainActivity::class.java).apply {
+            action = "ACTION_OPEN_POMODORO"
+            putExtra("OPEN_POMODORO", true)
+            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pomodoroPendingIntent = android.app.PendingIntent.getActivity(
+            context,
+            1,
+            pomodoroIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+         views.setOnClickPendingIntent(R.id.widget_pomodoro_button, pomodoroPendingIntent)
+
         // Get today's day of week
         val calendar = Calendar.getInstance()
         val dayOfWeek = when (calendar.get(Calendar.DAY_OF_WEEK)) {

@@ -26,7 +26,8 @@ data class PomodoroState(
     val subjectId: Int? = null,
     val courseId: Int? = null,
     val assignmentId: Int? = null,
-    val taskId: Int? = null
+    val taskId: Int? = null,
+    val isAlarmActive: Boolean = false
 )
 
 class PomodoroActionReceiver : android.content.BroadcastReceiver() {
@@ -126,6 +127,9 @@ class PomodoroService : Service() {
     private var originalTime = 0
     private var isPaused = false
     
+    private var isAlarmActive = false
+    private var mediaPlayer: android.media.MediaPlayer? = null
+    
     // Period tracking
     private var sessionsCompleted = 0 // 0 to periodSessions
     private var currentMode = PomodoroMode.WORK
@@ -143,6 +147,48 @@ class PomodoroService : Service() {
     private var maxPeriods = -1
     private var periodsCompleted = 0
 
+    private fun playAlarmSound(isWorkEnd: Boolean) {
+        stopAlarmSound()
+        try {
+            val soundUri = if (isWorkEnd) {
+                android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM)
+                    ?: android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE)
+            } else {
+                android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+            }
+            
+            mediaPlayer = android.media.MediaPlayer().apply {
+                setDataSource(applicationContext, soundUri)
+                setAudioStreamType(if (isWorkEnd) android.media.AudioManager.STREAM_ALARM else android.media.AudioManager.STREAM_NOTIFICATION)
+                isLooping = isWorkEnd
+                prepare()
+                start()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("PomodoroService", "Error playing alarm sound", e)
+            try {
+                val toneG = android.media.ToneGenerator(android.media.AudioManager.STREAM_ALARM, 100)
+                toneG.startTone(android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 2000)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+        }
+    }
+
+    private fun stopAlarmSound() {
+        try {
+            mediaPlayer?.let {
+                if (it.isPlaying) {
+                    it.stop()
+                }
+                it.release()
+            }
+            mediaPlayer = null
+        } catch (e: Exception) {
+            android.util.Log.e("PomodoroService", "Error stopping alarm sound", e)
+        }
+    }
+
     private fun syncToState() {
         updateState {
             it.copy(
@@ -155,7 +201,8 @@ class PomodoroService : Service() {
                 subjectId = subjectId,
                 courseId = courseId,
                 assignmentId = assignmentId,
-                taskId = taskId
+                taskId = taskId,
+                isAlarmActive = isAlarmActive
             )
         }
     }
@@ -163,6 +210,7 @@ class PomodoroService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         isServiceRunning = false
+        stopAlarmSound()
         job?.cancel()
         syncToState()
     }
@@ -173,26 +221,44 @@ class PomodoroService : Service() {
         isServiceRunning = true
 
         if (action == "STOP") {
+            stopAlarmSound()
             stopSelf()
+            return START_NOT_STICKY
+        }
+
+        if (action == "STOP_ALARM") {
+            stopAlarmSound()
+            isAlarmActive = false
+            syncToState()
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.notify(2002, buildNotification(timeLeft))
             return START_NOT_STICKY
         }
         
         if (action == "PAUSE_RESUME") {
             isPaused = !isPaused
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(2002, buildNotification(timeLeft))
-            sendTick()
-            syncToState()
+            if (!isPaused && (job == null || job?.isActive != true)) {
+                startTimer()
+            } else {
+                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.notify(2002, buildNotification(timeLeft))
+                sendTick()
+                syncToState()
+            }
             return START_NOT_STICKY
         }
         
         if (action == "SKIP") {
+            stopAlarmSound()
+            isAlarmActive = false
             job?.cancel()
             finishSession(skipped = true)
             return START_NOT_STICKY
         }
 
         if (action == "START" || action == "RESET") {
+            stopAlarmSound()
+            isAlarmActive = false
             workDuration = intent?.getIntExtra("workDuration", 25 * 60) ?: (25 * 60)
             shortBreakDuration = intent?.getIntExtra("shortBreakDuration", 5 * 60) ?: (5 * 60)
             longBreakDuration = intent?.getIntExtra("longBreakDuration", 15 * 60) ?: (15 * 60)
@@ -215,7 +281,7 @@ class PomodoroService : Service() {
         return START_NOT_STICKY
     }
     
-    private fun startCurrentMode() {
+    private fun startCurrentMode(startPaused: Boolean = false) {
         isWork = currentMode == PomodoroMode.WORK
         originalTime = when (currentMode) {
             PomodoroMode.WORK -> workDuration
@@ -223,10 +289,17 @@ class PomodoroService : Service() {
             PomodoroMode.LONG_BREAK -> longBreakDuration
         }
         timeLeft = originalTime
-        isPaused = false
+        isPaused = startPaused
         currentStateStr = currentMode.name
         syncToState()
-        startTimer()
+        if (!startPaused) {
+            startTimer()
+        } else {
+            job?.cancel()
+            job = null
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.notify(2002, buildNotification(timeLeft))
+        }
     }
 
     private fun startForegroundService() {
@@ -252,6 +325,29 @@ class PomodoroService : Service() {
             PomodoroMode.LONG_BREAK -> "Long Rest (Period Complete!)"
         }
 
+        val mainIntent = Intent(this, MainActivity::class.java).apply { 
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK 
+        }
+        val mainPending = PendingIntent.getActivity(this, 0, mainIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+        if (isAlarmActive) {
+            val stopAlarmIntent = Intent(this, PomodoroActionReceiver::class.java).apply { action = "STOP_ALARM" }
+            val stopAlarmPending = PendingIntent.getBroadcast(this, 3, stopAlarmIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+            
+            return NotificationCompat.Builder(this, "pomodoro_service")
+                .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
+                .setContentTitle(if (currentMode == PomodoroMode.WORK) "Rest Break Finished!" else "Focus Session Finished!")
+                .setContentText("Alarm active! Tap to stop sound.")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setContentIntent(mainPending)
+                .setOngoing(true)
+                .setColor(lumia.tracker.util.NotificationHelper.getColor(this))
+                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop Alarm", stopAlarmPending)
+                .build()
+        }
+
         val stopIntent = Intent(this, PomodoroActionReceiver::class.java).apply { action = "STOP" }
         val stopPending = PendingIntent.getBroadcast(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
@@ -261,21 +357,10 @@ class PomodoroService : Service() {
         val skipIntent = Intent(this, PomodoroActionReceiver::class.java).apply { action = "SKIP" }
         val skipPending = PendingIntent.getBroadcast(this, 2, skipIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
-        val mainIntent = Intent(this, MainActivity::class.java).apply { 
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK 
-        }
-        val mainPending = PendingIntent.getActivity(this, 0, mainIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        
         // Progress bar in notification
         val progressMax = originalTime
         val progressNow = originalTime - time
         
-        val notificationColor = when (currentMode) {
-            PomodoroMode.WORK -> 0xFF4285F4.toInt()
-            PomodoroMode.SHORT_BREAK -> 0xFF3DDC84.toInt()
-            PomodoroMode.LONG_BREAK -> 0xFFFABB05.toInt()
-        }
-
         val builder = NotificationCompat.Builder(this, "pomodoro_service")
             .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
             .setContentTitle(title)
@@ -328,7 +413,7 @@ class PomodoroService : Service() {
                     sendTick()
                     syncToState()
                 } else {
-                    delay(100) // Sleep minimally when paused but loop
+                    delay(100)
                 }
             }
             
@@ -337,8 +422,15 @@ class PomodoroService : Service() {
     }
     
     private fun finishSession(skipped: Boolean) {
+        val completedMode = currentMode
+
+        if (!skipped) {
+            isAlarmActive = true
+            playAlarmSound(isWorkEnd = (completedMode == PomodoroMode.WORK))
+        }
+
         // Send finished log broadcast if work
-        if (currentMode == PomodoroMode.WORK && !skipped) {
+        if (completedMode == PomodoroMode.WORK && !skipped) {
             val finishedIntent = Intent("PomodoroLogSession").apply { setPackage(packageName) }
             finishedIntent.putExtra("isWork", true)
             finishedIntent.putExtra("originalTime", originalTime)
@@ -348,34 +440,31 @@ class PomodoroService : Service() {
             taskId?.let { finishedIntent.putExtra("taskId", it) }
             sendBroadcast(finishedIntent)
             
-            val prefs = getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
-            val autoLog = prefs.getBoolean("system_pomodoro_auto_log", true)
-            if (autoLog) {
-                scope.launch {
-                    try {
-                        val db = lumia.tracker.data.AppDatabase.getDatabase(applicationContext)
-                        db.scholarDao().insertPomodoroSession(
-                            lumia.tracker.model.PomodoroSession(
-                                dateMillis = System.currentTimeMillis(),
-                                durationMinutes = originalTime / 60,
-                                subjectId = subjectId,
-                                courseId = courseId,
-                                assignmentId = assignmentId,
-                                taskId = taskId
-                            )
+            // Unconditional database save
+            scope.launch {
+                try {
+                    val db = lumia.tracker.data.AppDatabase.getDatabase(applicationContext)
+                    db.scholarDao().insertPomodoroSession(
+                        lumia.tracker.model.PomodoroSession(
+                            dateMillis = System.currentTimeMillis(),
+                            durationMinutes = originalTime / 60,
+                            subjectId = subjectId,
+                            courseId = courseId,
+                            assignmentId = assignmentId,
+                            taskId = taskId
                         )
-                        db.scholarDao().insertActionLog(
-                            lumia.tracker.model.ActionLog(actionText = "Completed Pomodoro Session (${originalTime / 60} min)")
-                        )
-                    } catch (e: Exception) {
-                        android.util.Log.e("PomodoroService", "Failed to auto-log pomodoro session", e)
-                    }
+                    )
+                    db.scholarDao().insertActionLog(
+                        lumia.tracker.model.ActionLog(actionText = "Completed Pomodoro Session (${originalTime / 60} min)")
+                    )
+                } catch (e: Exception) {
+                    android.util.Log.e("PomodoroService", "Failed to auto-log pomodoro session", e)
                 }
             }
         }
 
         // Advance Period Logic
-        if (currentMode == PomodoroMode.WORK) {
+        if (completedMode == PomodoroMode.WORK) {
             sessionsCompleted++
             if (sessionsCompleted >= periodSessions) {
                 currentMode = PomodoroMode.LONG_BREAK
@@ -383,7 +472,7 @@ class PomodoroService : Service() {
             } else {
                 currentMode = PomodoroMode.SHORT_BREAK
             }
-        } else if (currentMode == PomodoroMode.LONG_BREAK) {
+        } else if (completedMode == PomodoroMode.LONG_BREAK) {
             periodsCompleted++
             if (maxPeriods > 0 && periodsCompleted >= maxPeriods) {
                 stopSelf()
@@ -391,11 +480,10 @@ class PomodoroService : Service() {
             }
             currentMode = PomodoroMode.WORK
         } else {
-            // Short break -> Work
             currentMode = PomodoroMode.WORK
         }
         
-        startCurrentMode()
+        startCurrentMode(startPaused = !skipped)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

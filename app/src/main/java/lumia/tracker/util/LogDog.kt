@@ -10,6 +10,18 @@ object LogDog {
     fun setup(context: Context) {
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            val now = System.currentTimeMillis()
+            val prefs = context.getSharedPreferences("logdog_prefs", Context.MODE_PRIVATE)
+            val lastCrash = prefs.getLong("last_crash_timestamp", 0L)
+            
+            // Loop Protection: If app crashes within 4.5 seconds of last crash/reboot,
+            // let the system default crash-handler abort the process to avoid endless loop cascades.
+            if (now - lastCrash < 4500) {
+                Log.e("LogDog", "Subsequent crash detected too quickly! Aborting to prevent restart loop.")
+                defaultHandler?.uncaughtException(thread, throwable)
+                return@setDefaultUncaughtExceptionHandler
+            }
+            
             val stackTrace = throwable.stackTraceToString()
             val crashInfo = """
                 Device: ${Build.MODEL}
@@ -18,16 +30,22 @@ object LogDog {
             """.trimIndent()
             
             Log.e("LogDog", "Crash captured: $crashInfo")
-            val prefs = context.getSharedPreferences("logdog_prefs", Context.MODE_PRIVATE)
             val crashes = try {
                 JSONArray(prefs.getString("crashes", "[]") ?: "[]")
             } catch (e: Exception) {
                 JSONArray()
             }
-            if (crashes.length() >= 5) crashes.remove(0)
+            if (crashes.length() >= 5) {
+                crashes.remove(0)
+            }
             crashes.put(crashInfo)
             
-            prefs.edit().putString("crashes", crashes.toString()).apply()
+            // Use commit() rather than apply() here because the JVM process is terminated immediately.
+            // commit() ensures synchronous disk write, guaranteeing the log is preserved before process kill.
+            prefs.edit()
+                .putString("crashes", crashes.toString())
+                .putLong("last_crash_timestamp", now)
+                .commit()
             
             // Gracefully restart and show panel
             val intent = android.content.Intent(context, lumia.tracker.MainActivity::class.java).apply {
@@ -41,10 +59,14 @@ object LogDog {
     }
     
     fun getCrashes(context: Context): List<String> {
-        val json = context.getSharedPreferences("logdog_prefs", Context.MODE_PRIVATE)
-            .getString("crashes", "[]") ?: "[]"
-        val crashes = JSONArray(json)
-        return (0 until crashes.length()).map { crashes.getString(it) }.reversed()
+        return try {
+            val json = context.getSharedPreferences("logdog_prefs", Context.MODE_PRIVATE)
+                .getString("crashes", "[]") ?: "[]"
+            val crashes = JSONArray(json)
+            (0 until crashes.length()).map { crashes.getString(it) }.reversed()
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     fun analyze(crash: String): String {
@@ -64,38 +86,43 @@ object LogDog {
     )
 
     fun analyzeCrash(crash: String): AnalyzedCrash {
-        val lines = crash.lines()
-        val errorLineIndex = lines.indexOfFirst { it.contains("Error:") }
-        
         var exceptionType = "Unknown Exception"
         var errorMessage = "No details available."
+        var appTraceLine: String? = null
+        var defaultTraceLine: String? = null
         
-        if (errorLineIndex != -1) {
-            val errorLine = lines[errorLineIndex].substringAfter("Error:").trim()
-            if (errorLine.contains(":")) {
-                exceptionType = errorLine.substringBefore(":").trim()
-                errorMessage = errorLine.substringAfter(":").trim()
-            } else {
-                exceptionType = errorLine
-                errorMessage = "Unknown exception detail"
+        // Fast, memory-efficient single-pass segment traversal
+        val lines = crash.split('\n')
+        for (line in lines) {
+            val trimmed = line.trim()
+            if (trimmed.startsWith("Error:") && exceptionType == "Unknown Exception") {
+                val errorMsg = trimmed.substringAfter("Error:").trim()
+                if (errorMsg.contains(":")) {
+                    exceptionType = errorMsg.substringBefore(":").trim()
+                    errorMessage = errorMsg.substringAfter(":").trim()
+                } else {
+                    exceptionType = errorMsg
+                    errorMessage = "Check details below"
+                }
+            } else if (trimmed.startsWith("at ")) {
+                if (trimmed.contains("lumia.tracker.") && appTraceLine == null) {
+                    appTraceLine = trimmed
+                } else if (defaultTraceLine == null) {
+                    defaultTraceLine = trimmed
+                }
             }
         }
         
-        // Find lumia.tracker. line in stack trace
-        val appTraceLine = lines.firstOrNull { it.trim().startsWith("at ") && it.contains("lumia.tracker.") }?.trim()
-        val defaultTraceLine = lines.firstOrNull { it.trim().startsWith("at ") }?.trim()
         val rawLocation = appTraceLine ?: defaultTraceLine ?: ""
-        
         var parsedLocation = "Unknown Location"
         var fileAndLine = "Unknown file"
-        var methodName = ""
         
         if (rawLocation.isNotEmpty()) {
             if (rawLocation.contains("(") && rawLocation.contains(")")) {
                 fileAndLine = rawLocation.substringAfter("(").substringBefore(")")
                 val beforeParen = rawLocation.substringBefore("(")
                 val lastDot = beforeParen.lastIndexOf(".")
-                methodName = if (lastDot != -1) beforeParen.substring(lastDot + 1) else ""
+                val methodName = if (lastDot != -1) beforeParen.substring(lastDot + 1) else ""
                 parsedLocation = "$fileAndLine inside method $methodName"
             } else {
                 parsedLocation = rawLocation.substringAfter("at ")
@@ -104,18 +131,22 @@ object LogDog {
         
         var severityLevel = "Moderate"
         var likelyComponent = "Unknown Component"
-        var isFrameworkBug = false
-
-        if (crash.contains("androidx.compose") || crash.contains("android.view")) likelyComponent = "UI Framework"
-        else if (crash.contains("androidx.room") || crash.contains("android.database")) likelyComponent = "Local Database"
-        else if (crash.contains("androidx.navigation")) likelyComponent = "Navigation"
-        else if (crash.contains("java.lang.OutOfMemoryError")) likelyComponent = "Memory Management"
-        else if (crash.contains("retrofit2") || crash.contains("okhttp3")) likelyComponent = "Network Layer"
-        else if (crash.contains("coroutines") || crash.contains("java.lang.Thread")) likelyComponent = "Concurrency"
-
-        if (appTraceLine == null && rawLocation.isNotEmpty()) {
-            isFrameworkBug = true
+        
+        if (crash.contains("androidx.compose") || crash.contains("android.view")) {
+            likelyComponent = "UI Framework"
+        } else if (crash.contains("androidx.room") || crash.contains("android.database")) {
+            likelyComponent = "Local Database"
+        } else if (crash.contains("androidx.navigation")) {
+            likelyComponent = "Navigation"
+        } else if (crash.contains("java.lang.OutOfMemoryError")) {
+            likelyComponent = "Memory Management"
+        } else if (crash.contains("retrofit2") || crash.contains("okhttp3")) {
+            likelyComponent = "Network Layer"
+        } else if (crash.contains("coroutines") || crash.contains("java.lang.Thread")) {
+            likelyComponent = "Concurrency"
         }
+
+        val isFrameworkBug = appTraceLine == null && rawLocation.isNotEmpty()
 
         val suggestion = when {
             exceptionType.contains("NullPointerException") -> {
@@ -179,6 +210,6 @@ object LogDog {
         context.getSharedPreferences("logdog_prefs", Context.MODE_PRIVATE)
             .edit()
             .remove("crashes")
-            .apply()
+            .commit()
     }
 }

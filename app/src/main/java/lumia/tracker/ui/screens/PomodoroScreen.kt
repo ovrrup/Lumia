@@ -37,6 +37,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.testTag
 
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.rounded.ArrowDropDown
@@ -373,6 +374,48 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                 }
 
                 item {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Quick Presets",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val presets = listOf(
+                            Triple(15, "15m", "⚡"),
+                            Triple(25, "25m", "🍅"),
+                            Triple(45, "45m", "📚"),
+                            Triple(60, "60m", "🚀")
+                        )
+                        presets.forEach { (time, label, emo) ->
+                            val isSelected = workDuration == time
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    if (isRunning) {
+                                        android.widget.Toast.makeText(context, "Stop the active timer to change presets", android.widget.Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        viewModel.updatePomodoroWorkDuration(time)
+                                        android.widget.Toast.makeText(context, "Focus preset updated to $time minutes", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                label = { Text(label) },
+                                leadingIcon = { Text(emo) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            )
+                        }
+                    }
+                }
+
+                item {
                     Spacer(modifier = Modifier.height(16.dp))
                     var lastClickTime by remember { mutableStateOf(0L) }
                     Column(
@@ -450,7 +493,7 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                 } else {
                                     MaterialTheme.colorScheme.primaryContainer
                                 },
-                                modifier = Modifier.size(72.dp)
+                                modifier = Modifier.size(72.dp).testTag("play_pause_button")
                             ) {
                                 Icon(
                                     imageVector = if (isExitButtonShown) {
@@ -475,7 +518,7 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                         context.startService(intent)
                                     },
                                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                    modifier = Modifier.size(72.dp)
+                                    modifier = Modifier.size(72.dp).testTag("skip_button")
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.SkipNext,
@@ -496,7 +539,7 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                     totalTime = workDuration * 60
                                 },
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                modifier = Modifier.size(72.dp)
+                                modifier = Modifier.size(72.dp).testTag("reset_button")
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Refresh,
@@ -508,7 +551,7 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                             lumia.tracker.ui.components.BouncyFloatingActionButton(
                                 onClick = { isAodMode = true },
                                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                modifier = Modifier.size(72.dp)
+                                modifier = Modifier.size(72.dp).testTag("aod_button")
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.NightlightRound,
@@ -674,6 +717,46 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
+    }
+
+    if (serviceState.isAlarmActive) {
+        val completedMode = serviceState.modeString
+        AlertDialog(
+            onDismissRequest = { },
+            title = {
+                Text(
+                    text = if (completedMode == "WORK") "Focus Session Completed!" else "Rest Break Finished!",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            },
+            text = {
+                Text(
+                    text = if (completedMode == "WORK") 
+                        "Fantastic effort! Your focus timer has completed. Ready to stop the alarm and take a rest?"
+                        else "Rest is complete! Ready to stop the alarm and tackle your next focus session?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val serviceIntent = android.content.Intent(context, lumia.tracker.service.PomodoroService::class.java).apply {
+                            action = "STOP_ALARM"
+                        }
+                        context.startService(serviceIntent)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.testTag("stop_alarm_button")
+                ) {
+                    Text("Stop Alarm", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 }
 }
