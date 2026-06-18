@@ -26,6 +26,98 @@ import java.util.Calendar
 
 class ScholarViewModel(application: Application) : AndroidViewModel(application) {
 
+    val profileManager = lumia.tracker.data.ProfileManager(application)
+    val activeProfile = MutableStateFlow(profileManager.getActiveProfile())
+    
+    val allProfiles = MutableStateFlow(profileManager.getAllProfiles())
+    
+    fun switchProfileAndRestart(context: Context, id: String) {
+        profileManager.setActiveProfileId(id)
+        lumia.tracker.data.AppDatabase.clearInstances()
+        val pm = context.packageManager
+        val intent = pm.getLaunchIntentForPackage(context.packageName)
+        val mainIntent = android.content.Intent.makeRestartActivityTask(intent!!.component)
+        context.startActivity(mainIntent)
+        Runtime.getRuntime().exit(0)
+    }
+    
+    fun createProfile(name: String, avatar: String) {
+        profileManager.addProfile(name, avatar)
+        allProfiles.value = profileManager.getAllProfiles()
+    }
+    
+    fun updateProfile(name: String, avatar: String) {
+        val current = profileManager.getActiveProfile()
+        val updated = current.copy(name = name, avatarEmoji = avatar)
+        profileManager.updateProfile(updated)
+        activeProfile.value = updated
+        allProfiles.value = profileManager.getAllProfiles()
+    }
+
+    fun purchaseFeature(featureId: String, cost: Int): Boolean {
+        val current = profileManager.getActiveProfile()
+        if (current.points >= cost && !current.unlockedFeatures.contains(featureId)) {
+            current.points -= cost
+            val newFeatures = current.unlockedFeatures.toMutableList()
+            newFeatures.add(featureId)
+            current.unlockedFeatures = newFeatures
+            profileManager.updateProfile(current)
+            activeProfile.value = current
+            allProfiles.value = profileManager.getAllProfiles()
+            return true
+        }
+        return false
+    }
+
+    fun deleteProfile(context: Context, id: String) {
+        val wasActive = profileManager.getActiveProfileId() == id
+        profileManager.deleteProfile(id)
+        allProfiles.value = profileManager.getAllProfiles()
+        if (wasActive) {
+            switchProfileAndRestart(context, profileManager.getActiveProfileId())
+        }
+    }
+    
+    fun awardPoints(points: Int) {
+        val current = profileManager.getActiveProfile()
+        current.points += points
+        // Naive level calculation: Level 1 up to 100, Level 2 up to 300, etc. (100 * level^2)
+        // Let's just do level = points / 200 + 1
+        current.level = (current.points / 200) + 1
+        profileManager.updateProfile(current)
+        activeProfile.value = current
+        allProfiles.value = profileManager.getAllProfiles()
+        
+        // Let's also check achievements in a separate function...
+        checkAchievements(current)
+    }
+    
+    private fun checkAchievements(profile: lumia.tracker.model.UserProfile) {
+        viewModelScope.launch {
+            val totalTasks = tasks.value.filter { it.isCompleted }.size
+            val totalSessions = pomodoroSessions.value.size
+            val streak = prefs.getInt("current_streak", 0)
+            
+            val unlocked = lumia.tracker.model.AchievementSystem.evaluateAchievements(
+                profile = profile,
+                totalTasks = totalTasks,
+                totalSessions = totalSessions,
+                currentStreak = streak
+            )
+            
+            if (unlocked.isNotEmpty()) {
+                val updatedUnlocked = profile.unlockedAchievements.toMutableList()
+                unlocked.forEach { ach ->
+                    updatedUnlocked.add(ach.id)
+                    // You could emit a Toast/Event here to show achievement UI!
+                }
+                profile.unlockedAchievements = updatedUnlocked
+                profileManager.updateProfile(profile)
+                activeProfile.value = profile
+            }
+        }
+    }
+
     private val repository = ScholarRepository(AppDatabase.getDatabase(application).scholarDao())
     
     private val prefs = application.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
@@ -852,6 +944,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 taskId = taskId
             ))
             logAction("Completed Pomodoro Session ($durationMinutes min)")
+            val pointsToAward = (durationMinutes / 5) * 2
+            if (pointsToAward > 0) {
+                awardPoints(pointsToAward)
+            }
         }
     }
 
@@ -1044,6 +1140,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             logAction(actionText)
             if (newlyCompleted) {
                 checkAndUpdateStreak()
+                awardPoints(10)
             }
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
@@ -1090,7 +1187,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             repository.updateAssignment(assignment.copy(isCompleted = newlyCompleted))
             val actionText = if (newlyCompleted) "Completed assignment: ${assignment.title}" else "Unmarked assignment: ${assignment.title}"
             logAction(actionText)
-            if (newlyCompleted) checkAndUpdateStreak()
+            if (newlyCompleted) {
+                checkAndUpdateStreak()
+                awardPoints(15)
+            }
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
@@ -1328,7 +1428,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
                     repository.exportDataToStream(os, settings)
                 }
-                _importExportStatus.value = "Secure backup binary package exported successfully ✔"
+                _importExportStatus.value = "Secure backup binary package exported successfully"
             } catch (e: Exception) {
                 _importExportStatus.value = "Export failed: ${e.message}"
             }
@@ -1343,7 +1443,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     settings = repository.importDataFromStream(ins)
                 }
                 loadSettings(settings)
-                _importExportStatus.value = "Secure backup package imported and restored successfully ✔"
+                _importExportStatus.value = "Secure backup package imported and restored successfully"
                 lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             } catch (e: Exception) {
                 _importExportStatus.value = "Import failed: Invalid file or wrong format"

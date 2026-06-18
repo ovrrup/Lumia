@@ -387,12 +387,12 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         val presets = listOf(
-                            Triple(15, "15m", "⚡"),
-                            Triple(25, "25m", "🍅"),
-                            Triple(45, "45m", "📚"),
-                            Triple(60, "60m", "🚀")
+                            Pair(15, "15m"),
+                            Pair(25, "25m"),
+                            Pair(45, "45m"),
+                            Pair(60, "60m")
                         )
-                        presets.forEach { (time, label, emo) ->
+                        presets.forEach { (time, label) ->
                             val isSelected = workDuration == time
                             FilterChip(
                                 selected = isSelected,
@@ -405,7 +405,6 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                     }
                                 },
                                 label = { Text(label) },
-                                leadingIcon = { Text(emo) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                     selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer

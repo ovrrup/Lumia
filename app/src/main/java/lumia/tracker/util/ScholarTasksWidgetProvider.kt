@@ -49,10 +49,10 @@ class ScholarTasksWidgetProvider : AppWidgetProvider() {
                 // Combine them
                 val items = mutableListOf<String>()
                 allAssignments.forEach { ass ->
-                    items.add("📝 [Assig] ${ass.title}")
+                    items.add("[Assig] ${ass.title}")
                 }
                 allTasks.forEach { task ->
-                    items.add("✅ [Task] ${task.title}")
+                    items.add("[Task] ${task.title}")
                 }
 
                 if (items.isEmpty()) {

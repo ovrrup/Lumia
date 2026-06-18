@@ -70,11 +70,11 @@ class ScholarPomodoroWidgetProvider : AppWidgetProvider() {
                 else -> "Focus Mode"
             }
             views.setTextViewText(R.id.widget_pomo_state, modeName + if (state.isPaused) " (PAUSED)" else "")
-            views.setTextViewText(R.id.widget_btn_text_1, if (state.isPaused) "▶️ Resume" else "⏸️ Pause")
+            views.setTextViewText(R.id.widget_btn_text_1, if (state.isPaused) "Resume" else "Pause")
         } else {
             views.setTextViewText(R.id.widget_pomo_time, "25:00")
             views.setTextViewText(R.id.widget_pomo_state, "Ready to focus")
-            views.setTextViewText(R.id.widget_btn_text_1, "▶️ Start")
+            views.setTextViewText(R.id.widget_btn_text_1, "Start")
         }
 
         appWidgetManager.updateAppWidget(widgetId, views)

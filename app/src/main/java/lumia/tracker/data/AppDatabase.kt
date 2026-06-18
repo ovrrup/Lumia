@@ -21,8 +21,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun scholarDao(): ScholarDao
 
     companion object {
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
+        private val instances = mutableMapOf<String, AppDatabase>()
 
         val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
@@ -47,18 +46,26 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
+            val profMgr = lumia.tracker.data.ProfileManager(context)
+            val profileId = profMgr.getActiveProfileId()
+            
+            return instances[profileId] ?: synchronized(this) {
+                val dbName = if (profileId == "DEFAULT") "scholar_sync_database" else "scholar_sync_$profileId"
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "scholar_sync_database"
+                    dbName
                 )
                 .addMigrations(MIGRATION_5_6, MIGRATION_12_13, MIGRATION_14_15)
                 .fallbackToDestructiveMigration()
                 .build()
-                INSTANCE = instance
+                instances[profileId] = instance
                 instance
             }
+        }
+        
+        fun clearInstances() {
+            instances.clear()
         }
     }
 }

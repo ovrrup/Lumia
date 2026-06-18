@@ -10,7 +10,7 @@
         android:id="@+id/widget_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="📅 Today's Classes"
+        android:text="Today's Classes"
         android:textStyle="bold"
         android:textColor="#FFFFFF"
         android:textSize="14sp" />

@@ -181,6 +181,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             val moreRounds = lumia.tracker.ui.theme.LocalMoreRounds.current
                             val moreRoundsMode = lumia.tracker.ui.theme.LocalMoreRoundsMode.current
                             val isMrGlass = moreRounds && moreRoundsMode == "Glass"
+                            val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
                             androidx.compose.foundation.layout.Box(
                                 modifier = Modifier
                                     .padding(end = 16.dp)
@@ -189,11 +190,31 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                                     .then(if (isMrGlass) Modifier.liquidGlass(CircleShape, tintAlpha = 0.25f) else Modifier.background(MaterialTheme.colorScheme.primaryContainer, CircleShape))
                                     .clip(CircleShape)
                                     .bouncyClick(
-                                        onClick = { navController.navigate("settings") }
+                                        onClick = { navController.navigate("profile_menu") }
                                     ),
                                 contentAlignment = androidx.compose.ui.Alignment.Center
                             ) {
-                                Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = if (isMrGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
+                                val isLocalImage = activeProfile.avatarEmoji.startsWith("/") || activeProfile.avatarEmoji.startsWith("file://") || activeProfile.avatarEmoji.startsWith("content://")
+                                if (isLocalImage) {
+                                    coil.compose.AsyncImage(
+                                        model = activeProfile.avatarEmoji,
+                                        contentDescription = "Profile Picture",
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    val fallback = if (activeProfile.avatarEmoji.isNotBlank() && activeProfile.avatarEmoji.length <= 2 && activeProfile.avatarEmoji != "A" && activeProfile.avatarEmoji != "U") {
+                                        activeProfile.avatarEmoji.uppercase()
+                                    } else {
+                                        activeProfile.name.take(2).uppercase()
+                                    }
+                                    Text(
+                                        text = fallback,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = if (isMrGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         },
                         scrollBehavior = scrollBehavior,
@@ -372,7 +393,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             viewModel = viewModel,
                             bottomPadding = extendedPadding
                         )
-                        4 -> AnalyticsTab(viewModel = viewModel, paddingValues = extendedPadding)
+                        4 -> AnalyticsTab(navController = navController, viewModel = viewModel, paddingValues = extendedPadding)
                         5 -> CalendarTab(
                             navController = navController,
                             viewModel = viewModel,

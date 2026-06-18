@@ -151,46 +151,46 @@ object LogDog {
         val suggestion = when {
             exceptionType.contains("NullPointerException") -> {
                 severityLevel = "High"
-                "🐾 Sniffing detail: Found a NullPointerException! Checked variables around $fileAndLine. Ensure you are using Kotlin's null safety (?.) and not forcing non-null (!!)."
+                "Sniffing detail: Found a NullPointerException! Checked variables around $fileAndLine. Ensure you are using Kotlin's null safety (?.) and not forcing non-null (!!)."
             }
             exceptionType.contains("IllegalArgumentException") -> {
                 severityLevel = "Moderate"
                 if (errorMessage.contains("matches route", ignoreCase = true) || errorMessage.contains("navigation", ignoreCase = true)) {
-                    "🐾 Sniffing detail: Navigation route mismatch! We ran into a wall. Check route definitions and arguments passed at $fileAndLine."
+                    "Sniffing detail: Navigation route mismatch! We ran into a wall. Check route definitions and arguments passed at $fileAndLine."
                 } else {
-                    "🐾 Sniffing detail: Got an IllegalArgument. Verify input types and argument constraints at $fileAndLine."
+                    "Sniffing detail: Got an IllegalArgument. Verify input types and argument constraints at $fileAndLine."
                 }
             }
             exceptionType.contains("SQLiteException") || exceptionType.contains("Room") || exceptionType.contains("database", ignoreCase = true) -> {
                 severityLevel = "Critical"
-                "🐾 Sniffing detail: SQL Database conflict! Check for missing migrations, typo'd column names, or incorrect Dao syntax."
+                "Sniffing detail: SQL Database conflict! Check for missing migrations, typo'd column names, or incorrect Dao syntax."
             }
             exceptionType.contains("IndexOutOfBoundsException") || exceptionType.contains("ArrayIndexOutOfBoundsException") -> {
                 severityLevel = "High"
-                "🐾 Sniffing detail: Out of bounds array indexing. You requested an element past the end of the collection at $fileAndLine."
+                "Sniffing detail: Out of bounds array indexing. You requested an element past the end of the collection at $fileAndLine."
             }
             exceptionType.contains("ClassCastException") -> {
                 severityLevel = "High"
-                "🐾 Sniffing detail: Invalid Cast operation. Verify 'as' casts safely using 'as?' or check generic boundaries."
+                "Sniffing detail: Invalid Cast operation. Verify 'as' casts safely using 'as?' or check generic boundaries."
             }
             exceptionType.contains("IllegalStateException") -> {
                 severityLevel = "High"
-                "🐾 Sniffing detail: Illegal State! A component or lifecycle method was called at an inappropriate time."
+                "Sniffing detail: Illegal State! A component or lifecycle method was called at an inappropriate time."
             }
             exceptionType.contains("ActivityNotFoundException") -> {
                 severityLevel = "Moderate"
-                "🐾 Sniffing detail: Intent target missing. Did you forget to declare an Activity in the AndroidManifest?"
+                "Sniffing detail: Intent target missing. Did you forget to declare an Activity in the AndroidManifest?"
             }
             exceptionType.contains("SecurityException") -> {
                 severityLevel = "Critical"
-                "🐾 Sniffing detail: Permission denied! Declare necessary permissions in AndroidManifest and request them explicitly."
+                "Sniffing detail: Permission denied! Declare necessary permissions in AndroidManifest and request them explicitly."
             }
             exceptionType.contains("OutOfMemoryError") -> {
                 severityLevel = "Critical"
-                "🐾 Sniffing detail: OUT OF MEMORY (OOM)! The heap overflowed. Check for memory leaks, massive bitmaps, or endless loops."
+                "Sniffing detail: OUT OF MEMORY (OOM)! The heap overflowed. Check for memory leaks, massive bitmaps, or endless loops."
             }
             else -> {
-                "🐾 Sniffing detail: An undetermined exception occurred. Pinpoint your investigation around $fileAndLine!"
+                "Sniffing detail: An undetermined exception occurred. Pinpoint your investigation around $fileAndLine!"
             }
         }
         

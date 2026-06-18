@@ -38,6 +38,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Lock
@@ -246,6 +248,26 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             
             Spacer(modifier = Modifier.height(16.dp))
 
+            val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
+            SettingsGroupCard(title = "Profile Selection", icon = Icons.Rounded.Person) {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                SettingsActionItemInCard(
+                    title = "Switch Profile",
+                    subtitle = "Currently using: ${activeProfile.name}",
+                    icon = Icons.Rounded.SwapHoriz,
+                    onClick = { 
+                        // Tell main activity to show profile selector
+                        val pm = context.packageManager
+                        val intent = pm.getLaunchIntentForPackage(context.packageName)
+                        val mainIntent = android.content.Intent.makeRestartActivityTask(intent!!.component)
+                        context.startActivity(mainIntent)
+                        Runtime.getRuntime().exit(0)
+                    }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
             // System configuration
             SettingsGroupCard(title = "System Details", icon = Icons.Rounded.Settings) {
                 SettingsActionItemInCard(
@@ -315,6 +337,10 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) {
+    val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
+    val isPremiumUnlocked = activeProfile.unlockedFeatures.contains("feat_theme_pack") || activeProfile.unlockedFeatures.contains("feat_custom_theme")
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
     val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
@@ -421,7 +447,13 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         Triple("Immersive", "Immersive", Icons.Rounded.Star)
                     ),
                     selected = displayLayoutMode,
-                    onSelected = { viewModel.updateDisplayLayoutMode(it) }
+                    onSelected = { 
+                        if (activeProfile.unlockedFeatures.contains("feat_screen_layout")) {
+                            viewModel.updateDisplayLayoutMode(it) 
+                        } else {
+                            android.widget.Toast.makeText(context, "Requires unlocking Advanced Screen Layouts in Plus Shop", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 )
             }
 
@@ -2030,7 +2062,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                 ) {
                                     Column(modifier = Modifier.padding(14.dp)) {
                                         Text(
-                                            text = "⚠️ FORMAL COMPLIANCE WARNINGS",
+                                            text = "FORMAL COMPLIANCE WARNINGS",
                                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.primary
                                         )
@@ -3493,10 +3525,10 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                             }
                         }
                         "latest" -> {
-                            Text("✨ Lumia FOSS is up-to-date (v$currentVersion) with latest release branch.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                            Text("Lumia FOSS is up-to-date (v$currentVersion) with latest release branch.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                         }
                         "error" -> {
-                            Text("⚠️ Code status: Offline or DNS limitation. Standard local database remains highly optimized.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            Text("Code status: Offline or DNS limitation. Standard local database remains highly optimized.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }

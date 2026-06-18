@@ -1,5 +1,7 @@
 package lumia.tracker.ui.screens
 
+import androidx.navigation.NavController
+
 import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.glassBar
 import android.text.format.DateFormat
@@ -17,6 +19,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,6 +31,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.School
+import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.MilitaryTech
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.Whatshot
+import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -69,7 +82,7 @@ import androidx.compose.runtime.remember
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
+fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, paddingValues: PaddingValues) {
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val actionLogs by viewModel.actionLogs.collectAsStateWithLifecycle()
@@ -164,6 +177,65 @@ fun AnalyticsTab(viewModel: ScholarViewModel, paddingValues: PaddingValues) {
                         }
                     }
                 }
+                
+                val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
+                val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
+                
+                PointsAndLevelCard(modifier = Modifier.fillMaxWidth(), profile = activeProfile)
+                
+                if (allProfiles.size > 1) {
+                    val isLeaderboardUnlocked = activeProfile.unlockedFeatures.contains("feat_leaderboard")
+                    if (isLeaderboardUnlocked) {
+                        LeaderboardChart(modifier = Modifier.fillMaxWidth(), profiles = allProfiles)
+                    } else {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                                .clickable {
+                                    navController.navigate("plus_shop")
+                                },
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                            shape = RoundedCornerShape(24.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                        ) {
+                            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        androidx.compose.material.icons.Icons.Rounded.Lock,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Study Leaderboard (Plus Feature)",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Unlock the local study leaderboard to compare performance with other user profiles! Swap 350 focus points in the M-Power Plus Shop.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                                ) {
+                                    Text("Visit Plus Shop", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                AchievementsCard(modifier = Modifier.fillMaxWidth(), profile = activeProfile)
                 
                 WeeklyAssignmentsDueChart(
                     modifier = Modifier.fillMaxWidth(),
@@ -1186,6 +1258,195 @@ fun AssignmentCategoryDistributionChart(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LeaderboardChart(modifier: Modifier = Modifier, profiles: List<lumia.tracker.model.UserProfile>) {
+    val sorted = profiles.sortedByDescending { it.points }
+    Card(
+        modifier = modifier.padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Text(
+                text = "Local Leaderboard",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            sorted.forEachIndexed { index, profile ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "#${index + 1}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.width(32.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    val isLocalImage = profile.avatarEmoji.startsWith("/") || profile.avatarEmoji.startsWith("file://") || profile.avatarEmoji.startsWith("content://")
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape)
+                            .clip(CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isLocalImage) {
+                            coil.compose.AsyncImage(
+                                model = profile.avatarEmoji,
+                                contentDescription = profile.name,
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            val fallback = if (profile.avatarEmoji.isNotBlank() && profile.avatarEmoji.length <= 2 && profile.avatarEmoji != "A" && profile.avatarEmoji != "U") {
+                                profile.avatarEmoji.uppercase()
+                            } else {
+                                profile.name.take(1).uppercase()
+                            }
+                            Text(fallback, color = MaterialTheme.colorScheme.onSecondaryContainer, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(profile.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                        Text("Level ${profile.level}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Text(
+                        text = "${profile.points} pts",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                if (index < sorted.size - 1) {
+                    androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PointsAndLevelCard(modifier: Modifier = Modifier, profile: lumia.tracker.model.UserProfile) {
+    Card(
+        modifier = modifier.padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(24.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text("Your Progress", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Spacer(Modifier.height(4.dp))
+                Text("${profile.points} pts", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+            Box(
+                modifier = Modifier.size(72.dp).background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("LEVEL", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text("${profile.level}", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AchievementsCard(modifier: Modifier = Modifier, profile: lumia.tracker.model.UserProfile) {
+    val system = lumia.tracker.model.AchievementSystem.ACHIEVEMENTS
+    val unlocked = system.filter { profile.unlockedAchievements.contains(it.id) }
+    val progressPct = if (system.isNotEmpty()) unlocked.size.toFloat() / system.size else 0f
+    
+    Card(
+        modifier = modifier.padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Achievements",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${unlocked.size} / ${system.size}",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { progressPct },
+                modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Box(modifier = Modifier.heightIn(max = 300.dp)) {
+                LazyColumn {
+                    items(system) { ach ->
+                        val isUnlocked = profile.unlockedAchievements.contains(ach.id)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).let {
+                                if (!isUnlocked) it.alpha(0.4f) else it
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier.size(48.dp).background(
+                                    color = if (isUnlocked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                    shape = RoundedCornerShape(12.dp)
+                                ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val iconVector = when (ach.iconEmoji) {
+                                    "Novice" -> Icons.Rounded.School
+                                    "Scroll" -> Icons.Rounded.MenuBook
+                                    "Cap" -> Icons.Rounded.School
+                                    "Crown" -> Icons.Rounded.MilitaryTech
+                                    "Star" -> Icons.Rounded.Star
+                                    "Check" -> Icons.Rounded.CheckCircle
+                                    "Timer" -> Icons.Rounded.Timer
+                                    "Fire" -> Icons.Rounded.Whatshot
+                                    "Book" -> Icons.Rounded.MenuBook
+                                    else -> Icons.Rounded.EmojiEvents
+                                }
+                                Icon(
+                                    imageVector = iconVector,
+                                    contentDescription = null,
+                                    tint = if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(ach.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                                Text(ach.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            if (isUnlocked) {
+                                Text("UNLOCKED", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
+                            }
                         }
                     }
                 }

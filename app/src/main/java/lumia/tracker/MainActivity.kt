@@ -145,6 +145,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            val showingProfileSelector = remember { androidx.compose.runtime.mutableStateOf(true) }
+            val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
+            val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
+
             ScholarTheme(
                 themeMode = themeMode,
                 themeColor = themeColor,
@@ -175,9 +179,24 @@ class MainActivity : ComponentActivity() {
                     ), 
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val safetyPinDialogData by viewModel.safetyPinDialogData.collectAsStateWithLifecycle()
-                    if (safetyPinDialogData != null) {
-                        val data = safetyPinDialogData!!
+                    if (showingProfileSelector.value) {
+                        lumia.tracker.ui.screens.ProfileSelectionScreen(
+                            profiles = allProfiles,
+                            onProfileSelected = { profileId ->
+                                if (profileId != activeProfile.id) {
+                                    viewModel.switchProfileAndRestart(this@MainActivity, profileId)
+                                } else {
+                                    showingProfileSelector.value = false
+                                }
+                            },
+                            onCreateProfile = { name, emoji -> 
+                                viewModel.createProfile(name, emoji)
+                            }
+                        )
+                    } else {
+                        val safetyPinDialogData by viewModel.safetyPinDialogData.collectAsStateWithLifecycle()
+                        if (safetyPinDialogData != null) {
+                            val data = safetyPinDialogData!!
                         androidx.compose.material3.AlertDialog(
                             icon = {
                                 androidx.compose.material3.Icon(
@@ -449,6 +468,26 @@ class MainActivity : ComponentActivity() {
                                 fileName = fileName
                             )
                         }
+                        composable("profile_menu") {
+                            lumia.tracker.ui.screens.ProfileMenuScreen(navController = navController, viewModel = viewModel)
+                        }
+                        composable("level_rewards") {
+                            lumia.tracker.ui.screens.LevelRewardsScreen(navController = navController, viewModel = viewModel)
+                        }
+                        composable("achievements_screen") {
+                            lumia.tracker.ui.screens.AchievementsScreen(navController = navController, viewModel = viewModel)
+                        }
+                        composable("plus_shop") {
+                            lumia.tracker.ui.screens.PlusShopScreen(navController = navController, viewModel = viewModel)
+                        }
+                        composable("switch_user") {
+                            showingProfileSelector.value = true
+                            // Since showingProfileSelector controls the entire surface display above NavHost, it'll just show the profile selector.
+                            // However, we should pop back because it's an overlay
+                            androidx.compose.runtime.LaunchedEffect(Unit) {
+                                navController.navigateUp()
+                            }
+                        }
                     }
                     
                     val crashDataState by _crashData.collectAsStateWithLifecycle()
@@ -493,7 +532,8 @@ class MainActivity : ComponentActivity() {
                     }
 
                     } // End of Box
-                }
+                    } // End of else
+                } // End of Surface
             }
         }
     }
