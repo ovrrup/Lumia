@@ -137,7 +137,7 @@ fun CalendarTab(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                navController.navigate("course_detail/${course.id}")
+                                navController.navigate("courseDetail/${course.id}")
                             },
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
                         shape = RoundedCornerShape(16.dp)

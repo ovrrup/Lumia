@@ -927,6 +927,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 )
             )
             logAction("Added course: $name")
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
@@ -934,6 +935,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.deleteCourse(course)
             logAction("Deleted course: ${course.name}")
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
@@ -941,6 +943,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.updateCourse(course)
             logAction("Updated course: ${course.name}")
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
@@ -1029,6 +1032,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 )
             }
             logAction("Added task: ${task.title}")
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
@@ -1041,6 +1045,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             if (newlyCompleted) {
                 checkAndUpdateStreak()
             }
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
@@ -1048,12 +1053,14 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.updateTask(task)
             logAction("Updated task: ${task.title}")
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
     fun updateTasksOrder(tasks: List<Task>) {
         viewModelScope.launch {
             repository.updateTasks(tasks)
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
@@ -1061,6 +1068,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.deleteTask(task)
             logAction("Deleted task: ${task.title}")
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
@@ -1072,6 +1080,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             if (tags.isNotBlank()) interconnections += ", Tags: $tags"
             lumia.tracker.util.ReminderScheduler.scheduleReminder(context, newId, title, desc, interconnections, dueDate)
             logAction("Added assignment: $title ($category)")
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
@@ -1082,12 +1091,14 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             val actionText = if (newlyCompleted) "Completed assignment: ${assignment.title}" else "Unmarked assignment: ${assignment.title}"
             logAction(actionText)
             if (newlyCompleted) checkAndUpdateStreak()
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
     fun deleteAssignment(assignment: PracticeAssignment) {
         viewModelScope.launch {
             repository.deleteAssignment(assignment)
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
@@ -1095,12 +1106,14 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.updateAssignment(assignment)
             logAction("Updated assignment: ${assignment.title}")
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
     fun updateAssignmentsOrder(assignments: List<PracticeAssignment>) {
         viewModelScope.launch {
             repository.updateAssignments(assignments)
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 
@@ -1331,6 +1344,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 }
                 loadSettings(settings)
                 _importExportStatus.value = "Secure backup package imported and restored successfully ✔"
+                lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             } catch (e: Exception) {
                 _importExportStatus.value = "Import failed: Invalid file or wrong format"
             }
@@ -1848,6 +1862,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
             repository.insertActionLog(ActionLog(actionText = "Cleared all application data and settings"))
             _importExportStatus.value = "All data and settings erased successfully"
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
 }

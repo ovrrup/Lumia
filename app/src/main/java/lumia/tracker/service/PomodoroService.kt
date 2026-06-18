@@ -413,10 +413,8 @@ class PomodoroService : Service() {
                     delay(1000)
                     timeLeft--
                     
-                    if (timeLeft % 5 == 0 || timeLeft < 10) {
-                        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                        notificationManager.notify(2002, buildNotification(timeLeft))
-                    }
+                    val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    notificationManager.notify(2002, buildNotification(timeLeft))
                     sendTick()
                     syncToState()
                 } else {
