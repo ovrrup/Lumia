@@ -35,6 +35,46 @@ import lumia.tracker.model.AchievementDef
 import lumia.tracker.model.AchievementSystem
 import lumia.tracker.viewmodel.ScholarViewModel
 
+fun getAchievementDifficultyAndRank(ach: AchievementDef): Pair<String, String> {
+    val required = ach.requiredValue
+    val type = ach.requiredType
+    return when (type) {
+        "POINTS" -> {
+            when {
+                required <= 300 -> "Easy" to "Bronze"
+                required <= 1000 -> "Medium" to "Silver"
+                required <= 5000 -> "Hard" to "Gold"
+                else -> "Mythic" to "Platinum"
+            }
+        }
+        "TASKS" -> {
+            when {
+                required <= 10 -> "Easy" to "Bronze"
+                required <= 75 -> "Medium" to "Silver"
+                required <= 200 -> "Hard" to "Gold"
+                else -> "Mythic" to "Platinum"
+            }
+        }
+        "SESSIONS" -> {
+            when {
+                required <= 10 -> "Easy" to "Bronze"
+                required <= 75 -> "Medium" to "Silver"
+                required <= 200 -> "Hard" to "Gold"
+                else -> "Mythic" to "Platinum"
+            }
+        }
+        "STREAK" -> {
+            when {
+                required <= 5 -> "Easy" to "Bronze"
+                required <= 21 -> "Medium" to "Silver"
+                required <= 75 -> "Hard" to "Gold"
+                else -> "Mythic" to "Platinum"
+            }
+        }
+        else -> "Easy" to "Bronze"
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AchievementsScreen(navController: NavController, viewModel: ScholarViewModel) {
@@ -46,10 +86,12 @@ fun AchievementsScreen(navController: NavController, viewModel: ScholarViewModel
     val tasksState by viewModel.tasks.collectAsStateWithLifecycle()
     val completedTasksCount = tasksState.count { it.isCompleted }
     val totalSessions = viewModel.pomodoroSessions.collectAsStateWithLifecycle().value.size
-    val currentStreak = activeProfile.points / 30 // or evaluate dynamic streaks if present, let's keep robust fallback
+    val currentStreak by viewModel.currentStreak.collectAsStateWithLifecycle()
     
     var selectedTab by remember { mutableStateOf("All") }
     val tabs = listOf("All", "POINTS", "TASKS", "SESSIONS", "STREAK")
+    
+    var selectedDifficulty by remember { mutableStateOf("All") }
     
     var selectedAchievement by remember { mutableStateOf<AchievementDef?>(null) }
 
@@ -75,7 +117,7 @@ fun AchievementsScreen(navController: NavController, viewModel: ScholarViewModel
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                shape = RoundedCornerShape(24.dp),
+                shape = MaterialTheme.shapes.large,
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                 )
@@ -149,7 +191,7 @@ fun AchievementsScreen(navController: NavController, viewModel: ScholarViewModel
                         Box(
                             modifier = Modifier
                                 .padding(horizontal = 4.dp, vertical = 2.dp)
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(MaterialTheme.shapes.medium)
                                 .background(
                                     if (isSelected) MaterialTheme.colorScheme.secondary
                                     else MaterialTheme.colorScheme.surfaceVariant
@@ -167,10 +209,54 @@ fun AchievementsScreen(navController: NavController, viewModel: ScholarViewModel
                 }
             }
 
-            val filteredAchievements = if (selectedTab == "All") {
+            androidx.compose.foundation.lazy.LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(listOf("All", "Easy", "Medium", "Hard", "Mythic")) { diff ->
+                    val isSelected = selectedDifficulty == diff
+                    val rankText = when (diff) {
+                        "Easy" -> "Bronze"
+                        "Medium" -> "Silver"
+                        "Hard" -> "Gold"
+                        "Mythic" -> "Plat / Mythic"
+                        else -> "All Difficulties"
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                            .clickable { selectedDifficulty = diff }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = rankText,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            val filteredByCategory = if (selectedTab == "All") {
                 allAchievements
             } else {
                 allAchievements.filter { it.requiredType == selectedTab }
+            }
+
+            val filteredAchievements = if (selectedDifficulty == "All") {
+                filteredByCategory
+            } else {
+                filteredByCategory.filter { ach ->
+                    val (diff, _) = getAchievementDifficultyAndRank(ach)
+                    diff == selectedDifficulty
+                }
             }
 
             LazyColumn(
@@ -201,7 +287,7 @@ fun AchievementsScreen(navController: NavController, viewModel: ScholarViewModel
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { selectedAchievement = ach },
-                        shape = RoundedCornerShape(16.dp),
+                        shape = MaterialTheme.shapes.medium,
                         colors = CardDefaults.cardColors(
                             containerColor = if (isUnlocked) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
                         ),
@@ -242,12 +328,43 @@ fun AchievementsScreen(navController: NavController, viewModel: ScholarViewModel
                             }
                             Spacer(Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    ach.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isUnlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
+                                val (diff, rank) = getAchievementDifficultyAndRank(ach)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        ach.title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isUnlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                    val tagBg = when (rank) {
+                                        "Bronze" -> Color(0xFFCD7F32).copy(alpha = 0.15f)
+                                        "Silver" -> Color(0xFFC0C0C0).copy(alpha = 0.15f)
+                                        "Gold" -> Color(0xFFFFD700).copy(alpha = 0.15f)
+                                        else -> Color(0xFFDDA0DD).copy(alpha = 0.2f)
+                                    }
+                                    val tagText = when (rank) {
+                                        "Bronze" -> Color(0xFF8B5A2B)
+                                        "Silver" -> Color(0xFF5A5A5A)
+                                        "Gold" -> Color(0xFFB8860B)
+                                        else -> Color(0xFF8A2BE2)
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(tagBg)
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = rank,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = tagText
+                                        )
+                                    }
+                                }
                                 Text(
                                     ach.description,
                                     style = MaterialTheme.typography.bodySmall,
@@ -314,6 +431,39 @@ fun AchievementsScreen(navController: NavController, viewModel: ScholarViewModel
             },
             text = {
                 Column {
+                    val (diff, rank) = getAchievementDifficultyAndRank(ach)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                "Difficulty: $diff",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.tertiaryContainer)
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                "Rank: $rank",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
                     Text(ach.description, style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(16.dp))
                     
@@ -342,6 +492,27 @@ fun AchievementsScreen(navController: NavController, viewModel: ScholarViewModel
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
+                        Spacer(Modifier.height(16.dp))
+                        val isSelected = activeProfile.selectedBadge == ach.id
+                        Button(
+                            onClick = {
+                                viewModel.selectProfileBadge(ach.id)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                if (isSelected) {
+                                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Text("Active Profile Badge", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                } else {
+                                    Icon(Icons.Rounded.EmojiEvents, contentDescription = null)
+                                    Text("Set as Profile Badge", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
                     } else {
                         val remaining = (target - currentValue).coerceAtLeast(0)
                         Text(

@@ -40,12 +40,14 @@ class ProfileManager(private val context: Context) {
         prefs.edit().putString("profiles_json", profileAdapter.toJson(profiles)).apply()
     }
 
-    fun addProfile(name: String, avatar: String) {
+    fun addProfile(name: String, avatar: String, alias: String = "", starterTheme: String = "") {
         val list = getAllProfiles().toMutableList()
         val newProfile = UserProfile(
             id = UUID.randomUUID().toString(),
             name = name,
-            avatarEmoji = avatar
+            avatarEmoji = avatar,
+            alias = alias,
+            starterTheme = starterTheme
         )
         list.add(newProfile)
         saveProfiles(list)

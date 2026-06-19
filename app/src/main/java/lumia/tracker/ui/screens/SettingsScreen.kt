@@ -9,6 +9,7 @@ import lumia.tracker.ui.theme.glassBar
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
@@ -322,8 +323,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                 SettingsActionItemInCard(
-                    title = "About Lumia (FOSS)",
-                    subtitle = "Developer info, GNU license text & update status",
+                    title = "About App",
+                    subtitle = "Developer info, update status & open source details",
                     icon = Icons.Rounded.Info,
                     onClick = { navController.navigate("settings/about") }
                 )
@@ -338,7 +339,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 @Composable
 fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) {
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
-    val isPremiumUnlocked = activeProfile.unlockedFeatures.contains("feat_theme_pack") || activeProfile.unlockedFeatures.contains("feat_custom_theme")
+    val isPremiumUnlocked = activeProfile.isFeatureUnlocked("feat_theme_pack") || activeProfile.isFeatureUnlocked("feat_custom_theme")
     val context = androidx.compose.ui.platform.LocalContext.current
 
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
@@ -429,7 +430,13 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     icon = Icons.Rounded.DarkMode,
                     enabled = themeMode != "Light",
                     unavailableReason = "Requires System/Dark mode options.",
-                    onCheckedChange = { viewModel.updatePureBlackMode(it) }
+                    onCheckedChange = {
+                        if (activeProfile.isFeatureUnlocked("feat_theme_pack")) {
+                            viewModel.updatePureBlackMode(it)
+                        } else {
+                            android.widget.Toast.makeText(context, "Pure Black Canvas is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
                 )
             }
 
@@ -448,7 +455,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     ),
                     selected = displayLayoutMode,
                     onSelected = { 
-                        if (activeProfile.unlockedFeatures.contains("feat_screen_layout")) {
+                        if (activeProfile.isFeatureUnlocked("feat_screen_layout")) {
                             viewModel.updateDisplayLayoutMode(it) 
                         } else {
                             android.widget.Toast.makeText(context, "Requires unlocking Advanced Screen Layouts in Plus Shop", android.widget.Toast.LENGTH_SHORT).show()
@@ -482,7 +489,13 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     subtitle = "Replace all sharp-edged geometries with bouncy, spherical rounded layouts",
                     checked = moreRounds,
                     icon = Icons.Rounded.CheckCircle,
-                    onCheckedChange = { viewModel.updateMoreRounds(it) }
+                    onCheckedChange = {
+                        if (activeProfile.isFeatureUnlocked("feat_theme_pack")) {
+                            viewModel.updateMoreRounds(it)
+                        } else {
+                            android.widget.Toast.makeText(context, "More Rounds is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
                 )
 
                 AnimatedVisibility(visible = moreRounds) {
@@ -521,7 +534,13 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         subtitle = "Enable premium translucent glass textures across screen panels",
                         checked = betaGlassUi,
                         icon = Icons.Rounded.Palette,
-                        onCheckedChange = { viewModel.updateBetaGlassUi(it) }
+                        onCheckedChange = {
+                            if (activeProfile.isFeatureUnlocked("feat_theme_pack")) {
+                                viewModel.updateBetaGlassUi(it)
+                            } else {
+                                android.widget.Toast.makeText(context, "Frosted Glass is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!", android.widget.Toast.LENGTH_LONG).show()
+                            }
+                        }
                     )
                     
                     AnimatedVisibility(visible = betaGlassUi) {
@@ -686,7 +705,13 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     subtitle = "Force glass satin backdrop overlay specifically on bottom bar even if global Frosted UI is off",
                     checked = navBarGlassForceEnabled,
                     icon = Icons.Rounded.Palette,
-                    onCheckedChange = { viewModel.updateNavBarGlassForceEnabled(it) }
+                    onCheckedChange = {
+                        if (activeProfile.unlockedFeatures.contains("feat_theme_pack")) {
+                            viewModel.updateNavBarGlassForceEnabled(it)
+                        } else {
+                            android.widget.Toast.makeText(context, "Independent Glass is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
                 )
 
                 val isGlassTheme = lumia.tracker.ui.theme.LocalGlassMode.current
@@ -954,7 +979,21 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             name = name,
                             color = color,
                             isSelected = themeColor == name,
-                            onClick = { viewModel.updateThemeColor(name) }
+                            onClick = {
+                                val starterTheme = activeProfile.starterTheme.ifBlank { "Ocean" }
+                                val isUniversalFree = name == starterTheme || name == "Dynamic"
+                                if (name == "Custom") {
+                                    if (activeProfile.unlockedFeatures.contains("feat_custom_theme")) {
+                                        viewModel.updateThemeColor(name)
+                                    } else {
+                                        android.widget.Toast.makeText(context, "Requires unlocking Custom Themes in Plus Shop", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                } else if (!isUniversalFree && !activeProfile.unlockedFeatures.contains("feat_theme_pack")) {
+                                    android.widget.Toast.makeText(context, "Requires Theme Pack Expansion in Plus Shop! Only your selected starter theme ($starterTheme) is unlocked from the start.", android.widget.Toast.LENGTH_LONG).show()
+                                } else {
+                                    viewModel.updateThemeColor(name)
+                                }
+                            }
                         )
                     }
                 }
@@ -1108,6 +1147,8 @@ data class BetaFeatureDialogData(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel) {
+    val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
+    val context = androidx.compose.ui.platform.LocalContext.current
     var pendingFeature by remember { mutableStateOf<BetaFeatureDialogData?>(null) }
     
     val handleToggle = { isChecked: Boolean, title: String, subtitle: String, updateAction: (Boolean) -> Unit ->
@@ -1189,15 +1230,52 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
+        val isUnlocked = activeProfile.unlockedFeatures.contains("feat_experimental")
+        if (!isUnlocked) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(48.dp))
+                Icon(
+                    Icons.Rounded.Lock,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(72.dp)
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    "Mad Scientist Lab Locked",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Experimental beta features and cutting-edge system options are a premium Plus option. Unlock the Mad Scientist Lab expansion in the Plus Shop using points to gain access to future tracker modifications!",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(24.dp))
+                BouncyButton(onClick = { navController.navigate("plus_shop") }) {
+                    Text("Unlock in Plus Shop")
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // 1. Experimental Workflow
+                // 1. Experimental Workflow
             SettingsGroupCard(title = "Experimental Workflow", icon = Icons.Rounded.Edit) {
                 val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
                 SettingsPremiumToggleItem(
@@ -1237,6 +1315,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
 }
@@ -1245,6 +1324,11 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
 @Composable
 fun DataManagementScreen(navController: NavController, viewModel: ScholarViewModel) {
     val status by viewModel.importExportStatus.collectAsStateWithLifecycle()
+    val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
+    val dbStats by viewModel.dbStatistics.collectAsStateWithLifecycle()
+    val defragText by viewModel.defragStatus.collectAsStateWithLifecycle()
+    val isAdvancedUnlocked = activeProfile.isFeatureUnlocked("feat_advanced_data")
+
     val context = LocalContext.current
     var showResetDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
@@ -1378,6 +1462,146 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Advanced Data Management Section (Plus Feature)
+            SettingsGroupCard(title = "Advanced Schema & Diagnostics", icon = Icons.Rounded.Storage) {
+                if (isAdvancedUnlocked) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "SQLite Local Schema Metrics",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            "View row counts of the physical application databases in real-time.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        if (dbStats.isEmpty()) {
+                            Button(
+                                onClick = { viewModel.loadDBStatistics() },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Analyze Schema Metrics")
+                                }
+                            }
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                dbStats.forEach { (table, count) ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(table, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                                        Text("$count rows", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                TextButton(
+                                    onClick = { viewModel.loadDBStatistics() },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Re-Analyze Database")
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Text(
+                            "Index Pack compacting & SQLite VACUUM",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Text(
+                            "Rebuild database indices, clean orphaned assignments, and run VACUUM optimization commands to decrease storage allocations.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = { viewModel.defragmentDatabase() },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                            enabled = defragText.isEmpty() || defragText.startsWith("Optimized!"),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Execute SQLite Defrag")
+                            }
+                        }
+
+                        if (defragText.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = defragText,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (defragText.startsWith("Optimized!")) Color(0xFF4BC27D) else MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    }
+                } else {
+                    // Locked premium promo card
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Lock,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Text(
+                            "Advanced Database Diagnostics Console",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            "Run physical database compaction, index rebuilds, vacuum defragmenters, and deep-dive schema analyzer metrics.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Button(
+                            onClick = { navController.navigate("plus_shop") },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                                Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Rent or Buy in Scholar Shop")
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             SettingsGroupCard(title = "Backup & Erasure Hub", icon = Icons.Rounded.Storage) {
                 SettingsActionItemInCard(
@@ -1653,6 +1877,7 @@ fun SettingsActionItem(title: String, subtitle: String, icon: androidx.compose.u
 @Composable
 fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewModel) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
     var hasOverlayPermission by remember { mutableStateOf(android.provider.Settings.canDrawOverlays(context)) }
     var hasAccessibilityPermission by remember { mutableStateOf(lumia.tracker.service.AodAccessibilityService.isServiceEnabled(context)) }
 
@@ -1827,7 +2052,13 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                     subtitle = "Draw a full-screen SYSTEM OVERLAY clock directly over lockscreens, launchers and other apps for ultimate aesthetic hardware preservation.",
                     checked = aodTrueAodEnabled,
                     icon = Icons.Rounded.CropFree,
-                    onCheckedChange = { viewModel.updateAodTrueAodEnabled(it) }
+                    onCheckedChange = {
+                        if (activeProfile.unlockedFeatures.contains("feat_true_aod")) {
+                            viewModel.updateAodTrueAodEnabled(it)
+                        } else {
+                            android.widget.Toast.makeText(context, "True Always-On Display is a premium Plus feature. Unlock it in the Plus Shop!", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
                 )
 
                 androidx.compose.animation.AnimatedVisibility(visible = aodTrueAodEnabled) {
@@ -3098,6 +3329,8 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(navController: NavController, viewModel: ScholarViewModel) {
+    val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val notifFormalTone by viewModel.notifFormalTone.collectAsStateWithLifecycle()
     val notifEnableDeadlines by viewModel.notifEnableDeadlines.collectAsStateWithLifecycle()
     val notifEnableStreaks by viewModel.notifEnableStreaks.collectAsStateWithLifecycle()
@@ -3156,7 +3389,13 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
                     subtitle = if (notifFormalTone) "Notifications will sound polite and professional" else "Notifications will sound taunting and strict to push you harder!",
                     checked = notifFormalTone,
                     icon = Icons.Rounded.RecordVoiceOver,
-                    onCheckedChange = { viewModel.updateNotifFormalTone(it) }
+                    onCheckedChange = { 
+                        if (activeProfile.unlockedFeatures.contains("feat_notification_tone")) {
+                            viewModel.updateNotifFormalTone(it) 
+                        } else {
+                            android.widget.Toast.makeText(context, "Selecting custom notification tones is a premium feature! Unlock it in the Plus Shop.", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
                 )
                 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
@@ -3317,7 +3556,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                     )
                 }
                 CenterAlignedTopAppBar(
-                    title = { Text("About Lumia", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                    title = { Text("About App", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)

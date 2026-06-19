@@ -2,6 +2,8 @@ package lumia.tracker.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -21,8 +23,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.viewmodel.ScholarViewModel
+import lumia.tracker.ui.components.BouncyButton
+import lumia.tracker.ui.components.BouncyTextButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.graphics.Color
+import lumia.tracker.model.AchievementSystem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,53 +60,405 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
         ) {
             item {
                 Spacer(Modifier.height(16.dp))
-                // Profile Summary Card
+                // Profile Summary Card with Triple Dots, Streaks, Points and Achievements display
+                var showDropdownMenu by remember { mutableStateOf(false) }
+                val currentStreak by viewModel.currentStreak.collectAsStateWithLifecycle()
+                
+                val ranking = when (activeProfile.level) {
+                    in 1..2 -> "Bronze Scholar"
+                    in 3..4 -> "Silver Spark"
+                    in 5..9 -> "Gold Sage"
+                    in 10..14 -> "Emerald Master"
+                    in 15..19 -> "Diamond Lord"
+                    in 20..29 -> "Scholar Vanguard"
+                    in 30..49 -> "Immortal Titan"
+                    in 50..74 -> "Cosmic Sovereign"
+                    in 75..99 -> "Universal Legend"
+                    else -> "Eternal Luminary"
+                }
+                
+                val rankingColor = when (activeProfile.level) {
+                    in 1..2 -> Color(0xFFCD7F32) // Bronze
+                    in 3..4 -> Color(0xFFC0C0C0) // Silver
+                    in 5..9 -> Color(0xFFFFD700) // Gold
+                    in 10..14 -> Color(0xFF4BC27D) // Emerald
+                    in 15..19 -> Color(0xFF5BA7FF) // Diamond
+                    in 20..29 -> Color(0xFF9888E4) // Vanguard
+                    in 30..49 -> Color(0xFFFF4081) // Titan pinkish-red
+                    in 50..74 -> Color(0xFFFFEB3B) // Cosmic bright-gold
+                    in 75..99 -> Color(0xFF00E676) // Universal bright-green
+                    else -> Color(0xFFE040FB) // Eternal neon-purple
+                }
+
                 Card(
-                    modifier = Modifier.fillMaxWidth().clickable { showEditDialog = true },
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
                 ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(64.dp)
-                                    .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f), CircleShape)
-                                    .clip(CircleShape),
-                                contentAlignment = Alignment.Center
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        // Dropdown Menu (on Three Dots Tapped)
+                        Box(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)) {
+                            IconButton(onClick = { showDropdownMenu = true }) {
+                                Icon(
+                                    Icons.Rounded.MoreVert,
+                                    contentDescription = "Options",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showDropdownMenu,
+                                onDismissRequest = { showDropdownMenu = false }
                             ) {
-                                val isLocalImage = activeProfile.avatarEmoji.startsWith("/") || activeProfile.avatarEmoji.startsWith("file://") || activeProfile.avatarEmoji.startsWith("content://")
-                                if (isLocalImage) {
-                                    coil.compose.AsyncImage(
-                                        model = activeProfile.avatarEmoji,
-                                        contentDescription = "Profile Picture",
-                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                } else {
-                                    val fallback = if (activeProfile.avatarEmoji.isNotBlank() && activeProfile.avatarEmoji.length <= 2 && activeProfile.avatarEmoji != "A" && activeProfile.avatarEmoji != "U") {
-                                        activeProfile.avatarEmoji.uppercase()
-                                    } else {
-                                        activeProfile.name.take(2).uppercase()
+                                DropdownMenuItem(
+                                    text = { Text("Profile Editing") },
+                                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
+                                    onClick = {
+                                        showDropdownMenu = false
+                                        showEditDialog = true
                                     }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Level Rewards") },
+                                    leadingIcon = { Icon(Icons.Rounded.Star, contentDescription = null) },
+                                    onClick = {
+                                        showDropdownMenu = false
+                                        navController.navigate("level_rewards")
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Achievements") },
+                                    leadingIcon = { Icon(Icons.Rounded.EmojiEvents, contentDescription = null) },
+                                    onClick = {
+                                        showDropdownMenu = false
+                                        navController.navigate("achievements_screen")
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Plus Shop") },
+                                    leadingIcon = { Icon(Icons.Rounded.Storefront, contentDescription = null) },
+                                    onClick = {
+                                        showDropdownMenu = false
+                                        navController.navigate("plus_shop")
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Switch User") },
+                                    leadingIcon = { Icon(Icons.Rounded.SwapHoriz, contentDescription = null) },
+                                    onClick = {
+                                        showDropdownMenu = false
+                                        navController.navigate("switch_user")
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Settings") },
+                                    leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null) },
+                                    onClick = {
+                                        showDropdownMenu = false
+                                        navController.navigate("settings")
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("About App") },
+                                    leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
+                                    onClick = {
+                                        showDropdownMenu = false
+                                        showAboutDialog = true
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("More (Under Dev)") },
+                                    leadingIcon = { Icon(Icons.Rounded.Construction, contentDescription = null) },
+                                    enabled = false,
+                                    onClick = {}
+                                )
+                            }
+                        }
+
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(72.dp)
+                                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f), CircleShape)
+                                        .clip(CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val isLocalImage = activeProfile.avatarEmoji.startsWith("/") || activeProfile.avatarEmoji.startsWith("file://") || activeProfile.avatarEmoji.startsWith("content://")
+                                    if (isLocalImage) {
+                                        coil.compose.AsyncImage(
+                                            model = activeProfile.avatarEmoji,
+                                            contentDescription = "Profile Picture",
+                                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    } else {
+                                        val fallback = if (activeProfile.avatarEmoji.isNotBlank() && activeProfile.avatarEmoji.length <= 2 && activeProfile.avatarEmoji != "A" && activeProfile.avatarEmoji != "U") {
+                                            activeProfile.avatarEmoji.uppercase()
+                                        } else {
+                                            activeProfile.name.take(2).uppercase()
+                                        }
+                                        Text(
+                                            text = fallback,
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = fallback,
-                                        style = MaterialTheme.typography.headlineMedium,
+                                        text = activeProfile.name,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    if (activeProfile.alias.isNotBlank()) {
+                                        Text(
+                                            text = "@${activeProfile.alias}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "No alias configured",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                    
+                                    if (activeProfile.selectedBadge.isNotBlank()) {
+                                        val badgeDef = AchievementSystem.ACHIEVEMENTS.find { it.id == activeProfile.selectedBadge }
+                                        if (badgeDef != null) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                modifier = Modifier
+                                                    .padding(top = 4.dp)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                val badgeIcon = when (badgeDef.iconEmoji) {
+                                                    "Novice" -> Icons.Rounded.School
+                                                    "Scroll" -> Icons.Rounded.MenuBook
+                                                    "Cap" -> Icons.Rounded.School
+                                                    "Crown" -> Icons.Rounded.MilitaryTech
+                                                    "Star" -> Icons.Rounded.Star
+                                                    "Check" -> Icons.Rounded.CheckCircle
+                                                    "Timer" -> Icons.Rounded.Timer
+                                                    "Fire" -> Icons.Rounded.Whatshot
+                                                    "Book" -> Icons.Rounded.MenuBook
+                                                    else -> Icons.Rounded.EmojiEvents
+                                                }
+                                                Icon(
+                                                    imageVector = badgeIcon,
+                                                    contentDescription = badgeDef.title,
+                                                    tint = Color(0xFFFFD700), // Gold color for badge
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                                Text(
+                                                    text = badgeDef.title,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Black,
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(16.dp))
+
+                            // Level, ranking & streak badges
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
+                                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = "Lv. ${activeProfile.level}",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(rankingColor.copy(alpha = 0.25f))
+                                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = ranking,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Black,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color(0xFFFF5722).copy(alpha = 0.2f))
+                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Whatshot,
+                                            contentDescription = "Streak",
+                                            tint = Color(0xFFFF5722),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = "$currentStreak Days",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(16.dp))
+
+                            // Points display
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.MonetizationOn,
+                                        contentDescription = "Points",
+                                        tint = Color(0xFFFFC107),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = "${activeProfile.points} Profile Points",
+                                        style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 }
                             }
-                            Spacer(Modifier.width(16.dp))
-                            Column {
-                                Text(activeProfile.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                Text("Level ${activeProfile.level} • ${activeProfile.points} pts", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
+
+                            Spacer(Modifier.height(12.dp))
+
+                            // Achievements display progress
+                            Text(
+                                text = "Achievements: ${activeProfile.unlockedAchievements.size} / ${AchievementSystem.ACHIEVEMENTS.size} Badges",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                             )
+                             Spacer(Modifier.height(6.dp))
+                             LinearProgressIndicator(
+                                 progress = { if (AchievementSystem.ACHIEVEMENTS.isNotEmpty()) activeProfile.unlockedAchievements.size.toFloat() / AchievementSystem.ACHIEVEMENTS.size else 0f },
+                                 modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                 trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.25f)
+                             )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
+            }
+            
+            item {
+                val unlockedBadges = AchievementSystem.ACHIEVEMENTS.filter { activeProfile.unlockedAchievements.contains(it.id) }
+                if (unlockedBadges.isNotEmpty()) {
+                    Column(modifier = Modifier.padding(bottom = 24.dp)) {
+                        Text(
+                            text = "Unlocked Badge Shelf",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
+                        )
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium,
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = "Tap to equip active profile badge:",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 12.dp)
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    unlockedBadges.forEach { badge ->
+                                        val isSelected = activeProfile.selectedBadge == badge.id
+                                        val badgeIcon = when (badge.iconEmoji) {
+                                            "Novice" -> Icons.Rounded.School
+                                            "Scroll" -> Icons.Rounded.MenuBook
+                                            "Cap" -> Icons.Rounded.School
+                                            "Crown" -> Icons.Rounded.MilitaryTech
+                                            "Star" -> Icons.Rounded.Star
+                                            "Check" -> Icons.Rounded.CheckCircle
+                                            "Timer" -> Icons.Rounded.Timer
+                                            "Fire" -> Icons.Rounded.Whatshot
+                                            "Book" -> Icons.Rounded.MenuBook
+                                            else -> Icons.Rounded.EmojiEvents
+                                        }
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(52.dp)
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        if (isSelected) MaterialTheme.colorScheme.primary
+                                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
+                                                    )
+                                                    .clickable {
+                                                        viewModel.selectProfileBadge(if (isSelected) "" else badge.id)
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = badgeIcon,
+                                                    contentDescription = badge.title,
+                                                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(24.dp)
+                                                )
+                                            }
+                                    }
+                                }
+                                val selectedBadgeDef = AchievementSystem.ACHIEVEMENTS.find { it.id == activeProfile.selectedBadge }
+                                if (selectedBadgeDef != null) {
+                                    Spacer(modifier = Modifier.height(14.dp))
+                                    Text(
+                                        text = "Active Badge: ${selectedBadgeDef.title} \u2014 ${selectedBadgeDef.description}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
                     }
                 }
-                
-                Spacer(Modifier.height(24.dp))
             }
             
             item {
@@ -146,7 +504,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("About Lumia", fontWeight = FontWeight.Bold)
+                    Text("About App", fontWeight = FontWeight.Bold)
                 }
             },
             text = {
@@ -166,7 +524,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showAboutDialog = false }) {
+                BouncyTextButton(onClick = { showAboutDialog = false }) {
                     Text("Done")
                 }
             }
@@ -175,6 +533,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
 
     if (showEditDialog) {
         var editName by remember { mutableStateOf(activeProfile.name) }
+        var editAlias by remember { mutableStateOf(activeProfile.alias) }
         var editImagePath by remember { mutableStateOf(activeProfile.avatarEmoji) }
         val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -201,13 +560,20 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
         
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
-            title = { Text("Edit Profile / Alias") },
+            title = { Text("Edit Profile") },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = editName,
                         onValueChange = { editName = it },
-                        label = { Text("Name / Alias") },
+                        label = { Text("Display Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = editAlias,
+                        onValueChange = { editAlias = it },
+                        label = { Text("Alias / Nickname") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(16.dp))
@@ -246,15 +612,15 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                 }
             },
             confirmButton = {
-                Button(onClick = {
+                BouncyButton(onClick = {
                     if (editName.isNotBlank()) {
-                        viewModel.updateProfile(editName, editImagePath.ifBlank { editName.take(2).uppercase() })
+                        viewModel.updateProfile(editName, editImagePath.ifBlank { editName.take(2).uppercase() }, editAlias)
                         showEditDialog = false
                     }
                 }) { Text("Save") }
             },
             dismissButton = {
-                TextButton(onClick = { showEditDialog = false }) { Text("Cancel") }
+                BouncyTextButton(onClick = { showEditDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -264,7 +630,7 @@ fun MenuListItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: S
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(MaterialTheme.shapes.medium)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically

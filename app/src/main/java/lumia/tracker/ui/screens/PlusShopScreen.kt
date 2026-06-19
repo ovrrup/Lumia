@@ -28,7 +28,9 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import lumia.tracker.model.PlusFeature
 import lumia.tracker.model.PlusShop
+import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.viewmodel.ScholarViewModel
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -42,15 +44,23 @@ fun PlusShopScreen(navController: NavController, viewModel: ScholarViewModel) {
     val categories = listOf("All") + availableFeatures.map { it.category }.distinct()
     var selectedCategory by remember { mutableStateOf("All") }
 
+    // Dialog state for Currency Information / Explanation
+    var showInfoDialog by remember { mutableStateOf(false) }
+
+    // Mystery Wheel rolling state
+    var isRollingWheel by remember { mutableStateOf(false) }
+    var rolledFeatureResult by remember { mutableStateOf<PlusFeature?>(null) }
+    var showRollResultDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("M-Power Plus Shop", fontWeight = FontWeight.Black)
+                        Text("Scholar Economy Shop", fontWeight = FontWeight.Black)
                         Text(
-                            "Maximize study fun & focus custom tools",
+                            "Earn and balance points & credits to unlock features",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -59,41 +69,6 @@ fun PlusShopScreen(navController: NavController, viewModel: ScholarViewModel) {
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    // Elevated points counter pill with custom gradient
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.primary,
-                                        MaterialTheme.colorScheme.secondary
-                                    )
-                                ),
-                                RoundedCornerShape(32.dp)
-                            )
-                            .border(1.dp, MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f), RoundedCornerShape(32.dp))
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Rounded.Token,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                "${activeProfile.points} pts",
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
                     }
                 }
             )
@@ -104,6 +79,58 @@ fun PlusShopScreen(navController: NavController, viewModel: ScholarViewModel) {
                 .padding(padding)
                 .fillMaxSize()
         ) {
+            // Currencies Status Bar - Modern dual-currency high-contrast visual display
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Points Counter Pill
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.MilitaryTech, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Focus Points", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        }
+                        Text("${activeProfile.points}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+
+                // Credits Counter Pill
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Savings, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Credits Block", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                        }
+                        Text("${activeProfile.credits}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.secondary)
+                    }
+                }
+
+                // Currency Valuation Info Icon Trigger
+                IconButton(
+                    onClick = { showInfoDialog = true },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Icon(Icons.Rounded.Info, contentDescription = "Explain Currency Value", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
             // Category Quick Filter Scrollable Row
             ScrollableTabRow(
                 selectedTabIndex = categories.indexOf(selectedCategory),
@@ -121,7 +148,7 @@ fun PlusShopScreen(navController: NavController, viewModel: ScholarViewModel) {
                         Box(
                             modifier = Modifier
                                 .padding(horizontal = 4.dp, vertical = 4.dp)
-                                .clip(RoundedCornerShape(32.dp))
+                                .clip(MaterialTheme.shapes.extraLarge)
                                 .background(
                                     if (isSelected) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
@@ -152,59 +179,65 @@ fun PlusShopScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // mystery chest gacha banner item
                 item {
-                    Spacer(Modifier.height(8.dp))
-                    // Study Motivation Header Card
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f))
-                    ) {
-                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Rounded.School, 
-                                contentDescription = null, 
-                                tint = MaterialTheme.colorScheme.secondary, 
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(Modifier.width(16.dp))
-                            Column {
-                                Text("Earn Focus Points", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Text("Complete study sessions and clear list tasks to gain points. Swap points below for incredible Plus styling upgrades!", style = MaterialTheme.typography.bodySmall)
+                    MysteryRarityChestCard(
+                        credits = activeProfile.credits,
+                        isRolling = isRollingWheel,
+                        onRoll = {
+                            if (activeProfile.credits >= 150) {
+                                isRollingWheel = true
+                                scope.launch {
+                                    kotlinx.coroutines.delay(1800) // Animated suspense delay
+                                    val result = viewModel.rollMysteryWheel()
+                                    isRollingWheel = false
+                                    rolledFeatureResult = result
+                                    showRollResultDialog = true
+                                }
+                            } else {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("❌ You need 150 Credits to spin the Lucky Star chest!")
+                                }
                             }
                         }
-                    }
-                    Spacer(Modifier.height(8.dp))
+                    )
                 }
 
                 items(filteredFeatures, key = { it.id }) { feature ->
-                    val isUnlocked = activeProfile.unlockedFeatures.contains(feature.id)
+                    val isLockedPermanently = !activeProfile.unlockedFeatures.contains(feature.id)
+                    val rentExpiry = activeProfile.rentedFeatures[feature.id] ?: 0L
+                    val isRented = rentExpiry > System.currentTimeMillis()
+                    val isUnlocked = !isLockedPermanently || isRented
+                    
                     val levelSufficient = activeProfile.level >= feature.requiredLevel
                     val pointsSufficient = activeProfile.points >= feature.pricePoints
+                    val creditsSufficient = activeProfile.credits >= feature.priceCredits
+                    val rentCreditsSufficient = activeProfile.credits >= feature.rentCostCredits
                     
-                    // Style by Rank with appropriate premium-looking gradients/borders
+                    // Style by Grade with high-end academic designator tags
                     val (rankLabel, rankColor) = when (feature.rank) {
-                        "Diamond" -> "Diamond Tier" to Color(0xFF2196F3)
-                        "Gold" -> "Gold Tier" to Color(0xFFFFB300)
-                        "Silver" -> "Silver Tier" to Color(0xFF9E9E9E)
-                        else -> "Bronze Tier" to Color(0xFFCD7F32)
+                        "SS" -> "SS Grade (1 in 250 Rare, 0.4%)" to Color(0xFFFF3D00)
+                        "S" -> "S Grade (1 in 100 Rare, 1.0%)" to Color(0xFFE040FB)
+                        "A+" -> "A+ Grade (1 in 50 Hard, 2.0%)" to Color(0xFFFF9100)
+                        "A" -> "A Grade (1 in 30 Unlocking, 3.3%)" to Color(0xFF2979FF)
+                        else -> "B Grade (1 in 15 Baseline, 6.7%)" to Color(0xFF00E676)
                     }
 
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .animateItemPlacement(),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = MaterialTheme.shapes.large,
                         colors = CardDefaults.cardColors(
                             containerColor = if (isUnlocked) {
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
                             } else {
                                 MaterialTheme.colorScheme.surface
                             }
                         ),
-                        border = borderStrokeForFeature(isUnlocked, pointsSufficient, levelSufficient)
+                        border = borderStrokeForFeature(isUnlocked, pointsSufficient || creditsSufficient, levelSufficient)
                     ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             // Top Row: Category Badge + Class Tag
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -233,7 +266,7 @@ fun PlusShopScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 )
                             }
 
-                            Spacer(Modifier.height(12.dp))
+                            Spacer(Modifier.height(10.dp))
 
                             // Name and Description
                             Text(
@@ -249,31 +282,28 @@ fun PlusShopScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            Spacer(Modifier.height(16.dp))
+                            Spacer(Modifier.height(12.dp))
 
-                            // Actions and stats area
+                            // Display current status
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                // Locked requirements or unlocked status
                                 Column {
-                                    if (isUnlocked) {
+                                    if (!isLockedPermanently) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                Icons.Rounded.TaskAlt,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(18.dp)
-                                            )
+                                            Icon(Icons.Rounded.Verified, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(4.dp))
-                                            Text(
-                                                "Active/Unlocked",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
+                                            Text("Owned Permanently", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                        }
+                                    } else if (isRented) {
+                                        val hoursLeft = TimeUnit.MILLISECONDS.toHours(rentExpiry - System.currentTimeMillis()).coerceAtLeast(0)
+                                        val minsLeft = (TimeUnit.MILLISECONDS.toMinutes(rentExpiry - System.currentTimeMillis()) % 60).coerceAtLeast(0)
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Rounded.HourglassBottom, contentDescription = null, tint = Color(0xFFFF9100), modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Active Rent: ${hoursLeft}h ${minsLeft}m left", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Color(0xFFFF9100))
                                         }
                                     } else {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -281,64 +311,340 @@ fun PlusShopScreen(navController: NavController, viewModel: ScholarViewModel) {
                                                 if (levelSufficient) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
                                                 contentDescription = null,
                                                 tint = if (levelSufficient) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(14.dp)
                                             )
                                             Spacer(Modifier.width(4.dp))
                                             Text(
                                                 text = "Required Level: ${feature.requiredLevel}",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                fontWeight = FontWeight.Medium,
                                                 color = if (levelSufficient) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
                                             )
                                         }
-                                        Spacer(Modifier.height(2.dp))
-                                        Text(
-                                            text = "Cost: ${feature.pricePoints} points",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (pointsSufficient) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
-                                        )
                                     }
                                 }
+                            }
 
-                                if (!isUnlocked) {
+                            // Interactive Acquisition Panel
+                            if (isLockedPermanently) {
+                                Spacer(Modifier.height(16.dp))
+                                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                Spacer(Modifier.height(12.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // Rent Button
                                     Button(
                                         onClick = {
-                                            if (viewModel.purchaseFeature(feature.id, feature.pricePoints)) {
+                                            if (viewModel.rentFeatureWithCredits(feature.id, feature.rentCostCredits, 1)) {
                                                 scope.launch {
-                                                    snackbarHostState.showSnackbar("🔓 Unlocked: ${feature.name} successfully!")
+                                                    snackbarHostState.showSnackbar("⏳ Rented: ${feature.name} for 24 hours successfully!")
                                                 }
-                                            } else {
+                                            }
+                                        },
+                                        enabled = rentCreditsSufficient && levelSufficient,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                        ),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("Rent 24h", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                            Text("${feature.rentCostCredits} Credits", style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+
+                                    // Purchase with Credits
+                                    Button(
+                                        onClick = {
+                                            if (viewModel.purchaseFeatureWithCredits(feature.id, feature.priceCredits)) {
                                                 scope.launch {
-                                                    snackbarHostState.showSnackbar("❌ Requirements not met.")
+                                                    snackbarHostState.showSnackbar("🔑 Unlocked Permanently: ${feature.name}!")
+                                                }
+                                            }
+                                        },
+                                        enabled = creditsSufficient && levelSufficient,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.secondary,
+                                            contentColor = MaterialTheme.colorScheme.onSecondary
+                                        ),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.weight(1.2f)
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("Buy Permanent", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                            Text("${feature.priceCredits} Credits", style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+
+                                    // Purchase with Points
+                                    Button(
+                                        onClick = {
+                                            if (viewModel.purchaseFeatureWithPoints(feature.id, feature.pricePoints)) {
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar("💎 Unlocked Permanently: ${feature.name}!")
                                                 }
                                             }
                                         },
                                         enabled = pointsSufficient && levelSufficient,
-                                        shape = RoundedCornerShape(12.dp),
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.secondary,
-                                            contentColor = MaterialTheme.colorScheme.onSecondary
-                                        )
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                        ),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.weight(1.2f)
                                     ) {
-                                        Text("Exchange", fontWeight = FontWeight.Bold)
-                                    }
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                                    ) {
-                                        Text("Owned", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("Buy Premium", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                            Text("${feature.pricePoints} Points", style = MaterialTheme.typography.labelSmall)
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-                
+
                 item {
-                    Spacer(Modifier.height(32.dp))
+                    Spacer(Modifier.height(48.dp))
+                }
+            }
+        }
+    }
+
+    // Economy Valuation Explanation Dialog
+    if (showInfoDialog) {
+        AlertDialog(
+            onDismissRequest = { showInfoDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Economy Valuation", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text(
+                        "Points and Credits are completely different and independent currencies designed to serve separate purposes in the Scholar economy.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Rounded.MilitaryTech, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Column {
+                            Text("Focus Points (Progression)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("Linked directly to long-term academic accomplishments and permanent progression achievements.", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Rounded.Savings, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Column {
+                            Text("Credits Block (Utility)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                            Text("Modular tokens earned frequently for renting features or buying items in the shop of rarity grades.", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+
+                    Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                            .padding(12.dp)
+                    ) {
+                        Column {
+                            Text(
+                                text = "Relative Valuation:",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "1 Focus Point is equal valuable and rare as 50 Credits at one time.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showInfoDialog = false }) {
+                    Text("Understood", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    // Mystery Wheel Suspense Result Dialog
+    if (showRollResultDialog) {
+        AlertDialog(
+            onDismissRequest = { showRollResultDialog = false },
+            title = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    Icon(
+                        Icons.Rounded.WorkspacePremium,
+                        contentDescription = null,
+                        tint = Color(0xFFFFD700),
+                        modifier = Modifier.size(56.dp)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = if (rolledFeatureResult != null) "RARE DRAFT DROP!" else "LUCKY ROLL EXTRA",
+                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val res = rolledFeatureResult
+                    if (res != null) {
+                        Text(
+                            "You pulled the capsule containing:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    res.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Grade Rank: ${res.rank}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            res.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    } else {
+                        Text(
+                            "Amazing! You already own all dynamic library parts! Spin Cost of 150 Credits refunded. (Double Drop prevention activated)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showRollResultDialog = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Equip & Enjoy!", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun MysteryRarityChestCard(
+    credits: Int,
+    isRolling: Boolean,
+    onRoll: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Color(0xFFFFD700).copy(alpha = 0.4f), MaterialTheme.shapes.large),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Rounded.AutoAwesome,
+                    contentDescription = null,
+                    tint = Color(0xFFFFD700),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Column {
+                    Text("Lucky Star Mystery Chest", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
+                    Text("Spend 150 credits to acquire a random premium lock of rarity grades!", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+
+            // Probabilities breakdown collapsed style
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(8.dp)
+            ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("B: 1-in-15", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFF00E676))
+                    Text("A: 1-in-30", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFF2979FF))
+                    Text("A+: 1-in-50", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFFFF9100))
+                    Text("S: 1-in-100", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFFE040FB))
+                    Text("SS: 1-in-250", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFFFF3D00))
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            Button(
+                onClick = onRoll,
+                enabled = !isRolling && credits >= 150,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFD700),
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isRolling) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onSecondaryContainer)
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Casino, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Draft Capsule Chest (150 Credits)", fontWeight = FontWeight.Black)
+                    }
                 }
             }
         }

@@ -14,6 +14,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
@@ -27,10 +29,14 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.Face
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Leaderboard
 import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.Token
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,10 +59,16 @@ import lumia.tracker.viewmodel.ScholarViewModel
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) {
-    val pagerState = rememberPagerState(pageCount = { 5 })
+    val pagerState = rememberPagerState(pageCount = { 6 })
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     var isLegalAgreed by remember { mutableStateOf(false) }
+
+    // First user setup temporary state variables
+    var firstProfileName by remember { mutableStateOf("Main User") }
+    var firstProfileAlias by remember { mutableStateOf("Scholar") }
+    var firstProfileTheme by remember { mutableStateOf("Ocean") }
+    var firstProfileAvatar by remember { mutableStateOf("") }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -79,25 +91,41 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                     )
                     1 -> OnboardingPage(
                         icon = Icons.Rounded.AutoAwesome,
-                        title = "Welcome to Lumia",
-                        description = "Your beautifully crafted companion for seamless study and productivity. Let's make learning an elegant experience.",
+                        title = "Glassmorphism & Style",
+                        description = "Experience Lumia's distinctive Frosted Glass layouts! Custom theme overlays, floating adaptive navigation rails, and bouncy physics tactile actions elevate your everyday routine.",
                         isActive = pagerState.currentPage == page
                     )
                     2 -> OnboardingPage(
                         icon = Icons.Rounded.Timer,
-                        title = "Focus & Analytics",
-                        description = "Utilize the True AOD Pomodoro timer to maintain deep focus without draining battery, and track everything with insightful analytics.",
+                        title = "Basic Focus Timer (Free)",
+                        description = "Our classic Pomodoro study space and course organizers are 100% free with local offline data security. Complete sessions to earn points and rank up!",
                         isActive = pagerState.currentPage == page
                     )
                     3 -> OnboardingPage(
-                        icon = Icons.Rounded.EditNote,
-                        title = "Effortless Organization",
-                        description = "Manage tasks, take quick notes, and organize courses effortlessly in a sleek, distraction-free environment.",
+                        icon = Icons.Rounded.Token,
+                        title = "Dual Currency Plus Economy",
+                        description = "Manage Focus Points & Credits with an active conversion! Spin the Lucky Chest for premium Grade-SS drops, rent features for 24-hour periods, or unlock custom layouts and database diagnostics permanently.",
                         isActive = pagerState.currentPage == page
                     )
-                    4 -> PermissionsPage(
+                    4 -> ProfileSetupPage(
+                        isActive = pagerState.currentPage == page,
+                        onSaved = { name, alias, theme, avatar ->
+                            firstProfileName = name
+                            firstProfileAlias = alias
+                            firstProfileTheme = theme
+                            firstProfileAvatar = avatar
+                        }
+                    )
+                    5 -> PermissionsPage(
                         isActive = pagerState.currentPage == page,
                         onComplete = {
+                            // Ensure setup is applied when completing
+                            viewModel.setupFirstProfile(
+                                name = firstProfileName.ifBlank { "Main User" },
+                                alias = firstProfileAlias.ifBlank { "Scholar" },
+                                avatar = firstProfileAvatar,
+                                starterTheme = firstProfileTheme
+                            )
                             viewModel.completeOnboarding()
                             navController.navigate("dashboard") {
                                 popUpTo("onboarding") { inclusive = true }
@@ -118,7 +146,7 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
             ) {
                 // Page Indicators
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    repeat(5) { index ->
+                    repeat(6) { index ->
                         val isSelected = pagerState.currentPage == index
                         val width by animateDpAsState(if (isSelected) 24.dp else 8.dp, label = "indicator_width")
                         val color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
@@ -135,11 +163,26 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                 // Next / Get Started Button
                 Button(
                     onClick = {
-                        if (pagerState.currentPage < 4) {
+                        if (pagerState.currentPage < 5) {
+                            if (pagerState.currentPage == 4) {
+                                // Save profile setups right when advancing from profile page
+                                viewModel.setupFirstProfile(
+                                    name = firstProfileName.ifBlank { "Main User" },
+                                    alias = firstProfileAlias.ifBlank { "Scholar" },
+                                    avatar = firstProfileAvatar,
+                                    starterTheme = firstProfileTheme
+                                )
+                            }
                             coroutineScope.launch {
                                 pagerState.animateScrollToPage(pagerState.currentPage + 1)
                             }
                         } else {
+                            viewModel.setupFirstProfile(
+                                name = firstProfileName.ifBlank { "Main User" },
+                                alias = firstProfileAlias.ifBlank { "Scholar" },
+                                avatar = firstProfileAvatar,
+                                starterTheme = firstProfileTheme
+                            )
                             viewModel.completeOnboarding()
                             navController.navigate("dashboard") {
                                 popUpTo("onboarding") { inclusive = true }
@@ -150,7 +193,7 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                     contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp),
                     enabled = pagerState.currentPage != 0 || isLegalAgreed
                 ) {
-                    Text(if (pagerState.currentPage == 4) "Finish" else "Next", fontWeight = FontWeight.Bold)
+                    Text(if (pagerState.currentPage == 5) "Finish" else "Next", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -627,6 +670,195 @@ fun PermissionCard(
             } else {
                 TextButton(onClick = onRequest) {
                     Text("ALLOW")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProfileSetupPage(
+    isActive: Boolean,
+    onSaved: (String, String, String, String) -> Unit
+) {
+    val scale by animateFloatAsState(if (isActive) 1f else 0.8f, tween(600, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "profile_scale")
+    val alpha by animateFloatAsState(if (isActive) 1f else 0f, tween(600), label = "profile_alpha")
+
+    var name by remember { mutableStateOf("Main User") }
+    var alias by remember { mutableStateOf("Scholar") }
+    var starterTheme by remember { mutableStateOf("Ocean") }
+    var selectedImagePath by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    
+    val pickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val avatarDir = java.io.File(context.filesDir, "avatars").apply { mkdirs() }
+                val destFile = java.io.File(avatarDir, "profile_avatar_${System.currentTimeMillis()}.jpg")
+                val outputStream = java.io.FileOutputStream(destFile)
+                inputStream?.use { input ->
+                    outputStream.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                selectedImagePath = destFile.absolutePath
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // Call onSaved when any field changes
+    LaunchedEffect(name, alias, starterTheme, selectedImagePath) {
+        val finalAvatar = selectedImagePath.ifBlank { name.take(2).uppercase().ifBlank { "ME" } }
+        onSaved(name, alias, starterTheme, finalAvatar)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp)
+            .scale(scale)
+            .alpha(alpha),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Text(
+            text = "Create Your Profile",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
+        )
+
+        Text(
+            text = "Enter your custom profile details and select a gorgeous styling palette theme to begin tracking.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center,
+            lineHeight = 22.sp
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Avatar configuration
+        Box(
+            modifier = Modifier
+                .size(96.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .clickable { pickerLauncher.launch("image/*") },
+            contentAlignment = Alignment.Center
+        ) {
+            if (selectedImagePath.isNotEmpty()) {
+                coil.compose.AsyncImage(
+                    model = selectedImagePath,
+                    contentDescription = "Avatar Preview",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Rounded.Face,
+                        contentDescription = "Pick Avatar",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(36.dp)
+                    )
+                    Text(
+                        "Upload Photo",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Display Name (e.g. Scholar Jordan)") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        OutlinedTextField(
+            value = alias,
+            onValueChange = { alias = it },
+            label = { Text("Alias / Nickname (e.g. Einstein)") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    "Choose Your Starter Theme",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                
+                val themesList = listOf(
+                    "Ocean" to Color(0xFF3197D6),
+                    "Emerald" to Color(0xFF4BC27D),
+                    "Gold" to Color(0xFFFFC646),
+                    "Rose" to Color(0xFFE52F28),
+                    "Sage" to Color(0xFFACBDAA),
+                    "Twilight" to Color(0xFF958CE8)
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    themesList.forEach { (tName, tColor) ->
+                        val isSelected = starterTheme == tName
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(tColor)
+                                .clickable { starterTheme = tName }
+                                .border(
+                                    width = if (isSelected) 3.dp else 0.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = "Selected",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

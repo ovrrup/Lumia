@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Photo
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import lumia.tracker.model.UserProfile
+import lumia.tracker.ui.components.BouncyButton
+import lumia.tracker.ui.components.BouncyTextButton
 import androidx.compose.ui.text.style.TextAlign
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,7 +32,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 fun ProfileSelectionScreen(
     profiles: List<UserProfile>,
     onProfileSelected: (String) -> Unit,
-    onCreateProfile: (String, String) -> Unit
+    onCreateProfile: (String, String, String, String) -> Unit
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -94,6 +97,8 @@ fun ProfileSelectionScreen(
 
     if (showAddDialog) {
         var name by remember { mutableStateOf("") }
+        var alias by remember { mutableStateOf("") }
+        var starterTheme by remember { mutableStateOf("Ocean") }
         var selectedImagePath by remember { mutableStateOf("") }
         val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -129,6 +134,55 @@ fun ProfileSelectionScreen(
                         label = { Text("Profile Name") },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = alias,
+                        onValueChange = { alias = it },
+                        label = { Text("Alias / Nickname") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    Text("Select Starter Theme", style = MaterialTheme.typography.titleSmall, modifier = Modifier.align(Alignment.Start))
+                    Spacer(Modifier.height(8.dp))
+                    
+                    val themesList = listOf(
+                        "Ocean" to Color(0xFF3197D6),
+                        "Emerald" to Color(0xFF4BC27D),
+                        "Gold" to Color(0xFFFFC646),
+                        "Rose" to Color(0xFFE52F28),
+                        "Sage" to Color(0xFFACBDAA),
+                        "Twilight" to Color(0xFF958CE8)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        themesList.forEach { (tName, tColor) ->
+                            val isSelected = starterTheme == tName
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(tColor)
+                                    .clickable { starterTheme = tName }
+                                    .then(
+                                        if (isSelected) Modifier.background(Color.White.copy(alpha = 0.3f), CircleShape)
+                                        else Modifier
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isSelected) {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = "Selected",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(16.dp))
 
                     Text("Profile Picture", style = MaterialTheme.typography.titleSmall, modifier = Modifier.align(Alignment.Start))
@@ -164,9 +218,9 @@ fun ProfileSelectionScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = {
+                BouncyButton(onClick = {
                     if (name.isNotBlank()) {
-                        onCreateProfile(name, selectedImagePath.ifBlank { name.take(2).uppercase() })
+                        onCreateProfile(name, selectedImagePath.ifBlank { name.take(2).uppercase() }, alias, starterTheme)
                         showAddDialog = false
                     }
                 }) {
@@ -174,7 +228,7 @@ fun ProfileSelectionScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) {
+                BouncyTextButton(onClick = { showAddDialog = false }) {
                     Text("Cancel")
                 }
             }

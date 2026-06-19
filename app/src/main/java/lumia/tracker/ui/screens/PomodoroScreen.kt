@@ -442,9 +442,9 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                                     assignmentId = selectedAssignmentId,
                                                     taskId = selectedTaskId
                                                 )
-                                                android.widget.Toast.makeText(context, "Saved session: $studiedMinutes min of focused study!", android.widget.Toast.LENGTH_LONG).show()
+                                                viewModel.postNotification("Focus Completed!", "Saved session: $studiedMinutes min of focused study! You earned experience.", "POINTS")
                                             } else if (studiedMinutes == 0 && modeString == "WORK") {
-                                                android.widget.Toast.makeText(context, "Session too brief to log to history.", android.widget.Toast.LENGTH_SHORT).show()
+                                                viewModel.postNotification("Session Cancelled", "Session too brief to log to history.", "INFO")
                                             }
                                             isRunning = false
                                             isExitButtonShown = false

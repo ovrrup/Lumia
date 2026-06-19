@@ -5,20 +5,33 @@ data class PlusFeature(
     val name: String,
     val description: String,
     val pricePoints: Int,
+    val priceCredits: Int,
+    val rentCostCredits: Int,
     val requiredLevel: Int,
     val category: String, // "Appearance", "Customization", "Experimental", "Analytics"
-    val rank: String // "Bronze", "Silver", "Gold", "Diamond"
+    val rank: String // "B", "A", "A+", "S", "SS" (Grades)
 )
 
 object PlusShop {
     val features = listOf(
-        PlusFeature("feat_theme_pack", "Theme Pack Expansion", "Unlocks Pastel, Matrix, and Cyberpunk themes.", 200, 2, "Appearance", "Silver"),
-        PlusFeature("feat_custom_theme", "Custom Themes", "Create your own unique themes completely from scratch.", 500, 5, "Appearance", "Gold"),
-        PlusFeature("feat_minimal_ui", "Minimalist Mode", "A distraction-free minimal UI with zero bloat.", 1000, 10, "Appearance", "Diamond"),
-        PlusFeature("feat_screen_layout", "Advanced Screen Layouts", "Freely adjust layout paddings, grids, and dock position.", 300, 3, "Customization", "Silver"),
-        PlusFeature("feat_true_aod", "True AOD", "An always-on display mode optimized for OLED screens.", 1500, 15, "Experimental", "Diamond"),
-        PlusFeature("feat_notification_tone", "Custom Notification Tones", "Select custom sounds for Pomodoro and task completions.", 250, 2, "Customization", "Bronze"),
-        PlusFeature("feat_leaderboard", "Study Leaderboard", "Compare study performance, daily sessions, and focus times with friends or local peer tiers.", 350, 3, "Analytics", "Gold"),
-        PlusFeature("feat_experimental", "Mad Scientist Lab", "Unlock highly experimental and test features.", 2000, 20, "Experimental", "Diamond")
+        // B-Grade (Utility) - 1 in 15 rarity (6.67%)
+        PlusFeature("feat_notification_tone", "Custom Notification Tones", "Select custom sound profiles and alert frequencies for Pomodoro sessions.", 100, 5000, 150, 2, "Customization", "B"),
+        PlusFeature("feat_theme_overlay", "Thematic Layout Overlays", "Inject frosted glass color overlays into the main screen layout.", 150, 7500, 200, 3, "Appearance", "B"),
+        
+        // A-Grade (Standard Plus) - 1 in 30 rarity (3.33%)
+        PlusFeature("feat_theme_pack", "Theme Pack Expansion", "Unlocks Pastel, Matrix, and Cyberpunk premium aesthetic dynamic colorways.", 300, 15000, 350, 4, "Appearance", "A"),
+        PlusFeature("feat_screen_layout", "Advanced Screen Layouts", "Freely adjust layout paddings, grids, and dock position in the primary view.", 400, 20000, 450, 5, "Customization", "A"),
+        
+        // A+-Grade (Advanced Scholar) - 1 in 50 rarity (2.0%)
+        PlusFeature("feat_custom_theme", "Custom Theme Engine", "Design your own custom Material 3 themed color codes from hex inputs.", 600, 30000, 600, 6, "Appearance", "A+"),
+        PlusFeature("feat_leaderboard", "Study Leaderboard", "Compare study performance, daily sessions, and focus times with friends or local peer tiers.", 700, 35000, 700, 7, "Analytics", "A+"),
+        
+        // S-Grade (High Premium) - 1 in 100 rarity (1.0%)
+        PlusFeature("feat_minimal_ui", "Minimalist Mode", "A complete distraction-free minimalist alternative launcher layout.", 1000, 50000, 1000, 10, "Appearance", "S"),
+        PlusFeature("feat_true_aod", "True Always-On Display", "An overlay-based screen-saver clock for physical screen and hardware protection during deep focus.", 1500, 75000, 1500, 15, "Experimental", "S"),
+        
+        // SS-Grade (Ultra Premium / Scholar God) - 1 in 250 rarity (0.4%)
+        PlusFeature("feat_advanced_data", "DB Inspector & Diagnostics", "Run local sqlite schema inspections, defragment indexes, clean orphans, and export filtered CSV packages.", 2000, 100000, 2000, 20, "Analytics", "SS"),
+        PlusFeature("feat_experimental", "Mad Scientist Lab", "Unlock highly experimental fluid UI components, customizable live wave particle visualizers, and premium soundscapes.", 3000, 150000, 3000, 25, "Experimental", "SS")
     )
 }

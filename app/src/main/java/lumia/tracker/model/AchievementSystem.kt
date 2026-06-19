@@ -9,32 +9,35 @@ data class AchievementDef(
     val description: String,
     val requiredType: String, // e.g. "POINTS", "TASKS", "SESSIONS", "STREAK"
     val requiredValue: Int,
-    val iconEmoji: String
+    val iconEmoji: String,
+    val rewardFeatureId: String? = null
 )
 
 object AchievementSystem {
     val ACHIEVEMENTS = listOf(
         // Points based
-        AchievementDef("P_100", "Apprentice", "Reach 100 points.", "POINTS", 100, "Novice"),
+        AchievementDef("P_100", "Apprentice", "Reach 100 points.", "POINTS", 100, "Novice", "feat_theme_overlay"),
         AchievementDef("P_500", "Scholar", "Reach 500 points.", "POINTS", 500, "Scroll"),
         AchievementDef("P_1000", "Master", "Reach 1,000 points.", "POINTS", 1000, "Cap"),
         AchievementDef("P_5000", "Grandmaster", "Reach 5,000 points.", "POINTS", 5000, "Crown"),
         AchievementDef("P_10000", "Legend", "Reach 10,000 points.", "POINTS", 10000, "Star"),
         // Tasks based
         AchievementDef("T_1", "First Step", "Complete your first task.", "TASKS", 1, "Check"),
-        AchievementDef("T_10", "Task Doer", "Complete 10 tasks.", "TASKS", 10, "Check"),
+        AchievementDef("T_10", "Task Doer", "Complete 10 tasks.", "TASKS", 10, "Check", "feat_screen_layout"),
         AchievementDef("T_50", "Task Manager", "Complete 50 tasks.", "TASKS", 50, "Check"),
         AchievementDef("T_100", "Task Master", "Complete 100 tasks.", "TASKS", 100, "Check"),
         AchievementDef("T_500", "Task Overlord", "Complete 500 tasks.", "TASKS", 500, "Check"),
         // Pomodoro based
         AchievementDef("S_1", "Focus Novice", "Complete your first focus session.", "SESSIONS", 1, "Timer"),
-        AchievementDef("S_10", "Focus Regular", "Complete 10 focus sessions.", "SESSIONS", 10, "Timer"),
+        AchievementDef("S_5", "Focus Beginner", "Complete 5 focus sessions.", "SESSIONS", 5, "Timer", "feat_notification_tone"),
+        AchievementDef("S_10", "Focus Regular", "Complete 10 focus sessions.", "SESSIONS", 10, "Timer", "feat_leaderboard"),
+        AchievementDef("S_25", "Focus Apprentice", "Complete 25 focus sessions.", "SESSIONS", 25, "Timer", "feat_custom_theme"),
         AchievementDef("S_50", "Focus Expert", "Complete 50 focus sessions.", "SESSIONS", 50, "Timer"),
         AchievementDef("S_100", "Focus Master", "Complete 100 focus sessions.", "SESSIONS", 100, "Timer"),
         AchievementDef("S_500", "Focus Legend", "Complete 500 focus sessions.", "SESSIONS", 500, "Timer"),
         // Streak based
         AchievementDef("ST_3", "Warming Up", "Reach a 3-day streak.", "STREAK", 3, "Fire"),
-        AchievementDef("ST_7", "Weekly Warrior", "Reach a 7-day streak.", "STREAK", 7, "Fire"),
+        AchievementDef("ST_7", "Weekly Warrior", "Reach a 7-day streak.", "STREAK", 7, "Fire", "feat_theme_pack"),
         AchievementDef("ST_30", "Monthly Master", "Reach a 30-day streak.", "STREAK", 30, "Fire"),
         AchievementDef("ST_100", "Unstoppable", "Reach a 100-day streak.", "STREAK", 100, "Fire"),
         AchievementDef("ST_365", "A Year of Focus", "Reach a 365-day streak.", "STREAK", 365, "Fire"),

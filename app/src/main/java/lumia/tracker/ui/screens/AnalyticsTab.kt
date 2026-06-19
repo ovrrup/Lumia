@@ -184,7 +184,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                 PointsAndLevelCard(modifier = Modifier.fillMaxWidth(), profile = activeProfile)
                 
                 if (allProfiles.size > 1) {
-                    val isLeaderboardUnlocked = activeProfile.unlockedFeatures.contains("feat_leaderboard")
+                    val isLeaderboardUnlocked = activeProfile.isFeatureUnlocked("feat_leaderboard")
                     if (isLeaderboardUnlocked) {
                         LeaderboardChart(modifier = Modifier.fillMaxWidth(), profiles = allProfiles)
                     } else {
@@ -235,8 +235,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                     }
                 }
                 
-                AchievementsCard(modifier = Modifier.fillMaxWidth(), profile = activeProfile)
-                
+
                 WeeklyAssignmentsDueChart(
                     modifier = Modifier.fillMaxWidth(),
                     assignments = assignments,
@@ -1416,7 +1415,7 @@ fun AchievementsCard(modifier: Modifier = Modifier, profile: lumia.tracker.model
                             Box(
                                 modifier = Modifier.size(48.dp).background(
                                     color = if (isUnlocked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = MaterialTheme.shapes.small
                                 ),
                                 contentAlignment = Alignment.Center
                             ) {

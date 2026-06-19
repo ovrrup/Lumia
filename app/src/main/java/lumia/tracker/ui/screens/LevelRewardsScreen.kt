@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.viewmodel.ScholarViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 data class LevelMilestone(
     val level: Int,
@@ -46,8 +48,15 @@ fun LevelRewardsScreen(navController: NavController, viewModel: ScholarViewModel
         LevelMilestone(5, "Creative Freedom", "Purchase Custom Theme customizer module in shop.", Icons.Rounded.AutoAwesome, "feat_custom_theme"),
         LevelMilestone(10, "Zen Minimalist", "Option to enable clutter-free, hyper-focus interface.", Icons.Rounded.OfflineBolt, "feat_minimal_ui"),
         LevelMilestone(15, "Stealth Always-On", "OLED-safe low frequency focus layout.", Icons.Rounded.SettingsBrightness, "feat_true_aod"),
-        LevelMilestone(20, "Scholar Vanguard", "Mad Scientist Lab experimental components.", Icons.Rounded.Science, "feat_experimental")
+        LevelMilestone(20, "Scholar Vanguard", "Mad Scientist Lab experimental components.", Icons.Rounded.Science, "feat_experimental"),
+        LevelMilestone(30, "Immortal Scholar", "Access premium custom dashboard widgets and fluid animations.", Icons.Rounded.WorkspacePremium),
+        LevelMilestone(40, "Galactic Wisdom", "Activate adaptive space-themed soundscapes for deep concentration.", Icons.Rounded.CloudQueue),
+        LevelMilestone(50, "Cosmic Vanguard", "Award of sovereign state indicator displays inside profiles.", Icons.Rounded.LocalFireDepartment),
+        LevelMilestone(75, "Universal Legend", "Exotic high-contrast deep twilight styling modules.", Icons.Rounded.BrightnessHigh),
+        LevelMilestone(100, "Eternal Luminary", "Final ultimate level completion badge of godhead enlightenment.", Icons.Rounded.Psychology)
     )
+
+    var showUnboxDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -69,15 +78,19 @@ fun LevelRewardsScreen(navController: NavController, viewModel: ScholarViewModel
         ) {
             item {
                 Spacer(Modifier.height(12.dp))
-                // Beautiful Hero Progress Card
+                // Beautiful RPG Experience Progress Card
+                val xpNeeded = viewModel.getXpNeededForNextLevel(currentLevel)
+                val currentXp = activeProfile.experience
+                val xpProgress = (currentXp.toFloat() / xpNeeded.toFloat()).coerceIn(0f, 1f)
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = MaterialTheme.shapes.large,
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                     )
                 ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
+                    Column(modifier = Modifier.padding(20.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
@@ -109,10 +122,105 @@ fun LevelRewardsScreen(navController: NavController, viewModel: ScholarViewModel
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    "${activeProfile.points} focus points accumulated",
+                                    "XP Progression: $currentXp / $xpNeeded XP",
                                     style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                 )
+                            }
+                        }
+                        
+                        Spacer(Modifier.height(16.dp))
+                        
+                        // M3 Linear Progress Indicator with rounded track
+                        LinearProgressIndicator(
+                            progress = { xpProgress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(CircleShape),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        )
+                        
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "Focus Points: ${activeProfile.points}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                "${(xpProgress * 100).toInt()}% towards Level ${currentLevel + 1}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                // Interactive Surprise Box Alert Banner if present
+                if (activeProfile.pendingSurpriseBoxes > 0) {
+                    Spacer(Modifier.height(16.dp))
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showUnboxDialog = true },
+                        shape = MaterialTheme.shapes.large,
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.tertiary)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .background(MaterialTheme.colorScheme.tertiary, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.CardGiftcard,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onTertiary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        "Surprise Boxes Available!",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    Text(
+                                        "You have ${activeProfile.pendingSurpriseBoxes} box(es). Tap to open!",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                                    )
+                                }
+                            }
+                            Button(
+                                onClick = { showUnboxDialog = true },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiary,
+                                    contentColor = MaterialTheme.colorScheme.onTertiary
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text("OPEN", fontWeight = FontWeight.ExtraBold)
                             }
                         }
                     }
@@ -130,7 +238,7 @@ fun LevelRewardsScreen(navController: NavController, viewModel: ScholarViewModel
 
             items(milestones) { milestone ->
                 val isUnlocked = currentLevel >= milestone.level
-                val isUnlockedShop = milestone.targetPlusId?.let { activeProfile.unlockedFeatures.contains(it) } ?: true
+                val isUnlockedShop = milestone.targetPlusId?.let { activeProfile.isFeatureUnlocked(it) } ?: true
                 
                 Row(
                     modifier = Modifier
@@ -175,7 +283,7 @@ fun LevelRewardsScreen(navController: NavController, viewModel: ScholarViewModel
                     Card(
                         modifier = Modifier
                             .weight(1f),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = MaterialTheme.shapes.medium,
                         colors = CardDefaults.cardColors(
                             containerColor = if (isUnlocked) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface
                         ),
@@ -262,5 +370,185 @@ fun LevelRewardsScreen(navController: NavController, viewModel: ScholarViewModel
                 Spacer(Modifier.height(48.dp))
             }
         }
+    }
+
+    // Interactive Surprise Box Opening Dialog with elegant tapping stages & animations
+    if (showUnboxDialog) {
+        var shakeStage by remember { mutableStateOf(0) }
+        var isExploding by remember { mutableStateOf(false) }
+        var result by remember { mutableStateOf<ScholarViewModel.SurpriseBoxResult?>(null) }
+        val scope = rememberCoroutineScope()
+
+        AlertDialog(
+            onDismissRequest = { 
+                if (result != null) {
+                    showUnboxDialog = false
+                }
+            },
+            title = {
+                Text(
+                    text = if (result != null) "LOOT UNBOXED!" else "Surprise Box",
+                    fontWeight = FontWeight.ExtraBold,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    if (result == null) {
+                        // Game-like interactive opening stages
+                        Text(
+                            text = "Tap the Surprise Box 3 times to crack the lock!",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(Modifier.height(24.dp))
+
+                        // Box Icon with animated bounce/shake properties
+                        val scale = if (shakeStage > 0) 1.15f - (shakeStage * 0.05f) else 1.0f
+                        Box(
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(
+                                    Brush.linearGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colorScheme.tertiary,
+                                            MaterialTheme.colorScheme.tertiaryContainer
+                                        )
+                                    )
+                                )
+                                .clickable(enabled = !isExploding) {
+                                    if (shakeStage < 2) {
+                                        shakeStage++
+                                    } else {
+                                        shakeStage = 3
+                                        isExploding = true
+                                        // Wait a little bit for realistic suspense explosion delay
+                                        scope.launch {
+                                            kotlinx.coroutines.delay(1000)
+                                            result = viewModel.claimSurpriseBox()
+                                             if (result != null) {
+                                                 viewModel.postNotification(
+                                                     title = "Reward Equipped!",
+                                                     message = result!!.detailText,
+                                                     type = result!!.type
+                                                 )
+                                             }
+                                            isExploding = false
+                                        }
+                                    }
+                                }
+                                .padding(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (shakeStage >= 3) Icons.Rounded.AutoAwesome else Icons.Rounded.CardGiftcard,
+                                contentDescription = "Surprise Box",
+                                tint = MaterialTheme.colorScheme.onTertiary,
+                                modifier = Modifier.size(64.dp)
+                            )
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+
+                        if (isExploding) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "BOOM! Opening...",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                        } else {
+                            Text(
+                                "Stage: $shakeStage / 3 Hits",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = when (shakeStage) {
+                                    0 -> "Give it a solid tap!"
+                                    1 -> "It's wobbling! Tap again!"
+                                    2 -> "Almost cracked! ONE MORE HIT!"
+                                    else -> "Exploding!"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        // Display unboxed prizes
+                        val unboxed = result!!
+                        val prizeColor = when (unboxed.type) {
+                            "POINTS" -> MaterialTheme.colorScheme.primary
+                            "CREDITS" -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.tertiary
+                        }
+                        
+                        Box(
+                            modifier = Modifier
+                                .size(96.dp)
+                                .background(prizeColor.copy(alpha = 0.15f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = when (unboxed.type) {
+                                    "POINTS" -> Icons.Rounded.MilitaryTech
+                                    "CREDITS" -> Icons.Rounded.Savings
+                                    else -> Icons.Rounded.WorkspacePremium
+                                },
+                                contentDescription = null,
+                                tint = prizeColor,
+                                modifier = Modifier.size(52.dp)
+                            )
+                        }
+                        
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            text = unboxed.detailText,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            color = prizeColor
+                        )
+                        
+                        if (unboxed.featureName.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Temporary Premium Unlock activated! Go explore the customized settings in menu layout overlays.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                if (result != null) {
+                    Button(
+                        onClick = { 
+                            showUnboxDialog = false 
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("EQUIP & CLAIM", fontWeight = FontWeight.ExtraBold)
+                    }
+                }
+            }
+        )
     }
 }

@@ -145,7 +145,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            val showingProfileSelector = remember { androidx.compose.runtime.mutableStateOf(true) }
+            val startupState = remember { androidx.compose.runtime.mutableStateOf("splash") }
             val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
             val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
 
@@ -179,18 +179,28 @@ class MainActivity : ComponentActivity() {
                     ), 
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    if (showingProfileSelector.value) {
+                    if (startupState.value == "splash") {
+                        lumia.tracker.ui.screens.ProfileSplashLoadingScreen(
+                            activeProfile = activeProfile,
+                            onEnter = {
+                                startupState.value = "main"
+                            },
+                            onSwitchAccount = {
+                                startupState.value = "selector"
+                            }
+                        )
+                    } else if (startupState.value == "selector") {
                         lumia.tracker.ui.screens.ProfileSelectionScreen(
                             profiles = allProfiles,
                             onProfileSelected = { profileId ->
                                 if (profileId != activeProfile.id) {
                                     viewModel.switchProfileAndRestart(this@MainActivity, profileId)
                                 } else {
-                                    showingProfileSelector.value = false
+                                    startupState.value = "main"
                                 }
                             },
-                            onCreateProfile = { name, emoji -> 
-                                viewModel.createProfile(name, emoji)
+                            onCreateProfile = { name, emoji, alias, starterTheme -> 
+                                viewModel.createProfile(name, emoji, alias, starterTheme)
                             }
                         )
                     } else {
@@ -481,8 +491,8 @@ class MainActivity : ComponentActivity() {
                             lumia.tracker.ui.screens.PlusShopScreen(navController = navController, viewModel = viewModel)
                         }
                         composable("switch_user") {
-                            showingProfileSelector.value = true
-                            // Since showingProfileSelector controls the entire surface display above NavHost, it'll just show the profile selector.
+                            startupState.value = "selector"
+                            // Since startupState controls the entire surface display above NavHost, it'll just show the profile selector.
                             // However, we should pop back because it's an overlay
                             androidx.compose.runtime.LaunchedEffect(Unit) {
                                 navController.navigateUp()
@@ -530,6 +540,20 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+                    
+                    val levelUpEvent by viewModel.lastLevelUpEvent.collectAsStateWithLifecycle()
+                    if (levelUpEvent != null) {
+                        lumia.tracker.ui.components.LevelCelebrationDialog(
+                            event = levelUpEvent!!,
+                            onDismiss = { viewModel.clearLevelUpEvent() }
+                        )
+                    }
+
+                    val activeInAppNotifications by viewModel.inAppNotifications.collectAsStateWithLifecycle()
+                    lumia.tracker.ui.components.InAppNotificationQueue(
+                        notifications = activeInAppNotifications,
+                        onDismissNotification = { id -> viewModel.dismissNotification(id) }
+                    )
 
                     } // End of Box
                     } // End of else

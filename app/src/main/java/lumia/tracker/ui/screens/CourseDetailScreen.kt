@@ -56,6 +56,23 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.AttachFile
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Book
+import androidx.compose.material.icons.rounded.Photo
+import androidx.compose.material.icons.rounded.Article
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.ui.graphics.Color
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.graphics.pdf.PdfDocument
+import android.graphics.Paint
+import android.net.Uri
+import java.io.File
+import java.io.FileOutputStream
+import android.widget.Toast
 
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
@@ -65,6 +82,7 @@ import org.burnoutcrew.reorderable.ReorderableItem
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel, courseId: Int) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val course = courses.find { it.id == courseId }
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
@@ -106,6 +124,163 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     var showAddAssignmentDialog by remember { mutableStateOf(false) }
     var localAssignments by remember(assignments) { mutableStateOf(assignments) }
     var localTasks by remember(courseTasks) { mutableStateOf(courseTasks) }
+
+    val attachments by viewModel.getAttachmentsForCourse(courseId).collectAsStateWithLifecycle(emptyList())
+    var showAddAttachmentDialog by remember { mutableStateOf(false) }
+    var attachmentTitle by remember { mutableStateOf("") }
+    var attachmentContent by remember { mutableStateOf("") }
+    val contentResolver = context.contentResolver
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                var displayName = "Attachment_${System.currentTimeMillis()}"
+                var sizeBytes: Long = 0
+                val cursor = contentResolver.query(uri, null, null, null, null)
+                if (cursor != null) {
+                    try {
+                        val nameIdx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        val sizeIdx = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
+                        if (cursor.moveToFirst()) {
+                            if (nameIdx != -1) displayName = cursor.getString(nameIdx)
+                            if (sizeIdx != -1) sizeBytes = cursor.getLong(sizeIdx)
+                        }
+                    } finally {
+                        cursor.close()
+                    }
+                }
+                val extension = if (displayName.contains(".")) displayName.substringAfterLast(".").lowercase() else "bin"
+                val fileType = when (extension) {
+                    "pdf" -> "PDF Document"
+                    "doc", "docx" -> "Word Document"
+                    "xls", "xlsx" -> "Excel Spreadsheet"
+                    "ppt", "pptx" -> "PowerPoint Presentation"
+                    "txt", "md" -> "Text File"
+                    "png", "jpg", "jpeg", "gif", "webp", "bmp" -> "Image"
+                    "mp3", "wav", "aac", "flac", "ogg", "m4a" -> "Audio Recording"
+                    "mp4", "mkv", "avi", "mov", "webm" -> "Video File"
+                    "zip", "rar", "tar", "gz", "7z" -> "Archive"
+                    else -> "${extension.uppercase()} File"
+                }
+                val localFile = File(context.filesDir, "attachment_${System.currentTimeMillis()}.$extension")
+                val inputStream = contentResolver.openInputStream(uri)
+                if (inputStream != null) {
+                    try {
+                        val outputStream = FileOutputStream(localFile)
+                        try {
+                            inputStream.copyTo(outputStream)
+                        } finally {
+                            outputStream.close()
+                        }
+                    } finally {
+                        inputStream.close()
+                    }
+                }
+                viewModel.addAttachment(
+                    name = displayName,
+                    filePath = localFile.absolutePath,
+                    fileType = fileType,
+                    sizeBytes = if (sizeBytes > 0) sizeBytes else localFile.length(),
+                    courseId = courseId,
+                    subjectId = null
+                )
+                Toast.makeText(context, "✅ Attachment successfully linked!", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "❌ Link failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val generateStudyGuidePdf: (String, String) -> Unit = { titleStr, contentStr ->
+        try {
+            val pdfDoc = PdfDocument()
+            val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+            val page = pdfDoc.startPage(pageInfo)
+            val canvas = page.canvas
+            val paint = Paint()
+            
+            paint.color = android.graphics.Color.parseColor("#4F46E5")
+            canvas.drawRect(0f, 0f, 595f, 120f, paint)
+            
+            paint.color = android.graphics.Color.WHITE
+            paint.textSize = 24f
+            paint.isFakeBoldText = true
+            canvas.drawText("SCHOLAR STUDY GUIDE", 40f, 60f, paint)
+            
+            paint.textSize = 14f
+            paint.isFakeBoldText = false
+            paint.color = android.graphics.Color.parseColor("#E0E7FF")
+            canvas.drawText("Linked Course: ${course?.name ?: ""}", 40f, 90f, paint)
+            
+            paint.color = android.graphics.Color.BLACK
+            paint.textSize = 16f
+            paint.isFakeBoldText = true
+            canvas.drawText(titleStr, 40f, 160f, paint)
+            
+            paint.textSize = 12f
+            paint.isFakeBoldText = false
+            paint.color = android.graphics.Color.parseColor("#1F2937")
+            
+            var y = 200f
+            val maxLines = 25
+            val words = contentStr.split(" ")
+            val wrappedLines = mutableListOf<String>()
+            var currentLine = StringBuilder()
+            
+            for (word in words) {
+                if (word.contains("\n")) {
+                    val parts = word.split("\n")
+                    for (i in parts.indices) {
+                        if (i > 0) {
+                            wrappedLines.add(currentLine.toString())
+                            currentLine = StringBuilder()
+                        }
+                        if (currentLine.isNotEmpty()) currentLine.append(" ")
+                        currentLine.append(parts[i])
+                    }
+                } else {
+                    if (currentLine.isNotEmpty()) currentLine.append(" ")
+                    currentLine.append(word)
+                    if (currentLine.length > 70) {
+                        wrappedLines.add(currentLine.toString())
+                        currentLine = StringBuilder()
+                    }
+                }
+            }
+            if (currentLine.isNotEmpty()) {
+                wrappedLines.add(currentLine.toString())
+            }
+            
+            for (line in wrappedLines.take(maxLines)) {
+                canvas.drawText(line, 40f, y, paint)
+                y += 22f
+            }
+            
+            paint.color = android.graphics.Color.GRAY
+            paint.textSize = 10f
+            canvas.drawText("Generated with Scholar Companion App • page 1 of 1", 40f, 800f, paint)
+            
+            pdfDoc.finishPage(page)
+            
+            val localFile = File(context.filesDir, "study_guide_${System.currentTimeMillis()}.pdf")
+            pdfDoc.writeTo(localFile.outputStream())
+            pdfDoc.close()
+            
+            viewModel.addAttachment(
+                name = if (titleStr.endsWith(".pdf", ignoreCase = true)) titleStr else "$titleStr.pdf",
+                filePath = localFile.absolutePath,
+                fileType = "PDF Document",
+                sizeBytes = localFile.length(),
+                courseId = courseId,
+                subjectId = null
+            )
+            Toast.makeText(context, "✅ Study guide PDF generated!", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "❌ Generation failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val reorderableState = rememberReorderableLazyListState(
@@ -1003,6 +1178,227 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         }
                     }
                 }
+
+                // Resource Hub & Attachments Section
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                        Text(
+                            "Resource Hub & Attachments",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            "Link physical course materials, lecture slides, and notes",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Browse Device File Button
+                        BouncyButton(
+                            onClick = { 
+                                try {
+                                    filePickerLauncher.launch(arrayOf("*/*"))
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "File picking not supported", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Rounded.AttachFile, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Browse File", style = MaterialTheme.typography.labelSmall)
+                        }
+
+                        // Generate Study Guide PDF Button
+                        BouncyButton(
+                            onClick = { 
+                                attachmentTitle = "Summary of ${course.name}"
+                                attachmentContent = if (courseNotes.isNotEmpty()) {
+                                    courseNotes.joinToString("\n\n") { "• [${it.tag}] ${it.content}" }
+                                } else {
+                                    "This is a summary guide for course ${course.name}.\n\nSchedule: ${course.schedule}\nInstructor: ${course.instructor}\n\nTasks:\n" + courseTasks.joinToString("\n") { "[] " + it.title }
+                                }
+                                showAddAttachmentDialog = true
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Rounded.Book, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("AI Auto-Guide", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+
+                if (attachments.isEmpty()) {
+                    item {
+                        lumia.tracker.ui.components.GlassCard(
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    "No study attachments linked.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    "Upload a PDF or tap AI Auto-Guide to generate study slips.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(attachments, key = { "attachment_${it.id}" }) { attachment ->
+                        val extension = remember(attachment.filePath) {
+                            if (attachment.filePath.contains(".")) attachment.filePath.substringAfterLast(".").lowercase() else ""
+                        }
+                        val visualMeta = remember(extension) {
+                            when (extension) {
+                                "pdf" -> Triple(Icons.Rounded.Description, Color(0xFFEF4444), Color(0xFFFEE2E2)) // Red for PDF
+                                "png", "jpg", "jpeg", "gif", "webp", "bmp" -> Triple(Icons.Rounded.Photo, Color(0xFF10B981), Color(0xFFD1FAE5)) // Green for Image
+                                "txt", "md", "doc", "docx" -> Triple(Icons.Rounded.Article, Color(0xFF3B82F6), Color(0xFFDBEAFE)) // Blue for Doc
+                                "xls", "xlsx" -> Triple(Icons.Rounded.Article, Color(0xFF059669), Color(0xFFD1FAE5)) // Green-emerald for Sheets
+                                "ppt", "pptx" -> Triple(Icons.Rounded.Article, Color(0xFFF59E0B), Color(0xFFFEF3C7)) // Amber for Presentation
+                                "mp3", "wav", "aac", "flac", "ogg", "m4a" -> Triple(Icons.Rounded.VolumeUp, Color(0xFF8B5CF6), Color(0xFFEDE9FE)) // Purple for Audio/Music
+                                "mp4", "mkv", "avi", "mov", "webm" -> Triple(Icons.Rounded.PlayArrow, Color(0xFFEC4899), Color(0xFFFCE7F3)) // Pink/Magenta for Video
+                                "zip", "rar", "tar", "gz", "7z" -> Triple(Icons.Rounded.Folder, Color(0xFF6B7280), Color(0xFFE5E7EB)) // Gray for Archive
+                                else -> Triple(Icons.Rounded.AttachFile, Color(0xFF4F46E5), Color(0xFFE0E7FF)) // Indigo for custom others
+                            }
+                        }
+
+                        lumia.tracker.ui.components.GlassCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        if (attachment.filePath.endsWith(".pdf", ignoreCase = true)) {
+                                            val encodedPath = Uri.encode(attachment.filePath)
+                                            val encodedName = Uri.encode(attachment.name)
+                                            navController.navigate("pdf_viewer?filePath=$encodedPath&fileName=$encodedName")
+                                        } else {
+                                            try {
+                                                val file = File(attachment.filePath)
+                                                if (!file.exists()) {
+                                                    Toast.makeText(context, "File does not exist or was deleted", Toast.LENGTH_SHORT).show()
+                                                } else {
+                                                    val authority = "${context.packageName}.provider"
+                                                    val uri = androidx.core.content.FileProvider.getUriForFile(context, authority, file)
+                                                    val mimeType = when (extension) {
+                                                        "txt" -> "text/plain"
+                                                        "md" -> "text/markdown"
+                                                        "png" -> "image/png"
+                                                        "jpg", "jpeg" -> "image/jpeg"
+                                                        "gif" -> "image/gif"
+                                                        "webp" -> "image/webp"
+                                                        "bmp" -> "image/bmp"
+                                                        "mp3" -> "audio/mpeg"
+                                                        "wav" -> "audio/wav"
+                                                        "ogg" -> "audio/ogg"
+                                                        "m4a" -> "audio/mp4"
+                                                        "mp4" -> "video/mp4"
+                                                        "mkv" -> "video/x-matroska"
+                                                        "doc", "docx" -> "application/msword"
+                                                        "xls", "xlsx" -> "application/vnd.ms-excel"
+                                                        "ppt", "pptx" -> "application/vnd.ms-powerpoint"
+                                                        "zip" -> "application/zip"
+                                                        "rar" -> "application/x-rar-compressed"
+                                                        else -> "*/*"
+                                                    }
+                                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                                        setDataAndType(uri, mimeType)
+                                                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                    }
+                                                    context.startActivity(android.content.Intent.createChooser(intent, "Open file with"))
+                                                }
+                                            } catch (e: Exception) {
+                                                Toast.makeText(context, "Could not open file: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                    }
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(visualMeta.third, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = visualMeta.first,
+                                        contentDescription = null,
+                                        tint = visualMeta.second,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.width(16.dp))
+                                
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = attachment.name,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    val sizeFormatted = remember(attachment.sizeBytes) {
+                                        if (attachment.sizeBytes < 1024) "${attachment.sizeBytes} B"
+                                        else if (attachment.sizeBytes < 1024 * 1024) "${attachment.sizeBytes / 1024} KB"
+                                        else String.format("%.2f MB", attachment.sizeBytes.toFloat() / (1024 * 1024))
+                                    }
+                                    Text(
+                                        text = "$sizeFormatted • ${attachment.fileType.uppercase()}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                
+                                IconButton(
+                                    onClick = { viewModel.deleteAttachment(attachment) }
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.Delete,
+                                        contentDescription = "Delete Attachment",
+                                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -1569,6 +1965,46 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             },
             dismissButton = {
                 BouncyTextButton(onClick = { showAddNoteDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showAddAttachmentDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddAttachmentDialog = false },
+            title = { Text("Generate Study Guide PDF") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Review or customize the automatic study booklet content. This will draft a physical PDF you can view anytime.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = attachmentTitle,
+                        onValueChange = { attachmentTitle = it },
+                        label = { Text("Document Title") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = attachmentContent,
+                        onValueChange = { attachmentContent = it },
+                        label = { Text("Study Guide / Lecture Material Content") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 6
+                    )
+                }
+            },
+            confirmButton = {
+                BouncyTextButton(onClick = {
+                    if (attachmentTitle.isNotBlank() && attachmentContent.isNotBlank()) {
+                        generateStudyGuidePdf(attachmentTitle, attachmentContent)
+                        showAddAttachmentDialog = false
+                    }
+                }) { Text("Generate PDF") }
+            },
+            dismissButton = {
+                BouncyTextButton(onClick = { showAddAttachmentDialog = false }) { Text("Cancel") }
             }
         )
     }

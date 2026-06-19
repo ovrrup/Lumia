@@ -14,7 +14,7 @@ import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.io.OutputStream
 
-class ScholarRepository(private val dao: ScholarDao) {
+class ScholarRepository(val dao: ScholarDao) {
 
     val allCourses: Flow<List<Course>> = dao.getAllCourses()
     val allSubjects: Flow<List<Subject>> = dao.getAllSubjects()
