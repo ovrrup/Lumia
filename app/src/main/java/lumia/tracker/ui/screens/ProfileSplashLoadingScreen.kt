@@ -219,7 +219,7 @@ fun ProfileSplashLoadingScreen(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .widthIn(min = 200.dp)
-                    .height(52.dp)
+                    .heightIn(min = 52.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

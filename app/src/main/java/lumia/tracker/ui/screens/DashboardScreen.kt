@@ -271,20 +271,10 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 alwaysShowLabel = labelModeAlways
                             )
                         }
-                        if (featureSubjectEnabled && !fuseSubjectsCourses) {
-                            NavigationBarItem(
-                                icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
-                                label = if (hideLabels) null else { { Text("Subjects") } },
-                                selected = selectedTab == 2,
-                                onClick = { selectedTab = 2 },
-                                colors = navItemColors,
-                                alwaysShowLabel = labelModeAlways
-                            )
-                        }
                         if (featureSelfStudyEnabled) {
                             NavigationBarItem(
-                                icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Self Study") },
-                                label = if (hideLabels) null else { { Text("Self Study") } },
+                                icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Tasks") },
+                                label = if (hideLabels) null else { { Text("Tasks") } },
                                 selected = selectedTab == 3,
                                 onClick = { selectedTab = 3 },
                                 colors = navItemColors,

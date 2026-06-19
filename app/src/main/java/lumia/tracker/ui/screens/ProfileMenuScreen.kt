@@ -165,12 +165,6 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                                         showAboutDialog = true
                                     }
                                 )
-                                DropdownMenuItem(
-                                    text = { Text("More (Under Dev)") },
-                                    leadingIcon = { Icon(Icons.Rounded.Construction, contentDescription = null) },
-                                    enabled = false,
-                                    onClick = {}
-                                )
                             }
                         }
 
@@ -487,7 +481,6 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                 MenuListItem(icon = Icons.Rounded.Info, title = "About App", subtitle = "Version and info") {
                     showAboutDialog = true
                 }
-                MenuListItem(icon = Icons.Rounded.Construction, title = "More", subtitle = "Under Development", enabled = false) {}
                 Spacer(Modifier.height(32.dp))
             }
         }

@@ -132,6 +132,7 @@ class PomodoroService : Service() {
     private var isAlarmActive = false
     private var endedModeStr = ""
     private var mediaPlayer: android.media.MediaPlayer? = null
+    private var hasSavedCurrentSession = false
     
     // Period tracking
     private var sessionsCompleted = 0 // 0 to periodSessions
@@ -214,6 +215,7 @@ class PomodoroService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        saveElapsedWorkSessionIfNeeded()
         isServiceRunning = false
         stopAlarmSound()
         job?.cancel()
@@ -226,6 +228,7 @@ class PomodoroService : Service() {
         isServiceRunning = true
 
         if (action == "STOP") {
+            saveElapsedWorkSessionIfNeeded()
             stopAlarmSound()
             stopSelf()
             return START_NOT_STICKY
@@ -255,6 +258,7 @@ class PomodoroService : Service() {
         }
         
         if (action == "SKIP") {
+            saveElapsedWorkSessionIfNeeded()
             stopAlarmSound()
             isAlarmActive = false
             job?.cancel()
@@ -297,6 +301,7 @@ class PomodoroService : Service() {
         timeLeft = originalTime
         isPaused = startPaused
         currentStateStr = currentMode.name
+        hasSavedCurrentSession = false
         syncToState()
         if (!startPaused) {
             startTimer()
@@ -426,6 +431,129 @@ class PomodoroService : Service() {
         }
     }
     
+    private fun saveElapsedWorkSessionIfNeeded() {
+        if (currentMode != PomodoroMode.WORK || hasSavedCurrentSession) return
+        val elapsedSeconds = originalTime - timeLeft
+        if (elapsedSeconds >= 60) {
+            val mins = Math.max(1, elapsedSeconds / 60)
+            hasSavedCurrentSession = true
+            scope.launch(Dispatchers.IO) {
+                logAndAwardSession(durationMinutes = mins, isFullCompletion = false, isWorkSession = (currentMode == PomodoroMode.WORK))
+            }
+        }
+    }
+
+    private suspend fun logAndAwardSession(durationMinutes: Int, isFullCompletion: Boolean, isWorkSession: Boolean) {
+        if (!isWorkSession) return
+        try {
+            // Check preference "system_pomodoro_auto_log" in lumia_prefs
+            val autoLogPrefs = applicationContext.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
+            val isAutoLogEnabled = autoLogPrefs.getBoolean("system_pomodoro_auto_log", true)
+            if (!isAutoLogEnabled && isFullCompletion) {
+                android.util.Log.d("PomodoroService", "Auto-logging disabled by user prefix settings.")
+                return
+            }
+
+            // 1. Save session in local database & SQLite action log
+            val db = lumia.tracker.data.AppDatabase.getDatabase(applicationContext)
+            db.scholarDao().insertPomodoroSession(
+                lumia.tracker.model.PomodoroSession(
+                    dateMillis = System.currentTimeMillis(),
+                    durationMinutes = durationMinutes,
+                    subjectId = subjectId,
+                    courseId = courseId,
+                    assignmentId = assignmentId,
+                    taskId = taskId
+                )
+            )
+            val actionLabel = if (isFullCompletion) "Completed" else "Focused partially on"
+            db.scholarDao().insertActionLog(
+                lumia.tracker.model.ActionLog(actionText = "$actionLabel Pomodoro Session ($durationMinutes min)")
+            )
+            android.util.Log.d("PomodoroService", "SAVED AUTOMATIC FOCUS SESSION TO DB: $durationMinutes mins")
+
+            // 2. Load User Profile & Award Rewards
+            val pm = lumia.tracker.data.ProfileManager(applicationContext)
+            val profile = pm.getActiveProfile()
+
+            // Rewards calculations matches ViewModel
+            val creditsToAward = durationMinutes * 2
+            val pointsToAward = durationMinutes / 25
+            val xpGained = 10 + durationMinutes * 3
+
+            profile.credits += creditsToAward
+            profile.points += pointsToAward
+            profile.experience += xpGained
+
+            var newLevel = profile.level
+            var xpLeft = profile.experience
+            var leveledUp = false
+
+            val getXpNeeded = { level: Int -> 100 + (level * 50) }
+
+            while (xpLeft >= getXpNeeded(newLevel)) {
+                xpLeft -= getXpNeeded(newLevel)
+                newLevel++
+                leveledUp = true
+                
+                // standard level rewards
+                if (newLevel == 1) {
+                    profile.points += 10
+                } else if (newLevel >= 2) {
+                    profile.pendingSurpriseBoxes++
+                }
+
+                if (newLevel > 0 && newLevel % 5 == 0) {
+                    val randCredits = java.util.Random().nextInt(701) + 100 // 100 to 800
+                    profile.credits += randCredits
+                }
+
+                if (newLevel > 0 && newLevel % 10 == 0) {
+                    profile.credits += 100
+                    val randPoints = java.util.Random().nextInt(16) + 5 // 5 to 20
+                    profile.points += randPoints
+                }
+
+                if (newLevel > 0 && newLevel % 50 == 0) {
+                    val eligible = lumia.tracker.model.PlusShop.features.filter { it.rank == "A+" || it.rank == "S" || it.rank == "SS" }
+                    if (eligible.isNotEmpty()) {
+                        val selectedFeat = eligible.random()
+                        val weeks = java.util.Random().nextInt(2) + 3 // 3 or 4 weeks
+                        val durationMillis = weeks * 7L * 24L * 60L * 60L * 1000L
+                        val activeRents = profile.rentedFeatures.toMutableMap()
+                        val currentExpiry = activeRents[selectedFeat.id] ?: System.currentTimeMillis()
+                        val cleanStart = if (currentExpiry > System.currentTimeMillis()) currentExpiry else System.currentTimeMillis()
+                        activeRents[selectedFeat.id] = cleanStart + durationMillis
+                        profile.rentedFeatures = activeRents
+                    }
+                }
+            }
+
+            profile.level = newLevel
+            profile.experience = xpLeft
+
+            // Update user profile in disk
+            pm.updateProfile(profile)
+            android.util.Log.d("PomodoroService", "SAVED PROFILE UPDATES: +$creditsToAward Credits, +$pointsToAward Points, +$xpGained XP")
+            
+            // Post custom reward details in-app Notification UI
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val rewardsSummary = "+$creditsToAward Cr, +$pointsToAward FP, +$xpGained XP" + if (leveledUp) " | LEVELED UP to $newLevel!" else ""
+            val rewardNotification = NotificationCompat.Builder(applicationContext, "pomodoro_service")
+                .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
+                .setContentTitle(if (isFullCompletion) "Focus Completed!" else "Focus Saved!")
+                .setContentText("Locked in $durationMinutes min study. Secured: $rewardsSummary")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true)
+                .setColor(lumia.tracker.util.NotificationHelper.getColor(applicationContext))
+                .build()
+            notificationManager.notify(2003, rewardNotification)
+            
+        } catch (e: Exception) {
+            android.util.Log.e("PomodoroService", "Failed to log and award pomodoro session", e)
+        }
+    }
+
     private fun finishSession(skipped: Boolean) {
         val completedMode = currentMode
         endedModeStr = if (!skipped) completedMode.name else ""
@@ -436,7 +564,8 @@ class PomodoroService : Service() {
         }
 
         // Send finished log broadcast if work
-        if (completedMode == PomodoroMode.WORK && !skipped) {
+        if (completedMode == PomodoroMode.WORK && !skipped && !hasSavedCurrentSession) {
+            hasSavedCurrentSession = true
             val finishedIntent = Intent("PomodoroLogSession").apply { setPackage(packageName) }
             finishedIntent.putExtra("isWork", true)
             finishedIntent.putExtra("originalTime", originalTime)
@@ -446,28 +575,9 @@ class PomodoroService : Service() {
             taskId?.let { finishedIntent.putExtra("taskId", it) }
             sendBroadcast(finishedIntent)
             
-            // Unconditional database save on Dispatchers.IO
+            val mins = Math.max(1, originalTime / 60)
             scope.launch(Dispatchers.IO) {
-                try {
-                    val db = lumia.tracker.data.AppDatabase.getDatabase(applicationContext)
-                    val mins = Math.max(1, originalTime / 60)
-                    db.scholarDao().insertPomodoroSession(
-                        lumia.tracker.model.PomodoroSession(
-                            dateMillis = System.currentTimeMillis(),
-                            durationMinutes = mins,
-                            subjectId = subjectId,
-                            courseId = courseId,
-                            assignmentId = assignmentId,
-                            taskId = taskId
-                        )
-                    )
-                    db.scholarDao().insertActionLog(
-                        lumia.tracker.model.ActionLog(actionText = "Completed Pomodoro Session ($mins min)")
-                    )
-                    android.util.Log.d("PomodoroService", "SAVED AUTOMATIC FOCUS SESSION: $mins mins")
-                } catch (e: Exception) {
-                    android.util.Log.e("PomodoroService", "Failed to auto-log pomodoro session", e)
-                }
+                logAndAwardSession(durationMinutes = mins, isFullCompletion = true, isWorkSession = (completedMode == PomodoroMode.WORK))
             }
         }
 

@@ -30,6 +30,28 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     val activeProfile = MutableStateFlow(profileManager.getActiveProfile())
     
     val allProfiles = MutableStateFlow(profileManager.getAllProfiles())
+
+    private val prefListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+        val active = profileManager.getActiveProfile()
+        if (activeProfile.value != active) {
+            activeProfile.value = active
+        }
+        val all = profileManager.getAllProfiles()
+        if (allProfiles.value != all) {
+            allProfiles.value = all
+        }
+    }
+
+    init {
+        application.getSharedPreferences("global_profiles", Context.MODE_PRIVATE)
+            .registerOnSharedPreferenceChangeListener(prefListener)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        getApplication<Application>().getSharedPreferences("global_profiles", Context.MODE_PRIVATE)
+            .unregisterOnSharedPreferenceChangeListener(prefListener)
+    }
     
     fun switchProfileAndRestart(context: Context, id: String) {
         profileManager.setActiveProfileId(id)

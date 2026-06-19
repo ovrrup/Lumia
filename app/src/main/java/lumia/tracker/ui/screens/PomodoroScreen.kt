@@ -56,10 +56,10 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
     var mode by remember { mutableStateOf(PomodoroMode.WORK) }
     val context = LocalContext.current
     
-    val subjects by viewModel.subjects.collectAsStateWithLifecycle(emptyList())
-    val courses by viewModel.courses.collectAsStateWithLifecycle(emptyList())
-    val assignmentsList by viewModel.assignments.collectAsStateWithLifecycle(emptyList())
-    val tasks by viewModel.tasks.collectAsStateWithLifecycle(emptyList())
+    val subjects by viewModel.subjects.collectAsStateWithLifecycle(emptyList<lumia.tracker.model.Subject>())
+    val courses by viewModel.courses.collectAsStateWithLifecycle(emptyList<lumia.tracker.model.Course>())
+    val assignmentsList by viewModel.assignments.collectAsStateWithLifecycle(emptyList<lumia.tracker.model.PracticeAssignment>())
+    val tasks by viewModel.tasks.collectAsStateWithLifecycle(emptyList<lumia.tracker.model.Task>())
 
     var selectedSubjectId by remember { mutableStateOf<Int?>(null) }
     var selectedCourseId by remember { mutableStateOf<Int?>(null) }
@@ -106,7 +106,7 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
     }
 
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
-    val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle(emptyList())
+    val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle(emptyList<lumia.tracker.model.PomodoroSession>())
 
     val aodTrueBlackOled by viewModel.aodTrueBlackOled.collectAsStateWithLifecycle()
     val aodAutoDeactivateTrueBlack by viewModel.aodAutoDeactivateTrueBlack.collectAsStateWithLifecycle()
@@ -435,14 +435,13 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                                 0
                                             }
                                             if (studiedMinutes > 0 && modeString == "WORK") {
-                                                viewModel.addPomodoroSession(
-                                                    durationMinutes = studiedMinutes,
+                                                // viewModel.addPomodoroSession(
+                                                    /* durationMinutes = studiedMinutes,
                                                     subjectId = selectedSubjectId,
                                                     courseId = selectedCourseId,
                                                     assignmentId = selectedAssignmentId,
-                                                    taskId = selectedTaskId
-                                                )
-                                                viewModel.postNotification("Focus Completed!", "Saved session: $studiedMinutes min of focused study! You earned experience.", "POINTS")
+                                                    taskId = selectedTaskId */ // test\n                                                 // )
+                                                // viewModel.postNotification("Focus Completed!", "Saved session: $studiedMinutes min of focused study! You earned experience.", "POINTS")
                                             } else if (studiedMinutes == 0 && modeString == "WORK") {
                                                 viewModel.postNotification("Session Cancelled", "Session too brief to log to history.", "INFO")
                                             }
@@ -681,11 +680,21 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                val courseName = session.courseId?.let { cid -> courses.find { it.id == cid }?.name }
+                                val subjectName = session.subjectId?.let { sid -> subjects.find { it.id == sid }?.name }
+                                val contextualText = when {
+                                    courseName != null && subjectName != null -> "Focus Session: $courseName - $subjectName"
+                                    courseName != null -> "Focus Session: $courseName"
+                                    subjectName != null -> "Focus Session: $subjectName"
+                                    else -> "Focus Session"
+                                }
                                 Text(
-                                    text = "Focus Session",
+                                    text = contextualText,
                                     style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                                 val dateStr = java.text.SimpleDateFormat("MMM dd, hh:mm a", java.util.Locale.getDefault()).format(
                                     java.util.Date(session.dateMillis)

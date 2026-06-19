@@ -599,7 +599,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             FilledTonalButton(
                                 onClick = { showAddChapter = true },
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                modifier = Modifier.height(36.dp)
+                                modifier = Modifier.heightIn(min = 36.dp)
                             ) {
                                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
@@ -608,7 +608,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             Button(
                                 onClick = { showAddTopic = true },
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                modifier = Modifier.height(36.dp)
+                                modifier = Modifier.heightIn(min = 36.dp)
                             ) {
                                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
