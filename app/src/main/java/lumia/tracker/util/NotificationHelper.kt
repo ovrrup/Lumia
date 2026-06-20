@@ -16,7 +16,8 @@ object NotificationHelper {
      * to tint the notification icon and elements, matching the app's aesthetic.
      */
     fun getColor(context: Context): Int {
-        val prefs = context.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
+        val profMgr = lumia.tracker.data.ProfileManager(context)
+        val prefs = profMgr.getProfilePrefs()
         val themeColor = prefs.getString("theme_color", "Ocean") ?: "Ocean"
         val customPrimary = prefs.getString("custom_primary", "#3197D6") ?: "#3197D6"
         

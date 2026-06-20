@@ -258,18 +258,13 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     icon = Icons.Rounded.SwapHoriz,
                     onClick = { 
                         // Tell main activity to show profile selector
-                        val pm = context.packageManager
-                        val intent = pm.getLaunchIntentForPackage(context.packageName)
-                        if (intent != null) {
-                            val mainIntent = android.content.Intent.makeRestartActivityTask(intent.component)
-                            context.startActivity(mainIntent)
-                            Runtime.getRuntime().exit(0)
-                        } else {
-                            val fallbackIntent = android.content.Intent(context, lumia.tracker.MainActivity::class.java)
-                            fallbackIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                            context.startActivity(fallbackIntent)
-                            Runtime.getRuntime().exit(0)
+                        val intent = android.content.Intent(context, lumia.tracker.MainActivity::class.java)
+                        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        intent.putExtra("OPEN_PROFILE_SELECTOR", true)
+                        if (context is android.app.Activity) {
+                            context.finish()
                         }
+                        context.startActivity(intent)
                     }
                 )
             }

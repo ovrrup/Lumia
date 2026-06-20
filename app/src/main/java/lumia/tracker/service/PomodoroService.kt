@@ -446,8 +446,9 @@ class PomodoroService : Service() {
     private suspend fun logAndAwardSession(durationMinutes: Int, isFullCompletion: Boolean, isWorkSession: Boolean) {
         if (!isWorkSession) return
         try {
-            // Check preference "system_pomodoro_auto_log" in lumia_prefs
-            val autoLogPrefs = applicationContext.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
+            // Check preference "system_pomodoro_auto_log" in profile prefs
+            val profMgr = lumia.tracker.data.ProfileManager(applicationContext)
+            val autoLogPrefs = profMgr.getProfilePrefs()
             val isAutoLogEnabled = autoLogPrefs.getBoolean("system_pomodoro_auto_log", true)
             if (!isAutoLogEnabled && isFullCompletion) {
                 android.util.Log.d("PomodoroService", "Auto-logging disabled by user prefix settings.")
@@ -479,7 +480,7 @@ class PomodoroService : Service() {
             // Rewards calculations matches ViewModel
             val creditsToAward = durationMinutes * 2
             val pointsToAward = durationMinutes / 25
-            val xpGained = 10 + durationMinutes * 3
+            val xpGained = if (isFullCompletion) 10 + (durationMinutes * 3) else durationMinutes * 3
 
             profile.credits += creditsToAward
             profile.points += pointsToAward
@@ -526,6 +527,28 @@ class PomodoroService : Service() {
                         activeRents[selectedFeat.id] = cleanStart + durationMillis
                         profile.rentedFeatures = activeRents
                     }
+                }
+
+                val milestones = mapOf(
+                    3 to "feat_theme_pack",
+                    5 to "feat_leaderboard",
+                    6 to "feat_ui_icon",
+                    10 to "feat_enhanced_blur",
+                    12 to "feat_custom_theme",
+                    13 to "feat_dynamic_lighting",
+                    14 to "feat_animations",
+                    15 to "feat_minimal_ui",
+                    20 to "feat_true_aod",
+                    25 to "feat_experimental"
+                )
+                
+                milestones[newLevel]?.let { featId ->
+                    val durationMillis = 48L * 60L * 60L * 1000L // 48 hours
+                    val activeRents = profile.rentedFeatures.toMutableMap()
+                    val currentExpiry = activeRents[featId] ?: System.currentTimeMillis()
+                    val cleanStart = if (currentExpiry > System.currentTimeMillis()) currentExpiry else System.currentTimeMillis()
+                    activeRents[featId] = cleanStart + durationMillis
+                    profile.rentedFeatures = activeRents
                 }
             }
 

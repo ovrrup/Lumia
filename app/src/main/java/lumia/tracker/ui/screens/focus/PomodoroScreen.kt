@@ -436,11 +436,12 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                             }
                                             if (studiedMinutes > 0 && modeString == "WORK") {
                                                 // viewModel.addPomodoroSession(
-                                                    /* durationMinutes = studiedMinutes,
-                                                    subjectId = selectedSubjectId,
-                                                    courseId = selectedCourseId,
-                                                    assignmentId = selectedAssignmentId,
-                                                    taskId = selectedTaskId */ // test\n                                                 // )
+                                                //     durationMinutes = studiedMinutes,
+                                                //     subjectId = selectedSubjectId,
+                                                //     courseId = selectedCourseId,
+                                                //     assignmentId = selectedAssignmentId,
+                                                //     taskId = selectedTaskId
+                                                // )
                                                 // viewModel.postNotification("Focus Completed!", "Saved session: $studiedMinutes min of focused study! You earned experience.", "POINTS")
                                             } else if (studiedMinutes == 0 && modeString == "WORK") {
                                                 viewModel.postNotification("Session Cancelled", "Session too brief to log to history.", "INFO")

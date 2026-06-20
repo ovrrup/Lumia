@@ -59,14 +59,15 @@ import lumia.tracker.viewmodel.ScholarViewModel
 @Composable
 fun ProfileSetupPage(
     isActive: Boolean,
-    onSaved: (String, String, String, String) -> Unit
+    onSaved: (String, String, String, String, Boolean) -> Unit
 ) {
     val scale by animateFloatAsState(if (isActive) 1f else 0.8f, tween(600, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "profile_scale")
     val alpha by animateFloatAsState(if (isActive) 1f else 0f, tween(600), label = "profile_alpha")
 
     var name by remember { mutableStateOf("Main User") }
-    var alias by remember { mutableStateOf("Scholar") }
+    var alias by remember { mutableStateOf("Student") }
     var starterTheme by remember { mutableStateOf("Ocean") }
+    var gamificationEnabled by remember { mutableStateOf(true) }
     var selectedImagePath by remember { mutableStateOf("") }
     val context = LocalContext.current
     
@@ -92,9 +93,9 @@ fun ProfileSetupPage(
     }
 
     // Call onSaved when any field changes
-    LaunchedEffect(name, alias, starterTheme, selectedImagePath) {
+    LaunchedEffect(name, alias, starterTheme, selectedImagePath, gamificationEnabled) {
         val finalAvatar = selectedImagePath.ifBlank { name.take(2).uppercase().ifBlank { "ME" } }
-        onSaved(name, alias, starterTheme, finalAvatar)
+        onSaved(name, alias, starterTheme, finalAvatar, gamificationEnabled)
     }
 
     Column(
@@ -166,7 +167,7 @@ fun ProfileSetupPage(
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Display Name (e.g. Scholar Jordan)") },
+            label = { Text("Display Name (e.g. User)") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
@@ -240,6 +241,44 @@ fun ProfileSetupPage(
                         }
                     }
                 }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Enable Gamification",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        "Track levels, points, and unlock features in the shop. Turn off for a simpler study tool.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Switch(
+                    checked = gamificationEnabled,
+                    onCheckedChange = { gamificationEnabled = it }
+                )
             }
         }
     }

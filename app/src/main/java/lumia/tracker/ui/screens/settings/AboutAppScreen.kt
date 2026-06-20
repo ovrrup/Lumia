@@ -109,7 +109,8 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
     }
 
     // Preferences for Auto Update check
-    val prefs = remember { context.getSharedPreferences("lumia_prefs", android.content.Context.MODE_PRIVATE) }
+    val profMgr = remember { lumia.tracker.data.ProfileManager(context) }
+    val prefs = remember { profMgr.getProfilePrefs() }
     var autoCheckEnabled by remember { mutableStateOf(prefs.getBoolean("auto_check_updates", true)) }
 
     // Update Checker Status States: "idle", "checking", "available", "latest", "error"

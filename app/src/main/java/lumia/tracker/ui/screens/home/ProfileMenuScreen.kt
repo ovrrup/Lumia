@@ -60,21 +60,20 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
         ) {
             item {
                 Spacer(Modifier.height(16.dp))
-                // Profile Summary Card with Triple Dots, Streaks, Points and Achievements display
-                var showDropdownMenu by remember { mutableStateOf(false) }
+                // Profile Summary Card with Streaks, Points and Achievements display
                 val currentStreak by viewModel.currentStreak.collectAsStateWithLifecycle()
                 
                 val ranking = when (activeProfile.level) {
-                    in 1..2 -> "Bronze Scholar"
-                    in 3..4 -> "Silver Spark"
-                    in 5..9 -> "Gold Sage"
-                    in 10..14 -> "Emerald Master"
-                    in 15..19 -> "Diamond Lord"
-                    in 20..29 -> "Scholar Vanguard"
-                    in 30..49 -> "Immortal Titan"
-                    in 50..74 -> "Cosmic Sovereign"
-                    in 75..99 -> "Universal Legend"
-                    else -> "Eternal Luminary"
+                    in 1..2 -> "Bronze Tier"
+                    in 3..4 -> "Silver Tier"
+                    in 5..9 -> "Gold Tier"
+                    in 10..14 -> "Platinum Tier"
+                    in 15..19 -> "Diamond Tier"
+                    in 20..29 -> "Master Tier"
+                    in 30..49 -> "Grandmaster Tier"
+                    in 50..74 -> "Elite Tier"
+                    in 75..99 -> "Legendary Tier"
+                    else -> "Maximum Tier"
                 }
                 
                 val rankingColor = when (activeProfile.level) {
@@ -96,77 +95,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
                 ) {
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        // Dropdown Menu (on Three Dots Tapped)
-                        Box(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)) {
-                            IconButton(onClick = { showDropdownMenu = true }) {
-                                Icon(
-                                    Icons.Rounded.MoreVert,
-                                    contentDescription = "Options",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = showDropdownMenu,
-                                onDismissRequest = { showDropdownMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Profile Editing") },
-                                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
-                                    onClick = {
-                                        showDropdownMenu = false
-                                        showEditDialog = true
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Level Rewards") },
-                                    leadingIcon = { Icon(Icons.Rounded.Star, contentDescription = null) },
-                                    onClick = {
-                                        showDropdownMenu = false
-                                        navController.navigate("level_rewards")
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Achievements") },
-                                    leadingIcon = { Icon(Icons.Rounded.EmojiEvents, contentDescription = null) },
-                                    onClick = {
-                                        showDropdownMenu = false
-                                        navController.navigate("achievements_screen")
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Plus Shop") },
-                                    leadingIcon = { Icon(Icons.Rounded.Storefront, contentDescription = null) },
-                                    onClick = {
-                                        showDropdownMenu = false
-                                        navController.navigate("plus_shop")
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Switch User") },
-                                    leadingIcon = { Icon(Icons.Rounded.SwapHoriz, contentDescription = null) },
-                                    onClick = {
-                                        showDropdownMenu = false
-                                        navController.navigate("switch_user")
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Settings") },
-                                    leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null) },
-                                    onClick = {
-                                        showDropdownMenu = false
-                                        navController.navigate("settings")
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("About App") },
-                                    leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
-                                    onClick = {
-                                        showDropdownMenu = false
-                                        showAboutDialog = true
-                                    }
-                                )
-                            }
-                        }
+                        // No Dropdown Menu Since TopBar has Edit and MenuList items cover the rest
 
                         Column(modifier = Modifier.padding(20.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -266,37 +195,56 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
 
                             Spacer(Modifier.height(16.dp))
 
+                            if (activeProfile.gamificationEnabled && activeProfile.level == 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f))
+                                        .padding(12.dp)
+                                ) {
+                                    Text(
+                                        text = "Tip: Not a fan of Levels and Points? You can turn off Gamification by tapping your profile picture or the Edit icon.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                                Spacer(Modifier.height(16.dp))
+                            }
+
                             // Level, ranking & streak badges
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
-                                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    Text(
-                                        text = "Lv. ${activeProfile.level}",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
+                                if (activeProfile.gamificationEnabled) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
+                                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = "Lv. ${activeProfile.level}",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
 
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(rankingColor.copy(alpha = 0.25f))
-                                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    Text(
-                                        text = ranking,
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.Black,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(rankingColor.copy(alpha = 0.25f))
+                                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = ranking,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Black,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
                                 }
 
                                 Box(
@@ -328,32 +276,33 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
 
                             Spacer(Modifier.height(16.dp))
 
-                            // Points display
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            if (activeProfile.gamificationEnabled) {
+                                // Points display
                                 Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.MonetizationOn,
-                                        contentDescription = "Points",
-                                        tint = Color(0xFFFFC107),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(
-                                        text = "${activeProfile.points} Profile Points",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.MonetizationOn,
+                                            contentDescription = "Points",
+                                            tint = Color(0xFFFFC107),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Text(
+                                            text = "${activeProfile.points} Profile Points",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
                                 }
+                                Spacer(Modifier.height(12.dp))
                             }
-
-                            Spacer(Modifier.height(12.dp))
 
                             // Achievements display progress
                             Text(
@@ -456,15 +405,45 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
             }
             
             item {
+                if (activeProfile.level < 1) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Before you reach Level 1, you can update your Gamification choice directly from here:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Gamification Enabled", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                                Switch(
+                                    checked = activeProfile.gamificationEnabled,
+                                    onCheckedChange = { viewModel.updateProfile(name = activeProfile.name, avatar = activeProfile.avatarEmoji, alias = activeProfile.alias, gamificationEnabled = it) }
+                                )
+                            }
+                        }
+                    }
+                }
+                
                 Text("Progression", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp))
-                MenuListItem(icon = Icons.Rounded.Star, title = "Level Rewards", subtitle = "View future level progression perks") {
-                    navController.navigate("level_rewards")
+                if (activeProfile.gamificationEnabled) {
+                    MenuListItem(icon = Icons.Rounded.Star, title = "Level Rewards", subtitle = "View future level progression perks") {
+                        navController.navigate("level_rewards")
+                    }
                 }
                 MenuListItem(icon = Icons.Rounded.EmojiEvents, title = "Achievements", subtitle = "View unlocked and locked achievements") {
                     navController.navigate("achievements_screen")
                 }
-                MenuListItem(icon = Icons.Rounded.Storefront, title = "Plus Shop", subtitle = "Spend points to unlock Plus features") {
-                    navController.navigate("plus_shop")
+                if (activeProfile.gamificationEnabled) {
+                    MenuListItem(icon = Icons.Rounded.Storefront, title = "Plus Shop", subtitle = "Spend points to unlock Plus features") {
+                        navController.navigate("plus_shop")
+                    }
                 }
                 Spacer(Modifier.height(16.dp))
             }
@@ -528,6 +507,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
         var editName by remember { mutableStateOf(activeProfile.name) }
         var editAlias by remember { mutableStateOf(activeProfile.alias) }
         var editImagePath by remember { mutableStateOf(activeProfile.avatarEmoji) }
+        var editGamification by remember { mutableStateOf(activeProfile.gamificationEnabled) }
         val context = androidx.compose.ui.platform.LocalContext.current
 
         val pickerLauncher = rememberLauncherForActivityResult(
@@ -602,12 +582,29 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                             }
                         }
                     }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Gamification", style = MaterialTheme.typography.titleSmall)
+                            Text("Leveling and points systems", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        androidx.compose.material3.Switch(
+                            checked = editGamification,
+                            onCheckedChange = { editGamification = it }
+                        )
+                    }
                 }
             },
             confirmButton = {
                 BouncyButton(onClick = {
                     if (editName.isNotBlank()) {
-                        viewModel.updateProfile(editName, editImagePath.ifBlank { editName.take(2).uppercase() }, editAlias)
+                        viewModel.updateProfile(editName, editImagePath.ifBlank { editName.take(2).uppercase() }, editAlias, editGamification)
                         showEditDialog = false
                     }
                 }) { Text("Save") }

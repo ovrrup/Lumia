@@ -40,7 +40,7 @@ class ProfileManager(private val context: Context) {
         prefs.edit().putString("profiles_json", profileAdapter.toJson(profiles)).commit()
     }
 
-    fun addProfile(name: String, avatar: String, alias: String = "", starterTheme: String = ""): String {
+    fun addProfile(name: String, avatar: String, alias: String = "", starterTheme: String = "", gamificationEnabled: Boolean = true): String {
         val list = getAllProfiles().toMutableList()
         val newId = UUID.randomUUID().toString()
         val newProfile = UserProfile(
@@ -48,7 +48,8 @@ class ProfileManager(private val context: Context) {
             name = name,
             avatarEmoji = avatar,
             alias = alias,
-            starterTheme = starterTheme
+            starterTheme = starterTheme,
+            gamificationEnabled = gamificationEnabled
         )
         list.add(newProfile)
         saveProfiles(list)
@@ -86,5 +87,11 @@ class ProfileManager(private val context: Context) {
     fun getActiveProfile(): UserProfile {
         val id = getActiveProfileId()
         return getAllProfiles().find { it.id == id } ?: getAllProfiles().first()
+    }
+
+    fun getProfilePrefs(): SharedPreferences {
+        val id = getActiveProfileId()
+        val prefName = if (id == "DEFAULT") "lumia_prefs" else "lumia_prefs_$id"
+        return context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
     }
 }

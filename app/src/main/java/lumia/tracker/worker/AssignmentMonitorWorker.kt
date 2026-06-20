@@ -25,7 +25,8 @@ class AssignmentMonitorWorker(
         
         try {
             val database = AppDatabase.getDatabase(context)
-            val prefs = context.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
+            val profMgr = lumia.tracker.data.ProfileManager(context)
+            val prefs = profMgr.getProfilePrefs()
 
             val enableDailyDigest = prefs.getBoolean("notif_enable_daily_digest", true)
             val formalTone = prefs.getBoolean("notif_formal_tone", true)

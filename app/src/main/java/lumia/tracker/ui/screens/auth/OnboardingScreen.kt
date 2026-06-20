@@ -66,9 +66,10 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
 
     // First user setup temporary state variables
     var firstProfileName by remember { mutableStateOf("Main User") }
-    var firstProfileAlias by remember { mutableStateOf("Scholar") }
+    var firstProfileAlias by remember { mutableStateOf("Student") }
     var firstProfileTheme by remember { mutableStateOf("Ocean") }
     var firstProfileAvatar by remember { mutableStateOf("") }
+    var firstProfileGamificationEnabled by remember { mutableStateOf(true) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -109,11 +110,12 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                     )
                     4 -> ProfileSetupPage(
                         isActive = pagerState.currentPage == page,
-                        onSaved = { name, alias, theme, avatar ->
+                        onSaved = { name, alias, theme, avatar, gamification ->
                             firstProfileName = name
                             firstProfileAlias = alias
                             firstProfileTheme = theme
                             firstProfileAvatar = avatar
+                            firstProfileGamificationEnabled = gamification
                         }
                     )
                     5 -> PermissionsPage(
@@ -122,9 +124,10 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                             // Ensure setup is applied when completing
                             viewModel.setupFirstProfile(
                                 name = firstProfileName.ifBlank { "Main User" },
-                                alias = firstProfileAlias.ifBlank { "Scholar" },
+                                alias = firstProfileAlias.ifBlank { "Student" },
                                 avatar = firstProfileAvatar,
-                                starterTheme = firstProfileTheme
+                                starterTheme = firstProfileTheme,
+                                gamificationEnabled = firstProfileGamificationEnabled
                             )
                             viewModel.completeOnboarding()
                             navController.navigate("dashboard") {
@@ -168,9 +171,10 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 // Save profile setups right when advancing from profile page
                                 viewModel.setupFirstProfile(
                                     name = firstProfileName.ifBlank { "Main User" },
-                                    alias = firstProfileAlias.ifBlank { "Scholar" },
+                                    alias = firstProfileAlias.ifBlank { "Student" },
                                     avatar = firstProfileAvatar,
-                                    starterTheme = firstProfileTheme
+                                    starterTheme = firstProfileTheme,
+                                    gamificationEnabled = firstProfileGamificationEnabled
                                 )
                             }
                             coroutineScope.launch {
@@ -179,9 +183,10 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                         } else {
                             viewModel.setupFirstProfile(
                                 name = firstProfileName.ifBlank { "Main User" },
-                                alias = firstProfileAlias.ifBlank { "Scholar" },
+                                alias = firstProfileAlias.ifBlank { "Student" },
                                 avatar = firstProfileAvatar,
-                                starterTheme = firstProfileTheme
+                                starterTheme = firstProfileTheme,
+                                gamificationEnabled = firstProfileGamificationEnabled
                             )
                             viewModel.completeOnboarding()
                             navController.navigate("dashboard") {

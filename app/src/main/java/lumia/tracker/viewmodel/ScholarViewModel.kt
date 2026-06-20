@@ -56,34 +56,29 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun switchProfileAndRestart(context: Context, id: String) {
         profileManager.setActiveProfileId(id)
         lumia.tracker.data.AppDatabase.clearInstances()
-        val pm = context.packageManager
-        val intent = pm.getLaunchIntentForPackage(context.packageName)
-        if (intent != null) {
-            val mainIntent = android.content.Intent.makeRestartActivityTask(intent.component)
-            context.startActivity(mainIntent)
-            Runtime.getRuntime().exit(0)
-        } else {
-            val fallbackIntent = android.content.Intent(context, lumia.tracker.MainActivity::class.java).apply {
-                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }
-            context.startActivity(fallbackIntent)
-            Runtime.getRuntime().exit(0)
+        val intent = android.content.Intent(context, lumia.tracker.MainActivity::class.java).apply {
+            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
+        if (context is android.app.Activity) {
+            context.finish()
+        }
+        context.startActivity(intent)
     }
     
-    fun createProfile(name: String, avatar: String, alias: String = "", starterTheme: String = ""): String {
-        val newId = profileManager.addProfile(name, avatar, alias, starterTheme)
+    fun createProfile(name: String, avatar: String, alias: String = "", starterTheme: String = "", gamificationEnabled: Boolean = true): String {
+        val newId = profileManager.addProfile(name, avatar, alias, starterTheme, gamificationEnabled)
         allProfiles.value = profileManager.getAllProfiles()
         return newId
     }
 
-    fun setupFirstProfile(name: String, avatar: String, alias: String, starterTheme: String) {
+    fun setupFirstProfile(name: String, avatar: String, alias: String, starterTheme: String, gamificationEnabled: Boolean) {
         val current = profileManager.getActiveProfile()
         val updated = current.copy(
             name = name,
             avatarEmoji = avatar,
             alias = alias,
-            starterTheme = starterTheme
+            starterTheme = starterTheme,
+            gamificationEnabled = gamificationEnabled
         )
         profileManager.updateProfile(updated)
         activeProfile.value = updated
@@ -91,9 +86,14 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         updateThemeColor(starterTheme)
     }
     
-    fun updateProfile(name: String, avatar: String, alias: String = "") {
+    fun updateProfile(name: String, avatar: String, alias: String = "", gamificationEnabled: Boolean? = null) {
         val current = profileManager.getActiveProfile()
-        val updated = current.copy(name = name, avatarEmoji = avatar, alias = alias)
+        val updated = current.copy(
+            name = name, 
+            avatarEmoji = avatar, 
+            alias = alias,
+            gamificationEnabled = gamificationEnabled ?: current.gamificationEnabled
+        )
         profileManager.updateProfile(updated)
         activeProfile.value = updated
         allProfiles.value = profileManager.getAllProfiles()
@@ -116,8 +116,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val feature = lumia.tracker.model.PlusShop.features.find { it.id == featureId } ?: return false
         if (current.level < feature.requiredLevel) return false
         
-        if (current.points >= cost && !current.unlockedFeatures.contains(featureId)) {
-            current.points -= cost
+        val actualCost = feature.pricePoints
+        if (current.points >= actualCost && !current.unlockedFeatures.contains(featureId)) {
+            current.points -= actualCost
             val newFeatures = current.unlockedFeatures.toMutableList()
             newFeatures.add(featureId)
             current.unlockedFeatures = newFeatures
@@ -134,8 +135,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val feature = lumia.tracker.model.PlusShop.features.find { it.id == featureId } ?: return false
         if (current.level < feature.requiredLevel) return false
         
-        if (current.credits >= cost && !current.unlockedFeatures.contains(featureId)) {
-            current.credits -= cost
+        val actualCost = feature.priceCredits
+        if (current.credits >= actualCost && !current.unlockedFeatures.contains(featureId)) {
+            current.credits -= actualCost
             val newFeatures = current.unlockedFeatures.toMutableList()
             newFeatures.add(featureId)
             current.unlockedFeatures = newFeatures
@@ -152,8 +154,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val feature = lumia.tracker.model.PlusShop.features.find { it.id == featureId } ?: return false
         if (current.level < feature.requiredLevel) return false
         
-        if (current.credits >= cost) {
-            current.credits -= cost
+        val actualCost = feature.rentCostCredits * durationDays
+        if (current.credits >= actualCost) {
+            current.credits -= actualCost
             
             val activeRents = current.rentedFeatures.toMutableMap()
             val currentExpiry = activeRents[featureId] ?: System.currentTimeMillis()
@@ -235,6 +238,15 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         activeProfile.value = current
         allProfiles.value = profileManager.getAllProfiles()
         postNotification("Credits Earned!", "+$creditsGained Credits added directly to your profile!", "CREDITS")
+    }
+
+    fun deductCredits(creditsLost: Int) {
+        val current = profileManager.getActiveProfile()
+        current.credits -= creditsLost
+        // Let it go negative so users cannot farm by uncompleting at 0 balance
+        profileManager.updateProfile(current)
+        activeProfile.value = current
+        allProfiles.value = profileManager.getAllProfiles()
     }
 
     // Advanced Data Management flow states
@@ -334,6 +346,15 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         checkAchievements(current)
     }
 
+    fun deductPoints(points: Int) {
+        val current = profileManager.getActiveProfile()
+        current.points -= points
+        // Let it go negative so users cannot farm by uncompleting at 0 balance
+        profileManager.updateProfile(current)
+        activeProfile.value = current
+        allProfiles.value = profileManager.getAllProfiles()
+    }
+
     fun awardExperience(xpGained: Int) {
         val current = profileManager.getActiveProfile()
         current.experience += xpGained
@@ -352,6 +373,19 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         
         current.level = newLevel
         current.experience = xpLeft
+        
+        profileManager.updateProfile(current)
+        activeProfile.value = current
+        allProfiles.value = profileManager.getAllProfiles()
+    }
+
+    fun deductExperience(xpLost: Int) {
+        val current = profileManager.getActiveProfile()
+        current.experience -= xpLost
+        
+        // Note: Do not drop level down, otherwise users can farm level-up rewards by uncompleting and completing tasks.
+        // And do NOT clamp to 0, otherwise they can farm free XP when they are at 0 XP.
+        // It is perfectly safe to leave current.experience as negative, they will just have to pay off the "XP debt".
         
         profileManager.updateProfile(current)
         activeProfile.value = current
@@ -401,9 +435,35 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 val cleanStart = if (currentExpiry > System.currentTimeMillis()) currentExpiry else System.currentTimeMillis()
                 activeRents[selectedFeat.id] = cleanStart + durationMillis
                 current.rentedFeatures = activeRents
-                featureUnlockedName = "${selectedFeat.name} ($weeks weeks)"
+                if (featureUnlockedName == null) featureUnlockedName = "${selectedFeat.name} ($weeks weeks)"
             }
         }
+        
+        val milestones = mapOf(
+            3 to "feat_theme_pack",
+            5 to "feat_leaderboard",
+            6 to "feat_ui_icon",
+            10 to "feat_enhanced_blur",
+            12 to "feat_custom_theme",
+            13 to "feat_dynamic_lighting",
+            14 to "feat_animations",
+            15 to "feat_minimal_ui",
+            20 to "feat_true_aod",
+            25 to "feat_experimental"
+        )
+        
+        milestones[newLevel]?.let { featId ->
+            val durationMillis = 48L * 60L * 60L * 1000L // 48 hours
+            val activeRents = current.rentedFeatures.toMutableMap()
+            val currentExpiry = activeRents[featId] ?: System.currentTimeMillis()
+            val cleanStart = if (currentExpiry > System.currentTimeMillis()) currentExpiry else System.currentTimeMillis()
+            activeRents[featId] = cleanStart + durationMillis
+            current.rentedFeatures = activeRents
+            
+            val featName = lumia.tracker.model.PlusShop.features.find { it.id == featId }?.name ?: featId
+            featureUnlockedName = if (featureUnlockedName == null) "$featName (48 Hour Trial)" else "$featureUnlockedName, $featName (48 Hour Trial)"
+        }
+
         
         val event = LevelUpRewardEvent(
             newLevel = newLevel,
@@ -534,7 +594,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     private val repository = ScholarRepository(AppDatabase.getDatabase(application).scholarDao())
     
-    private val prefs = application.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
+    private val prefs = profileManager.getProfilePrefs()
 
     private val initiallyCompleted = run {
         var completed = prefs.getBoolean("onboarding_completed", false)
@@ -860,6 +920,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 e.printStackTrace()
             }
             logAction("Deleted attachment: ${attachment.name}")
+            deductExperience(30)
         }
     }
 
@@ -1213,6 +1274,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         val database = AppDatabase.getDatabase(application)
         
         refreshThemeBrightness()
+        verifyFeatureEntitlements()
         
         val lastActionDate = prefs.getString("last_action_date_str", "") ?: ""
         if (lastActionDate.isNotEmpty()) {
@@ -1367,7 +1429,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             if (pointsToAward > 0) {
                 awardPoints(pointsToAward)
             }
-            awardExperience(10 + durationMinutes * 3)
+            val xpGained = if (durationMinutes >= 25) 10 + (durationMinutes * 3) else durationMinutes * 3
+            awardExperience(xpGained)
         }
     }
 
@@ -1563,6 +1626,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 awardCredits(200)
                 awardPoints(2)
                 awardExperience(40)
+            } else {
+                deductCredits(200)
+                deductPoints(2)
+                deductExperience(40)
             }
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
@@ -1614,6 +1681,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 awardCredits(300)
                 awardPoints(3)
                 awardExperience(60)
+            } else {
+                deductCredits(300)
+                deductPoints(3)
+                deductExperience(60)
             }
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
@@ -1867,11 +1938,43 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     settings = repository.importDataFromStream(ins)
                 }
                 loadSettings(settings)
+                verifyFeatureEntitlements()
                 _importExportStatus.value = "Secure backup package imported and restored successfully"
                 lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             } catch (e: Exception) {
                 _importExportStatus.value = "Import failed: Invalid file or wrong format"
             }
+        }
+    }
+
+    private fun verifyFeatureEntitlements() {
+        val currentProfile = profileManager.getActiveProfile()
+        if (!currentProfile.isFeatureUnlocked("feat_minimal_ui") && _betaMinimalistMode.value) {
+            updateBetaMinimalistMode(false)
+        }
+        if (!currentProfile.isFeatureUnlocked("feat_ui_icon") && _dynamicAppIcon.value) {
+            updateDynamicAppIcon(false)
+        }
+        if (!currentProfile.isFeatureUnlocked("feat_enhanced_blur") && _betaEnhancedHeader.value) {
+            updateBetaEnhancedHeader(false)
+        }
+        if (!currentProfile.isFeatureUnlocked("feat_dynamic_lighting") && _betaDynamicBackground.value) {
+            updateBetaDynamicBackground(false)
+        }
+        
+        if (!currentProfile.isFeatureUnlocked("feat_notification_tone") && !_notifFormalTone.value) {
+            updateNotifFormalTone(true)
+        }
+        
+        // Color Themes
+        val starterTheme = currentProfile.starterTheme.ifBlank { "Ocean" }
+        val isUniversalFree = _themeColor.value == starterTheme || _themeColor.value == "Dynamic"
+        if (_themeColor.value == "Custom") {
+            if (!currentProfile.unlockedFeatures.contains("feat_custom_theme")) {
+                updateThemeColor(starterTheme)
+            }
+        } else if (!isUniversalFree && !currentProfile.unlockedFeatures.contains("feat_theme_pack")) {
+            updateThemeColor(starterTheme)
         }
     }
 

@@ -181,9 +181,11 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                 val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
                 val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
                 
-                PointsAndLevelCard(modifier = Modifier.fillMaxWidth(), profile = activeProfile)
+                if (activeProfile.gamificationEnabled) {
+                    PointsAndLevelCard(modifier = Modifier.fillMaxWidth(), profile = activeProfile)
+                }
                 
-                if (allProfiles.size > 1) {
+                if (allProfiles.size > 1 && activeProfile.gamificationEnabled) {
                     val isLeaderboardUnlocked = activeProfile.isFeatureUnlocked("feat_leaderboard")
                     if (isLeaderboardUnlocked) {
                         LeaderboardChart(modifier = Modifier.fillMaxWidth(), profiles = allProfiles)

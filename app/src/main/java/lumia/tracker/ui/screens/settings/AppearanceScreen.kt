@@ -236,7 +236,13 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         Triple("Bouncy", "Bouncy", Icons.Rounded.Star)
                     ),
                     selected = appAnimationMode,
-                    onSelected = { viewModel.updateAppAnimationMode(it) }
+                    onSelected = { 
+                        if (activeProfile.isFeatureUnlocked("feat_animations")) {
+                            viewModel.updateAppAnimationMode(it)
+                        } else {
+                            android.widget.Toast.makeText(context, "Requires unlocking Advanced Animations in Plus Shop", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
@@ -769,45 +775,53 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             // 4. Interface Tweaks Card
             SettingsGroupCard(title = "Interface Modifiers", icon = Icons.Rounded.Settings) {
+                val isMinimalistUnlocked = activeProfile.isFeatureUnlocked("feat_minimal_ui")
                 SettingsPremiumToggleItem(
                     title = "Minimalist Focus Mode",
                     subtitle = "Force-off and lock complex visuals for intense studying focus",
                     checked = betaMinimalistMode,
                     icon = Icons.Rounded.Star,
+                    enabled = isMinimalistUnlocked,
+                    unavailableReason = if (!isMinimalistUnlocked) "Locked. Purchase in Plus Shop or Reach Level 15." else null,
                     onCheckedChange = { viewModel.updateBetaMinimalistMode(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
+                val isDynamicIconUnlocked = activeProfile.isFeatureUnlocked("feat_ui_icon")
                 SettingsPremiumToggleItem(
                     title = "UI-based Launcher Icon",
                     subtitle = "Match home screen app icon style with the active Lumia color scheme",
                     checked = dynamicAppIcon,
                     icon = Icons.Rounded.Palette,
+                    enabled = isDynamicIconUnlocked,
+                    unavailableReason = if (!isDynamicIconUnlocked) "Locked. Purchase in Plus Shop or Reach Level 6." else null,
                     onCheckedChange = { viewModel.updateDynamicAppIcon(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
+                val isEnhancedBlurUnlocked = activeProfile.isFeatureUnlocked("feat_enhanced_blur")
                 SettingsPremiumToggleItem(
                     title = "Enhanced Blur Navigation",
                     subtitle = "Apply a polished satin translucent backdrop to primary navigation header",
                     checked = betaEnhancedHeader,
-                    enabled = !betaMinimalistMode,
+                    enabled = !betaMinimalistMode && isEnhancedBlurUnlocked,
                     icon = Icons.Rounded.Settings,
-                    unavailableReason = "Locked by Minimalist Focus Mode.",
+                    unavailableReason = if (!isEnhancedBlurUnlocked) "Locked. Purchase in Plus Shop or Reach Level 10." else "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { viewModel.updateBetaEnhancedHeader(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
+                val isDynamicLightingUnlocked = activeProfile.isFeatureUnlocked("feat_dynamic_lighting")
                 SettingsPremiumToggleItem(
                     title = "Dynamic Lighting Background",
                     subtitle = "Soft, vibrant animated background gradient shifts",
                     checked = betaDynamicBackground,
-                    enabled = !betaMinimalistMode,
+                    enabled = !betaMinimalistMode && isDynamicLightingUnlocked,
                     icon = Icons.Rounded.Check,
-                    unavailableReason = "Locked by Minimalist Focus Mode.",
+                    unavailableReason = if (!isDynamicLightingUnlocked) "Locked. Purchase in Plus Shop or Reach Level 13." else "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
                 )
 

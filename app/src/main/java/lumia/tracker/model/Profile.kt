@@ -18,7 +18,8 @@ data class UserProfile(
     var credits: Int = 250, // default starter credits
     var rentedFeatures: Map<String, Long> = emptyMap(), // map of feature ID to expiration epoch millis
     var experience: Int = 0,
-    var pendingSurpriseBoxes: Int = 0
+    var pendingSurpriseBoxes: Int = 0,
+    var gamificationEnabled: Boolean = true
 ) {
     fun isFeatureUnlocked(featureId: String): Boolean {
         if (unlockedFeatures.contains(featureId)) return true

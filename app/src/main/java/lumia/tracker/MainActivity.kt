@@ -146,6 +146,13 @@ class MainActivity : ComponentActivity() {
             }
 
             val startupState = remember { androidx.compose.runtime.mutableStateOf("splash") }
+            val actForStartup = androidx.compose.ui.platform.LocalContext.current as? MainActivity
+            androidx.compose.runtime.LaunchedEffect(actForStartup?.intent) {
+                if (actForStartup?.intent?.getBooleanExtra("OPEN_PROFILE_SELECTOR", false) == true) {
+                    startupState.value = "selector"
+                    actForStartup.intent.removeExtra("OPEN_PROFILE_SELECTOR")
+                }
+            }
             val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
             val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
 
@@ -199,8 +206,8 @@ class MainActivity : ComponentActivity() {
                                     startupState.value = "main"
                                 }
                             },
-                            onCreateProfile = { name, emoji, alias, starterTheme -> 
-                                viewModel.createProfile(name, emoji, alias, starterTheme)
+                            onCreateProfile = { name, emoji, alias, starterTheme, gamificationEnabled -> 
+                                viewModel.createProfile(name, emoji, alias, starterTheme, gamificationEnabled)
                             }
                         )
                     } else {
@@ -247,7 +254,8 @@ class MainActivity : ComponentActivity() {
 
                     val context = androidx.compose.ui.platform.LocalContext.current
                     androidx.compose.runtime.LaunchedEffect(Unit) {
-                        val prefs = context.getSharedPreferences("lumia_prefs", android.content.Context.MODE_PRIVATE)
+                        val profMgr = lumia.tracker.data.ProfileManager(context)
+                        val prefs = profMgr.getProfilePrefs()
                         if (prefs.getBoolean("auto_check_updates", true)) {
                             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                                 try {

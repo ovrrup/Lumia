@@ -21,7 +21,8 @@ class ReminderReceiver : BroadcastReceiver() {
         val action = intent.action
         val assignmentId = intent.getIntExtra("assignment_id", -1)
         
-        val prefs = context.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
+        val profMgr = lumia.tracker.data.ProfileManager(context)
+        val prefs = profMgr.getProfilePrefs()
         val formalTone = prefs.getBoolean("notif_formal_tone", true)
         val enableDeadlines = prefs.getBoolean("notif_enable_deadlines", true)
         
@@ -143,7 +144,8 @@ object ReminderScheduler {
     }
 
     fun scheduleClassReminder(context: Context, classId: Int, title: String, desc: String, timestamp: Long) {
-        val prefs = context.getSharedPreferences("lumia_prefs", Context.MODE_PRIVATE)
+        val profMgr = lumia.tracker.data.ProfileManager(context)
+        val prefs = profMgr.getProfilePrefs()
         if (!prefs.getBoolean("notif_enable_classes", true)) return
         val triggerTime = timestamp - (1000 * 60 * 15) // 15 mins before class
         if (triggerTime > System.currentTimeMillis()) {

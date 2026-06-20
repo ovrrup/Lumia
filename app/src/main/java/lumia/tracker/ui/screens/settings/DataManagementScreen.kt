@@ -366,7 +366,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                                 Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Rent or Buy in Scholar Shop")
+                                Text("Rent or Buy in Plus Shop")
                             }
                         }
                     }

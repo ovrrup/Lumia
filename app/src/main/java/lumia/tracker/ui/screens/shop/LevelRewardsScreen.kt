@@ -41,19 +41,23 @@ fun LevelRewardsScreen(navController: NavController, viewModel: ScholarViewModel
     val currentLevel = activeProfile.level
 
     val milestones = listOf(
-        LevelMilestone(1, "Beginning of Wisdom", "Access to the classic study timer interface.", Icons.Rounded.MenuBook),
-        LevelMilestone(5, "Theme Expansion Tier", "Eligible to purchase Pastel, Matrix, and Cyberpunk themes.", Icons.Rounded.Palette, "feat_theme_pack"),
-        LevelMilestone(10, "Layout & Social unlocks", "Eligible to integrate Advanced Screen Layouts and the Study Leaderboard.", Icons.Rounded.Dashboard, "feat_leaderboard"),
-        LevelMilestone(15, "Advanced Typography", "Unlock beautiful global custom font sizing & layout weights.", Icons.Rounded.TextFields),
-        LevelMilestone(25, "Creative Freedom", "Purchase Custom Theme customizer module in shop.", Icons.Rounded.AutoAwesome, "feat_custom_theme"),
-        LevelMilestone(40, "Zen Minimalist", "Option to enable clutter-free, hyper-focus interface.", Icons.Rounded.OfflineBolt, "feat_minimal_ui"),
-        LevelMilestone(55, "Stealth Always-On", "OLED-safe low frequency focus layout.", Icons.Rounded.SettingsBrightness, "feat_true_aod"),
-        LevelMilestone(75, "Scholar Vanguard", "Mad Scientist Lab experimental components.", Icons.Rounded.Science, "feat_experimental"),
-        LevelMilestone(100, "Immortal Scholar", "Access premium custom dashboard widgets and fluid animations.", Icons.Rounded.WorkspacePremium),
-        LevelMilestone(150, "Galactic Wisdom", "Activate adaptive space-themed soundscapes for deep concentration.", Icons.Rounded.CloudQueue),
-        LevelMilestone(200, "Cosmic Vanguard", "Award of sovereign state indicator displays inside profiles.", Icons.Rounded.LocalFireDepartment),
-        LevelMilestone(250, "Universal Legend", "Exotic high-contrast deep twilight styling modules.", Icons.Rounded.BrightnessHigh),
-        LevelMilestone(300, "Eternal Luminary", "Final ultimate level completion badge of godhead enlightenment.", Icons.Rounded.Psychology)
+        LevelMilestone(1, "Timer Access", "Access to the classic study timer interface.", Icons.Rounded.MenuBook),
+        LevelMilestone(3, "Theme Expansion", "Eligible to purchase additional themes.", Icons.Rounded.Palette, "feat_theme_pack"),
+        LevelMilestone(5, "Layout & Leaderboard", "Eligible to integrate Advanced Screen Layouts and the Study Leaderboard.", Icons.Rounded.Dashboard, "feat_leaderboard"),
+        LevelMilestone(6, "Icons Expansion", "Eligible to use UI-based Launcher Icon.", Icons.Rounded.Palette, "feat_ui_icon"),
+        LevelMilestone(8, "Advanced Typography", "Unlock custom font sizing & layout weights.", Icons.Rounded.TextFields),
+        LevelMilestone(10, "Enhanced Blur", "Eligible to use Enhanced Blur Navigation.", Icons.Rounded.BlurOn, "feat_enhanced_blur"),
+        LevelMilestone(12, "Custom Themes", "Purchase Custom Theme module in shop.", Icons.Rounded.AutoAwesome, "feat_custom_theme"),
+        LevelMilestone(13, "Dynamic Lighting", "Eligible to use Dynamic Lighting Background.", Icons.Rounded.Lightbulb, "feat_dynamic_lighting"),
+        LevelMilestone(14, "Advanced Animations", "Change the application's animation quality.", Icons.Rounded.Animation, "feat_animations"),
+        LevelMilestone(15, "Minimalist Mode", "Option to enable clutter-free interface.", Icons.Rounded.OfflineBolt, "feat_minimal_ui"),
+        LevelMilestone(20, "Always-On Display", "Screen-safe low frequency focus layout.", Icons.Rounded.SettingsBrightness, "feat_true_aod"),
+        LevelMilestone(25, "Experimental Settings", "Access experimental components.", Icons.Rounded.Science, "feat_experimental"),
+        LevelMilestone(30, "Premium Widgets", "Access premium custom dashboard widgets and animations.", Icons.Rounded.WorkspacePremium),
+        LevelMilestone(40, "Focus Soundscapes", "Activate soundscapes for deep concentration.", Icons.Rounded.CloudQueue),
+        LevelMilestone(50, "Profile Badges", "Award of indicator displays inside profiles.", Icons.Rounded.LocalFireDepartment),
+        LevelMilestone(75, "Twilight Styling", "High-contrast deep twilight styling modules.", Icons.Rounded.BrightnessHigh),
+        LevelMilestone(100, "Completionist", "Final ultimate level completion badge.", Icons.Rounded.Psychology)
     )
 
     var showUnboxDialog by remember { mutableStateOf(false) }

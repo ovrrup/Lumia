@@ -32,7 +32,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 fun ProfileSelectionScreen(
     profiles: List<UserProfile>,
     onProfileSelected: (String) -> Unit,
-    onCreateProfile: (String, String, String, String) -> String
+    onCreateProfile: (String, String, String, String, Boolean) -> String
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -100,6 +100,7 @@ fun ProfileSelectionScreen(
         var alias by remember { mutableStateOf("") }
         var starterTheme by remember { mutableStateOf("Ocean") }
         var selectedImagePath by remember { mutableStateOf("") }
+        var gamificationEnabled by remember { mutableStateOf(true) }
         val context = androidx.compose.ui.platform.LocalContext.current
 
         val pickerLauncher = rememberLauncherForActivityResult(
@@ -215,12 +216,30 @@ fun ProfileSelectionScreen(
                             }
                         }
                     }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Gamification", style = MaterialTheme.typography.titleSmall)
+                            Text("Leveling and point systems", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = gamificationEnabled,
+                            onCheckedChange = { gamificationEnabled = it }
+                        )
+                    }
+
                 }
             },
             confirmButton = {
                 BouncyButton(onClick = {
                     if (name.isNotBlank()) {
-                        val newId = onCreateProfile(name, selectedImagePath.ifBlank { name.take(2).uppercase() }, alias, starterTheme)
+                        val newId = onCreateProfile(name, selectedImagePath.ifBlank { name.take(2).uppercase() }, alias, starterTheme, gamificationEnabled)
                         showAddDialog = false
                         onProfileSelected(newId)
                     }
