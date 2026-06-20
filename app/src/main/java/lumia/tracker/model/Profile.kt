@@ -20,7 +20,7 @@ data class UserProfile(
     var experience: Int = 0,
     var pendingSurpriseBoxes: Int = 0,
     var gamificationEnabled: Boolean = true,
-    var createdAt: Long = System.currentTimeMillis()
+    var createdAt: Long? = null
 ) {
     fun isFeatureUnlocked(featureId: String): Boolean {
         if (!gamificationEnabled) return true

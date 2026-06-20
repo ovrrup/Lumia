@@ -195,7 +195,8 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
 
                             Spacer(Modifier.height(16.dp))
 
-                            if (activeProfile.gamificationEnabled && System.currentTimeMillis() - activeProfile.createdAt <= 24L * 60 * 60 * 1000) {
+                            val creationTime = activeProfile.createdAt ?: System.currentTimeMillis()
+                            if (System.currentTimeMillis() - creationTime <= 24L * 60 * 60 * 1000) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -204,7 +205,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                                         .padding(12.dp)
                                 ) {
                                     Text(
-                                        text = "Tip: Not a fan of Levels and Points? You can turn off Gamification by tapping your profile picture or the Edit icon within the first 24 hours.",
+                                        text = "Tip: Want everything unlocked instantly? You can turn off Gamification by tapping your profile picture or the Edit icon within the first 24 hours. Achievements & points will still track!",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
@@ -217,20 +218,18 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                if (activeProfile.gamificationEnabled) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
-                                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                                    ) {
-                                        Text(
-                                            text = "Lv. ${activeProfile.level}",
-                                            style = MaterialTheme.typography.labelLarge,
-                                            fontWeight = FontWeight.ExtraBold,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
+                                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = "Lv. ${activeProfile.level}",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
                                 }
 
                                 Box(
@@ -262,38 +261,35 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
 
                             Spacer(Modifier.height(16.dp))
 
-                            if (activeProfile.gamificationEnabled) {
-                                // Points display
+                            // Points display
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.MonetizationOn,
-                                            contentDescription = "Points",
-                                            tint = Color(0xFFFFC107),
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Text(
-                                            text = "${activeProfile.points} Profile Points",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
+                                    Icon(
+                                        imageVector = Icons.Rounded.MonetizationOn,
+                                        contentDescription = "Points",
+                                        tint = Color(0xFFFFC107),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = "${activeProfile.points} Profile Points",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
                                 }
-                                Spacer(Modifier.height(12.dp))
                             }
+                            Spacer(Modifier.height(12.dp))
 
-                            if (activeProfile.gamificationEnabled) {
-                                // Achievements display progress
-                                Text(
-                                    text = "Achievements: ${activeProfile.unlockedAchievements.size} / ${AchievementSystem.ACHIEVEMENTS.size} Badges",
+                            // Achievements display progress
+                            Text(
+                                text = "Achievements: ${activeProfile.unlockedAchievements.size} / ${AchievementSystem.ACHIEVEMENTS.size} Badges",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -305,7 +301,6 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                                     trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.25f)
                                 )
-                            }
                         }
                     }
                 }
@@ -313,9 +308,8 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
             }
             
             item {
-                if (activeProfile.gamificationEnabled) {
-                    val unlockedBadges = AchievementSystem.ACHIEVEMENTS.filter { activeProfile.unlockedAchievements.contains(it.id) }
-                    if (unlockedBadges.isNotEmpty()) {
+                val unlockedBadges = AchievementSystem.ACHIEVEMENTS.filter { activeProfile.unlockedAchievements.contains(it.id) }
+                if (unlockedBadges.isNotEmpty()) {
                     Column(modifier = Modifier.padding(bottom = 24.dp)) {
                         Text(
                             text = "Unlocked Badge Shelf",
@@ -391,11 +385,11 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                         }
                     }
                 }
-                }
             }
             
             item {
-                val timeSinceCreation = System.currentTimeMillis() - activeProfile.createdAt
+                val creationTime = activeProfile.createdAt ?: System.currentTimeMillis()
+                val timeSinceCreation = System.currentTimeMillis() - creationTime
                 val timeAllowed = 24L * 60 * 60 * 1000
                 if (timeSinceCreation <= timeAllowed) {
                     val remainingMs = timeAllowed - timeSinceCreation
@@ -427,19 +421,17 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                     }
                 }
                 
-                if (activeProfile.gamificationEnabled) {
-                    Text("Progression", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp))
-                    MenuListItem(icon = Icons.Rounded.Star, title = "Level Rewards", subtitle = "View future level progression perks") {
-                        navController.navigate("level_rewards")
-                    }
-                    MenuListItem(icon = Icons.Rounded.EmojiEvents, title = "Achievements", subtitle = "View unlocked and locked achievements") {
-                        navController.navigate("achievements_screen")
-                    }
-                    MenuListItem(icon = Icons.Rounded.Storefront, title = "Plus Shop", subtitle = "Spend points to unlock Plus features") {
-                        navController.navigate("plus_shop")
-                    }
-                    Spacer(Modifier.height(16.dp))
+                Text("Progression", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp))
+                MenuListItem(icon = Icons.Rounded.Star, title = "Level Rewards", subtitle = "View future level progression perks") {
+                    navController.navigate("level_rewards")
                 }
+                MenuListItem(icon = Icons.Rounded.EmojiEvents, title = "Achievements", subtitle = "View unlocked and locked achievements") {
+                    navController.navigate("achievements_screen")
+                }
+                MenuListItem(icon = Icons.Rounded.Storefront, title = "Plus Shop", subtitle = "Spend points to unlock Plus features") {
+                    navController.navigate("plus_shop")
+                }
+                Spacer(Modifier.height(16.dp))
             }
 
             item {
@@ -546,7 +538,8 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        val timeSinceCreation = System.currentTimeMillis() - activeProfile.createdAt
+                        val creationTime = activeProfile.createdAt ?: System.currentTimeMillis()
+                        val timeSinceCreation = System.currentTimeMillis() - creationTime
                         val timeAllowed = 24L * 60 * 60 * 1000
                         val withinTime = timeSinceCreation <= timeAllowed
                         

@@ -233,7 +233,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun awardCredits(creditsGained: Int) {
         val current = profileManager.getActiveProfile()
-        if (!current.gamificationEnabled) return
         current.credits += creditsGained
         profileManager.updateProfile(current)
         activeProfile.value = current
@@ -243,7 +242,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun deductCredits(creditsLost: Int) {
         val current = profileManager.getActiveProfile()
-        if (!current.gamificationEnabled) return
         current.credits -= creditsLost
         // Let it go negative so users cannot farm by uncompleting at 0 balance
         profileManager.updateProfile(current)
@@ -338,7 +336,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun awardPoints(points: Int) {
         val current = profileManager.getActiveProfile()
-        if (!current.gamificationEnabled) return
         current.points += points
         profileManager.updateProfile(current)
         activeProfile.value = current
@@ -351,7 +348,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun deductPoints(points: Int) {
         val current = profileManager.getActiveProfile()
-        if (!current.gamificationEnabled) return
         current.points -= points
         // Let it go negative so users cannot farm by uncompleting at 0 balance
         profileManager.updateProfile(current)
@@ -361,7 +357,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun awardExperience(xpGained: Int) {
         val current = profileManager.getActiveProfile()
-        if (!current.gamificationEnabled) return
         current.experience += xpGained
         postNotification("XP Gained!", "+$xpGained Experience secured!", "XP")
         
@@ -386,7 +381,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun deductExperience(xpLost: Int) {
         val current = profileManager.getActiveProfile()
-        if (!current.gamificationEnabled) return
         current.experience -= xpLost
         
         // Note: Do not drop level down, otherwise users can farm level-up rewards by uncompleting and completing tasks.
