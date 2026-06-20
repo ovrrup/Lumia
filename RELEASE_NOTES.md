@@ -5,11 +5,12 @@ Due to updates to our application's Package ID and code-signing credentials, ver
 Installing this update directly over older installations may cause duplicate apps to show up on your home screen or raise package configuration conflicts.
 Please back up your data if needed, completely UNINSTALL any previous pre-release or preview version of Lumia from your device, and perform a fresh install of Lumia v1.0.5.
 
-## What's New in v1.0.5 (Local Photo Avatars & Functional Unlocks)
+## 🌟 What's New in v1.0.5 (Test Analytics & Academic Progress)
+- **Comprehensive Test Tracking & Analytics**: Log test records per subject and course. Includes real-time tracking metrics, average scores, best marks, and performance trends over time.
+- **Visual Progress Charts**: Newly integrated linear progress graphs visually map out your academic standing and history across tests.
 - **Local Storage Avatars (FOSS Dev-Photo integration)**: Completely retired emoji-based profile identifiers. Profiles now support importing real, high-resolution custom pictures selected directly from your device's files and local storage.
-- **Advanced Typography Standardized**: Custom global typography configurations (font adjustments, custom sizing scaling, and font weights) have been fully uncaged from the Plus Shop. They are now recognized as a standard core utility available to all users with zero locks.
-- **Achievement Visual Overhaul**: Fully refactored achievement cards to utilize sharp, professional, high-fidelity Material symbols and vector graphics instead of loose illustrative emojis.
-- **Stability and Fixes**: Corrected layout sizing parameters, resolved memory references during picture loading, and removed leftover emoji-based elements for a streamlined, high-performance offline workspace.
+- **Advanced Typography Standardized**: Custom global typography configurations (font adjustments, custom sizing scaling, and font weights) are now recognized as a standard core utility available to all users with zero locks.
+- **Stability and Fixes**: Corrected layout sizing parameters, resolved memory references during picture loading, and optimized the offline workspace.
 
 ## 🌟 What's New in v1.0.4 (Elastic Buttons & Style Engine)
 - **Enhanced "More Rounds" Core**: Re-engineered the shape engine to support hierarchical corner radii, delivering a more organic and polished look across all UI tiers.
