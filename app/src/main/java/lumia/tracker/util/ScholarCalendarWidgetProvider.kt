@@ -93,6 +93,7 @@ class ScholarCalendarWidgetProvider : AppWidgetProvider() {
                     }
                 }
                 
+                WidgetThemeHelper.applyTheme(context, views)
                 appWidgetManager.updateAppWidget(widgetId, views)
             } catch (e: Exception) {
                 e.printStackTrace()

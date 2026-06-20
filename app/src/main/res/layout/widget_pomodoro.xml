@@ -1,95 +1,116 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="12dp"
-    android:background="@drawable/widget_background">
+    android:background="@android:color/transparent">
 
-    <TextView
-        android:id="@+id/widget_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Focus Timer"
-        android:textStyle="bold"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp" />
-
-    <TextView
-        android:id="@+id/widget_pomo_state"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Ready to focus"
-        android:textColor="#94A3B8"
-        android:textSize="11sp"
-        android:layout_marginTop="1dp" />
+    <ImageView
+        android:id="@+id/widget_bg_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/widget_bg_base"
+        android:scaleType="fitXY" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="12dp">
 
         <TextView
-            android:id="@+id/widget_pomo_time"
+            android:id="@+id/widget_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="25:00"
+            android:text="Focus Timer"
             android:textStyle="bold"
-            android:textColor="#3197D6"
-            android:textSize="32sp" />
-    </LinearLayout>
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:weightSum="2">
+        <TextView
+            android:id="@+id/widget_pomo_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ready to focus"
+            android:textColor="#94A3B8"
+            android:textSize="11sp"
+            android:layout_marginTop="1dp" />
 
         <LinearLayout
-            android:id="@+id/widget_btn_mode"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_height="32dp"
-            android:orientation="horizontal"
-            android:layout_marginRight="4dp"
-            android:background="@drawable/widget_button_background"
             android:gravity="center"
-            android:clickable="true"
-            android:focusable="true">
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/widget_btn_text_1"
+                android:id="@+id/widget_pomo_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Start"
-                android:textColor="#FFFFFF"
+                android:text="25:00"
                 android:textStyle="bold"
-                android:textSize="11sp" />
+                android:textColor="#3197D6"
+                android:textSize="32sp" />
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/widget_btn_app"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="32dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginLeft="4dp"
-            android:background="@drawable/widget_button_background"
             android:gravity="center"
-            android:clickable="true"
-            android:focusable="true">
+            android:weightSum="2">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Open App"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold"
-                android:textSize="11sp" />
+            <!-- Button 1 -->
+            <RelativeLayout
+                android:id="@+id/widget_btn_mode"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="32dp"
+                android:layout_marginRight="4dp">
+                
+                <ImageView
+                    android:id="@+id/widget_btn_mode_image"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_button_base"
+                    android:scaleType="fitXY" />
+                
+                <TextView
+                    android:id="@+id/widget_btn_text_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="Start"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="11sp" />
+            </RelativeLayout>
+
+            <!-- Button 2 -->
+            <RelativeLayout
+                android:id="@+id/widget_btn_app"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="32dp"
+                android:layout_marginLeft="4dp">
+                
+                <ImageView
+                    android:id="@+id/widget_btn_app_image"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_button_base"
+                    android:scaleType="fitXY" />
+                    
+                <TextView
+                    android:id="@+id/widget_btn_text_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="Open App"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="11sp" />
+            </RelativeLayout>
+
         </LinearLayout>
-
     </LinearLayout>
-</LinearLayout>
+</RelativeLayout>

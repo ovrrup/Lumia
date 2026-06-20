@@ -77,6 +77,7 @@ class ScholarPomodoroWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_btn_text_1, "Start")
         }
 
+        WidgetThemeHelper.applyTheme(context, views)
         appWidgetManager.updateAppWidget(widgetId, views)
     }
 }

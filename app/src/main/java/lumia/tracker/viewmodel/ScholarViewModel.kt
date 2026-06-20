@@ -56,6 +56,13 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun switchProfileAndRestart(context: Context, id: String) {
         profileManager.setActiveProfileId(id)
         lumia.tracker.data.AppDatabase.clearInstances()
+        
+        // Notify widgets to update their theme based on new profile
+        val app = getApplication<Application>()
+        app.sendBroadcast(android.content.Intent(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply { setComponent(android.content.ComponentName(app, lumia.tracker.util.ScholarTasksWidgetProvider::class.java)) })
+        app.sendBroadcast(android.content.Intent(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply { setComponent(android.content.ComponentName(app, lumia.tracker.util.ScholarCalendarWidgetProvider::class.java)) })
+        app.sendBroadcast(android.content.Intent(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply { setComponent(android.content.ComponentName(app, lumia.tracker.util.ScholarPomodoroWidgetProvider::class.java)) })
+
         val intent = android.content.Intent(context, lumia.tracker.MainActivity::class.java).apply {
             addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
@@ -2142,6 +2149,13 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         _themeColor.value = color
         prefs.edit().putString("theme_color", color).apply()
         refreshThemeBrightness()
+        
+        // Notify widgets to update their theme
+        val app = getApplication<Application>()
+        app.sendBroadcast(android.content.Intent(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply { setComponent(android.content.ComponentName(app, lumia.tracker.util.ScholarTasksWidgetProvider::class.java)) })
+        app.sendBroadcast(android.content.Intent(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply { setComponent(android.content.ComponentName(app, lumia.tracker.util.ScholarCalendarWidgetProvider::class.java)) })
+        app.sendBroadcast(android.content.Intent(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply { setComponent(android.content.ComponentName(app, lumia.tracker.util.ScholarPomodoroWidgetProvider::class.java)) })
+
         if (_dynamicAppIcon.value) {
             applyThemeBasedAppIcon(color)
         }

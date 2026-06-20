@@ -134,7 +134,7 @@ fun SettingsGroupCard(
         if (isGlass) {
             lumia.tracker.ui.components.GlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp)
+                shape = MaterialTheme.shapes.large
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -146,7 +146,7 @@ fun SettingsGroupCard(
         } else {
             androidx.compose.material3.OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                shape = MaterialTheme.shapes.large,
                 colors = CardDefaults.outlinedCardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
                 ),

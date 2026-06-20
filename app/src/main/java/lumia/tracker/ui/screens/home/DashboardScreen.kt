@@ -491,7 +491,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     androidx.compose.material3.OutlinedTextField(
                         value = code,
                         onValueChange = { code = it },
-                        label = { Text("Course Code (e.g. TECHNO 101)") },
+                        label = { Text("Course Code") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))

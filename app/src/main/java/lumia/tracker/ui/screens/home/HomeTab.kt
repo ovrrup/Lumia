@@ -155,6 +155,8 @@ fun HomeTab(
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
+    var selectedDateOffset by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
         floatingActionButton = {}
@@ -290,12 +292,13 @@ fun HomeTab(
             
             item(key = "today_classes_calendar") {
                 Spacer(modifier = Modifier.height(16.dp))
-                val calendar = java.util.Calendar.getInstance()
-                val currentDayOfWeekStr = java.text.SimpleDateFormat("EEEE", java.util.Locale.getDefault()).format(calendar.time)
-                val todayDayNum = calendar.get(java.util.Calendar.DAY_OF_MONTH)
-                val todayMonthStr = java.text.SimpleDateFormat("MMM", java.util.Locale.getDefault()).format(calendar.time)
+                val baseCalendar = java.util.Calendar.getInstance()
+                baseCalendar.add(java.util.Calendar.DAY_OF_MONTH, selectedDateOffset)
+                val currentDayOfWeekStr = java.text.SimpleDateFormat("EEEE", java.util.Locale.getDefault()).format(baseCalendar.time)
+                val todayDayNum = baseCalendar.get(java.util.Calendar.DAY_OF_MONTH)
+                val todayMonthStr = java.text.SimpleDateFormat("MMM", java.util.Locale.getDefault()).format(baseCalendar.time)
                 
-                val todaysCourses = courses.filter { course ->
+                val scheduledCourses = courses.filter { course ->
                     course.scheduleDays.contains(currentDayOfWeekStr, ignoreCase = true)
                 }
 
@@ -315,7 +318,7 @@ fun HomeTab(
                         ) {
                             Column {
                                 Text(
-                                    text = "Today's Classes",
+                                    text = if (selectedDateOffset == 0) "Today's Classes" else if (selectedDateOffset == 1) "Tomorrow's Classes" else if (selectedDateOffset == -1) "Yesterday's Classes" else "$currentDayOfWeekStr's Classes",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.primary
@@ -330,7 +333,8 @@ fun HomeTab(
                             Box(
                                 modifier = Modifier
                                     .size(48.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                                    .clickable { selectedDateOffset = 0 }, // reset to today
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -345,14 +349,16 @@ fun HomeTab(
                         
                         // We will build a sleek horizontal list of dates for the surrounding 5 days
                         val daysBefore = 2
+                        val todayCalendar = java.util.Calendar.getInstance()
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             for (i in -daysBefore..2) {
-                                val calOffset = calendar.clone() as java.util.Calendar
-                                calOffset.add(java.util.Calendar.DAY_OF_MONTH, i)
-                                val isToday = i == 0
+                                val calOffset = todayCalendar.clone() as java.util.Calendar
+                                val targetOffset = selectedDateOffset + i
+                                calOffset.add(java.util.Calendar.DAY_OF_MONTH, targetOffset)
+                                val isSelected = i == 0
                                 val dayLetter = java.text.SimpleDateFormat("E", java.util.Locale.getDefault()).format(calOffset.time).take(1)
                                 val dayNumber = calOffset.get(java.util.Calendar.DAY_OF_MONTH).toString()
                                 
@@ -362,20 +368,21 @@ fun HomeTab(
                                         .weight(1f)
                                         .padding(horizontal = 4.dp)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(if (isToday) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                        .clickable { selectedDateOffset = targetOffset }
                                         .padding(vertical = 12.dp)
                                 ) {
                                     Text(
                                         text = dayLetter,
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = if (isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = dayNumber,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
@@ -383,7 +390,7 @@ fun HomeTab(
                         
                         Spacer(modifier = Modifier.height(20.dp))
                         
-                        if (todaysCourses.isEmpty()) {
+                        if (scheduledCourses.isEmpty()) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -392,14 +399,14 @@ fun HomeTab(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    "No classes scheduled for today.",
+                                    "No classes scheduled for ${if (selectedDateOffset == 0) "today" else "this day"}.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         } else {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                todaysCourses.forEach { course ->
+                                scheduledCourses.forEach { course ->
                                     val courseColor = try {
                                         Color(android.graphics.Color.parseColor(course.colorHex.ifBlank { "#3197D6" }))
                                     } catch(e: Exception) {

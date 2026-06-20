@@ -268,7 +268,7 @@ fun CoursesTab(
                     OutlinedTextField(
                         value = code,
                         onValueChange = { code = it },
-                        label = { Text("Course Code (e.g. TECHNO 101)") },
+                        label = { Text("Course Code") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
