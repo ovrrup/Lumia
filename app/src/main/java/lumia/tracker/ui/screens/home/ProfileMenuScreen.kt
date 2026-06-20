@@ -236,17 +236,100 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
 
 
             item {
-                Text("App & Account", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp))
-                MenuListItem(icon = Icons.Rounded.SwapHoriz, title = "Switch User", subtitle = "Change active profile or create new") {
-                    // This can restart the app or just show a bottom sheet.
-                    navController.navigate("switch_user")
+                // Personalization Card
+                SettingsGroupCard(title = "Personalization", icon = Icons.Rounded.Palette) {
+                    SettingsActionItemInCard(
+                        title = "Appearance & Theme",
+                        subtitle = "Themes, color palettes, and layout modifiers",
+                        icon = Icons.Rounded.Palette,
+                        onClick = { navController.navigate("settings/appearance") }
+                    )
                 }
-                MenuListItem(icon = Icons.Rounded.Settings, title = "Settings", subtitle = "Preferences and customization") {
-                    navController.navigate("settings")
+                
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SettingsGroupCard(title = "Profile Selection", icon = Icons.Rounded.Person) {
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    SettingsActionItemInCard(
+                        title = "Switch Profile",
+                        subtitle = "Currently using: ${activeProfile.name}",
+                        icon = Icons.Rounded.SwapHoriz,
+                        onClick = { 
+                            // Tell main activity to show profile selector
+                            val intent = android.content.Intent(context, lumia.tracker.MainActivity::class.java)
+                            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                            intent.putExtra("OPEN_PROFILE_SELECTOR", true)
+                            if (context is android.app.Activity) {
+                                context.finish()
+                            }
+                            context.startActivity(intent)
+                        }
+                    )
                 }
-                MenuListItem(icon = Icons.Rounded.Info, title = "About App", subtitle = "Version and info") {
-                    navController.navigate("settings/about")
+                
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // System configuration
+                SettingsGroupCard(title = "System Details", icon = Icons.Rounded.Settings) {
+                    SettingsActionItemInCard(
+                        title = "System Configuration",
+                        subtitle = "Advanced background features and interconnections",
+                        icon = Icons.Rounded.Settings,
+                        onClick = { navController.navigate("settings/system") }
+                    )
+                    
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                    
+                    SettingsActionItemInCard(
+                        title = "Experimental Features",
+                        subtitle = "Quick tools and layouts",
+                        icon = Icons.Rounded.Check,
+                        onClick = { navController.navigate("settings/beta") }
+                    )
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Safety & Notifications
+                SettingsGroupCard(title = "Alerts & Security", icon = Icons.Rounded.Lock) {
+                    SettingsActionItemInCard(
+                        title = "Safety System Guard",
+                        subtitle = "Automatic alerts and smart recommendations",
+                        icon = Icons.Rounded.Lock,
+                        onClick = { navController.navigate("settings/safety") }
+                    )
+                    
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                    SettingsActionItemInCard(
+                        title = "Notifications Management",
+                        subtitle = "Tones, schedules, and active alerts",
+                        icon = Icons.Rounded.Notifications,
+                        onClick = { navController.navigate("settings/notifications") }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Data Management
+                SettingsGroupCard(title = "Storage & Versioning", icon = Icons.Rounded.Storage) {
+                    SettingsActionItemInCard(
+                        title = "Database & Management",
+                        subtitle = "Manage secure active backups, exports & resets",
+                        icon = Icons.Rounded.Storage,
+                        onClick = { navController.navigate("settings/data") }
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                    SettingsActionItemInCard(
+                        title = "About App",
+                        subtitle = "Developer info, update status & open source details",
+                        icon = Icons.Rounded.Info,
+                        onClick = { navController.navigate("settings/about") }
+                    )
+                }
+
                 Spacer(Modifier.height(32.dp))
             }
         }

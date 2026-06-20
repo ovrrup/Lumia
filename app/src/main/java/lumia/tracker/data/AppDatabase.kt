@@ -15,8 +15,9 @@ import lumia.tracker.model.Note
 import lumia.tracker.model.Chapter
 import lumia.tracker.model.Task
 import lumia.tracker.model.Attachment
+import lumia.tracker.model.TestRecord
 
-@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class, AttendanceRecord::class, PomodoroSession::class, Note::class, Chapter::class, Task::class, Attachment::class], version = 16, exportSchema = false)
+@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class, AttendanceRecord::class, PomodoroSession::class, Note::class, Chapter::class, Task::class, Attachment::class, TestRecord::class], version = 17, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scholarDao(): ScholarDao
 
@@ -45,6 +46,12 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_16_17 = object : androidx.room.migration.Migration(16, 17) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `test_records` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `dateMillis` INTEGER NOT NULL, `marksObtained` REAL NOT NULL, `totalMarks` REAL NOT NULL, `notes` TEXT NOT NULL, `subjectId` INTEGER, `courseId` INTEGER)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             val profMgr = lumia.tracker.data.ProfileManager(context)
             val profileId = profMgr.getActiveProfileId()
@@ -56,7 +63,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     dbName
                 )
-                .addMigrations(MIGRATION_5_6, MIGRATION_12_13, MIGRATION_14_15)
+                .addMigrations(MIGRATION_5_6, MIGRATION_12_13, MIGRATION_14_15, MIGRATION_16_17)
                 .fallbackToDestructiveMigration()
                 .build()
                 instances[profileId] = instance

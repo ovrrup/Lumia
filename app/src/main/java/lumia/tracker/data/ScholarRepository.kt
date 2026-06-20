@@ -74,6 +74,12 @@ class ScholarRepository(val dao: ScholarDao) {
     suspend fun updateNote(note: lumia.tracker.model.Note) = dao.updateNote(note)
     suspend fun deleteNote(note: lumia.tracker.model.Note) = dao.deleteNote(note)
 
+    fun getTestRecordsForCourse(courseId: Int) = dao.getTestRecordsForCourse(courseId)
+    fun getTestRecordsForSubject(subjectId: Int) = dao.getTestRecordsForSubject(subjectId)
+    suspend fun insertTestRecord(record: lumia.tracker.model.TestRecord) = dao.insertTestRecord(record)
+    suspend fun updateTestRecord(record: lumia.tracker.model.TestRecord) = dao.updateTestRecord(record)
+    suspend fun deleteTestRecord(record: lumia.tracker.model.TestRecord) = dao.deleteTestRecord(record)
+
     suspend fun clearAllData() {
         dao.clearCourses()
         dao.clearSubjects()
@@ -86,6 +92,7 @@ class ScholarRepository(val dao: ScholarDao) {
         dao.clearNotes()
         dao.clearTasks()
         dao.clearAttachments()
+        dao.clearTestRecords()
     }
 
     private val moshi = com.squareup.moshi.Moshi.Builder().addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()
@@ -105,7 +112,8 @@ class ScholarRepository(val dao: ScholarDao) {
             notes = dao.exportAllNotes(),
             chapters = dao.exportAllChapters(),
             tasks = dao.exportAllTasks(),
-            attachments = dao.exportAllAttachments()
+            attachments = dao.exportAllAttachments(),
+            testRecords = dao.exportAllTestRecords()
         )
         // Secure binary format: wrap outputStream in GZIPOutputStream for compression and obfuscation
         java.util.zip.GZIPOutputStream(outputStream).use { gzos ->
@@ -144,6 +152,7 @@ class ScholarRepository(val dao: ScholarDao) {
         dao.clearNotes()
         dao.clearTasks()
         dao.clearAttachments()
+        dao.clearTestRecords()
 
         // 2. Insert Subjects and map old IDs to newly generated auto-increment IDs
         val oldToNewSubjectId = mutableMapOf<Int, Int>()
@@ -236,6 +245,13 @@ class ScholarRepository(val dao: ScholarDao) {
             val newCourseId = attachment.courseId?.let { oldToNewCourseId[it] } ?: attachment.courseId
             val newSubjectId = attachment.subjectId?.let { oldToNewSubjectId[it] } ?: attachment.subjectId
             dao.insertAttachment(attachment.copy(id = 0, courseId = newCourseId, subjectId = newSubjectId))
+        }
+
+        // 13. Insert Test Records with mapped Course/Subject IDs
+        backup.testRecords?.forEach { test ->
+            val newCourseId = test.courseId?.let { oldToNewCourseId[it] } ?: test.courseId
+            val newSubjectId = test.subjectId?.let { oldToNewSubjectId[it] } ?: test.subjectId
+            dao.insertTestRecord(test.copy(id = 0, courseId = newCourseId, subjectId = newSubjectId))
         }
 
         return backup.settings

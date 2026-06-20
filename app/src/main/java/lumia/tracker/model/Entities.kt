@@ -26,6 +26,19 @@ data class Course(
     val tags: String = ""
 ) : Serializable
 
+@Entity(tableName = "test_records")
+@JsonClass(generateAdapter = true)
+data class TestRecord(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val title: String,
+    val dateMillis: Long = System.currentTimeMillis(),
+    val marksObtained: Float = 0f,
+    val totalMarks: Float = 100f,
+    val notes: String = "",
+    val subjectId: Int? = null,
+    val courseId: Int? = null
+) : Serializable
+
 @Entity(tableName = "subjects")
 @JsonClass(generateAdapter = true)
 data class Subject(
@@ -180,5 +193,6 @@ data class ScholarBackup(
     val notes: List<Note>? = emptyList(),
     val chapters: List<Chapter>? = emptyList(),
     val tasks: List<Task>? = emptyList(),
-    val attachments: List<Attachment>? = emptyList()
+    val attachments: List<Attachment>? = emptyList(),
+    val testRecords: List<TestRecord>? = emptyList()
 ) : Serializable

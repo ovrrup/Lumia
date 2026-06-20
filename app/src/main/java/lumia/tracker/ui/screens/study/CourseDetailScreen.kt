@@ -48,6 +48,7 @@ import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyOutlinedButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
+import lumia.tracker.ui.components.TestCornerCard
 
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -78,6 +79,10 @@ import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.ReorderableItem
+
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.ui.graphics.StrokeCap
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -835,6 +840,25 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             }
                         )
                     }
+                }
+
+                // Test Corner Section
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    val testRecords by viewModel.getTestRecordsForCourse(courseId).collectAsStateWithLifecycle()
+                    
+                    TestCornerCard(
+                        testRecords = testRecords,
+                        onAddTest = { newTest ->
+                            viewModel.addTestRecord(newTest.copy(courseId = courseId))
+                        },
+                        onUpdateTest = { updatedTest ->
+                            viewModel.updateTestRecord(updatedTest)
+                        },
+                        onDeleteTest = { testToDelete ->
+                            viewModel.deleteTestRecord(testToDelete)
+                        }
+                    )
                 }
 
                 // Course Notes Section
@@ -2009,3 +2033,4 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         )
     }
 }
+

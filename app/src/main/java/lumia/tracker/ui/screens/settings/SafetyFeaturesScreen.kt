@@ -271,14 +271,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                     subtitle = "Draw a full-screen SYSTEM OVERLAY clock directly over lockscreens, launchers and other apps for ultimate aesthetic hardware preservation.",
                     checked = aodTrueAodEnabled,
                     icon = Icons.Rounded.CropFree,
-                    onCheckedChange = {
-                        if (activeProfile.unlockedFeatures.contains("feat_true_aod")) {
-                            viewModel.updateAodTrueAodEnabled(it)
-                        } else {
-                            val msg = if (activeProfile.gamificationEnabled) "True Always-On Display is a premium Plus feature. Unlock it in the Plus Shop!" else "Enable Gamification to unlock True Always-On Display."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
-                        }
-                    }
+                    onCheckedChange = { viewModel.updateAodTrueAodEnabled(it) }
                 )
 
                 androidx.compose.animation.AnimatedVisibility(visible = aodTrueAodEnabled) {

@@ -1470,6 +1470,48 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             repository.deleteAttendanceRecord(record)
         }
     }
+    
+    // --- Test Records ---
+    private val testRecordsFlowCache = HashMap<Int, StateFlow<List<lumia.tracker.model.TestRecord>>>()
+    private val subjectTestRecordsFlowCache = HashMap<Int, StateFlow<List<lumia.tracker.model.TestRecord>>>()
+
+    fun getTestRecordsForCourse(courseId: Int): StateFlow<List<lumia.tracker.model.TestRecord>> {
+        return testRecordsFlowCache.getOrPut(courseId) {
+            repository.getTestRecordsForCourse(courseId).stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+        }
+    }
+
+    fun getTestRecordsForSubject(subjectId: Int): StateFlow<List<lumia.tracker.model.TestRecord>> {
+        return subjectTestRecordsFlowCache.getOrPut(subjectId) {
+            repository.getTestRecordsForSubject(subjectId).stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+        }
+    }
+
+    fun addTestRecord(record: lumia.tracker.model.TestRecord) {
+        viewModelScope.launch {
+            repository.insertTestRecord(record)
+        }
+    }
+
+    fun updateTestRecord(record: lumia.tracker.model.TestRecord) {
+        viewModelScope.launch {
+            repository.updateTestRecord(record)
+        }
+    }
+
+    fun deleteTestRecord(record: lumia.tracker.model.TestRecord) {
+        viewModelScope.launch {
+            repository.deleteTestRecord(record)
+        }
+    }
 
     fun addCourse(
         name: String,
@@ -1945,6 +1987,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 _importExportStatus.value = "Import failed: Invalid file or wrong format"
             }
         }
+    }
+
+    fun clearImportExportStatus() {
+        _importExportStatus.value = ""
     }
 
     private fun verifyFeatureEntitlements() {

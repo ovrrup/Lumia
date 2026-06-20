@@ -749,21 +749,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             color = color,
                             isSelected = themeColor == name,
                             onClick = {
-                                val starterTheme = activeProfile.starterTheme.ifBlank { "Ocean" }
-                                val isUniversalFree = name == starterTheme || name == "Dynamic"
-                                if (name == "Custom") {
-                                    if (activeProfile.unlockedFeatures.contains("feat_custom_theme")) {
-                                        viewModel.updateThemeColor(name)
-                                    } else {
-                                        val msg = if (activeProfile.gamificationEnabled) "Requires unlocking Custom Themes in Plus Shop" else "Enable Gamification to unlock Custom Themes."
-                                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                                    }
-                                } else if (!isUniversalFree && !activeProfile.unlockedFeatures.contains("feat_theme_pack")) {
-                                    val msg = if (activeProfile.gamificationEnabled) "Requires Theme Pack Expansion in Plus Shop! Only your selected starter theme ($starterTheme) is unlocked from the start." else "Enable Gamification to unlock Theme Pack Expansion."
-                                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
-                                } else {
-                                    viewModel.updateThemeColor(name)
-                                }
+                                viewModel.updateThemeColor(name)
                             }
                         )
                     }

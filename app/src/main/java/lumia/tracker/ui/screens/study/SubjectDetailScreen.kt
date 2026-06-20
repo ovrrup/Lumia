@@ -61,6 +61,11 @@ import java.io.File
 import java.io.FileOutputStream
 import android.widget.Toast
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.ui.graphics.StrokeCap
+import lumia.tracker.ui.components.BouncyIconButton
+import lumia.tracker.ui.components.TestCornerCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -580,6 +585,25 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             }
                         }
                     }
+                }
+
+                // Test Corner Section
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    val testRecords by viewModel.getTestRecordsForSubject(subjectId).collectAsStateWithLifecycle()
+                    
+                    TestCornerCard(
+                        testRecords = testRecords,
+                        onAddTest = { newTest ->
+                            viewModel.addTestRecord(newTest.copy(subjectId = subjectId))
+                        },
+                        onUpdateTest = { updatedTest ->
+                            viewModel.updateTestRecord(updatedTest)
+                        },
+                        onDeleteTest = { testToDelete ->
+                            viewModel.deleteTestRecord(testToDelete)
+                        }
+                    )
                 }
 
                 // Chapters & Topics Section

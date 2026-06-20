@@ -60,9 +60,60 @@ class AssignmentMonitorWorker(
             // 3. Classes & Attendance Reminder
             val enableClasses = prefs.getBoolean("notif_enable_classes", true)
             if (enableClasses) {
-                val title = if (formalTone) "Daily Attendance Tracker" else "Class Attendance Reminder!"
-                val desc = if (formalTone) "Please ensure your attendance is updated for all courses today." else "Skipped any classes today? Go update your attendance board before I tell your parents!"
-                sendNotification("scholar_monitor_channel", 1003, title, desc, lumia.tracker.util.NotificationHelper.getSmallIcon(), lumia.tracker.util.NotificationHelper.getColor(context))
+                // Get today's day string (e.g. "Monday")
+                val calendar = java.util.Calendar.getInstance()
+                val currentDayOfWeekStr = java.text.SimpleDateFormat("EEEE", java.util.Locale.getDefault()).format(calendar.time)
+                
+                val allCourses = database.scholarDao().exportAllCourses()
+                val todaysCourses = allCourses.filter {
+                    it.scheduleDays.contains(currentDayOfWeekStr, ignoreCase = true)
+                }
+
+                if (todaysCourses.isEmpty()) {
+                    // Generic daily reminder if no classes but we want them to open the app? Actually just skip.
+                } else {
+                    todaysCourses.forEach { course ->
+                        try {
+                            if (course.scheduleStartTime.isNotBlank()) {
+                                // parse time and create calendar for today at that time
+                                val sdfTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                                val startCal = java.util.Calendar.getInstance()
+                                val parsedStart = sdfTime.parse(course.scheduleStartTime.uppercase())
+                                if (parsedStart != null) {
+                                    val timeCal = java.util.Calendar.getInstance()
+                                    timeCal.time = parsedStart
+                                    startCal.set(java.util.Calendar.HOUR_OF_DAY, timeCal.get(java.util.Calendar.HOUR_OF_DAY))
+                                    startCal.set(java.util.Calendar.MINUTE, timeCal.get(java.util.Calendar.MINUTE))
+                                    startCal.set(java.util.Calendar.SECOND, 0)
+                                    // schedule 10 minutes before
+                                    lumia.tracker.util.ReminderScheduler.scheduleClassReminder(
+                                        context, course.id, course.name, "Starts at ${course.scheduleStartTime}",
+                                        startCal.timeInMillis - (10 * 60 * 1000), "class_start"
+                                    )
+                                }
+                            }
+                            if (course.scheduleEndTime.isNotBlank()) {
+                                val sdfTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                                val endCal = java.util.Calendar.getInstance()
+                                val parsedEnd = sdfTime.parse(course.scheduleEndTime.uppercase())
+                                if (parsedEnd != null) {
+                                    val timeCal = java.util.Calendar.getInstance()
+                                    timeCal.time = parsedEnd
+                                    endCal.set(java.util.Calendar.HOUR_OF_DAY, timeCal.get(java.util.Calendar.HOUR_OF_DAY))
+                                    endCal.set(java.util.Calendar.MINUTE, timeCal.get(java.util.Calendar.MINUTE))
+                                    endCal.set(java.util.Calendar.SECOND, 0)
+                                    // schedule at the exact end time
+                                    lumia.tracker.util.ReminderScheduler.scheduleClassReminder(
+                                        context, course.id, course.name, "Class finished. Don't forget to mark your attendance!",
+                                        endCal.timeInMillis, "class_end"
+                                    )
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("AppMonitor", "Error parsing time for course ${course.name}", e)
+                        }
+                    }
+                }
             }
             
             return Result.success()

@@ -158,7 +158,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     1 -> "Your Courses"
                     2 -> "Your Subjects"
                     3 -> "Self Study & Tasks"
-                    5 -> "Class Calendar"
                     else -> "Analytics"
                 }
                 androidx.compose.foundation.layout.Box {
@@ -261,16 +260,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
                         )
-                        if (featureCalendarEnabled) {
-                            NavigationBarItem(
-                                icon = { Icon(Icons.Rounded.CalendarMonth, contentDescription = "Calendar") },
-                                label = if (hideLabels) null else { { Text("Calendar") } },
-                                selected = selectedTab == 5,
-                                onClick = { selectedTab = 5 },
-                                colors = navItemColors,
-                                alwaysShowLabel = labelModeAlways
-                            )
-                        }
                         if (featureSelfStudyEnabled) {
                             NavigationBarItem(
                                 icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Tasks") },
@@ -384,11 +373,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             bottomPadding = extendedPadding
                         )
                         4 -> AnalyticsTab(navController = navController, viewModel = viewModel, paddingValues = extendedPadding)
-                        5 -> CalendarTab(
-                            navController = navController,
-                            viewModel = viewModel,
-                            bottomPadding = extendedPadding
-                        )
                     }
                 }
             }
@@ -445,16 +429,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         colors = navItemColors,
                         alwaysShowLabel = labelModeAlways
                     )
-                    if (featureCalendarEnabled) {
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.CalendarMonth, contentDescription = "Calendar") },
-                            label = if (hideLabels) null else { { Text("Calendar") } },
-                            selected = selectedTab == 5,
-                            onClick = { selectedTab = 5 },
-                            colors = navItemColors,
-                            alwaysShowLabel = labelModeAlways
-                        )
-                    }
                     if (featureSubjectEnabled && !fuseSubjectsCourses) {
                         NavigationBarItem(
                             icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },

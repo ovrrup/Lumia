@@ -62,7 +62,12 @@ class BootReceiver : BroadcastReceiver() {
                             }
                         }
                     }
-                    Log.d("BootReceiver", "Restored $scheduledCount reminders successfully.")
+                    
+                    // Trigger the monitor worker to ensure streaks, digest, and class attendance timings are properly configured for the current day
+                    val workRequest = androidx.work.OneTimeWorkRequestBuilder<lumia.tracker.worker.AssignmentMonitorWorker>().build()
+                    androidx.work.WorkManager.getInstance(context).enqueueUniqueWork("boot_assignment_monitor", androidx.work.ExistingWorkPolicy.REPLACE, workRequest)
+                    
+                    Log.d("BootReceiver", "Restored $scheduledCount reminders successfully and triggered AssignmentMonitorWorker.")
                 } catch (e: Exception) {
                     Log.e("BootReceiver", "Error restoring notifications on boot", e)
                 } finally {

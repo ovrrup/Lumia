@@ -1,43 +1,19 @@
 package lumia.tracker.ui.screens
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.rounded.Analytics
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.EditNote
-import androidx.compose.material.icons.rounded.Face
-import androidx.compose.material.icons.rounded.FavoriteBorder
-import androidx.compose.material.icons.rounded.Leaderboard
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material.icons.rounded.Token
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,32 +21,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import lumia.tracker.viewmodel.ScholarViewModel
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) {
+    // Sequence: Intro1, Intro2, Permissions, Backup, Setup Profile, Tour
     val pagerState = rememberPagerState(pageCount = { 6 })
     val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
-    var isLegalAgreed by remember { mutableStateOf(false) }
-
+    
     // First user setup temporary state variables
     var firstProfileName by remember { mutableStateOf("Main User") }
     var firstProfileAlias by remember { mutableStateOf("Student") }
     var firstProfileTheme by remember { mutableStateOf("Ocean") }
     var firstProfileAvatar by remember { mutableStateOf("") }
-    var firstProfileGamificationEnabled by remember { mutableStateOf(true) }
+    var firstProfileGamificationEnabled by remember { mutableStateOf(false) } // Gamification is removed/disabled
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -83,63 +56,54 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                 state = pagerState,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                userScrollEnabled = false
             ) { page ->
                 when (page) {
-                    0 -> LegalConsentPage(
-                        isActive = pagerState.currentPage == page,
-                        isAgreed = isLegalAgreed,
-                        onAgreedChange = { isLegalAgreed = it }
-                    )
-                    1 -> OnboardingPage(
+                    0 -> OnboardingPage(
                         icon = Icons.Rounded.AutoAwesome,
                         title = "Glassmorphism & Style",
-                        description = "Experience Lumia's distinctive Frosted Glass layouts! Custom theme overlays, floating adaptive navigation rails, and bouncy physics tactile actions elevate your everyday routine.",
+                        description = "Experience Lumia's distinctive Frosted Glass layouts! Custom theme overlays, floating adaptive navigation rails, and tactile actions elevate your routine.",
                         isActive = pagerState.currentPage == page
                     )
-                    2 -> OnboardingPage(
+                    1 -> OnboardingPage(
                         icon = Icons.Rounded.Timer,
                         title = "Basic Focus Timer",
                         description = "Our classic Pomodoro study space and course organizers are 100% free with local offline data security.",
                         isActive = pagerState.currentPage == page
                     )
-                    3 -> OnboardingPage(
-                        icon = Icons.Rounded.EditNote,
-                        title = "Fully Customizable",
-                        description = "Unlock features and layout settings to customize your study experience exactly how you want it.",
-                        isActive = pagerState.currentPage == page
+                    2 -> PermissionsPage(
+                        isActive = pagerState.currentPage == page,
+                        onComplete = {
+                            coroutineScope.launch { pagerState.animateScrollToPage(3) }
+                        }
+                    )
+                    3 -> BackupOptionPage(
+                        isActive = pagerState.currentPage == page,
+                        viewModel = viewModel,
+                        onBackupImported = {
+                            coroutineScope.launch { pagerState.animateScrollToPage(4) }
+                        },
+                        onSkip = {
+                            coroutineScope.launch { pagerState.animateScrollToPage(4) }
+                        }
                     )
                     4 -> ProfileSetupPage(
                         isActive = pagerState.currentPage == page,
-                        onSaved = { name, alias, theme, avatar, gamification ->
+                        onSaved = { name, alias, theme, avatar, _ ->
                             firstProfileName = name
                             firstProfileAlias = alias
                             firstProfileTheme = theme
                             firstProfileAvatar = avatar
-                            firstProfileGamificationEnabled = gamification
                         }
                     )
-                    5 -> PermissionsPage(
-                        isActive = pagerState.currentPage == page,
-                        onComplete = {
-                            // Ensure setup is applied when completing
-                            viewModel.setupFirstProfile(
-                                name = firstProfileName.ifBlank { "Main User" },
-                                alias = firstProfileAlias.ifBlank { "Student" },
-                                avatar = firstProfileAvatar,
-                                starterTheme = firstProfileTheme,
-                                gamificationEnabled = firstProfileGamificationEnabled
-                            )
-                            viewModel.completeOnboarding()
-                            navController.navigate("dashboard") {
-                                popUpTo("onboarding") { inclusive = true }
-                            }
-                        }
+                    5 -> VisualTourPage(
+                        isActive = pagerState.currentPage == page
                     )
                 }
             }
 
-            // Bottom Navigation Bar
+            // Bottom bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -164,44 +128,204 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                     }
                 }
 
-                // Next / Get Started Button
-                Button(
-                    onClick = {
-                        if (pagerState.currentPage < 5) {
+                // Wait logic: we only allow advancing to Permissions on our own, but Backup (we skip or import).
+                val isButtonVisible = pagerState.currentPage in listOf(0, 1, 2, 4, 5)
+                
+                if (isButtonVisible) {
+                    Button(
+                        onClick = {
                             if (pagerState.currentPage == 4) {
-                                // Save profile setups right when advancing from profile page
                                 viewModel.setupFirstProfile(
                                     name = firstProfileName.ifBlank { "Main User" },
                                     alias = firstProfileAlias.ifBlank { "Student" },
                                     avatar = firstProfileAvatar,
                                     starterTheme = firstProfileTheme,
-                                    gamificationEnabled = firstProfileGamificationEnabled
+                                    gamificationEnabled = false
                                 )
+                                coroutineScope.launch { pagerState.animateScrollToPage(5) }
+                            } else if (pagerState.currentPage == 5) {
+                                viewModel.completeOnboarding()
+                                navController.navigate("dashboard") {
+                                    popUpTo("onboarding") { inclusive = true }
+                                }
+                            } else {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                }
                             }
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                            }
-                        } else {
-                            viewModel.setupFirstProfile(
-                                name = firstProfileName.ifBlank { "Main User" },
-                                alias = firstProfileAlias.ifBlank { "Student" },
-                                avatar = firstProfileAvatar,
-                                starterTheme = firstProfileTheme,
-                                gamificationEnabled = firstProfileGamificationEnabled
-                            )
-                            viewModel.completeOnboarding()
-                            navController.navigate("dashboard") {
-                                popUpTo("onboarding") { inclusive = true }
-                            }
-                        }
-                    },
-                    shape = RoundedCornerShape(24.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp),
-                    enabled = pagerState.currentPage != 0 || isLegalAgreed
-                ) {
-                    Text(if (pagerState.currentPage == 5) "Finish" else "Next", fontWeight = FontWeight.Bold)
+                        },
+                        shape = RoundedCornerShape(24.dp),
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)
+                    ) {
+                        Text(if (pagerState.currentPage == 5) "Let's Go!" else "Next", fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(64.dp))
                 }
             }
         }
     }
 }
+
+@Composable
+fun BackupOptionPage(
+    isActive: Boolean,
+    viewModel: ScholarViewModel,
+    onBackupImported: () -> Unit,
+    onSkip: () -> Unit
+) {
+    val scale by animateFloatAsState(if (isActive) 1f else 0.8f, tween(600), label = "backup_scale")
+    val alpha by animateFloatAsState(if (isActive) 1f else 0f, tween(600), label = "backup_alpha")
+    val context = LocalContext.current
+    
+    val importExportStatus by viewModel.importExportStatus.collectAsState()
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri: Uri? ->
+            if (uri != null) {
+                viewModel.importData(uri)
+            }
+        }
+    )
+    
+    // Automatically advance if imported successfully
+    LaunchedEffect(importExportStatus) {
+        if (importExportStatus?.contains("successfully", ignoreCase = true) == true) {
+            android.widget.Toast.makeText(context, "Backup Restored Successfully!", android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.clearImportExportStatus() // Make sure to reset it
+            onBackupImported()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp)
+            .scale(scale)
+            .alpha(alpha)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.CloudDownload,
+            contentDescription = null,
+            modifier = Modifier
+                .size(80.dp)
+                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                .padding(20.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "Welcome Back?",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "If you have a previous Lumia backup file (.bin or .json), you can import it now. All your courses, subjects and settings will be restored instantly.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        
+        if (!importExportStatus.isNullOrBlank() && importExportStatus?.contains("successfully", ignoreCase = true) != true) {
+            Text(
+                text = importExportStatus ?: "",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        Button(
+            onClick = { filePickerLauncher.launch(arrayOf("*/*")) },
+            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp)
+        ) {
+            Text("Import Backup Data", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        OutlinedButton(
+            onClick = onSkip,
+            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp)
+        ) {
+            Text("I'm a New User", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+        }
+    }
+}
+
+@Composable
+fun VisualTourPage(isActive: Boolean) {
+    val scale by animateFloatAsState(if (isActive) 1f else 0.8f, tween(600), label = "tour_scale")
+    val alpha by animateFloatAsState(if (isActive) 1f else 0f, tween(600), label = "tour_alpha")
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp)
+            .scale(scale)
+            .alpha(alpha),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Explore,
+            contentDescription = null,
+            modifier = Modifier
+                .size(80.dp)
+                .background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape)
+                .padding(20.dp),
+            tint = MaterialTheme.colorScheme.tertiary
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Text(
+            text = "Your setup is complete!",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                TourItem(icon = Icons.Rounded.Dashboard, title = "Home Dashboard", desc = "Overview of your day and next classes")
+                TourItem(icon = Icons.Rounded.MenuBook, title = "Courses & Subjects", desc = "Manage your studying material and schedule")
+                TourItem(icon = Icons.Rounded.Timer, title = "Pomodoro Timer", desc = "Focus and track your study sessions")
+                TourItem(icon = Icons.Rounded.Settings, title = "Settings", desc = "Customize aesthetics and advanced toggles")
+            }
+        }
+    }
+}
+
+@Composable
+fun TourItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, desc: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+

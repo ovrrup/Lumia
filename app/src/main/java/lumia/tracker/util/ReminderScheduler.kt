@@ -55,12 +55,22 @@ class ReminderReceiver : BroadcastReceiver() {
 
         if (!enableDeadlines) return
 
+        val typeExtra = intent.getStringExtra("type") ?: "assignment"
         val titleExtra = intent.getStringExtra("title") ?: "Assignment Due"
         val descExtra = intent.getStringExtra("desc") ?: "You have an assignment to complete."
         val interconnections = intent.getStringExtra("interconnections") ?: ""
 
-        val finalTitle = if (formalTone) "Deadline Reminder: $titleExtra" else "URGENT: $titleExtra is DUE!"
-        val finalDesc = if (formalTone) {
+        val finalTitle = if (typeExtra == "class_start") {
+             if (formalTone) "Class Starting Soon: $titleExtra" else "Hurry! $titleExtra is starting!"
+        } else if (typeExtra == "class_end") {
+             if (formalTone) "Class Ended: $titleExtra" else "Class over! Update your attendance!"
+        } else {
+             if (formalTone) "Deadline Reminder: $titleExtra" else "URGENT: $titleExtra is DUE!"
+        }
+
+        val finalDesc = if (typeExtra == "class_start" || typeExtra == "class_end") {
+             descExtra
+        } else if (formalTone) {
             descExtra + if (interconnections.isNotBlank()) "\nLinked with: $interconnections" else ""
         } else {
             "Are you procrastinating? $descExtra" + if (interconnections.isNotBlank()) "\nIt's linked to: $interconnections. You can't escape it!" else ""
@@ -112,9 +122,9 @@ class ReminderReceiver : BroadcastReceiver() {
         val bigTextStyle = NotificationCompat.BigTextStyle()
             .bigText(finalDesc)
             .setBigContentTitle(finalTitle)
-            .setSummaryText("Deadline Alert")
+            .setSummaryText(if (typeExtra.startsWith("class")) "Class Alert" else "Deadline Alert")
 
-        val notification = NotificationCompat.Builder(context, "scholar_sync_channel")
+        val builder = NotificationCompat.Builder(context, "scholar_sync_channel")
             .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
             .setContentTitle(finalTitle)
             .setContentText(finalDesc)
@@ -122,11 +132,15 @@ class ReminderReceiver : BroadcastReceiver() {
             .setColor(lumia.tracker.util.NotificationHelper.getColor(context))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(mainPendingIntent)
-            .addAction(android.R.drawable.ic_menu_edit, if (formalTone) "Mark Done" else "I Did It!", donePendingIntent)
-            .addAction(android.R.drawable.ic_popup_sync, "Snooze 15m", snoozePendingIntent)
             .setAutoCancel(true)
             .setGroup("assignments_group")
-            .build()
+            
+        if (typeExtra == "assignment") {
+            builder.addAction(android.R.drawable.ic_menu_edit, if (formalTone) "Mark Done" else "I Did It!", donePendingIntent)
+            builder.addAction(android.R.drawable.ic_popup_sync, "Snooze 15m", snoozePendingIntent)
+        }
+
+        val notification = builder.build()
             
         notificationManager.notify(if (assignmentId != -1) assignmentId else System.currentTimeMillis().toInt(), notification)
     }
@@ -143,23 +157,23 @@ object ReminderScheduler {
         }
     }
 
-    fun scheduleClassReminder(context: Context, classId: Int, title: String, desc: String, timestamp: Long) {
+    fun scheduleClassReminder(context: Context, classId: Int, title: String, desc: String, timestamp: Long, type: String = "class_start") {
         val profMgr = lumia.tracker.data.ProfileManager(context)
         val prefs = profMgr.getProfilePrefs()
         if (!prefs.getBoolean("notif_enable_classes", true)) return
-        val triggerTime = timestamp - (1000 * 60 * 15) // 15 mins before class
-        if (triggerTime > System.currentTimeMillis()) {
-            scheduleReminderExact(context, classId + 50000, "Class: $title", "Starting in 15 mins: $desc", "", triggerTime)
+        if (timestamp > System.currentTimeMillis()) {
+            scheduleReminderExact(context, classId + (if(type == "class_start") 50000 else 60000), title, desc, "", timestamp, type)
         }
     }
 
-    fun scheduleReminderExact(context: Context, assignmentId: Int, title: String, desc: String, interconnections: String, triggerTime: Long) {
+    fun scheduleReminderExact(context: Context, assignmentId: Int, title: String, desc: String, interconnections: String, triggerTime: Long, type: String = "assignment") {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, ReminderReceiver::class.java).apply {
             putExtra("assignment_id", assignmentId)
             putExtra("title", title)
             putExtra("desc", desc)
             putExtra("interconnections", interconnections)
+            putExtra("type", type)
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,

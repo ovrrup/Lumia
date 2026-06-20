@@ -103,6 +103,27 @@ interface ScholarDao {
     @Insert
     suspend fun insertPomodoroSession(session: lumia.tracker.model.PomodoroSession)
 
+    // Test Records
+    @Query("SELECT * FROM test_records WHERE courseId = :courseId ORDER BY dateMillis DESC")
+    fun getTestRecordsForCourse(courseId: Int): Flow<List<lumia.tracker.model.TestRecord>>
+
+    @Query("SELECT * FROM test_records WHERE subjectId = :subjectId ORDER BY dateMillis DESC")
+    fun getTestRecordsForSubject(subjectId: Int): Flow<List<lumia.tracker.model.TestRecord>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTestRecord(record: lumia.tracker.model.TestRecord)
+
+    @Update
+    suspend fun updateTestRecord(record: lumia.tracker.model.TestRecord)
+
+    @Delete
+    suspend fun deleteTestRecord(record: lumia.tracker.model.TestRecord)
+
+    @Query("SELECT * FROM test_records")
+    suspend fun exportAllTestRecords(): List<lumia.tracker.model.TestRecord>
+
+    @Query("DELETE FROM test_records") suspend fun clearTestRecords()
+
     // For Backup / Restore
     @Query("SELECT * FROM courses")
     suspend fun exportAllCourses(): List<Course>

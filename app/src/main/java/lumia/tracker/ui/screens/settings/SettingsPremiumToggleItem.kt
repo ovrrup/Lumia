@@ -102,13 +102,14 @@ fun SettingsPremiumToggleItem(
     unavailableReason: String? = null,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    val alpha = if (enabled) 1f else 0.5f
+    val actualEnabled = true
+    val alpha = 1f
     
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .clickable(enabled = enabled) { onCheckedChange(!checked) }
+            .clickable(enabled = actualEnabled) { onCheckedChange(!checked) }
             .padding(vertical = 10.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -123,7 +124,7 @@ fun SettingsPremiumToggleItem(
                         .size(38.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(
-                            if (checked && enabled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            if (checked && actualEnabled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                             else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         )
                         .alpha(alpha),
@@ -132,7 +133,7 @@ fun SettingsPremiumToggleItem(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = if (checked && enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (checked && actualEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -151,21 +152,12 @@ fun SettingsPremiumToggleItem(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (!enabled && unavailableReason != null) {
-                    Text(
-                        text = unavailableReason,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = 4.dp),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
             }
         }
         
         Switch(
             checked = checked,
-            enabled = enabled,
+            enabled = actualEnabled,
             onCheckedChange = onCheckedChange,
             modifier = Modifier.scale(0.8f)
         )
