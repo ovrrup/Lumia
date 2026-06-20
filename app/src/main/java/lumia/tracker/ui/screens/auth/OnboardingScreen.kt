@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Face
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Leaderboard
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.Token
 import androidx.compose.material3.*
@@ -98,14 +99,14 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                     )
                     2 -> OnboardingPage(
                         icon = Icons.Rounded.Timer,
-                        title = "Basic Focus Timer (Free)",
-                        description = "Our classic Pomodoro study space and course organizers are 100% free with local offline data security. Complete sessions to earn points and rank up!",
+                        title = "Basic Focus Timer",
+                        description = "Our classic Pomodoro study space and course organizers are 100% free with local offline data security.",
                         isActive = pagerState.currentPage == page
                     )
                     3 -> OnboardingPage(
-                        icon = Icons.Rounded.Token,
-                        title = "Dual Currency Plus Economy",
-                        description = "Manage Focus Points & Credits with an active conversion! Spin the Lucky Chest for premium Grade-SS drops, rent features for 24-hour periods, or unlock custom layouts and database diagnostics permanently.",
+                        icon = Icons.Rounded.EditNote,
+                        title = "Fully Customizable",
+                        description = "Unlock features and layout settings to customize your study experience exactly how you want it.",
                         isActive = pagerState.currentPage == page
                     )
                     4 -> ProfileSetupPage(

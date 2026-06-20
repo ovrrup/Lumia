@@ -181,62 +181,6 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                 val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
                 val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
                 
-                if (activeProfile.gamificationEnabled) {
-                    PointsAndLevelCard(modifier = Modifier.fillMaxWidth(), profile = activeProfile)
-                }
-                
-                if (allProfiles.size > 1 && activeProfile.gamificationEnabled) {
-                    val isLeaderboardUnlocked = activeProfile.isFeatureUnlocked("feat_leaderboard")
-                    if (isLeaderboardUnlocked) {
-                        LeaderboardChart(modifier = Modifier.fillMaxWidth(), profiles = allProfiles)
-                    } else {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                                .clickable {
-                                    navController.navigate("plus_shop")
-                                },
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-                            shape = RoundedCornerShape(24.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                        ) {
-                            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        androidx.compose.material.icons.Icons.Rounded.Lock,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Study Leaderboard (Plus Feature)",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Unlock the local study leaderboard to compare performance with other user profiles! Swap 350 focus points in the M-Power Plus Shop.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
-                                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                                ) {
-                                    Text("Visit Plus Shop", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
-                }
-                
 
                 WeeklyAssignmentsDueChart(
                     modifier = Modifier.fillMaxWidth(),

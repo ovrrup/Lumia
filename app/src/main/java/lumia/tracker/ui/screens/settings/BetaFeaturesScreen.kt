@@ -178,7 +178,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
             }
         }
     ) { padding ->
-        val isUnlocked = activeProfile.unlockedFeatures.contains("feat_experimental")
+        val isUnlocked = true
         if (!isUnlocked) {
             Column(
                 modifier = Modifier

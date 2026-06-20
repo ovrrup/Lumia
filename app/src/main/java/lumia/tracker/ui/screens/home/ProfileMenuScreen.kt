@@ -195,43 +195,11 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
 
                             Spacer(Modifier.height(16.dp))
 
-                            val creationTime = activeProfile.createdAt ?: System.currentTimeMillis()
-                            if (System.currentTimeMillis() - creationTime <= 24L * 60 * 60 * 1000) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f))
-                                        .padding(12.dp)
-                                ) {
-                                    Text(
-                                        text = "Tip: Want everything unlocked instantly? You can turn off Gamification by tapping your profile picture or the Edit icon within the first 24 hours. Achievements & points will still track!",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                }
-                                Spacer(Modifier.height(16.dp))
-                            }
-
-                            // Level, ranking & streak badges
+                            // Ranking & streak badges
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
-                                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    Text(
-                                        text = "Lv. ${activeProfile.level}",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
@@ -258,181 +226,14 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                                     }
                                 }
                             }
-
-                            Spacer(Modifier.height(16.dp))
-
-                            // Points display
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.MonetizationOn,
-                                        contentDescription = "Points",
-                                        tint = Color(0xFFFFC107),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(
-                                        text = "${activeProfile.points} Profile Points",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.height(12.dp))
-
-                            // Achievements display progress
-                            Text(
-                                text = "Achievements: ${activeProfile.unlockedAchievements.size} / ${AchievementSystem.ACHIEVEMENTS.size} Badges",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Spacer(Modifier.height(6.dp))
-                                LinearProgressIndicator(
-                                    progress = { if (AchievementSystem.ACHIEVEMENTS.isNotEmpty()) activeProfile.unlockedAchievements.size.toFloat() / AchievementSystem.ACHIEVEMENTS.size else 0f },
-                                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.25f)
-                                )
                         }
                     }
                 }
                 Spacer(Modifier.height(24.dp))
             }
             
-            item {
-                val unlockedBadges = AchievementSystem.ACHIEVEMENTS.filter { activeProfile.unlockedAchievements.contains(it.id) }
-                if (unlockedBadges.isNotEmpty()) {
-                    Column(modifier = Modifier.padding(bottom = 24.dp)) {
-                        Text(
-                            text = "Unlocked Badge Shelf",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
-                        )
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.medium,
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = "Tap to equip active profile badge:",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(bottom = 12.dp)
-                                )
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    unlockedBadges.forEach { badge ->
-                                        val isSelected = activeProfile.selectedBadge == badge.id
-                                        val badgeIcon = when (badge.iconEmoji) {
-                                            "Novice" -> Icons.Rounded.School
-                                            "Scroll" -> Icons.Rounded.MenuBook
-                                            "Cap" -> Icons.Rounded.School
-                                            "Crown" -> Icons.Rounded.MilitaryTech
-                                            "Star" -> Icons.Rounded.Star
-                                            "Check" -> Icons.Rounded.CheckCircle
-                                            "Timer" -> Icons.Rounded.Timer
-                                            "Fire" -> Icons.Rounded.Whatshot
-                                            "Book" -> Icons.Rounded.MenuBook
-                                            else -> Icons.Rounded.EmojiEvents
-                                        }
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(52.dp)
-                                                    .clip(CircleShape)
-                                                    .background(
-                                                        if (isSelected) MaterialTheme.colorScheme.primary
-                                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
-                                                    )
-                                                    .clickable {
-                                                        viewModel.selectProfileBadge(if (isSelected) "" else badge.id)
-                                                    },
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    imageVector = badgeIcon,
-                                                    contentDescription = badge.title,
-                                                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.size(24.dp)
-                                                )
-                                            }
-                                    }
-                                }
-                                val selectedBadgeDef = AchievementSystem.ACHIEVEMENTS.find { it.id == activeProfile.selectedBadge }
-                                if (selectedBadgeDef != null) {
-                                    Spacer(modifier = Modifier.height(14.dp))
-                                    Text(
-                                        text = "Active Badge: ${selectedBadgeDef.title} \u2014 ${selectedBadgeDef.description}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            item {
-                val creationTime = activeProfile.createdAt ?: System.currentTimeMillis()
-                val timeSinceCreation = System.currentTimeMillis() - creationTime
-                val timeAllowed = 24L * 60 * 60 * 1000
-                if (timeSinceCreation <= timeAllowed) {
-                    val remainingMs = timeAllowed - timeSinceCreation
-                    val remainingHrs = java.util.concurrent.TimeUnit.MILLISECONDS.toHours(remainingMs)
-                    val remainingMins = java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(remainingMs) % 60
-                    
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("You can change your Gamification preference for the first 24 hours. Time remaining: ${remainingHrs}h ${remainingMins}m.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Gamification Enabled", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                                Switch(
-                                    checked = activeProfile.gamificationEnabled,
-                                    onCheckedChange = { viewModel.updateProfile(name = activeProfile.name, avatar = activeProfile.avatarEmoji, alias = activeProfile.alias, gamificationEnabled = it) }
-                                )
-                            }
-                        }
-                    }
-                }
-                
-                Text("Progression", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp))
-                MenuListItem(icon = Icons.Rounded.Star, title = "Level Rewards", subtitle = "View future level progression perks") {
-                    navController.navigate("level_rewards")
-                }
-                MenuListItem(icon = Icons.Rounded.EmojiEvents, title = "Achievements", subtitle = "View unlocked and locked achievements") {
-                    navController.navigate("achievements_screen")
-                }
-                MenuListItem(icon = Icons.Rounded.Storefront, title = "Plus Shop", subtitle = "Spend points to unlock Plus features") {
-                    navController.navigate("plus_shop")
-                }
-                Spacer(Modifier.height(16.dp))
-            }
+        // Progression removed
+
 
             item {
                 Text("App & Account", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp))
@@ -531,38 +332,12 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                         }
                     }
 
-                    Spacer(Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        val creationTime = activeProfile.createdAt ?: System.currentTimeMillis()
-                        val timeSinceCreation = System.currentTimeMillis() - creationTime
-                        val timeAllowed = 24L * 60 * 60 * 1000
-                        val withinTime = timeSinceCreation <= timeAllowed
-                        
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Gamification", style = MaterialTheme.typography.titleSmall)
-                            Text(
-                                if (withinTime) "Leveling and points systems" else "Option locked. Can only be changed within first 24 hrs.", 
-                                style = MaterialTheme.typography.bodySmall, 
-                                color = if (withinTime) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
-                            )
-                        }
-                        androidx.compose.material3.Switch(
-                            checked = editGamification,
-                            onCheckedChange = { editGamification = it },
-                            enabled = withinTime
-                        )
-                    }
                 }
             },
             confirmButton = {
                 BouncyButton(onClick = {
                     if (editName.isNotBlank()) {
-                        viewModel.updateProfile(editName, editImagePath.ifBlank { editName.take(2).uppercase() }, editAlias, editGamification)
+                        viewModel.updateProfile(editName, editImagePath.ifBlank { editName.take(2).uppercase() }, editAlias, false)
                         showEditDialog = false
                     }
                 }) { Text("Save") }

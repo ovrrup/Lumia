@@ -100,7 +100,7 @@ fun ProfileSelectionScreen(
         var alias by remember { mutableStateOf("") }
         var starterTheme by remember { mutableStateOf("Ocean") }
         var selectedImagePath by remember { mutableStateOf("") }
-        var gamificationEnabled by remember { mutableStateOf(true) }
+        var gamificationEnabled by remember { mutableStateOf(false) }
         val context = androidx.compose.ui.platform.LocalContext.current
 
         val pickerLauncher = rememberLauncherForActivityResult(
@@ -215,23 +215,6 @@ fun ProfileSelectionScreen(
                                 Text("Choose Device Photo", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer, textAlign = TextAlign.Center)
                             }
                         }
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Gamification", style = MaterialTheme.typography.titleSmall)
-                            Text("Leveling and point systems", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Switch(
-                            checked = gamificationEnabled,
-                            onCheckedChange = { gamificationEnabled = it }
-                        )
                     }
 
                 }

@@ -67,7 +67,7 @@ fun ProfileSetupPage(
     var name by remember { mutableStateOf("Main User") }
     var alias by remember { mutableStateOf("Student") }
     var starterTheme by remember { mutableStateOf("Ocean") }
-    var gamificationEnabled by remember { mutableStateOf(true) }
+    var gamificationEnabled by remember { mutableStateOf(false) }
     var selectedImagePath by remember { mutableStateOf("") }
     val context = LocalContext.current
     
@@ -244,42 +244,5 @@ fun ProfileSetupPage(
             }
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-            ),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Enable Gamification",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        "Track levels, points, and unlock features in the shop. Turn off for a simpler study tool.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Switch(
-                    checked = gamificationEnabled,
-                    onCheckedChange = { gamificationEnabled = it }
-                )
-            }
-        }
     }
 }

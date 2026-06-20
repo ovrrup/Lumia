@@ -19,14 +19,11 @@ data class UserProfile(
     var rentedFeatures: Map<String, Long> = emptyMap(), // map of feature ID to expiration epoch millis
     var experience: Int = 0,
     var pendingSurpriseBoxes: Int = 0,
-    var gamificationEnabled: Boolean = true,
+    var gamificationEnabled: Boolean = false,
     var createdAt: Long? = null
 ) {
     fun isFeatureUnlocked(featureId: String): Boolean {
-        if (!gamificationEnabled) return true
-        if (unlockedFeatures.contains(featureId)) return true
-        val expiry = rentedFeatures[featureId] ?: 0L
-        return expiry > System.currentTimeMillis()
+        return true
     }
 }
 
