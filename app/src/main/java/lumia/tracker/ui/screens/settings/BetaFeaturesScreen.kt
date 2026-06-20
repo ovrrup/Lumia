@@ -203,15 +203,18 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(Modifier.height(8.dp))
+                val msg = if (activeProfile.gamificationEnabled) "Experimental beta features and cutting-edge system options are a premium Plus option. Unlock the Mad Scientist Lab expansion in the Plus Shop using points to gain access to future tracker modifications!" else "Enable Gamification to unlock the Mad Scientist Lab expansion and gain access to future tracker modifications!"
                 Text(
-                    "Experimental beta features and cutting-edge system options are a premium Plus option. Unlock the Mad Scientist Lab expansion in the Plus Shop using points to gain access to future tracker modifications!",
+                    msg,
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(24.dp))
-                BouncyButton(onClick = { navController.navigate("plus_shop") }) {
-                    Text("Unlock in Plus Shop")
+                if (activeProfile.gamificationEnabled) {
+                    BouncyButton(onClick = { navController.navigate("plus_shop") }) {
+                        Text("Unlock in Plus Shop")
+                    }
                 }
             }
         } else {

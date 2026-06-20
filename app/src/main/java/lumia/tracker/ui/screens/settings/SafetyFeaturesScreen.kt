@@ -275,7 +275,8 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                         if (activeProfile.unlockedFeatures.contains("feat_true_aod")) {
                             viewModel.updateAodTrueAodEnabled(it)
                         } else {
-                            android.widget.Toast.makeText(context, "True Always-On Display is a premium Plus feature. Unlock it in the Plus Shop!", android.widget.Toast.LENGTH_LONG).show()
+                            val msg = if (activeProfile.gamificationEnabled) "True Always-On Display is a premium Plus feature. Unlock it in the Plus Shop!" else "Enable Gamification to unlock True Always-On Display."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
                 )

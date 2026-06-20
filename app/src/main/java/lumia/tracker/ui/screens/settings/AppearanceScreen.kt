@@ -191,7 +191,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         if (activeProfile.isFeatureUnlocked("feat_theme_pack")) {
                             viewModel.updatePureBlackMode(it)
                         } else {
-                            android.widget.Toast.makeText(context, "Pure Black Canvas is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!", android.widget.Toast.LENGTH_LONG).show()
+                            val msg = if (activeProfile.gamificationEnabled) "Pure Black Canvas is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!" else "Enable Gamification to unlock Appearance premium settings."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
                 )
@@ -215,7 +216,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         if (activeProfile.isFeatureUnlocked("feat_screen_layout")) {
                             viewModel.updateDisplayLayoutMode(it) 
                         } else {
-                            android.widget.Toast.makeText(context, "Requires unlocking Advanced Screen Layouts in Plus Shop", android.widget.Toast.LENGTH_SHORT).show()
+                            val msg = if (activeProfile.gamificationEnabled) "Requires unlocking Advanced Screen Layouts in Plus Shop" else "Enable Gamification to unlock Advanced Screen Layouts."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                         }
                     }
                 )
@@ -240,7 +242,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         if (activeProfile.isFeatureUnlocked("feat_animations")) {
                             viewModel.updateAppAnimationMode(it)
                         } else {
-                            android.widget.Toast.makeText(context, "Requires unlocking Advanced Animations in Plus Shop", android.widget.Toast.LENGTH_SHORT).show()
+                            val msg = if (activeProfile.gamificationEnabled) "Requires unlocking Advanced Animations in Plus Shop" else "Enable Gamification to unlock Advanced Animations."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                         }
                     }
                 )
@@ -256,7 +259,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         if (activeProfile.isFeatureUnlocked("feat_theme_pack")) {
                             viewModel.updateMoreRounds(it)
                         } else {
-                            android.widget.Toast.makeText(context, "More Rounds is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!", android.widget.Toast.LENGTH_LONG).show()
+                            val msg = if (activeProfile.gamificationEnabled) "More Rounds is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!" else "Enable Gamification to unlock Appearance premium settings."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
                 )
@@ -301,7 +305,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             if (activeProfile.isFeatureUnlocked("feat_theme_pack")) {
                                 viewModel.updateBetaGlassUi(it)
                             } else {
-                                android.widget.Toast.makeText(context, "Frosted Glass is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!", android.widget.Toast.LENGTH_LONG).show()
+                                val msg = if (activeProfile.gamificationEnabled) "Frosted Glass is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!" else "Enable Gamification to unlock Appearance premium settings."
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                             }
                         }
                     )
@@ -472,7 +477,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         if (activeProfile.unlockedFeatures.contains("feat_theme_pack")) {
                             viewModel.updateNavBarGlassForceEnabled(it)
                         } else {
-                            android.widget.Toast.makeText(context, "Independent Glass is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!", android.widget.Toast.LENGTH_LONG).show()
+                            val msg = if (activeProfile.gamificationEnabled) "Independent Glass is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!" else "Enable Gamification to unlock Appearance premium settings."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
                 )
@@ -749,10 +755,12 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                     if (activeProfile.unlockedFeatures.contains("feat_custom_theme")) {
                                         viewModel.updateThemeColor(name)
                                     } else {
-                                        android.widget.Toast.makeText(context, "Requires unlocking Custom Themes in Plus Shop", android.widget.Toast.LENGTH_SHORT).show()
+                                        val msg = if (activeProfile.gamificationEnabled) "Requires unlocking Custom Themes in Plus Shop" else "Enable Gamification to unlock Custom Themes."
+                                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 } else if (!isUniversalFree && !activeProfile.unlockedFeatures.contains("feat_theme_pack")) {
-                                    android.widget.Toast.makeText(context, "Requires Theme Pack Expansion in Plus Shop! Only your selected starter theme ($starterTheme) is unlocked from the start.", android.widget.Toast.LENGTH_LONG).show()
+                                    val msg = if (activeProfile.gamificationEnabled) "Requires Theme Pack Expansion in Plus Shop! Only your selected starter theme ($starterTheme) is unlocked from the start." else "Enable Gamification to unlock Theme Pack Expansion."
+                                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                                 } else {
                                     viewModel.updateThemeColor(name)
                                 }
@@ -782,7 +790,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     checked = betaMinimalistMode,
                     icon = Icons.Rounded.Star,
                     enabled = isMinimalistUnlocked,
-                    unavailableReason = if (!isMinimalistUnlocked) "Locked. Purchase in Plus Shop or Reach Level 15." else null,
+                    unavailableReason = if (!isMinimalistUnlocked) { if (activeProfile.gamificationEnabled) "Locked. Purchase in Plus Shop or Reach Level 15." else "Locked. Enable Gamification to unlock." } else null,
                     onCheckedChange = { viewModel.updateBetaMinimalistMode(it) }
                 )
 
@@ -795,7 +803,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     checked = dynamicAppIcon,
                     icon = Icons.Rounded.Palette,
                     enabled = isDynamicIconUnlocked,
-                    unavailableReason = if (!isDynamicIconUnlocked) "Locked. Purchase in Plus Shop or Reach Level 6." else null,
+                    unavailableReason = if (!isDynamicIconUnlocked) { if(activeProfile.gamificationEnabled) "Locked. Purchase in Plus Shop or Reach Level 6." else "Locked. Enable Gamification to unlock." } else null,
                     onCheckedChange = { viewModel.updateDynamicAppIcon(it) }
                 )
 
@@ -808,7 +816,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     checked = betaEnhancedHeader,
                     enabled = !betaMinimalistMode && isEnhancedBlurUnlocked,
                     icon = Icons.Rounded.Settings,
-                    unavailableReason = if (!isEnhancedBlurUnlocked) "Locked. Purchase in Plus Shop or Reach Level 10." else "Locked by Minimalist Focus Mode.",
+                    unavailableReason = if (!isEnhancedBlurUnlocked) { if(activeProfile.gamificationEnabled) "Locked. Purchase in Plus Shop or Reach Level 10." else "Locked. Enable Gamification to unlock." } else "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { viewModel.updateBetaEnhancedHeader(it) }
                 )
 
@@ -821,7 +829,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     checked = betaDynamicBackground,
                     enabled = !betaMinimalistMode && isDynamicLightingUnlocked,
                     icon = Icons.Rounded.Check,
-                    unavailableReason = if (!isDynamicLightingUnlocked) "Locked. Purchase in Plus Shop or Reach Level 13." else "Locked by Minimalist Focus Mode.",
+                    unavailableReason = if (!isDynamicLightingUnlocked) { if(activeProfile.gamificationEnabled) "Locked. Purchase in Plus Shop or Reach Level 13." else "Locked. Enable Gamification to unlock." } else "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
                 )
 

@@ -195,7 +195,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
 
                             Spacer(Modifier.height(16.dp))
 
-                            if (activeProfile.gamificationEnabled && activeProfile.level == 0) {
+                            if (activeProfile.gamificationEnabled && System.currentTimeMillis() - activeProfile.createdAt <= 24L * 60 * 60 * 1000) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -204,7 +204,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                                         .padding(12.dp)
                                 ) {
                                     Text(
-                                        text = "Tip: Not a fan of Levels and Points? You can turn off Gamification by tapping your profile picture or the Edit icon.",
+                                        text = "Tip: Not a fan of Levels and Points? You can turn off Gamification by tapping your profile picture or the Edit icon within the first 24 hours.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
@@ -228,20 +228,6 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                                             text = "Lv. ${activeProfile.level}",
                                             style = MaterialTheme.typography.labelLarge,
                                             fontWeight = FontWeight.ExtraBold,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
-
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(rankingColor.copy(alpha = 0.25f))
-                                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                                    ) {
-                                        Text(
-                                            text = ranking,
-                                            style = MaterialTheme.typography.labelLarge,
-                                            fontWeight = FontWeight.Black,
                                             color = MaterialTheme.colorScheme.onPrimaryContainer
                                         )
                                     }
@@ -304,20 +290,22 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                                 Spacer(Modifier.height(12.dp))
                             }
 
-                            // Achievements display progress
-                            Text(
-                                text = "Achievements: ${activeProfile.unlockedAchievements.size} / ${AchievementSystem.ACHIEVEMENTS.size} Badges",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                             )
-                             Spacer(Modifier.height(6.dp))
-                             LinearProgressIndicator(
-                                 progress = { if (AchievementSystem.ACHIEVEMENTS.isNotEmpty()) activeProfile.unlockedAchievements.size.toFloat() / AchievementSystem.ACHIEVEMENTS.size else 0f },
-                                 modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
-                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                 trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.25f)
-                             )
+                            if (activeProfile.gamificationEnabled) {
+                                // Achievements display progress
+                                Text(
+                                    text = "Achievements: ${activeProfile.unlockedAchievements.size} / ${AchievementSystem.ACHIEVEMENTS.size} Badges",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                LinearProgressIndicator(
+                                    progress = { if (AchievementSystem.ACHIEVEMENTS.isNotEmpty()) activeProfile.unlockedAchievements.size.toFloat() / AchievementSystem.ACHIEVEMENTS.size else 0f },
+                                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.25f)
+                                )
+                            }
                         }
                     }
                 }
@@ -325,8 +313,9 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
             }
             
             item {
-                val unlockedBadges = AchievementSystem.ACHIEVEMENTS.filter { activeProfile.unlockedAchievements.contains(it.id) }
-                if (unlockedBadges.isNotEmpty()) {
+                if (activeProfile.gamificationEnabled) {
+                    val unlockedBadges = AchievementSystem.ACHIEVEMENTS.filter { activeProfile.unlockedAchievements.contains(it.id) }
+                    if (unlockedBadges.isNotEmpty()) {
                     Column(modifier = Modifier.padding(bottom = 24.dp)) {
                         Text(
                             text = "Unlocked Badge Shelf",
@@ -402,10 +391,17 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                         }
                     }
                 }
+                }
             }
             
             item {
-                if (activeProfile.level < 1) {
+                val timeSinceCreation = System.currentTimeMillis() - activeProfile.createdAt
+                val timeAllowed = 24L * 60 * 60 * 1000
+                if (timeSinceCreation <= timeAllowed) {
+                    val remainingMs = timeAllowed - timeSinceCreation
+                    val remainingHrs = java.util.concurrent.TimeUnit.MILLISECONDS.toHours(remainingMs)
+                    val remainingMins = java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(remainingMs) % 60
+                    
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -414,7 +410,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Before you reach Level 1, you can update your Gamification choice directly from here:", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                            Text("You can change your Gamification preference for the first 24 hours. Time remaining: ${remainingHrs}h ${remainingMins}m.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -431,21 +427,19 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                     }
                 }
                 
-                Text("Progression", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp))
                 if (activeProfile.gamificationEnabled) {
+                    Text("Progression", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp))
                     MenuListItem(icon = Icons.Rounded.Star, title = "Level Rewards", subtitle = "View future level progression perks") {
                         navController.navigate("level_rewards")
                     }
-                }
-                MenuListItem(icon = Icons.Rounded.EmojiEvents, title = "Achievements", subtitle = "View unlocked and locked achievements") {
-                    navController.navigate("achievements_screen")
-                }
-                if (activeProfile.gamificationEnabled) {
+                    MenuListItem(icon = Icons.Rounded.EmojiEvents, title = "Achievements", subtitle = "View unlocked and locked achievements") {
+                        navController.navigate("achievements_screen")
+                    }
                     MenuListItem(icon = Icons.Rounded.Storefront, title = "Plus Shop", subtitle = "Spend points to unlock Plus features") {
                         navController.navigate("plus_shop")
                     }
+                    Spacer(Modifier.height(16.dp))
                 }
-                Spacer(Modifier.height(16.dp))
             }
 
             item {
@@ -458,49 +452,11 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                     navController.navigate("settings")
                 }
                 MenuListItem(icon = Icons.Rounded.Info, title = "About App", subtitle = "Version and info") {
-                    showAboutDialog = true
+                    navController.navigate("settings/about")
                 }
                 Spacer(Modifier.height(32.dp))
             }
         }
-    }
-
-    if (showAboutDialog) {
-        AlertDialog(
-            onDismissRequest = { showAboutDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Rounded.RocketLaunch,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text("About App", fontWeight = FontWeight.Bold)
-                }
-            },
-            text = {
-                Column {
-                    Text(
-                        "Lumia FOSS Study Tracker",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text("Version 2.4.0-foss", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        "Lumia is a 100% serverless, private, and customizable study assistant. All points, statistics, levels, and lists are maintained strictly on-device in an encrypted spatial architecture. Dive into Deep Pomodoro work with full security and elegant custom layouts.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            },
-            confirmButton = {
-                BouncyTextButton(onClick = { showAboutDialog = false }) {
-                    Text("Done")
-                }
-            }
-        )
     }
 
     if (showEditDialog) {
@@ -590,13 +546,22 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
+                        val timeSinceCreation = System.currentTimeMillis() - activeProfile.createdAt
+                        val timeAllowed = 24L * 60 * 60 * 1000
+                        val withinTime = timeSinceCreation <= timeAllowed
+                        
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Gamification", style = MaterialTheme.typography.titleSmall)
-                            Text("Leveling and points systems", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                if (withinTime) "Leveling and points systems" else "Option locked. Can only be changed within first 24 hrs.", 
+                                style = MaterialTheme.typography.bodySmall, 
+                                color = if (withinTime) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+                            )
                         }
                         androidx.compose.material3.Switch(
                             checked = editGamification,
-                            onCheckedChange = { editGamification = it }
+                            onCheckedChange = { editGamification = it },
+                            enabled = withinTime
                         )
                     }
                 }

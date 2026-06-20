@@ -159,7 +159,8 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
                         if (activeProfile.unlockedFeatures.contains("feat_notification_tone")) {
                             viewModel.updateNotifFormalTone(it) 
                         } else {
-                            android.widget.Toast.makeText(context, "Selecting custom notification tones is a premium feature! Unlock it in the Plus Shop.", android.widget.Toast.LENGTH_LONG).show()
+                            val msg = if (activeProfile.gamificationEnabled) "Selecting custom notification tones is a premium feature! Unlock it in the Plus Shop." else "Enable Gamification to unlock custom notification tones."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
                 )
