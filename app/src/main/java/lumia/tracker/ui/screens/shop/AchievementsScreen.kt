@@ -389,7 +389,7 @@ fun AchievementsScreen(navController: NavController, viewModel: ScholarViewModel
 
     // Interactive details dialog showing true numerical progress
     if (selectedAchievement != null) {
-        val ach = selectedAchievement!!
+        val ach = selectedAchievement ?: return
         val isUnlocked = unlockedIds.contains(ach.id)
         
         val currentValue = when (ach.requiredType) {

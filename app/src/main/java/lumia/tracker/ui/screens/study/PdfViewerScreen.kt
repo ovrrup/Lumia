@@ -89,7 +89,7 @@ fun PdfViewerScreen(navController: NavController, filePath: String?, fileName: S
             contentAlignment = Alignment.Center
         ) {
             if (errorMessage != null) {
-                Text(errorMessage!!, color = MaterialTheme.colorScheme.error)
+                Text(errorMessage ?: "Unknown Error", color = MaterialTheme.colorScheme.error)
             } else if (currentBitmap != null) {
                 Column(
                     modifier = Modifier
@@ -107,11 +107,13 @@ fun PdfViewerScreen(navController: NavController, filePath: String?, fileName: S
                             .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Image(
-                            bitmap = currentBitmap!!.asImageBitmap(),
-                            contentDescription = "PDF Page ${currentPageIndex + 1}",
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        currentBitmap?.let { bitmap ->
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = "PDF Page ${currentPageIndex + 1}",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))

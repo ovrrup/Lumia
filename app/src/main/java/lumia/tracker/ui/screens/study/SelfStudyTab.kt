@@ -311,21 +311,21 @@ fun SelfStudyTab(
                         Text("Due Date:", style = MaterialTheme.typography.labelMedium)
                         TextButton(onClick = { showDatePicker = true }) {
                             val df = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
-                            Text(if (dueDateMillis != null) df.format(java.util.Date(dueDateMillis!!)) else "Not set")
+                            Text(if (dueDateMillis != null) df.format(java.util.Date(dueDateMillis ?: System.currentTimeMillis())) else "Not set")
                         }
                         if (dueDateMillis != null) {
                             var showTimePicker by remember { mutableStateOf(false) }
                             if (showTimePicker) {
                                 val timePickerState = androidx.compose.material3.rememberTimePickerState(
-                                    initialHour = java.util.Calendar.getInstance().apply { timeInMillis = dueDateMillis!! }.get(java.util.Calendar.HOUR_OF_DAY),
-                                    initialMinute = java.util.Calendar.getInstance().apply { timeInMillis = dueDateMillis!! }.get(java.util.Calendar.MINUTE)
+                                    initialHour = java.util.Calendar.getInstance().apply { timeInMillis = dueDateMillis ?: System.currentTimeMillis() }.get(java.util.Calendar.HOUR_OF_DAY),
+                                    initialMinute = java.util.Calendar.getInstance().apply { timeInMillis = dueDateMillis ?: System.currentTimeMillis() }.get(java.util.Calendar.MINUTE)
                                 )
                                 androidx.compose.material3.DatePickerDialog(
                                     onDismissRequest = { showTimePicker = false },
                                     confirmButton = {
                                         TextButton(onClick = {
                                             val cal = java.util.Calendar.getInstance()
-                                            cal.timeInMillis = dueDateMillis!!
+                                            cal.timeInMillis = dueDateMillis ?: System.currentTimeMillis()
                                             cal.set(java.util.Calendar.HOUR_OF_DAY, timePickerState.hour)
                                             cal.set(java.util.Calendar.MINUTE, timePickerState.minute)
                                             dueDateMillis = cal.timeInMillis
@@ -343,7 +343,7 @@ fun SelfStudyTab(
                             }
                             TextButton(onClick = { showTimePicker = true }) {
                                 val tf = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
-                                Text(tf.format(java.util.Date(dueDateMillis!!)))
+                                Text(tf.format(java.util.Date(dueDateMillis ?: System.currentTimeMillis())))
                             }
                             IconButton(onClick = { dueDateMillis = null }) {
                                 Icon(Icons.Rounded.Cancel, contentDescription = "Clear Date", modifier = Modifier.size(16.dp))
@@ -414,70 +414,5 @@ fun SelfStudyTab(
                 }) { Text("Cancel") }
             }
         )
-    }
-}
-
-@Composable
-fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit, modifier: Modifier = Modifier) {
-    GlassCard(onClick = onEdit, modifier = modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(
-                checked = task.isCompleted,
-                onCheckedChange = { _ ->
-                    viewModel.toggleTaskCompleted(task)
-                }
-            )
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(task.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f, fill = false))
-                    if (task.priority > 0) {
-                        Spacer(Modifier.width(8.dp))
-                        val pColor = when (task.priority) { 1 -> MaterialTheme.colorScheme.secondary 2 -> MaterialTheme.colorScheme.error else -> MaterialTheme.colorScheme.onSurfaceVariant }
-                        Box(modifier = Modifier.size(10.dp).background(pColor, androidx.compose.foundation.shape.CircleShape))
-                    }
-                }
-                if (task.description.isNotBlank()) {
-                    Text(task.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                
-                if (task.dueDateMillis != null) {
-                    Spacer(Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.DateRange, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.error)
-                        Spacer(Modifier.width(4.dp))
-                        val df = java.text.SimpleDateFormat("MMM dd, yyyy • hh:mm a", java.util.Locale.getDefault())
-                        Text(df.format(java.util.Date(task.dueDateMillis)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
-                    }
-                }
-                
-                // Show links if any
-                if (task.tags.isNotBlank()) {
-                    Spacer(Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Sell, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.width(4.dp))
-                        Text(task.tags, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                
-                if (task.subjectId != null || task.courseId != null || task.assignmentId != null) {
-                    Spacer(Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Link, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.width(4.dp))
-                        val linkText = listOfNotNull(
-                            if (task.subjectId != null) "Subject" else null,
-                            if (task.courseId != null) "Course" else null,
-                            if (task.assignmentId != null) "Assignment" else null
-                        ).joinToString(", ")
-                        Text("$linkText Linked", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            }
-                        BouncyIconButton(onClick = { viewModel.deleteTask(task) }) {
-                Icon(Icons.Rounded.Delete, contentDescription = "Delete Task", tint = MaterialTheme.colorScheme.error)
-            }
-        }
     }
 }

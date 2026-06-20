@@ -205,8 +205,7 @@ class MainActivity : ComponentActivity() {
                         )
                     } else {
                         val safetyPinDialogData by viewModel.safetyPinDialogData.collectAsStateWithLifecycle()
-                        if (safetyPinDialogData != null) {
-                            val data = safetyPinDialogData!!
+                        safetyPinDialogData?.let { data ->
                         androidx.compose.material3.AlertDialog(
                             icon = {
                                 androidx.compose.material3.Icon(
@@ -542,9 +541,9 @@ class MainActivity : ComponentActivity() {
                     }
                     
                     val levelUpEvent by viewModel.lastLevelUpEvent.collectAsStateWithLifecycle()
-                    if (levelUpEvent != null) {
+                    levelUpEvent?.let { event ->
                         lumia.tracker.ui.components.LevelCelebrationDialog(
-                            event = levelUpEvent!!,
+                            event = event,
                             onDismiss = { viewModel.clearLevelUpEvent() }
                         )
                     }

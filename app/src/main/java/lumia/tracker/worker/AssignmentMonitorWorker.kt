@@ -81,7 +81,7 @@ class AssignmentMonitorWorker(
             try {
                 val lastDate = sdf.parse(lastActionDate)
                 if (lastDate != null) {
-                    val diff = (sdf.parse(today)!!.time - lastDate.time) / 86400000L
+                    val diff = ((sdf.parse(today)?.time ?: System.currentTimeMillis()) - lastDate.time) / 86400000L
                     if (diff == 1L) {
                         // At risk of breaking the streak tomorrow if not continued
                         val title = if (formalTone) "Maintain Your Streak" else "Don't Break the Streak!"

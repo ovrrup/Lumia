@@ -37,13 +37,14 @@ class ProfileManager(private val context: Context) {
     }
 
     private fun saveProfiles(profiles: List<UserProfile>) {
-        prefs.edit().putString("profiles_json", profileAdapter.toJson(profiles)).apply()
+        prefs.edit().putString("profiles_json", profileAdapter.toJson(profiles)).commit()
     }
 
-    fun addProfile(name: String, avatar: String, alias: String = "", starterTheme: String = "") {
+    fun addProfile(name: String, avatar: String, alias: String = "", starterTheme: String = ""): String {
         val list = getAllProfiles().toMutableList()
+        val newId = UUID.randomUUID().toString()
         val newProfile = UserProfile(
-            id = UUID.randomUUID().toString(),
+            id = newId,
             name = name,
             avatarEmoji = avatar,
             alias = alias,
@@ -51,6 +52,7 @@ class ProfileManager(private val context: Context) {
         )
         list.add(newProfile)
         saveProfiles(list)
+        return newId
     }
     
     fun updateProfile(updated: UserProfile) {
@@ -78,7 +80,7 @@ class ProfileManager(private val context: Context) {
     }
 
     fun setActiveProfileId(id: String) {
-        prefs.edit().putString("active_profile_id", id).apply()
+        prefs.edit().putString("active_profile_id", id).commit()
     }
 
     fun getActiveProfile(): UserProfile {

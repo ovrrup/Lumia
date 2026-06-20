@@ -436,11 +436,11 @@ fun LevelRewardsScreen(navController: NavController, viewModel: ScholarViewModel
                                         scope.launch {
                                             kotlinx.coroutines.delay(1000)
                                             result = viewModel.claimSurpriseBox()
-                                             if (result != null) {
+                                             result?.let { res ->
                                                  viewModel.postNotification(
                                                      title = "Reward Equipped!",
-                                                     message = result!!.detailText,
-                                                     type = result!!.type
+                                                     message = res.detailText,
+                                                     type = res.type
                                                  )
                                              }
                                             isExploding = false
@@ -490,49 +490,50 @@ fun LevelRewardsScreen(navController: NavController, viewModel: ScholarViewModel
                         }
                     } else {
                         // Display unboxed prizes
-                        val unboxed = result!!
-                        val prizeColor = when (unboxed.type) {
-                            "POINTS" -> MaterialTheme.colorScheme.primary
-                            "CREDITS" -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.tertiary
-                        }
-                        
-                        Box(
-                            modifier = Modifier
-                                .size(96.dp)
-                                .background(prizeColor.copy(alpha = 0.15f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = when (unboxed.type) {
-                                    "POINTS" -> Icons.Rounded.MilitaryTech
-                                    "CREDITS" -> Icons.Rounded.Savings
-                                    else -> Icons.Rounded.WorkspacePremium
-                                },
-                                contentDescription = null,
-                                tint = prizeColor,
-                                modifier = Modifier.size(52.dp)
-                            )
-                        }
-                        
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            text = unboxed.detailText,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            color = prizeColor
-                        )
-                        
-                        if (unboxed.featureName.isNotEmpty()) {
-                            Spacer(Modifier.height(8.dp))
+                        result?.let { unboxed ->
+                            val prizeColor = when (unboxed.type) {
+                                "POINTS" -> MaterialTheme.colorScheme.primary
+                                "CREDITS" -> MaterialTheme.colorScheme.secondary
+                                else -> MaterialTheme.colorScheme.tertiary
+                            }
+                            
+                            Box(
+                                modifier = Modifier
+                                    .size(96.dp)
+                                    .background(prizeColor.copy(alpha = 0.15f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = when (unboxed.type) {
+                                        "POINTS" -> Icons.Rounded.MilitaryTech
+                                        "CREDITS" -> Icons.Rounded.Savings
+                                        else -> Icons.Rounded.WorkspacePremium
+                                    },
+                                    contentDescription = null,
+                                    tint = prizeColor,
+                                    modifier = Modifier.size(52.dp)
+                                )
+                            }
+                            
+                            Spacer(Modifier.height(16.dp))
                             Text(
-                                text = "Temporary Premium Unlock activated! Go explore the customized settings in menu layout overlays.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                text = unboxed.detailText,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 16.dp)
+                                color = prizeColor
                             )
+                            
+                            if (unboxed.featureName.isNotEmpty()) {
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = "Temporary Premium Unlock activated! Go explore the customized settings in menu layout overlays.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                            }
                         }
                     }
                 }

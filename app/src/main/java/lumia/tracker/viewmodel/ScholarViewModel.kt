@@ -58,14 +58,23 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         lumia.tracker.data.AppDatabase.clearInstances()
         val pm = context.packageManager
         val intent = pm.getLaunchIntentForPackage(context.packageName)
-        val mainIntent = android.content.Intent.makeRestartActivityTask(intent!!.component)
-        context.startActivity(mainIntent)
-        Runtime.getRuntime().exit(0)
+        if (intent != null) {
+            val mainIntent = android.content.Intent.makeRestartActivityTask(intent.component)
+            context.startActivity(mainIntent)
+            Runtime.getRuntime().exit(0)
+        } else {
+            val fallbackIntent = android.content.Intent(context, lumia.tracker.MainActivity::class.java).apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            context.startActivity(fallbackIntent)
+            Runtime.getRuntime().exit(0)
+        }
     }
     
-    fun createProfile(name: String, avatar: String, alias: String = "", starterTheme: String = "") {
-        profileManager.addProfile(name, avatar, alias, starterTheme)
+    fun createProfile(name: String, avatar: String, alias: String = "", starterTheme: String = ""): String {
+        val newId = profileManager.addProfile(name, avatar, alias, starterTheme)
         allProfiles.value = profileManager.getAllProfiles()
+        return newId
     }
 
     fun setupFirstProfile(name: String, avatar: String, alias: String, starterTheme: String) {
@@ -1213,7 +1222,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 try {
                     val lastDate = sdf.parse(lastActionDate)
                     if (lastDate != null) {
-                        val diff = (sdf.parse(today)!!.time - lastDate.time) / 86400000L
+                        val diff = ((sdf.parse(today)?.time ?: System.currentTimeMillis()) - lastDate.time) / 86400000L
                         if (diff > 1L) {
                             updateStreak(0)
                         }
@@ -1660,7 +1669,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
         val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
         val lastDate = sdf.parse(lastActionDate) ?: return
-        val diff = (sdf.parse(today)!!.time - lastDate.time) / 86400000L
+        val diff = ((sdf.parse(today)?.time ?: System.currentTimeMillis()) - lastDate.time) / 86400000L
 
         when {
             diff == 1L -> {
