@@ -11,7 +11,8 @@ object WidgetThemeHelper {
     fun applyTheme(context: Context, views: RemoteViews) {
         val profMgr = ProfileManager(context)
         val profile = profMgr.getActiveProfile()
-        val themeName = profile.starterTheme
+        val prefs = profMgr.getProfilePrefs()
+        val themeName = prefs.getString("theme_color", profile.starterTheme.ifBlank { "Ocean" }) ?: "Ocean"
         
         // Define base colors
         var bgColor = Color.parseColor("#1E293B")

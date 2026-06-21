@@ -2045,17 +2045,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         if (!currentProfile.isFeatureUnlocked("feat_notification_tone") && !_notifFormalTone.value) {
             updateNotifFormalTone(true)
         }
-        
-        // Color Themes
-        val starterTheme = currentProfile.starterTheme.ifBlank { "Ocean" }
-        val isUniversalFree = _themeColor.value == starterTheme || _themeColor.value == "Dynamic"
-        if (_themeColor.value == "Custom") {
-            if (!currentProfile.unlockedFeatures.contains("feat_custom_theme")) {
-                updateThemeColor(starterTheme)
-            }
-        } else if (!isUniversalFree && !currentProfile.unlockedFeatures.contains("feat_theme_pack")) {
-            updateThemeColor(starterTheme)
-        }
     }
 
     fun clearStatus() {
