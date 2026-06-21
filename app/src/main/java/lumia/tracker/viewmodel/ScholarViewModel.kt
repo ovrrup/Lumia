@@ -1331,6 +1331,18 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         initialValue = emptyList()
     )
 
+    val allTestRecords: StateFlow<List<lumia.tracker.model.TestRecord>> = repository.allTestRecords.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val allTopics: StateFlow<List<Topic>> = repository.allTopics.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     fun getSessionsTodayCount(): Int {
         val todayStart = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
@@ -1505,18 +1517,33 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun addTestRecord(record: lumia.tracker.model.TestRecord) {
         viewModelScope.launch {
             repository.insertTestRecord(record)
+            
+            // Interconnection: Reward focus points based on marks obtained percentage!
+            val pct = if (record.totalMarks > 0) record.marksObtained / record.totalMarks else 0f
+            val pointsEarned = when {
+                pct >= 0.95f -> 30  // Near perfect / A+
+                pct >= 0.90f -> 25  // Excellent
+                pct >= 0.80f -> 20  // Great job
+                pct >= 0.70f -> 15  // Passing well
+                pct >= 0.50f -> 10  // Satisfactory pass
+                else -> 5           // Participation points
+            }
+            awardPoints(pointsEarned)
+            logAction("Logged test record '${record.title}' with score ${record.marksObtained}/${record.totalMarks} and earned $pointsEarned Focus Points!")
         }
     }
 
     fun updateTestRecord(record: lumia.tracker.model.TestRecord) {
         viewModelScope.launch {
             repository.updateTestRecord(record)
+            logAction("Updated test record '${record.title}'")
         }
     }
 
     fun deleteTestRecord(record: lumia.tracker.model.TestRecord) {
         viewModelScope.launch {
             repository.deleteTestRecord(record)
+            logAction("Deleted test record '${record.title}'")
         }
     }
 

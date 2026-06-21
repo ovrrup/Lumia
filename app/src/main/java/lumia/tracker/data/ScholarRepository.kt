@@ -24,6 +24,7 @@ class ScholarRepository(val dao: ScholarDao) {
     val allNotes: Flow<List<lumia.tracker.model.Note>> = dao.getAllNotes()
     val allTasks: Flow<List<Task>> = dao.getAllTasks()
     val allAttachments: Flow<List<lumia.tracker.model.Attachment>> = dao.getAllAttachments()
+    val allTopics: Flow<List<Topic>> = dao.getAllTopicsReactive()
 
     fun getTopicsForSubject(subjectId: Int) = dao.getTopicsForSubject(subjectId)
     fun getChaptersForSubject(subjectId: Int) = dao.getChaptersForSubject(subjectId)
@@ -76,6 +77,7 @@ class ScholarRepository(val dao: ScholarDao) {
 
     fun getTestRecordsForCourse(courseId: Int) = dao.getTestRecordsForCourse(courseId)
     fun getTestRecordsForSubject(subjectId: Int) = dao.getTestRecordsForSubject(subjectId)
+    val allTestRecords = dao.getAllTestRecordsReactive()
     suspend fun insertTestRecord(record: lumia.tracker.model.TestRecord) = dao.insertTestRecord(record)
     suspend fun updateTestRecord(record: lumia.tracker.model.TestRecord) = dao.updateTestRecord(record)
     suspend fun deleteTestRecord(record: lumia.tracker.model.TestRecord) = dao.deleteTestRecord(record)

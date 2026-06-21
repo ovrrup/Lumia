@@ -42,6 +42,11 @@ import androidx.compose.material.icons.rounded.Whatshot
 import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Label
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -87,6 +92,9 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val actionLogs by viewModel.actionLogs.collectAsStateWithLifecycle()
     val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
+    val allTestRecords by viewModel.allTestRecords.collectAsStateWithLifecycle()
+    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+    val topics by viewModel.allTopics.collectAsStateWithLifecycle()
     
     val totalAssignments = assignments.size
     val completedAssignments = assignments.count { it.isCompleted }
@@ -180,7 +188,231 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                 
                 val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
                 val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
-                
+
+                // Overall Academic Performance & Test Analytics
+                if (allTestRecords.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Academic & Test Analytics",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    
+                    lumia.tracker.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                        shape = RoundedCornerShape(32.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            val totalTests = allTestRecords.size
+                            val pctScores = allTestRecords.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }
+                            val overallAverage = pctScores.average().toFloat()
+                            val perfectScoresCount = allTestRecords.count { it.marksObtained == it.totalMarks && it.totalMarks > 0 }
+                            val passingTestsCount = pctScores.count { it >= 50f }
+                            val passRate = (passingTestsCount.toFloat() / totalTests * 100).toInt()
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("Overall GPA", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("${overallAverage.toInt()}%", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                }
+                                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("Tests Taken", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("$totalTests", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                }
+                                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("Pass Rate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("$passRate%", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = if (passRate >= 75) Color(0xFF2ECC71) else Color(0xFFE74C3C))
+                                }
+                            }
+
+                            if (perfectScoresCount > 0) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(imageVector = Icons.Rounded.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "$perfectScoresCount perfect scores achieved! Outstanding!",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                            }
+
+                            if (subjects.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Text("Subject Strength & Mastery", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    subjects.forEach { subj ->
+                                        val subjTests = allTestRecords.filter { it.subjectId == subj.id }
+                                        if (subjTests.isNotEmpty()) {
+                                            val subjAvg = subjTests.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }.average().toFloat()
+                                            
+                                            val (badgeText, badgeColor) = when {
+                                                subjAvg >= 85f -> "MASTER" to Color(0xFF2ECC71)
+                                                subjAvg >= 70f -> "PROFICIENT" to MaterialTheme.colorScheme.secondary
+                                                subjAvg >= 50f -> "DEVELOPING" to MaterialTheme.colorScheme.tertiary
+                                                else -> "NEEDS WORK" to Color(0xFFE74C3C)
+                                            }
+
+                                            Column(modifier = Modifier.fillMaxWidth()) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(subj.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(badgeColor.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    ) {
+                                                        Text(badgeText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = badgeColor)
+                                                    }
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text("${subjAvg.toInt()}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                                                }
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                LinearProgressIndicator(
+                                                    progress = subjAvg / 100f,
+                                                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                                                    color = badgeColor,
+                                                    trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            val allTagsMap = HashMap<String, MutableList<Float>>()
+                            allTestRecords.forEach { test ->
+                                if (test.tags.isNotBlank()) {
+                                    test.tags.split(",").map { it.trim() }.filter { it.isNotEmpty() }.forEach { tag ->
+                                        val pct = if (test.totalMarks > 0) (test.marksObtained / test.totalMarks) * 100f else 0f
+                                        allTagsMap.getOrPut(tag) { ArrayList() }.add(pct)
+                                    }
+                                }
+                            }
+
+                            if (allTagsMap.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Text("Performance by Tag Indicators", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    allTagsMap.entries.sortedByDescending { it.value.average() }.take(4).forEach { (tag, scores) ->
+                                        val tagAvg = scores.average().toFloat()
+                                        val tagColor = when {
+                                            tagAvg >= 80f -> Color(0xFF2ECC71)
+                                            tagAvg >= 60f -> MaterialTheme.colorScheme.primary
+                                            else -> Color(0xFFE74C3C)
+                                        }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                                                .border(1.dp, tagColor.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                                                .padding(8.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text(
+                                                    text = "#$tag",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = tagColor,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "${tagAvg.toInt()}%",
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    fontWeight = FontWeight.Black
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            val testedTopicIds = allTestRecords.mapNotNull { it.topicId }.distinct()
+                            if (testedTopicIds.isNotEmpty() && topics.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Text("Focused Concept Mastery", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("Interconnected concept mastery computed across assessments.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    testedTopicIds.take(3).forEach { tId ->
+                                        val topicObj = topics.find { it.id == tId }
+                                        if (topicObj != null) {
+                                            val tTests = allTestRecords.filter { it.topicId == tId }
+                                            val tAvg = tTests.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }.average().toFloat()
+                                            
+                                            val badgeColor = if (tAvg >= 80) Color(0xFF2ECC71) else if (tAvg >= 50) MaterialTheme.colorScheme.primary else Color(0xFFE74C3C)
+                                            val iconTint = if (topicObj.isCompleted) Color(0xFF2ECC71) else MaterialTheme.colorScheme.onSurfaceVariant
+
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                                                    .padding(12.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (topicObj.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.Category,
+                                                    contentDescription = null,
+                                                    tint = iconTint,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(12.dp))
+                                                Text(
+                                                    text = topicObj.title,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    fontWeight = FontWeight.Medium,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = "${tAvg.toInt()}% Avg",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Black,
+                                                    color = badgeColor
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 WeeklyAssignmentsDueChart(
                     modifier = Modifier.fillMaxWidth(),

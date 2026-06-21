@@ -48,6 +48,9 @@ interface ScholarDao {
     @Query("SELECT * FROM topics WHERE subjectId = :subjectId ORDER BY id ASC")
     fun getTopicsForSubject(subjectId: Int): Flow<List<Topic>>
 
+    @Query("SELECT * FROM topics")
+    fun getAllTopicsReactive(): Flow<List<Topic>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTopic(topic: Topic): Long
 
@@ -118,6 +121,9 @@ interface ScholarDao {
 
     @Delete
     suspend fun deleteTestRecord(record: lumia.tracker.model.TestRecord)
+
+    @Query("SELECT * FROM test_records ORDER BY dateMillis DESC")
+    fun getAllTestRecordsReactive(): Flow<List<lumia.tracker.model.TestRecord>>
 
     @Query("SELECT * FROM test_records")
     suspend fun exportAllTestRecords(): List<lumia.tracker.model.TestRecord>

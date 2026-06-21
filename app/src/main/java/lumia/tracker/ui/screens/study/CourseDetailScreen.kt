@@ -849,6 +849,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     
                     TestCornerCard(
                         testRecords = testRecords,
+                        topics = topics,
                         onAddTest = { newTest ->
                             viewModel.addTestRecord(newTest.copy(courseId = courseId))
                         },

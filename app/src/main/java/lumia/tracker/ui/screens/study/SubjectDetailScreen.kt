@@ -594,6 +594,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     
                     TestCornerCard(
                         testRecords = testRecords,
+                        topics = topics,
                         onAddTest = { newTest ->
                             viewModel.addTestRecord(newTest.copy(subjectId = subjectId))
                         },

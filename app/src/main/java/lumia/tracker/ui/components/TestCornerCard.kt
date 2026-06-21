@@ -2,6 +2,7 @@ package lumia.tracker.ui.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -10,6 +11,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Label
 import androidx.compose.material.icons.rounded.TrendingDown
 import androidx.compose.material.icons.rounded.TrendingFlat
 import androidx.compose.material.icons.rounded.TrendingUp
@@ -28,12 +33,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import lumia.tracker.model.TestRecord
+import lumia.tracker.model.Topic
 import kotlin.math.max
 import kotlin.math.min
 
 @Composable
 fun TestCornerCard(
     testRecords: List<TestRecord>,
+    topics: List<Topic> = emptyList(),
     onAddTest: (TestRecord) -> Unit,
     onUpdateTest: (TestRecord) -> Unit,
     onDeleteTest: (TestRecord) -> Unit
@@ -101,7 +108,7 @@ fun TestCornerCard(
                     Canvas(modifier = Modifier.fillMaxWidth().height(100.dp)) {
                         val maxScore = 100f
                         val minScore = 0f
-                        val range = max(1f, maxScore - minScore) // Fixed 0-100 range
+                        val range = max(1f, maxScore - minScore)
                         
                         val pointSpacing = size.width / max(1, percentages.size - 1)
                         val chartHeight = size.height
@@ -109,10 +116,12 @@ fun TestCornerCard(
                         val path = Path()
                         val points = mutableListOf<Offset>()
                         
-                        percentages.forEachIndexed { index, score ->
+                        percentages.forEachIndexed { index, pct ->
                             val x = index * pointSpacing
-                            val y = chartHeight - ((score - minScore) / range) * chartHeight
-                            points.add(Offset(x, y))
+                            val y = chartHeight - (pct / range) * chartHeight
+                            
+                            val point = Offset(x, y)
+                            points.add(point)
                             
                             if (index == 0) {
                                 path.moveTo(x, y)
@@ -149,7 +158,7 @@ fun TestCornerCard(
                     items(sortedRecords.reversed()) { test ->
                         var showEditDialog by remember { mutableStateOf(false) }
                         GlassCard(
-                            modifier = Modifier.width(180.dp).clickable { showEditDialog = true },
+                            modifier = Modifier.width(200.dp).clickable { showEditDialog = true },
                             shape = RoundedCornerShape(16.dp),
                             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
                         ) {
@@ -157,6 +166,7 @@ fun TestCornerCard(
                                 Text(test.title, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text("${test.marksObtained} / ${test.totalMarks}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                
                                 val pct = if (test.totalMarks > 0) (test.marksObtained / test.totalMarks * 100) else 0f
                                 val pctColor = if (pct >= 80) Color(0xFF2ECC71) else if (pct >= 50) Color(0xFFF1C40F) else Color(0xFFE74C3C)
                                 LinearProgressIndicator(
@@ -165,9 +175,57 @@ fun TestCornerCard(
                                     color = pctColor,
                                     trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                                 )
+
+                                // Associated study concept tag
+                                val linkedTopic = topics.find { it.id == test.topicId }
+                                if (linkedTopic != null) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Category,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = linkedTopic.title,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+
+                                // Interactive metadata tags
+                                if (test.tags.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        test.tags.split(",").map { it.trim() }.filter { it.isNotEmpty() }.take(2).forEach { tag ->
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f), RoundedCornerShape(6.dp))
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = tag,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
                                 if (test.notes.isNotBlank()) {
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text(test.notes, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(test.notes, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -175,6 +233,7 @@ fun TestCornerCard(
                         if (showEditDialog) {
                             AddEditTestRecordDialog(
                                 testToEdit = test,
+                                topics = topics,
                                 onDismiss = { showEditDialog = false },
                                 onSave = { updated -> onUpdateTest(updated); showEditDialog = false },
                                 onDelete = { onDeleteTest(test); showEditDialog = false }
@@ -192,12 +251,13 @@ fun TestCornerCard(
     if (showAddTestDialog) {
         AddEditTestRecordDialog(
             testToEdit = null,
+            topics = topics,
             onDismiss = { showAddTestDialog = false },
             onSave = { newTest ->
                 onAddTest(newTest)
                 showAddTestDialog = false
             },
-            onDelete = {} // handled internally or ignored since it's new
+            onDelete = {}
         )
     }
 }
@@ -211,9 +271,11 @@ fun AnalyticsStatItem(label: String, value: String) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditTestRecordDialog(
     testToEdit: TestRecord?,
+    topics: List<Topic> = emptyList(),
     onDismiss: () -> Unit,
     onSave: (TestRecord) -> Unit,
     onDelete: () -> Unit
@@ -222,6 +284,10 @@ fun AddEditTestRecordDialog(
     var marksObtained by remember(testToEdit) { mutableStateOf(testToEdit?.marksObtained?.toString() ?: "0") }
     var totalMarks by remember(testToEdit) { mutableStateOf(testToEdit?.totalMarks?.toString() ?: "100") }
     var notes by remember(testToEdit) { mutableStateOf(testToEdit?.notes ?: "") }
+    var tags by remember(testToEdit) { mutableStateOf(testToEdit?.tags ?: "") }
+    var selectedTopicId by remember(testToEdit) { mutableStateOf<Int?>(testToEdit?.topicId) }
+
+    var topicDropdownExpanded by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -250,6 +316,60 @@ fun AddEditTestRecordDialog(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                 }
+
+                OutlinedTextField(
+                    value = tags,
+                    onValueChange = { tags = it },
+                    label = { Text("Tags (comma separated, e.g. final, unit-1)") },
+                    placeholder = { Text("exam, unit-2, tricky") },
+                    leadingIcon = { Icon(Icons.Rounded.Label, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (topics.isNotEmpty()) {
+                    val currentSelection = topics.find { it.id == selectedTopicId }
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = currentSelection?.title ?: "No associated concept (General)",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Assessed Concept / Topic") },
+                            leadingIcon = { Icon(Icons.Rounded.Category, contentDescription = null) },
+                            trailingIcon = {
+                                IconButton(onClick = { topicDropdownExpanded = !topicDropdownExpanded }) {
+                                    Icon(
+                                        imageVector = if (topicDropdownExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                                        contentDescription = "Expand options"
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().clickable { topicDropdownExpanded = true }
+                        )
+                        DropdownMenu(
+                            expanded = topicDropdownExpanded,
+                            onDismissRequest = { topicDropdownExpanded = false },
+                            modifier = Modifier.fillMaxWidth(0.9f)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("No associated concept (General)") },
+                                onClick = {
+                                    selectedTopicId = null
+                                    topicDropdownExpanded = false
+                                }
+                            )
+                            topics.forEach { topic ->
+                                DropdownMenuItem(
+                                    text = { Text(topic.title) },
+                                    onClick = {
+                                        selectedTopicId = topic.id
+                                        topicDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
@@ -266,12 +386,16 @@ fun AddEditTestRecordDialog(
                         title = title,
                         marksObtained = marksObtained.toFloat(),
                         totalMarks = totalMarks.toFloat(),
-                        notes = notes
+                        notes = notes,
+                        tags = tags,
+                        topicId = selectedTopicId
                     ) ?: TestRecord(
                         title = title,
                         marksObtained = marksObtained.toFloat(),
                         totalMarks = totalMarks.toFloat(),
                         notes = notes,
+                        tags = tags,
+                        topicId = selectedTopicId,
                         dateMillis = System.currentTimeMillis()
                     )
                     onSave(record)
@@ -288,4 +412,3 @@ fun AddEditTestRecordDialog(
         }
     )
 }
-

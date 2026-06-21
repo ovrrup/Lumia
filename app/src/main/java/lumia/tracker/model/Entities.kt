@@ -36,7 +36,9 @@ data class TestRecord(
     val totalMarks: Float = 100f,
     val notes: String = "",
     val subjectId: Int? = null,
-    val courseId: Int? = null
+    val courseId: Int? = null,
+    val tags: String = "",
+    val topicId: Int? = null
 ) : Serializable
 
 @Entity(tableName = "subjects")
