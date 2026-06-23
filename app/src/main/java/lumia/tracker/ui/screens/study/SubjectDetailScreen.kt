@@ -80,10 +80,26 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             courses.filter { course ->
                 val crsName = course.name.trim().lowercase()
                 val subName = subject.name.trim().lowercase()
-                course.subjectId == subject.id || (systemAutoLinkByName && (
+                val splitIds = course.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }
+                course.subjectId == subject.id || 
+                splitIds.contains(subject.id) ||
+                (systemAutoLinkByName && (
                     crsName == subName || 
                     (crsName.isNotEmpty() && subName.isNotEmpty() && (crsName.contains(subName) || subName.contains(crsName)))
                 ))
+            }
+        } else {
+            emptyList()
+        }
+    }
+
+    val allTestRecords by viewModel.allTestRecords.collectAsStateWithLifecycle(emptyList())
+    val subjectTestRecords = remember(allTestRecords, subject, linkedCourses) {
+        if (subject != null) {
+            val linkedCourseIds = linkedCourses.map { it.id }
+            allTestRecords.filter { test ->
+                test.subjectId == subject.id || 
+                (test.courseId != null && linkedCourseIds.contains(test.courseId))
             }
         } else {
             emptyList()
@@ -118,6 +134,9 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     var noteToEdit by remember { mutableStateOf<lumia.tracker.model.Note?>(null) }
     var noteText by remember { mutableStateOf("") }
     var noteCustomTag by remember { mutableStateOf("Core") }
+
+    var showEditSubjectDialog by remember { mutableStateOf(false) }
+    var showDeleteSubjectDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -314,6 +333,14 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showEditSubjectDialog = true }) {
+                            Icon(Icons.Rounded.Edit, contentDescription = "Edit Subject", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(onClick = { showDeleteSubjectDialog = true }) {
+                            Icon(Icons.Rounded.Delete, contentDescription = "Delete Subject", tint = MaterialTheme.colorScheme.error)
                         }
                     },
                     scrollBehavior = scrollBehavior,
@@ -590,10 +617,9 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 // Test Corner Section
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
-                    val testRecords by viewModel.getTestRecordsForSubject(subjectId).collectAsStateWithLifecycle()
                     
                     TestCornerCard(
-                        testRecords = testRecords,
+                        testRecords = subjectTestRecords,
                         topics = topics,
                         onAddTest = { newTest ->
                             viewModel.addTestRecord(newTest.copy(subjectId = subjectId))
@@ -1284,6 +1310,63 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             },
             dismissButton = {
                 TextButton(onClick = { showAddAttachmentDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showDeleteSubjectDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteSubjectDialog = false },
+            title = { Text("Delete Subject") },
+            text = { Text("Are you sure you want to delete this subject? This process cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteSubjectDialog = false
+                    if (subject != null) {
+                        viewModel.deleteSubject(subject)
+                    }
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteSubjectDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showEditSubjectDialog && subject != null) {
+        var name by remember(subject) { mutableStateOf(subject.name) }
+        var tags by remember(subject) { mutableStateOf(subject.tags) }
+
+        AlertDialog(
+            onDismissRequest = { showEditSubjectDialog = false },
+            title = { Text("Edit Subject") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Subject Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tags,
+                        onValueChange = { tags = it },
+                        label = { Text("Tags (comma separated, optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (name.isNotBlank()) {
+                        viewModel.updateSubject(subject.copy(name = name, tags = tags))
+                        showEditSubjectDialog = false
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditSubjectDialog = false }) { Text("Cancel") }
             }
         )
     }

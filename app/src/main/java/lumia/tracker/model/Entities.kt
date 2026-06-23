@@ -23,7 +23,8 @@ data class Course(
     val attendedClasses: Int = 0,
     val totalClasses: Int = 0,
     val subjectId: Int? = null,
-    val tags: String = ""
+    val tags: String = "",
+    val subjectIds: String = ""
 ) : Serializable
 
 @Entity(tableName = "test_records")

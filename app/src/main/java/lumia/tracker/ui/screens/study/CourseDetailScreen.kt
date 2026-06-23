@@ -95,35 +95,45 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     val enableSynergy by viewModel.systemEnableSynergy.collectAsStateWithLifecycle()
     val fuseSubjectsCourses by viewModel.systemFuseSubjectsCourses.collectAsStateWithLifecycle()
 
-    val linkedSubject = remember(course, subjects, systemAutoLinkByName) {
+    val linkedSubjects = remember(course, subjects, systemAutoLinkByName) {
         if (course != null) {
-            if (course.subjectId != null) {
-                subjects.find { it.id == course.subjectId }
-            } else if (systemAutoLinkByName) {
-                subjects.find { it.name.trim().lowercase() == course.name.trim().lowercase() }
+            val list = mutableListOf<lumia.tracker.model.Subject>()
+            if (course.subjectIds.isNotBlank()) {
+                val ids = course.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }
+                list.addAll(subjects.filter { ids.contains(it.id) })
+            }
+            if (course.subjectId != null && list.none { it.id == course.subjectId }) {
+                subjects.find { it.id == course.subjectId }?.let { list.add(it) }
+            }
+            if (list.isEmpty() && systemAutoLinkByName) {
+                val autoSub = subjects.find { it.name.trim().lowercase() == course.name.trim().lowercase() }
                     ?: subjects.find {
                         val subName = it.name.trim().lowercase()
                         val crsName = course.name.trim().lowercase()
                         subName.isNotEmpty() && crsName.isNotEmpty() && (subName.contains(crsName) || crsName.contains(subName))
                     }
-            } else {
-                null
+                if (autoSub != null) {
+                    list.add(autoSub)
+                }
             }
+            list.distinctBy { it.id }
         } else {
-            null
+            emptyList()
         }
     }
+
+    val linkedSubject = remember(linkedSubjects) { linkedSubjects.firstOrNull() }
 
     val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
     val courseTasks = remember(allTasks, course) {
         if (course != null) allTasks.filter { it.courseId == course.id } else emptyList()
     }
 
-    val topicsFlow = remember(linkedSubject) {
-        if (linkedSubject != null) viewModel.getTopicsForSubject(linkedSubject.id)
-        else kotlinx.coroutines.flow.MutableStateFlow(emptyList())
+    val allTopicsGlobal by viewModel.allTopics.collectAsStateWithLifecycle(emptyList())
+    val topics = remember(allTopicsGlobal, linkedSubjects) {
+        val subjectIds = linkedSubjects.map { it.id }
+        allTopicsGlobal.filter { subjectIds.contains(it.subjectId) }
     }
-    val topics by topicsFlow.collectAsStateWithLifecycle(emptyList())
 
     val assignments by viewModel.getAssignmentsForCourse(courseId).collectAsStateWithLifecycle(emptyList())
     var showAddAssignmentDialog by remember { mutableStateOf(false) }
@@ -341,19 +351,22 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
     val allNotes by viewModel.notes.collectAsStateWithLifecycle()
 
-    val courseNotes = remember(allNotes, course, linkedSubject, subjects, courses, systemAutoLinkByName) {
+    val courseNotes = remember(allNotes, course, linkedSubjects, subjects, courses, systemAutoLinkByName) {
         if (course != null) {
-            val linkedSubjectId = linkedSubject?.id
-            val linkedCourseIds = if (linkedSubjectId != null) {
-                courses.filter { it.subjectId == linkedSubjectId || (systemAutoLinkByName && it.name.trim().lowercase() == linkedSubject.name.trim().lowercase()) }
-                    .map { it.id }
+            val linkedSubjectIds = linkedSubjects.map { it.id }
+            val linkedCourseIds = if (linkedSubjectIds.isNotEmpty()) {
+                courses.filter { c -> 
+                    linkedSubjectIds.contains(c.subjectId) || 
+                    linkedSubjectIds.any { sid -> c.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }.contains(sid) } ||
+                    (systemAutoLinkByName && linkedSubjects.any { s -> c.name.trim().lowercase() == s.name.trim().lowercase() })
+                }.map { it.id }
             } else {
                 emptyList()
             }
 
             allNotes.filter { note ->
                 note.courseId == course.id || 
-                (linkedSubjectId != null && note.subjectId == linkedSubjectId) ||
+                (note.subjectId != null && linkedSubjectIds.contains(note.subjectId)) ||
                 (note.courseId != null && linkedCourseIds.contains(note.courseId))
             }
         } else {
@@ -444,7 +457,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 }
 
                 // Interconnected Study Subject & Synergy Score Section
-                if (linkedSubject != null) {
+                if (linkedSubjects.isNotEmpty()) {
                     item {
                         lumia.tracker.ui.components.GlassCard(
                             modifier = Modifier
@@ -452,47 +465,41 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                Row(
-                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "Interconnected Study Subject",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = linkedSubject.name,
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        if (linkedSubject.tags.isNotBlank()) {
-                                            Text("Tags: ${linkedSubject.tags}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        }
+                                Text(
+                                    text = "Interconnected Study Subjects",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                linkedSubjects.forEachIndexed { idx, subj ->
+                                    if (idx > 0) {
+                                        androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                                     }
-                                    
-                                    if (!fuseSubjectsCourses) {
+                                    Row(
+                                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = subj.name,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            if (subj.tags.isNotBlank()) {
+                                                Text("Tags: ${subj.tags}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                        
                                         BouncyIconButton(
-                                            onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }
+                                            onClick = { navController.navigate("subjectDetail/${subj.id}") }
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.ChevronRight,
                                                 contentDescription = "Go to Study Subject",
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                    } else {
-                                        BouncyIconButton(
-                                            onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Edit,
-                                                contentDescription = "Manage Subject",
                                                 tint = MaterialTheme.colorScheme.primary
                                             )
                                         }
@@ -549,7 +556,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     Spacer(Modifier.height(16.dp))
                                     Text("Embedded Subject Hub", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
                                     Spacer(Modifier.height(8.dp))
-                                    BouncyButton(onClick = { navController.navigate("subjectDetail/${linkedSubject.id}") }, modifier = Modifier.fillMaxWidth()) {
+                                    BouncyButton(onClick = { navController.navigate("subjectDetail/${linkedSubjects.first().id}") }, modifier = Modifier.fillMaxWidth()) {
                                         Text("Open Subject Workspace")
                                     }
                                 }
@@ -845,7 +852,29 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 // Test Corner Section
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
-                    val testRecords by viewModel.getTestRecordsForCourse(courseId).collectAsStateWithLifecycle()
+                    val allTestRecordsGlobal by viewModel.allTestRecords.collectAsStateWithLifecycle(emptyList())
+                    val testRecords = remember(allTestRecordsGlobal, course, linkedSubjects, subjects, courses, systemAutoLinkByName) {
+                        if (course != null) {
+                            val linkedSubjectIds = linkedSubjects.map { it.id }
+                            val linkedCourseIds = if (linkedSubjectIds.isNotEmpty()) {
+                                courses.filter { c -> 
+                                    linkedSubjectIds.contains(c.subjectId) || 
+                                    linkedSubjectIds.any { sid -> c.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }.contains(sid) } ||
+                                    (systemAutoLinkByName && linkedSubjects.any { s -> c.name.trim().lowercase() == s.name.trim().lowercase() })
+                                }.map { it.id }
+                            } else {
+                                emptyList()
+                            }
+
+                            allTestRecordsGlobal.filter { test ->
+                                test.courseId == course.id || 
+                                (test.subjectId != null && linkedSubjectIds.contains(test.subjectId)) ||
+                                (test.courseId != null && linkedCourseIds.contains(test.courseId))
+                            }
+                        } else {
+                            emptyList()
+                        }
+                    }
                     
                     TestCornerCard(
                         testRecords = testRecords,
@@ -1432,16 +1461,25 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         var createNew by remember { mutableStateOf(false) }
         var newSubjectName by remember { mutableStateOf("") }
         var newSubjectTags by remember { mutableStateOf("") }
-        var selectedExistingId by remember { mutableStateOf<Int?>(null) }
+        
+        val currentIds = remember(course) {
+            val list = mutableListOf<Int>()
+            if (course.subjectId != null) list.add(course.subjectId)
+            if (course.subjectIds.isNotBlank()) {
+                list.addAll(course.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() })
+            }
+            list.distinct()
+        }
+        var selectedExistingIds by remember { mutableStateOf(currentIds) }
 
         AlertDialog(
             onDismissRequest = { showLinkSubjectDialog = false },
-            title = { Text("Link Subject to Course") },
+            title = { Text("Link Subjects to Course") },
             text = {
                 Column {
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         RadioButton(selected = !createNew, onClick = { createNew = false })
-                        Text("Link Existing Subject")
+                        Text("Link Existing Subjects")
                     }
                     if (!createNew) {
                         Spacer(modifier = Modifier.height(8.dp))
@@ -1451,8 +1489,14 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items(subjects) { subj ->
                                     FilterChip(
-                                        selected = selectedExistingId == subj.id,
-                                        onClick = { selectedExistingId = subj.id },
+                                        selected = selectedExistingIds.contains(subj.id),
+                                        onClick = {
+                                            selectedExistingIds = if (selectedExistingIds.contains(subj.id)) {
+                                                selectedExistingIds.filter { it != subj.id }
+                                            } else {
+                                                selectedExistingIds + subj.id
+                                            }
+                                        },
                                         label = { Text(subj.name) }
                                     )
                                 }
@@ -1488,11 +1532,15 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             confirmButton = {
                 TextButton(onClick = {
                     if (createNew && newSubjectName.isNotBlank()) {
+                        val nextId = subjects.maxOfOrNull { it.id }?.plus(1) ?: 1
                         viewModel.addSubject(newSubjectName, newSubjectTags)
-                        viewModel.updateCourse(course.copy(subjectId = subjects.maxOfOrNull { it.id }?.plus(1) ?: 1))
+                        val updatedIds = (selectedExistingIds + nextId).distinct().joinToString(",")
+                        viewModel.updateCourse(course.copy(subjectIds = updatedIds, subjectId = nextId))
                         showLinkSubjectDialog = false
-                    } else if (!createNew && selectedExistingId != null) {
-                        viewModel.updateCourse(course.copy(subjectId = selectedExistingId))
+                    } else if (!createNew) {
+                        val updatedIds = selectedExistingIds.joinToString(",")
+                        val firstId = selectedExistingIds.firstOrNull()
+                        viewModel.updateCourse(course.copy(subjectIds = updatedIds, subjectId = firstId))
                         showLinkSubjectDialog = false
                     }
                 }) { Text("Confirm") }
