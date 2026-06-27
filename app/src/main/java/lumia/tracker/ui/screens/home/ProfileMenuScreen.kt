@@ -28,7 +28,6 @@ import lumia.tracker.ui.components.BouncyTextButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.Color
-import lumia.tracker.model.AchievementSystem
 import lumia.tracker.ui.theme.glassBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,34 +79,8 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
         ) {
             item {
                 Spacer(Modifier.height(16.dp))
-                // Profile Summary Card with Streaks, Points and Achievements display
+                // Profile Summary Card with Streaks display
                 val currentStreak by viewModel.currentStreak.collectAsStateWithLifecycle()
-                
-                val ranking = when (activeProfile.level) {
-                    in 1..2 -> "Bronze Tier"
-                    in 3..4 -> "Silver Tier"
-                    in 5..9 -> "Gold Tier"
-                    in 10..14 -> "Platinum Tier"
-                    in 15..19 -> "Diamond Tier"
-                    in 20..29 -> "Master Tier"
-                    in 30..49 -> "Grandmaster Tier"
-                    in 50..74 -> "Elite Tier"
-                    in 75..99 -> "Legendary Tier"
-                    else -> "Maximum Tier"
-                }
-                
-                val rankingColor = when (activeProfile.level) {
-                    in 1..2 -> Color(0xFFCD7F32) // Bronze
-                    in 3..4 -> Color(0xFFC0C0C0) // Silver
-                    in 5..9 -> Color(0xFFFFD700) // Gold
-                    in 10..14 -> Color(0xFF4BC27D) // Emerald
-                    in 15..19 -> Color(0xFF5BA7FF) // Diamond
-                    in 20..29 -> Color(0xFF9888E4) // Vanguard
-                    in 30..49 -> Color(0xFFFF4081) // Titan pinkish-red
-                    in 50..74 -> Color(0xFFFFEB3B) // Cosmic bright-gold
-                    in 75..99 -> Color(0xFF00E676) // Universal bright-green
-                    else -> Color(0xFFE040FB) // Eternal neon-purple
-                }
 
                 Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                     lumia.tracker.ui.components.GlassCard(
@@ -171,52 +144,12 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
                                         )
                                     }
-                                    
-                                    if (activeProfile.selectedBadge.isNotBlank()) {
-                                        val badgeDef = AchievementSystem.ACHIEVEMENTS.find { it.id == activeProfile.selectedBadge }
-                                        if (badgeDef != null) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                modifier = Modifier
-                                                    .padding(top = 4.dp)
-                                                    .clip(RoundedCornerShape(6.dp))
-                                                    .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
-                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                                            ) {
-                                                val badgeIcon = when (badgeDef.iconEmoji) {
-                                                    "Novice" -> Icons.Rounded.School
-                                                    "Scroll" -> Icons.Rounded.MenuBook
-                                                    "Cap" -> Icons.Rounded.School
-                                                    "Crown" -> Icons.Rounded.MilitaryTech
-                                                    "Star" -> Icons.Rounded.Star
-                                                    "Check" -> Icons.Rounded.CheckCircle
-                                                    "Timer" -> Icons.Rounded.Timer
-                                                    "Fire" -> Icons.Rounded.Whatshot
-                                                    "Book" -> Icons.Rounded.MenuBook
-                                                    else -> Icons.Rounded.EmojiEvents
-                                                }
-                                                Icon(
-                                                    imageVector = badgeIcon,
-                                                    contentDescription = badgeDef.title,
-                                                    tint = Color(0xFFFFD700), // Gold color for badge
-                                                    modifier = Modifier.size(14.dp)
-                                                )
-                                                Text(
-                                                    text = badgeDef.title,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = FontWeight.Black,
-                                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                                )
-                                            }
-                                        }
-                                    }
                                 }
                             }
 
                             Spacer(Modifier.height(16.dp))
 
-                            // Ranking & streak badges
+                            // Status badge
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -224,7 +157,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(Color(0xFFFF5722).copy(alpha = 0.2f))
+                                        .background(Color(0xFF4CAF50).copy(alpha = 0.2f))
                                         .padding(horizontal = 10.dp, vertical = 6.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -233,13 +166,13 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Rounded.Whatshot,
-                                            contentDescription = "Streak",
-                                            tint = Color(0xFFFF5722),
+                                            imageVector = Icons.Rounded.VerifiedUser,
+                                            contentDescription = "Status",
+                                            tint = Color(0xFF4CAF50),
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Text(
-                                            text = "$currentStreak Days",
+                                            text = "Active Scholar",
                                             style = MaterialTheme.typography.labelLarge,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -361,7 +294,6 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
         var editName by remember { mutableStateOf(activeProfile.name) }
         var editAlias by remember { mutableStateOf(activeProfile.alias) }
         var editImagePath by remember { mutableStateOf(activeProfile.avatarEmoji) }
-        var editGamification by remember { mutableStateOf(activeProfile.gamificationEnabled) }
         val context = androidx.compose.ui.platform.LocalContext.current
 
         val pickerLauncher = rememberLauncherForActivityResult(
@@ -442,7 +374,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
             confirmButton = {
                 BouncyButton(onClick = {
                     if (editName.isNotBlank()) {
-                        viewModel.updateProfile(editName, editImagePath.ifBlank { editName.take(2).uppercase() }, editAlias, false)
+                        viewModel.updateProfile(editName, editImagePath.ifBlank { editName.take(2).uppercase() }, editAlias)
                         showEditDialog = false
                     }
                 }) { Text("Save") }

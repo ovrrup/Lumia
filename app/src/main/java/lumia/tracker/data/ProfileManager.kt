@@ -40,7 +40,7 @@ class ProfileManager(private val context: Context) {
         prefs.edit().putString("profiles_json", profileAdapter.toJson(profiles)).commit()
     }
 
-    fun addProfile(name: String, avatar: String, alias: String = "", starterTheme: String = "", gamificationEnabled: Boolean = true): String {
+    fun addProfile(name: String, avatar: String, alias: String = "", starterTheme: String = ""): String {
         val list = getAllProfiles().toMutableList()
         val newId = UUID.randomUUID().toString()
         val newProfile = UserProfile(
@@ -48,8 +48,7 @@ class ProfileManager(private val context: Context) {
             name = name,
             avatarEmoji = avatar,
             alias = alias,
-            starterTheme = starterTheme,
-            gamificationEnabled = gamificationEnabled
+            starterTheme = starterTheme
         )
         list.add(newProfile)
         saveProfiles(list)

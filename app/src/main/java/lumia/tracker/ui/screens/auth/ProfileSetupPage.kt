@@ -59,7 +59,7 @@ import lumia.tracker.viewmodel.ScholarViewModel
 @Composable
 fun ProfileSetupPage(
     isActive: Boolean,
-    onSaved: (String, String, String, String, Boolean) -> Unit
+    onSaved: (String, String, String, String) -> Unit
 ) {
     val scale by animateFloatAsState(if (isActive) 1f else 0.8f, tween(600, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "profile_scale")
     val alpha by animateFloatAsState(if (isActive) 1f else 0f, tween(600), label = "profile_alpha")
@@ -67,7 +67,6 @@ fun ProfileSetupPage(
     var name by remember { mutableStateOf("Main User") }
     var alias by remember { mutableStateOf("Student") }
     var starterTheme by remember { mutableStateOf("Ocean") }
-    var gamificationEnabled by remember { mutableStateOf(false) }
     var selectedImagePath by remember { mutableStateOf("") }
     val context = LocalContext.current
     
@@ -93,9 +92,9 @@ fun ProfileSetupPage(
     }
 
     // Call onSaved when any field changes
-    LaunchedEffect(name, alias, starterTheme, selectedImagePath, gamificationEnabled) {
+    LaunchedEffect(name, alias, starterTheme, selectedImagePath) {
         val finalAvatar = selectedImagePath.ifBlank { name.take(2).uppercase().ifBlank { "ME" } }
-        onSaved(name, alias, starterTheme, finalAvatar, gamificationEnabled)
+        onSaved(name, alias, starterTheme, finalAvatar)
     }
 
     Column(

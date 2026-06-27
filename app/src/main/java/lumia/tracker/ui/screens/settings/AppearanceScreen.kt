@@ -96,7 +96,7 @@ import lumia.tracker.ui.components.BouncyTextButton
 @Composable
 fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) {
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
-    val isPremiumUnlocked = activeProfile.isFeatureUnlocked("feat_theme_pack") || activeProfile.isFeatureUnlocked("feat_custom_theme")
+    val isPremiumUnlocked = true
     val context = androidx.compose.ui.platform.LocalContext.current
 
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
@@ -188,10 +188,10 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     enabled = themeMode != "Light",
                     unavailableReason = "Requires System/Dark mode options.",
                     onCheckedChange = {
-                        if (activeProfile.isFeatureUnlocked("feat_theme_pack")) {
+                        if (true) {
                             viewModel.updatePureBlackMode(it)
                         } else {
-                            val msg = if (activeProfile.gamificationEnabled) "Pure Black Canvas is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!" else "Enable Gamification to unlock Appearance premium settings."
+                            val msg = "Pure Black Canvas is a premium Appearance setting."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
@@ -213,10 +213,10 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     ),
                     selected = displayLayoutMode,
                     onSelected = { 
-                        if (activeProfile.isFeatureUnlocked("feat_screen_layout")) {
+                        if (true) {
                             viewModel.updateDisplayLayoutMode(it) 
                         } else {
-                            val msg = if (activeProfile.gamificationEnabled) "Requires unlocking Advanced Screen Layouts in Plus Shop" else "Enable Gamification to unlock Advanced Screen Layouts."
+                            val msg = "Requires Advanced Screen Layouts."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -239,10 +239,10 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     ),
                     selected = appAnimationMode,
                     onSelected = { 
-                        if (activeProfile.isFeatureUnlocked("feat_animations")) {
+                        if (true) {
                             viewModel.updateAppAnimationMode(it)
                         } else {
-                            val msg = if (activeProfile.gamificationEnabled) "Requires unlocking Advanced Animations in Plus Shop" else "Enable Gamification to unlock Advanced Animations."
+                            val msg = "Requires Advanced Animations."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -256,10 +256,10 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     checked = moreRounds,
                     icon = Icons.Rounded.CheckCircle,
                     onCheckedChange = {
-                        if (activeProfile.isFeatureUnlocked("feat_theme_pack")) {
+                        if (true) {
                             viewModel.updateMoreRounds(it)
                         } else {
-                            val msg = if (activeProfile.gamificationEnabled) "More Rounds is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!" else "Enable Gamification to unlock Appearance premium settings."
+                            val msg = "More Rounds is a premium Appearance setting."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
@@ -302,10 +302,10 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         checked = betaGlassUi,
                         icon = Icons.Rounded.Palette,
                         onCheckedChange = {
-                            if (activeProfile.isFeatureUnlocked("feat_theme_pack")) {
+                            if (true) {
                                 viewModel.updateBetaGlassUi(it)
                             } else {
-                                val msg = if (activeProfile.gamificationEnabled) "Frosted Glass is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!" else "Enable Gamification to unlock Appearance premium settings."
+                                val msg = "Frosted Glass is a premium Appearance setting."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                             }
                         }
@@ -474,10 +474,10 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     checked = navBarGlassForceEnabled,
                     icon = Icons.Rounded.Palette,
                     onCheckedChange = {
-                        if (activeProfile.unlockedFeatures.contains("feat_theme_pack")) {
+                        if (true) {
                             viewModel.updateNavBarGlassForceEnabled(it)
                         } else {
-                            val msg = if (activeProfile.gamificationEnabled) "Independent Glass is a premium Appearance setting. Unlock Theme Pack Expansion in the Plus Shop!" else "Enable Gamification to unlock Appearance premium settings."
+                            val msg = "Independent Glass is a premium Appearance setting."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
@@ -769,53 +769,53 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             // 4. Interface Tweaks Card
             SettingsGroupCard(title = "Interface Modifiers", icon = Icons.Rounded.Settings) {
-                val isMinimalistUnlocked = activeProfile.isFeatureUnlocked("feat_minimal_ui")
+                val isMinimalistUnlocked = true
                 SettingsPremiumToggleItem(
                     title = "Minimalist Focus Mode",
                     subtitle = "Force-off and lock complex visuals for intense studying focus",
                     checked = betaMinimalistMode,
                     icon = Icons.Rounded.Star,
                     enabled = isMinimalistUnlocked,
-                    unavailableReason = if (!isMinimalistUnlocked) { if (activeProfile.gamificationEnabled) "Locked. Purchase in Plus Shop or Reach Level 15." else "Locked. Enable Gamification to unlock." } else null,
+                    unavailableReason = if (!isMinimalistUnlocked) "Locked." else null,
                     onCheckedChange = { viewModel.updateBetaMinimalistMode(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                val isDynamicIconUnlocked = activeProfile.isFeatureUnlocked("feat_ui_icon")
+                val isDynamicIconUnlocked = true
                 SettingsPremiumToggleItem(
                     title = "UI-based Launcher Icon",
                     subtitle = "Match home screen app icon style with the active Lumia color scheme",
                     checked = dynamicAppIcon,
                     icon = Icons.Rounded.Palette,
                     enabled = isDynamicIconUnlocked,
-                    unavailableReason = if (!isDynamicIconUnlocked) { if(activeProfile.gamificationEnabled) "Locked. Purchase in Plus Shop or Reach Level 6." else "Locked. Enable Gamification to unlock." } else null,
+                    unavailableReason = if (!isDynamicIconUnlocked) "Locked." else null,
                     onCheckedChange = { viewModel.updateDynamicAppIcon(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                val isEnhancedBlurUnlocked = activeProfile.isFeatureUnlocked("feat_enhanced_blur")
+                val isEnhancedBlurUnlocked = true
                 SettingsPremiumToggleItem(
                     title = "Enhanced Blur Navigation",
                     subtitle = "Apply a polished satin translucent backdrop to primary navigation header",
                     checked = betaEnhancedHeader,
                     enabled = !betaMinimalistMode && isEnhancedBlurUnlocked,
                     icon = Icons.Rounded.Settings,
-                    unavailableReason = if (!isEnhancedBlurUnlocked) { if(activeProfile.gamificationEnabled) "Locked. Purchase in Plus Shop or Reach Level 10." else "Locked. Enable Gamification to unlock." } else "Locked by Minimalist Focus Mode.",
+                    unavailableReason = if (!isEnhancedBlurUnlocked) "Locked." else "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { viewModel.updateBetaEnhancedHeader(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                val isDynamicLightingUnlocked = activeProfile.isFeatureUnlocked("feat_dynamic_lighting")
+                val isDynamicLightingUnlocked = true
                 SettingsPremiumToggleItem(
                     title = "Dynamic Lighting Background",
                     subtitle = "Soft, vibrant animated background gradient shifts",
                     checked = betaDynamicBackground,
                     enabled = !betaMinimalistMode && isDynamicLightingUnlocked,
                     icon = Icons.Rounded.Check,
-                    unavailableReason = if (!isDynamicLightingUnlocked) { if(activeProfile.gamificationEnabled) "Locked. Purchase in Plus Shop or Reach Level 13." else "Locked. Enable Gamification to unlock." } else "Locked by Minimalist Focus Mode.",
+                    unavailableReason = if (!isDynamicLightingUnlocked) "Locked." else "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
                 )
 

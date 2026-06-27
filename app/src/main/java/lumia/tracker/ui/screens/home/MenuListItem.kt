@@ -28,7 +28,6 @@ import lumia.tracker.ui.components.BouncyTextButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.Color
-import lumia.tracker.model.AchievementSystem
 
 @Composable
 fun MenuListItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, enabled: Boolean = true, onClick: () -> Unit) {

@@ -72,20 +72,19 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         context.startActivity(intent)
     }
     
-    fun createProfile(name: String, avatar: String, alias: String = "", starterTheme: String = "", gamificationEnabled: Boolean = true): String {
-        val newId = profileManager.addProfile(name, avatar, alias, starterTheme, gamificationEnabled)
+    fun createProfile(name: String, avatar: String, alias: String = "", starterTheme: String = ""): String {
+        val newId = profileManager.addProfile(name, avatar, alias, starterTheme)
         allProfiles.value = profileManager.getAllProfiles()
         return newId
     }
 
-    fun setupFirstProfile(name: String, avatar: String, alias: String, starterTheme: String, gamificationEnabled: Boolean) {
+    fun setupFirstProfile(name: String, avatar: String, alias: String, starterTheme: String) {
         val current = profileManager.getActiveProfile()
         val updated = current.copy(
             name = name,
             avatarEmoji = avatar,
             alias = alias,
-            starterTheme = starterTheme,
-            gamificationEnabled = gamificationEnabled
+            starterTheme = starterTheme
         )
         profileManager.updateProfile(updated)
         activeProfile.value = updated
@@ -93,168 +92,19 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         updateThemeColor(starterTheme)
     }
     
-    fun updateProfile(name: String, avatar: String, alias: String = "", gamificationEnabled: Boolean? = null) {
+    fun updateProfile(name: String, avatar: String, alias: String = "") {
         val current = profileManager.getActiveProfile()
         val updated = current.copy(
             name = name, 
             avatarEmoji = avatar, 
-            alias = alias,
-            gamificationEnabled = gamificationEnabled ?: current.gamificationEnabled
+            alias = alias
         )
         profileManager.updateProfile(updated)
         activeProfile.value = updated
         allProfiles.value = profileManager.getAllProfiles()
     }
 
-    fun selectProfileBadge(badgeId: String) {
-        val current = profileManager.getActiveProfile()
-        val updated = current.copy(selectedBadge = badgeId)
-        profileManager.updateProfile(updated)
-        activeProfile.value = updated
-        allProfiles.value = profileManager.getAllProfiles()
-    }
 
-    fun purchaseFeature(featureId: String, cost: Int): Boolean {
-        return purchaseFeatureWithPoints(featureId, cost)
-    }
-
-    fun purchaseFeatureWithPoints(featureId: String, cost: Int): Boolean {
-        val current = profileManager.getActiveProfile()
-        val feature = lumia.tracker.model.PlusShop.features.find { it.id == featureId } ?: return false
-        if (current.level < feature.requiredLevel) return false
-        
-        val actualCost = feature.pricePoints
-        if (current.points >= actualCost && !current.unlockedFeatures.contains(featureId)) {
-            current.points -= actualCost
-            val newFeatures = current.unlockedFeatures.toMutableList()
-            newFeatures.add(featureId)
-            current.unlockedFeatures = newFeatures
-            profileManager.updateProfile(current)
-            activeProfile.value = current
-            allProfiles.value = profileManager.getAllProfiles()
-            return true
-        }
-        return false
-    }
-
-    fun purchaseFeatureWithCredits(featureId: String, cost: Int): Boolean {
-        val current = profileManager.getActiveProfile()
-        val feature = lumia.tracker.model.PlusShop.features.find { it.id == featureId } ?: return false
-        if (current.level < feature.requiredLevel) return false
-        
-        val actualCost = feature.priceCredits
-        if (current.credits >= actualCost && !current.unlockedFeatures.contains(featureId)) {
-            current.credits -= actualCost
-            val newFeatures = current.unlockedFeatures.toMutableList()
-            newFeatures.add(featureId)
-            current.unlockedFeatures = newFeatures
-            profileManager.updateProfile(current)
-            activeProfile.value = current
-            allProfiles.value = profileManager.getAllProfiles()
-            return true
-        }
-        return false
-    }
-
-    fun rentFeatureWithCredits(featureId: String, cost: Int, durationDays: Int = 1): Boolean {
-        val current = profileManager.getActiveProfile()
-        val feature = lumia.tracker.model.PlusShop.features.find { it.id == featureId } ?: return false
-        if (current.level < feature.requiredLevel) return false
-        
-        val actualCost = feature.rentCostCredits * durationDays
-        if (current.credits >= actualCost) {
-            current.credits -= actualCost
-            
-            val activeRents = current.rentedFeatures.toMutableMap()
-            val currentExpiry = activeRents[featureId] ?: System.currentTimeMillis()
-            val cleanStart = if (currentExpiry > System.currentTimeMillis()) currentExpiry else System.currentTimeMillis()
-            val durationMillis = durationDays * 24L * 60L * 60L * 1000L
-            activeRents[featureId] = cleanStart + durationMillis
-            
-            current.rentedFeatures = activeRents
-            profileManager.updateProfile(current)
-            activeProfile.value = current
-            allProfiles.value = profileManager.getAllProfiles()
-            return true
-        }
-        return false
-    }
-
-    fun rollMysteryWheel(): lumia.tracker.model.PlusFeature? {
-        val current = profileManager.getActiveProfile()
-        val rollCost = 150 // standard wheel spin in Credits
-        if (current.credits < rollCost) return null
-        
-        current.credits -= rollCost
-        
-        // Filter out features already unlocked permanently
-        val unownedFeatures = lumia.tracker.model.PlusShop.features.filter { !current.unlockedFeatures.contains(it.id) }
-        if (unownedFeatures.isEmpty()) {
-            // Already owns everything! Refund 150 Credits
-            current.credits += 150
-            profileManager.updateProfile(current)
-            activeProfile.value = current
-            allProfiles.value = profileManager.getAllProfiles()
-            return null
-        }
-        
-        // Select one based on ranking weights/probabilities
-        val weights = unownedFeatures.map { feat ->
-            when (feat.rank) {
-                "SS" -> 0.004
-                "S" -> 0.010
-                "A+" -> 0.020
-                "A" -> 0.033
-                else -> 0.067 // "B"
-            }
-        }
-        val sum = weights.sum()
-        if (sum == 0.0) {
-            profileManager.updateProfile(current)
-            activeProfile.value = current
-            allProfiles.value = profileManager.getAllProfiles()
-            return null
-        }
-        
-        val randomVal = java.util.Random().nextDouble() * sum
-        var cumulative = 0.0
-        var selectedIndex = 0
-        for (i in unownedFeatures.indices) {
-            cumulative += weights[i]
-            if (randomVal <= cumulative) {
-                selectedIndex = i
-                break
-            }
-        }
-        
-        val selected = unownedFeatures[selectedIndex]
-        val newFeatures = current.unlockedFeatures.toMutableList()
-        newFeatures.add(selected.id)
-        current.unlockedFeatures = newFeatures
-        
-        profileManager.updateProfile(current)
-        activeProfile.value = current
-        allProfiles.value = profileManager.getAllProfiles()
-        return selected
-    }
-
-    fun awardCredits(creditsGained: Int) {
-        val current = profileManager.getActiveProfile()
-        current.credits += creditsGained
-        profileManager.updateProfile(current)
-        activeProfile.value = current
-        allProfiles.value = profileManager.getAllProfiles()
-        postNotification("Credits Earned!", "+$creditsGained Credits added directly to your profile!", "CREDITS")
-    }
-
-    fun deductCredits(creditsLost: Int) {
-        val current = profileManager.getActiveProfile()
-        current.credits -= creditsLost
-        // Let it go negative so users cannot farm by uncompleting at 0 balance
-        profileManager.updateProfile(current)
-        activeProfile.value = current
-        allProfiles.value = profileManager.getAllProfiles()
-    }
 
     // Advanced Data Management flow states
     private val _dbStatistics = MutableStateFlow<Map<String, Int>>(emptyMap())
@@ -299,306 +149,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     
-    data class InAppNotification(
-        val id: String = java.util.UUID.randomUUID().toString(),
-        val title: String,
-        val message: String,
-        val type: String, // "ACHIEVEMENT", "CREDITS", "POINTS", "XP", "INFO"
-        val iconEmoji: String = ""
-    )
-
-    private val _inAppNotifications = MutableStateFlow<List<InAppNotification>>(emptyList())
-    val inAppNotifications = _inAppNotifications.asStateFlow()
-
-    fun postNotification(title: String, message: String, type: String = "INFO", icon: String = "") {
-        val newNotification = InAppNotification(title = title, message = message, type = type, iconEmoji = icon)
-        _inAppNotifications.value = _inAppNotifications.value + newNotification
-    }
-
-    fun dismissNotification(id: String) {
-        _inAppNotifications.value = _inAppNotifications.value.filter { it.id != id }
-    }
-
-    data class LevelUpRewardEvent(
-        val newLevel: Int,
-        val pointsEarned: Int,
-        val creditsEarned: Int,
-        val featureUnlocked: String? = null,
-        val gaveBox: Boolean = false
-    )
-    
-    data class SurpriseBoxResult(
-        val type: String, // "CREDITS", "POINTS", "TICKET_24H", "TICKET_48H"
-        val amount: Int,
-        val detailText: String,
-        val featureName: String = ""
-    )
-    
-    private val _lastLevelUpEvent = MutableStateFlow<LevelUpRewardEvent?>(null)
-    val lastLevelUpEvent = _lastLevelUpEvent.asStateFlow()
-    
-    fun clearLevelUpEvent() {
-        _lastLevelUpEvent.value = null
-    }
-
-    fun awardPoints(points: Int) {
-        val current = profileManager.getActiveProfile()
-        current.points += points
-        profileManager.updateProfile(current)
-        activeProfile.value = current
-        allProfiles.value = profileManager.getAllProfiles()
-        postNotification("Focus Points Gained!", "+$points Focus Points (FP) earned!", "POINTS")
-        
-        // Let's also check achievements in a separate function...
-        checkAchievements(current)
-    }
-
-    fun deductPoints(points: Int) {
-        val current = profileManager.getActiveProfile()
-        current.points -= points
-        // Let it go negative so users cannot farm by uncompleting at 0 balance
-        profileManager.updateProfile(current)
-        activeProfile.value = current
-        allProfiles.value = profileManager.getAllProfiles()
-    }
-
-    fun awardExperience(xpGained: Int) {
-        val current = profileManager.getActiveProfile()
-        current.experience += xpGained
-        postNotification("XP Gained!", "+$xpGained Experience secured!", "XP")
-        
-        var newLevel = current.level
-        var xpLeft = current.experience
-        var leveledUp = false
-        
-        while (xpLeft >= getXpNeededForNextLevel(newLevel)) {
-            xpLeft -= getXpNeededForNextLevel(newLevel)
-            newLevel++
-            leveledUp = true
-            onLevelUp(newLevel, current)
-        }
-        
-        current.level = newLevel
-        current.experience = xpLeft
-        
-        profileManager.updateProfile(current)
-        activeProfile.value = current
-        allProfiles.value = profileManager.getAllProfiles()
-    }
-
-    fun deductExperience(xpLost: Int) {
-        val current = profileManager.getActiveProfile()
-        current.experience -= xpLost
-        
-        // Note: Do not drop level down, otherwise users can farm level-up rewards by uncompleting and completing tasks.
-        // And do NOT clamp to 0, otherwise they can farm free XP when they are at 0 XP.
-        // It is perfectly safe to leave current.experience as negative, they will just have to pay off the "XP debt".
-        
-        profileManager.updateProfile(current)
-        activeProfile.value = current
-        allProfiles.value = profileManager.getAllProfiles()
-    }
-    
-    fun getXpNeededForNextLevel(currentLevel: Int): Int {
-        return 100 + (currentLevel * 50)
-    }
-    
-    private fun onLevelUp(newLevel: Int, current: lumia.tracker.model.UserProfile): LevelUpRewardEvent {
-        var pointsEarned = 0
-        var creditsEarned = 0
-        var featureUnlockedName: String? = null
-        var gaveBox = false
-        
-        if (newLevel == 1) {
-            current.points += 10
-            pointsEarned += 10
-        } else if (newLevel >= 2) {
-            current.pendingSurpriseBoxes++
-            gaveBox = true
-        }
-        
-        if (newLevel > 0 && newLevel % 5 == 0) {
-            val randCredits = java.util.Random().nextInt(701) + 100 // 100 to 800
-            current.credits += randCredits
-            creditsEarned += randCredits
-        }
-        
-        if (newLevel > 0 && newLevel % 10 == 0) {
-            current.credits += 100
-            creditsEarned += 100
-            val randPoints = java.util.Random().nextInt(16) + 5 // 5 to 20
-            current.points += randPoints
-            pointsEarned += randPoints
-        }
-        
-        if (newLevel > 0 && newLevel % 50 == 0) {
-            val eligible = lumia.tracker.model.PlusShop.features.filter { it.rank == "A+" || it.rank == "S" || it.rank == "SS" }
-            if (eligible.isNotEmpty()) {
-                val selectedFeat = eligible.random()
-                val weeks = java.util.Random().nextInt(2) + 3 // 3 or 4 weeks
-                val durationMillis = weeks * 7L * 24L * 60L * 60L * 1000L
-                val activeRents = current.rentedFeatures.toMutableMap()
-                val currentExpiry = activeRents[selectedFeat.id] ?: System.currentTimeMillis()
-                val cleanStart = if (currentExpiry > System.currentTimeMillis()) currentExpiry else System.currentTimeMillis()
-                activeRents[selectedFeat.id] = cleanStart + durationMillis
-                current.rentedFeatures = activeRents
-                if (featureUnlockedName == null) featureUnlockedName = "${selectedFeat.name} ($weeks weeks)"
-            }
-        }
-        
-        val milestones = mapOf(
-            3 to "feat_theme_pack",
-            5 to "feat_leaderboard",
-            6 to "feat_ui_icon",
-            10 to "feat_enhanced_blur",
-            12 to "feat_custom_theme",
-            13 to "feat_dynamic_lighting",
-            14 to "feat_animations",
-            15 to "feat_minimal_ui",
-            20 to "feat_true_aod",
-            25 to "feat_experimental"
-        )
-        
-        milestones[newLevel]?.let { featId ->
-            val durationMillis = 48L * 60L * 60L * 1000L // 48 hours
-            val activeRents = current.rentedFeatures.toMutableMap()
-            val currentExpiry = activeRents[featId] ?: System.currentTimeMillis()
-            val cleanStart = if (currentExpiry > System.currentTimeMillis()) currentExpiry else System.currentTimeMillis()
-            activeRents[featId] = cleanStart + durationMillis
-            current.rentedFeatures = activeRents
-            
-            val featName = lumia.tracker.model.PlusShop.features.find { it.id == featId }?.name ?: featId
-            featureUnlockedName = if (featureUnlockedName == null) "$featName (48 Hour Trial)" else "$featureUnlockedName, $featName (48 Hour Trial)"
-        }
-
-        
-        val event = LevelUpRewardEvent(
-            newLevel = newLevel,
-            pointsEarned = pointsEarned,
-            creditsEarned = creditsEarned,
-            featureUnlocked = featureUnlockedName,
-            gaveBox = gaveBox
-        )
-        _lastLevelUpEvent.value = event
-        return event
-    }
-    
-    fun claimSurpriseBox(): SurpriseBoxResult? {
-        val current = profileManager.getActiveProfile()
-        if (current.pendingSurpriseBoxes <= 0) return null
-        
-        current.pendingSurpriseBoxes--
-        
-        val rand = java.util.Random().nextDouble() * 100.0
-        val result: SurpriseBoxResult
-        
-        when {
-            // 30% of 20 credits
-            rand < 30.0 -> {
-                current.credits += 20
-                result = SurpriseBoxResult("CREDITS", 20, "20 Credits Gained!")
-            }
-            // 40% of 10 credits (Total 70%)
-            rand < 70.0 -> {
-                current.credits += 10
-                result = SurpriseBoxResult("CREDITS", 10, "10 Credits Gained!")
-            }
-            // 15% of 60-70 credits (randomly) (Total 85%)
-            rand < 85.0 -> {
-                val amt = java.util.Random().nextInt(11) + 60 // 60 to 70
-                current.credits += amt
-                result = SurpriseBoxResult("CREDITS", amt, "$amt Credits Gained!")
-            }
-            // 3% of 5 points (Total 88%)
-            rand < 88.0 -> {
-                current.points += 5
-                result = SurpriseBoxResult("POINTS", 5, "5 Focus Points Gained!")
-            }
-            // 4% of 2 points (Total 92%)
-            rand < 92.0 -> {
-                current.points += 2
-                result = SurpriseBoxResult("POINTS", 2, "2 Focus Points Gained!")
-            }
-            // 2% of 6-15 points (completely randomly chosen) (Total 94%)
-            rand < 94.0 -> {
-                val amt = java.util.Random().nextInt(10) + 6 // 6 to 15
-                current.points += amt
-                result = SurpriseBoxResult("POINTS", amt, "$amt Focus Points Gained!")
-            }
-            // 5% of a 24 hour ticket of any plus setting or feature (Total 99%)
-            rand < 99.0 -> {
-                val feature = lumia.tracker.model.PlusShop.features.random()
-                val durationMillis = 24L * 60L * 60L * 1000L
-                val activeRents = current.rentedFeatures.toMutableMap()
-                val currentExpiry = activeRents[feature.id] ?: System.currentTimeMillis()
-                val cleanStart = if (currentExpiry > System.currentTimeMillis()) currentExpiry else System.currentTimeMillis()
-                activeRents[feature.id] = cleanStart + durationMillis
-                current.rentedFeatures = activeRents
-                result = SurpriseBoxResult("TICKET_24H", 24, "24-Hour Trial Ticket: ${feature.name}", feature.name)
-            }
-            // 1% of a 48 hrs ticket for any random plus setting or feature (Total 100%)
-            else -> {
-                val feature = lumia.tracker.model.PlusShop.features.random()
-                val durationMillis = 48L * 60L * 60L * 1000L
-                val activeRents = current.rentedFeatures.toMutableMap()
-                val currentExpiry = activeRents[feature.id] ?: System.currentTimeMillis()
-                val cleanStart = if (currentExpiry > System.currentTimeMillis()) currentExpiry else System.currentTimeMillis()
-                activeRents[feature.id] = cleanStart + durationMillis
-                current.rentedFeatures = activeRents
-                result = SurpriseBoxResult("TICKET_48H", 48, "48-Hour Trial Ticket: ${feature.name}", feature.name)
-            }
-        }
-        
-        profileManager.updateProfile(current)
-        activeProfile.value = current
-        allProfiles.value = profileManager.getAllProfiles()
-        
-        checkAchievements(current)
-        return result
-    }
-    
-    private fun checkAchievements(profile: lumia.tracker.model.UserProfile) {
-        viewModelScope.launch {
-            val totalTasks = tasks.value.filter { it.isCompleted }.size
-            val totalSessions = pomodoroSessions.value.size
-            val streak = prefs.getInt("current_streak", 0)
-            
-            val unlocked = lumia.tracker.model.AchievementSystem.evaluateAchievements(
-                profile = profile,
-                totalTasks = totalTasks,
-                totalSessions = totalSessions,
-                currentStreak = streak
-            )
-            
-            if (unlocked.isNotEmpty()) {
-                val updatedUnlocked = profile.unlockedAchievements.toMutableList()
-                val newlyUnlockedFeatures = profile.unlockedFeatures.toMutableList()
-                var featuresAdded = false
-                unlocked.forEach { ach ->
-                    updatedUnlocked.add(ach.id)
-                    ach.rewardFeatureId?.let { featureId ->
-                        if (!newlyUnlockedFeatures.contains(featureId)) {
-                            newlyUnlockedFeatures.add(featureId)
-                            featuresAdded = true
-                        }
-                    }
-                    postNotification(
-                        title = "Achievement Unlocked!",
-                        message = "${ach.title}: ${ach.description}",
-                        type = "ACHIEVEMENT",
-                        icon = ach.iconEmoji
-                    )
-                }
-                profile.unlockedAchievements = updatedUnlocked
-                if (featuresAdded) {
-                    profile.unlockedFeatures = newlyUnlockedFeatures
-                }
-                profileManager.updateProfile(profile)
-                activeProfile.value = profile
-            }
-        }
-    }
-
     private val repository = ScholarRepository(AppDatabase.getDatabase(application).scholarDao())
     
     private val prefs = profileManager.getProfilePrefs()
@@ -849,6 +399,20 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _systemPomodoroAutoLog = MutableStateFlow(prefs.getBoolean("system_pomodoro_auto_log", true))
     val systemPomodoroAutoLog = _systemPomodoroAutoLog.asStateFlow()
 
+    private val _featureRecommendationsEnabled = MutableStateFlow(prefs.getBoolean("feature_recommendations_enabled", true))
+    val featureRecommendationsEnabled = _featureRecommendationsEnabled.asStateFlow()
+
+    fun updateFeatureRecommendationsEnabled(enabled: Boolean) {
+        _featureRecommendationsEnabled.value = enabled
+        prefs.edit().putBoolean("feature_recommendations_enabled", enabled).apply()
+    }
+
+    fun submitRecommendationFeedback(recommendationId: String, rating: Int) {
+        // rating: 1 for positive, -1 for negative
+        // In a complete implementation, this would adjust the FocusPredictor model weights
+        logAction("User rated recommendation $recommendationId with $rating")
+    }
+
     private val _featureSubjectEnabled = MutableStateFlow(prefs.getBoolean("feature_subject_enabled", true))
     val featureSubjectEnabled = _featureSubjectEnabled.asStateFlow()
 
@@ -911,7 +475,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 )
             )
             logAction("Added attachment: $name")
-            awardExperience(30)
         }
     }
 
@@ -927,7 +490,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 e.printStackTrace()
             }
             logAction("Deleted attachment: ${attachment.name}")
-            deductExperience(30)
         }
     }
 
@@ -1440,16 +1002,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 taskId = taskId
             ))
             logAction("Completed Pomodoro Session ($durationMinutes min)")
-            val creditsToAward = durationMinutes * 2
-            val pointsToAward = durationMinutes / 25
-            if (creditsToAward > 0) {
-                awardCredits(creditsToAward)
-            }
-            if (pointsToAward > 0) {
-                awardPoints(pointsToAward)
-            }
-            val xpGained = if (durationMinutes >= 25) 10 + (durationMinutes * 3) else durationMinutes * 3
-            awardExperience(xpGained)
         }
     }
 
@@ -1517,19 +1069,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun addTestRecord(record: lumia.tracker.model.TestRecord) {
         viewModelScope.launch {
             repository.insertTestRecord(record)
-            
-            // Interconnection: Reward focus points based on marks obtained percentage!
-            val pct = if (record.totalMarks > 0) record.marksObtained / record.totalMarks else 0f
-            val pointsEarned = when {
-                pct >= 0.95f -> 30  // Near perfect / A+
-                pct >= 0.90f -> 25  // Excellent
-                pct >= 0.80f -> 20  // Great job
-                pct >= 0.70f -> 15  // Passing well
-                pct >= 0.50f -> 10  // Satisfactory pass
-                else -> 5           // Participation points
-            }
-            awardPoints(pointsEarned)
-            logAction("Logged test record '${record.title}' with score ${record.marksObtained}/${record.totalMarks} and earned $pointsEarned Focus Points!")
+            logAction("Logged test record '${record.title}' with score ${record.marksObtained}/${record.totalMarks}")
         }
     }
 
@@ -1636,7 +1176,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             repository.updateTopic(topic.copy(isCompleted = newlyCompleted))
             val actionText = if (newlyCompleted) "Completed topic: ${topic.title}" else "Unmarked topic: ${topic.title}"
             logAction(actionText)
-            if (newlyCompleted) checkAndUpdateStreak()
         }
     }
 
@@ -1697,16 +1236,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             repository.updateTask(task.copy(isCompleted = newlyCompleted))
             val actionText = if (newlyCompleted) "Completed task: ${task.title}" else "Unmarked task: ${task.title}"
             logAction(actionText)
-            if (newlyCompleted) {
-                checkAndUpdateStreak()
-                awardCredits(200)
-                awardPoints(2)
-                awardExperience(40)
-            } else {
-                deductCredits(200)
-                deductPoints(2)
-                deductExperience(40)
-            }
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
@@ -1752,16 +1281,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             repository.updateAssignment(assignment.copy(isCompleted = newlyCompleted))
             val actionText = if (newlyCompleted) "Completed assignment: ${assignment.title}" else "Unmarked assignment: ${assignment.title}"
             logAction(actionText)
-            if (newlyCompleted) {
-                checkAndUpdateStreak()
-                awardCredits(300)
-                awardPoints(3)
-                awardExperience(60)
-            } else {
-                deductCredits(300)
-                deductPoints(3)
-                deductExperience(60)
-            }
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
         }
     }
@@ -1802,45 +1321,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
             .format(java.util.Date())
 
-    private fun checkAndUpdateStreak() {
-        val lastActionDate = prefs.getString("last_action_date_str", "") ?: ""
-        val today = todayDateString()
 
-        if (lastActionDate.isEmpty()) {
-            updateStreak(1)
-            prefs.edit().putString("last_action_date_str", today).apply()
-            return
-        }
-
-        if (lastActionDate == today) return  // already counted today
-
-        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-        val lastDate = sdf.parse(lastActionDate) ?: return
-        val diff = ((sdf.parse(today)?.time ?: System.currentTimeMillis()) - lastDate.time) / 86400000L
-
-        when {
-            diff == 1L -> {
-                val newStreak = _currentStreak.value + 1
-                updateStreak(newStreak)
-                if (notifEnableStreaks.value) {
-                    val formal = notifFormalTone.value
-                    val title = if (formal) "Streak Maintained" else "Good Job Not Slacking!"
-                    val msg = if (formal) "You have maintained your streak for $newStreak days." else "You actually did something today! Streak is now $newStreak."
-                    sendInstantNotification("scholar_streak_channel", 1004, title, msg, lumia.tracker.util.NotificationHelper.getSmallIcon(), lumia.tracker.util.NotificationHelper.getColor(getApplication()))
-                }
-            }
-            diff > 1L  -> {
-                updateStreak(1)  // streak broken
-                if (notifEnableStreaks.value && _currentStreak.value > 0) { // If there was a streak to break
-                    val formal = notifFormalTone.value
-                    val title = if (formal) "Streak Broken" else "Whelp... You broke it."
-                    val msg = if (formal) "Your last streak was broken. You are back to 1 day." else "I knew you couldn't keep it up. Back to day 1 for you."
-                    sendInstantNotification("scholar_streak_channel", 1005, title, msg, lumia.tracker.util.NotificationHelper.getSmallIcon(), lumia.tracker.util.NotificationHelper.getColor(getApplication()))
-                }
-            }
-        }
-        prefs.edit().putString("last_action_date_str", today).apply()
-    }
 
     private fun sendInstantNotification(channelId: String, notifId: Int, title: String, text: String, iconRes: Int, color: Int) {
         val application = getApplication<Application>()
@@ -2028,23 +1509,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun verifyFeatureEntitlements() {
-        val currentProfile = profileManager.getActiveProfile()
-        if (!currentProfile.isFeatureUnlocked("feat_minimal_ui") && _betaMinimalistMode.value) {
-            updateBetaMinimalistMode(false)
-        }
-        if (!currentProfile.isFeatureUnlocked("feat_ui_icon") && _dynamicAppIcon.value) {
-            updateDynamicAppIcon(false)
-        }
-        if (!currentProfile.isFeatureUnlocked("feat_enhanced_blur") && _betaEnhancedHeader.value) {
-            updateBetaEnhancedHeader(false)
-        }
-        if (!currentProfile.isFeatureUnlocked("feat_dynamic_lighting") && _betaDynamicBackground.value) {
-            updateBetaDynamicBackground(false)
-        }
-        
-        if (!currentProfile.isFeatureUnlocked("feat_notification_tone") && !_notifFormalTone.value) {
-            updateNotifFormalTone(true)
-        }
+        // Gamification has been removed, all features are enabled by default
     }
 
     fun clearStatus() {

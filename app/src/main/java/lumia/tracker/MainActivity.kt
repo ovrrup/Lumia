@@ -206,8 +206,8 @@ class MainActivity : ComponentActivity() {
                                     startupState.value = "main"
                                 }
                             },
-                            onCreateProfile = { name, emoji, alias, starterTheme, gamificationEnabled -> 
-                                viewModel.createProfile(name, emoji, alias, starterTheme, gamificationEnabled)
+                            onCreateProfile = { name, emoji, alias, starterTheme -> 
+                                viewModel.createProfile(name, emoji, alias, starterTheme)
                             }
                         )
                     } else {
@@ -488,15 +488,6 @@ class MainActivity : ComponentActivity() {
                         composable("profile_menu") {
                             lumia.tracker.ui.screens.ProfileMenuScreen(navController = navController, viewModel = viewModel)
                         }
-                        composable("level_rewards") {
-                            lumia.tracker.ui.screens.LevelRewardsScreen(navController = navController, viewModel = viewModel)
-                        }
-                        composable("achievements_screen") {
-                            lumia.tracker.ui.screens.AchievementsScreen(navController = navController, viewModel = viewModel)
-                        }
-                        composable("plus_shop") {
-                            lumia.tracker.ui.screens.PlusShopScreen(navController = navController, viewModel = viewModel)
-                        }
                         composable("switch_user") {
                             startupState.value = "selector"
                             // Since startupState controls the entire surface display above NavHost, it'll just show the profile selector.
@@ -548,20 +539,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     
-                    val levelUpEvent by viewModel.lastLevelUpEvent.collectAsStateWithLifecycle()
-                    levelUpEvent?.let { event ->
-                        lumia.tracker.ui.components.LevelCelebrationDialog(
-                            event = event,
-                            onDismiss = { viewModel.clearLevelUpEvent() }
-                        )
-                    }
-
-                    val activeInAppNotifications by viewModel.inAppNotifications.collectAsStateWithLifecycle()
-                    lumia.tracker.ui.components.InAppNotificationQueue(
-                        notifications = activeInAppNotifications,
-                        onDismissNotification = { id -> viewModel.dismissNotification(id) }
-                    )
-
                     } // End of Box
                     } // End of else
                 } // End of Surface

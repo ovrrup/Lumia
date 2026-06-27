@@ -43,7 +43,6 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
     var firstProfileAlias by remember { mutableStateOf("Student") }
     var firstProfileTheme by remember { mutableStateOf("Ocean") }
     var firstProfileAvatar by remember { mutableStateOf("") }
-    var firstProfileGamificationEnabled by remember { mutableStateOf(false) } // Gamification is removed/disabled
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -90,7 +89,7 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                     )
                     4 -> ProfileSetupPage(
                         isActive = pagerState.currentPage == page,
-                        onSaved = { name, alias, theme, avatar, _ ->
+                        onSaved = { name, alias, theme, avatar ->
                             firstProfileName = name
                             firstProfileAlias = alias
                             firstProfileTheme = theme
@@ -139,8 +138,7 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                                     name = firstProfileName.ifBlank { "Main User" },
                                     alias = firstProfileAlias.ifBlank { "Student" },
                                     avatar = firstProfileAvatar,
-                                    starterTheme = firstProfileTheme,
-                                    gamificationEnabled = false
+                                    starterTheme = firstProfileTheme
                                 )
                                 coroutineScope.launch { pagerState.animateScrollToPage(5) }
                             } else if (pagerState.currentPage == 5) {

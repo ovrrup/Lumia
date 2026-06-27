@@ -473,99 +473,11 @@ class PomodoroService : Service() {
             )
             android.util.Log.d("PomodoroService", "SAVED AUTOMATIC FOCUS SESSION TO DB: $durationMinutes mins")
 
-            // 2. Load User Profile & Award Rewards
-            val pm = lumia.tracker.data.ProfileManager(applicationContext)
-            val profile = pm.getActiveProfile()
-
-            // Rewards calculations matches ViewModel
-            val creditsToAward = durationMinutes * 2
-            val pointsToAward = durationMinutes / 25
-            val xpGained = if (isFullCompletion) 10 + (durationMinutes * 3) else durationMinutes * 3
-
-            profile.credits += creditsToAward
-            profile.points += pointsToAward
-            profile.experience += xpGained
-
-            var newLevel = profile.level
-            var xpLeft = profile.experience
-            var leveledUp = false
-
-            val getXpNeeded = { level: Int -> 100 + (level * 50) }
-
-            while (xpLeft >= getXpNeeded(newLevel)) {
-                xpLeft -= getXpNeeded(newLevel)
-                newLevel++
-                leveledUp = true
-                
-                // standard level rewards
-                if (newLevel == 1) {
-                    profile.points += 10
-                } else if (newLevel >= 2) {
-                    profile.pendingSurpriseBoxes++
-                }
-
-                if (newLevel > 0 && newLevel % 5 == 0) {
-                    val randCredits = java.util.Random().nextInt(701) + 100 // 100 to 800
-                    profile.credits += randCredits
-                }
-
-                if (newLevel > 0 && newLevel % 10 == 0) {
-                    profile.credits += 100
-                    val randPoints = java.util.Random().nextInt(16) + 5 // 5 to 20
-                    profile.points += randPoints
-                }
-
-                if (newLevel > 0 && newLevel % 50 == 0) {
-                    val eligible = lumia.tracker.model.PlusShop.features.filter { it.rank == "A+" || it.rank == "S" || it.rank == "SS" }
-                    if (eligible.isNotEmpty()) {
-                        val selectedFeat = eligible.random()
-                        val weeks = java.util.Random().nextInt(2) + 3 // 3 or 4 weeks
-                        val durationMillis = weeks * 7L * 24L * 60L * 60L * 1000L
-                        val activeRents = profile.rentedFeatures.toMutableMap()
-                        val currentExpiry = activeRents[selectedFeat.id] ?: System.currentTimeMillis()
-                        val cleanStart = if (currentExpiry > System.currentTimeMillis()) currentExpiry else System.currentTimeMillis()
-                        activeRents[selectedFeat.id] = cleanStart + durationMillis
-                        profile.rentedFeatures = activeRents
-                    }
-                }
-
-                val milestones = mapOf(
-                    3 to "feat_theme_pack",
-                    5 to "feat_leaderboard",
-                    6 to "feat_ui_icon",
-                    10 to "feat_enhanced_blur",
-                    12 to "feat_custom_theme",
-                    13 to "feat_dynamic_lighting",
-                    14 to "feat_animations",
-                    15 to "feat_minimal_ui",
-                    20 to "feat_true_aod",
-                    25 to "feat_experimental"
-                )
-                
-                milestones[newLevel]?.let { featId ->
-                    val durationMillis = 48L * 60L * 60L * 1000L // 48 hours
-                    val activeRents = profile.rentedFeatures.toMutableMap()
-                    val currentExpiry = activeRents[featId] ?: System.currentTimeMillis()
-                    val cleanStart = if (currentExpiry > System.currentTimeMillis()) currentExpiry else System.currentTimeMillis()
-                    activeRents[featId] = cleanStart + durationMillis
-                    profile.rentedFeatures = activeRents
-                }
-            }
-
-            profile.level = newLevel
-            profile.experience = xpLeft
-
-            // Update user profile in disk
-            pm.updateProfile(profile)
-            android.util.Log.d("PomodoroService", "SAVED PROFILE UPDATES: +$creditsToAward Credits, +$pointsToAward Points, +$xpGained XP")
-            
-            // Post custom reward details in-app Notification UI
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val rewardsSummary = "+$creditsToAward Cr, +$pointsToAward FP, +$xpGained XP" + if (leveledUp) " | LEVELED UP to $newLevel!" else ""
             val rewardNotification = NotificationCompat.Builder(applicationContext, "pomodoro_service")
                 .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
                 .setContentTitle(if (isFullCompletion) "Focus Completed!" else "Focus Saved!")
-                .setContentText("Locked in $durationMinutes min study. Secured: $rewardsSummary")
+                .setContentText("Locked in $durationMinutes min study.")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true)
                 .setColor(lumia.tracker.util.NotificationHelper.getColor(applicationContext))

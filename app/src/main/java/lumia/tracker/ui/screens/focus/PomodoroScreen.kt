@@ -444,7 +444,7 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                                 // )
                                                 // viewModel.postNotification("Focus Completed!", "Saved session: $studiedMinutes min of focused study! You earned experience.", "POINTS")
                                             } else if (studiedMinutes == 0 && modeString == "WORK") {
-                                                viewModel.postNotification("Session Cancelled", "Session too brief to log to history.", "INFO")
+                                                // Session cancelled
                                             }
                                             isRunning = false
                                             isExitButtonShown = false

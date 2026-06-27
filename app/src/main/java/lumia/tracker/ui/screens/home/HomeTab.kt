@@ -140,6 +140,9 @@ fun HomeTab(
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    val featureQuickNotesEnabled by viewModel.featureQuickNotesEnabled.collectAsStateWithLifecycle()
+    val featureRecommendationsEnabled by viewModel.featureRecommendationsEnabled.collectAsStateWithLifecycle()
+
     var courseToEdit by remember { mutableStateOf<lumia.tracker.model.Course?>(null) }
     var subjectToEdit by remember { mutableStateOf<lumia.tracker.model.Subject?>(null) }
 
@@ -178,7 +181,7 @@ fun HomeTab(
             }
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // Streak Card
+                    // Tasks Completed Card
                     GlassHeroCard(
                         modifier = Modifier
                             .weight(1f)
@@ -190,8 +193,8 @@ fun HomeTab(
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.LocalFireDepartment,
-                                contentDescription = "Streak",
+                                imageVector = Icons.Rounded.TaskAlt,
+                                contentDescription = "Completed Tasks",
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier
                                     .size(48.dp)
@@ -200,13 +203,13 @@ fun HomeTab(
                             )
                             Column {
                                 Text(
-                                    "$streak",
+                                    "${tasks.count { it.isCompleted }}",
                                     style = MaterialTheme.typography.displaySmall,
                                     fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    "Day Streak",
+                                    "Tasks Done",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
@@ -251,6 +254,15 @@ fun HomeTab(
                             }
                         }
                     }
+                }
+            }
+
+            if (featureRecommendationsEnabled) {
+                item(key = "smart_recommendations") {
+                    lumia.tracker.ui.screens.home.RecommendationsCard(
+                        viewModel = viewModel,
+                        modifier = Modifier.animateItem()
+                    )
                 }
             }
 

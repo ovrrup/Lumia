@@ -99,7 +99,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
     val dbStats by viewModel.dbStatistics.collectAsStateWithLifecycle()
     val defragText by viewModel.defragStatus.collectAsStateWithLifecycle()
-    val isAdvancedUnlocked = activeProfile.isFeatureUnlocked("feat_advanced_data")
+    val isAdvancedUnlocked = true
 
     val context = LocalContext.current
     var showResetDialog by remember { mutableStateOf(false) }
@@ -329,54 +329,6 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = if (defragText.startsWith("Optimized!")) Color(0xFF4BC27D) else MaterialTheme.colorScheme.secondary
-                            )
-                        }
-                    }
-                } else {
-                    // Locked premium promo card
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            Icons.Rounded.Lock,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(40.dp)
-                        )
-                        Text(
-                            "Advanced Database Diagnostics Console",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            "Run physical database compaction, index rebuilds, vacuum defragmenters, and deep-dive schema analyzer metrics.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        if (activeProfile.gamificationEnabled) {
-                            Button(
-                                onClick = { navController.navigate("plus_shop") },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("Rent or Buy in Plus Shop")
-                                }
-                            }
-                        } else {
-                            Text(
-                                "Locked. Enable Gamification to unlock premium Data Management features.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.secondary,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(top = 8.dp)
                             )
                         }
                     }

@@ -203,7 +203,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(Modifier.height(8.dp))
-                val msg = if (activeProfile.gamificationEnabled) "Experimental beta features and cutting-edge system options are a premium Plus option. Unlock the Mad Scientist Lab expansion in the Plus Shop using points to gain access to future tracker modifications!" else "Enable Gamification to unlock the Mad Scientist Lab expansion and gain access to future tracker modifications!"
+                val msg = "Experimental beta features and cutting-edge system options."
                 Text(
                     msg,
                     style = MaterialTheme.typography.bodyMedium,
@@ -211,11 +211,6 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(24.dp))
-                if (activeProfile.gamificationEnabled) {
-                    BouncyButton(onClick = { navController.navigate("plus_shop") }) {
-                        Text("Unlock in Plus Shop")
-                    }
-                }
             }
         } else {
             Column(
@@ -229,6 +224,17 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 // 1. Experimental Workflow
             SettingsGroupCard(title = "Experimental Workflow", icon = Icons.Rounded.Edit) {
                 val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
+                val featureRecommendationsEnabled by viewModel.featureRecommendationsEnabled.collectAsStateWithLifecycle()
+                SettingsPremiumToggleItem(
+                    title = "Smart Recommendations",
+                    subtitle = "Display serialized ML-based study recommendations in the Home tab.",
+                    checked = featureRecommendationsEnabled,
+                    icon = Icons.Rounded.Star,
+                    onCheckedChange = { handleToggle(it, "Smart Recommendations", "Enable personalized schedule adjustments on the Home tab.") { isChecked -> viewModel.updateFeatureRecommendationsEnabled(isChecked) } }
+                )
+                
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
+
                 SettingsPremiumToggleItem(
                     title = "Quick Notes Overlay",
                     subtitle = "Draft scratchpad canvas for immediate raw notes overlay panel.",
