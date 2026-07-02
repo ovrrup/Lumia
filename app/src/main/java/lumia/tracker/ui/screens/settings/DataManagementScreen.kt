@@ -357,8 +357,8 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                 
                 SettingsActionItemInCard(
-                    title = "Full Environment Factory Erase",
-                    subtitle = "Permanently delete all customisations, courses, subjects, assignments, and local history reports",
+                    title = if (activeProfile.isDefault) "Full Environment Factory Erase (All Accounts)" else "Erase Data & Delete Account",
+                    subtitle = if (activeProfile.isDefault) "Permanently delete all data for all accounts on this device" else "Permanently delete your profile and all your data",
                     icon = Icons.Rounded.DeleteForever,
                     isDestructive = true,
                     onClick = { showResetDialog = true }
@@ -371,7 +371,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showExportDialog = false },
             title = { Text("Export Data & Settings") },
-            text = { Text("Are you sure you want to export a binary backup of all your data and settings?") },
+            text = { Text(if (activeProfile.isDefault) "Export a backup of ALL user accounts?" else "Export a backup of YOUR data?") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -389,8 +389,8 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     if (showResetDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("Erase All Data & Settings?") },
-            text = { Text("This action cannot be undone. All your progress, custom themes, subjects, and settings will be permanently removed.", color = MaterialTheme.colorScheme.error) },
+            title = { Text(if (activeProfile.isDefault) "Erase All App Data?" else "Erase Data & Delete Account?") },
+            text = { Text(if (activeProfile.isDefault) "This action cannot be undone. ALL user accounts (except Main) and their data will be permanently removed." else "This action cannot be undone. Your profile and all your data will be permanently removed.", color = MaterialTheme.colorScheme.error) },
             confirmButton = {
                 TextButton(
                     onClick = {

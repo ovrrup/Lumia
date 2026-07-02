@@ -428,6 +428,11 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel
                             )
                         }
+                        
+                        composable("settings/streaks") {
+                            lumia.tracker.ui.screens.settings.StreakSettingsScreen(navController, viewModel)
+                        }
+
                         composable("settings/appearance") {
                             lumia.tracker.ui.screens.AppearanceScreen(
                                 navController = navController,

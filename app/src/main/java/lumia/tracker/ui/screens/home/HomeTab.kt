@@ -140,7 +140,6 @@ fun HomeTab(
     val context = LocalContext.current
 
     val featureQuickNotesEnabled by viewModel.featureQuickNotesEnabled.collectAsStateWithLifecycle()
-    val featureRecommendationsEnabled by viewModel.featureRecommendationsEnabled.collectAsStateWithLifecycle()
 
     var courseToEdit by remember { mutableStateOf<lumia.tracker.model.Course?>(null) }
     var subjectToEdit by remember { mutableStateOf<lumia.tracker.model.Subject?>(null) }
@@ -259,14 +258,6 @@ fun HomeTab(
                 }
             }
 
-            if (featureRecommendationsEnabled) {
-                item(key = "smart_recommendations") {
-                    lumia.tracker.ui.screens.home.RecommendationsCard(
-                        viewModel = viewModel,
-                        modifier = Modifier.animateItem()
-                    )
-                }
-            }
 
             if (betaNotes) {
                 item(key = "student_tools_title") {

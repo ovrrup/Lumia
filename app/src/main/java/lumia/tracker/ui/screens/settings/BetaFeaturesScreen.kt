@@ -189,16 +189,6 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
             // 1. Experimental Workflow
             SettingsGroupCard(title = "Experimental Workflow", icon = Icons.Rounded.Edit) {
                 val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
-                val featureRecommendationsEnabled by viewModel.featureRecommendationsEnabled.collectAsStateWithLifecycle()
-                SettingsToggleItem(
-                    title = "Smart Recommendations",
-                    subtitle = "Display serialized ML-based study recommendations in the Home tab.",
-                    checked = featureRecommendationsEnabled,
-                    icon = Icons.Rounded.Star,
-                    onCheckedChange = { handleToggle(it, "Smart Recommendations", "Enable personalized schedule adjustments on the Home tab.") { isChecked -> viewModel.updateFeatureRecommendationsEnabled(isChecked) } }
-                )
-                
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
                 SettingsToggleItem(
                     title = "Quick Notes Overlay",

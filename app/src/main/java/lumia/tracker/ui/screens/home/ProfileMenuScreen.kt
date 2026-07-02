@@ -231,6 +231,14 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                         icon = Icons.Rounded.Settings,
                         onClick = { navController.navigate("settings/system") }
                     )
+
+                    SettingsActionItemInCard(
+                        icon = androidx.compose.material.icons.Icons.Rounded.LocalFireDepartment,
+                        title = "Streak Goals & Visuals",
+                        subtitle = "Configure percentage limits, fire color, and liquid animations",
+                        onClick = { navController.navigate("settings/streaks") }
+                    )
+
                     
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                     

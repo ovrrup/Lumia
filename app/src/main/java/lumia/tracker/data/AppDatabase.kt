@@ -59,9 +59,9 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        fun getDatabase(context: Context): AppDatabase {
+        fun getDatabase(context: Context, forceProfileId: String? = null): AppDatabase {
             val profMgr = lumia.tracker.data.ProfileManager(context)
-            val profileId = profMgr.getActiveProfileId()
+            val profileId = forceProfileId ?: profMgr.getActiveProfileId()
             
             return instances[profileId] ?: synchronized(this) {
                 val dbName = if (profileId == "DEFAULT") "scholar_sync_database" else "scholar_sync_$profileId"

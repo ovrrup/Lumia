@@ -84,12 +84,13 @@ class ProfileManager(private val context: Context) {
     }
 
     fun getActiveProfile(): UserProfile {
-        val id = getActiveProfileId()
-        return getAllProfiles().find { it.id == id } ?: getAllProfiles().first()
+        
+        val activeId = getActiveProfileId()
+        return getAllProfiles().find { it.id == activeId } ?: getAllProfiles().first()
     }
 
-    fun getProfilePrefs(): SharedPreferences {
-        val id = getActiveProfileId()
+    fun getProfilePrefs(id: String = getActiveProfileId()): SharedPreferences {
+        
         val prefName = if (id == "DEFAULT") "lumia_prefs" else "lumia_prefs_$id"
         return context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
     }

@@ -101,22 +101,7 @@ class ScholarRepository(val dao: ScholarDao) {
     private val backupAdapter = moshi.adapter(ScholarBackup::class.java)
 
     // Export
-    suspend fun exportDataToStream(outputStream: OutputStream, settings: Map<String, String>) {
-        val backup = ScholarBackup(
-            courses = dao.exportAllCourses(),
-            subjects = dao.exportAllSubjects(),
-            topics = dao.exportAllTopics(),
-            assignments = dao.exportAllAssignments(),
-            settings = settings,
-            attendance = dao.exportAllAttendance(),
-            pomodoro = dao.exportAllPomodoro(),
-            actionLogs = dao.exportAllActionLogs(),
-            notes = dao.exportAllNotes(),
-            chapters = dao.exportAllChapters(),
-            tasks = dao.exportAllTasks(),
-            attachments = dao.exportAllAttachments(),
-            testRecords = dao.exportAllTestRecords()
-        )
+    suspend fun exportDataToStream(outputStream: OutputStream, backup: ScholarBackup) {
         // Secure binary format: wrap outputStream in GZIPOutputStream for compression and obfuscation
         java.util.zip.GZIPOutputStream(outputStream).use { gzos ->
             gzos.writer().use { writer ->
@@ -126,7 +111,7 @@ class ScholarRepository(val dao: ScholarDao) {
     }
 
     // Import
-    suspend fun importDataFromStream(inputStream: InputStream): Map<String, String>? {
+        suspend fun importDataFromStream(inputStream: InputStream): ScholarBackup {
         val bis = java.io.BufferedInputStream(inputStream)
         bis.mark(2)
         val header = ByteArray(2)
@@ -134,128 +119,40 @@ class ScholarRepository(val dao: ScholarDao) {
         bis.reset()
 
         val json = if (readBytes == 2 && header[0] == 0x1f.toByte() && header[1] == 0x8b.toByte()) {
-            // Secure compressed binary GZIP stream
             java.util.zip.GZIPInputStream(bis).reader().use { it.readText() }
         } else {
-            // Fallback plain-text JSON stream for older backups
             bis.reader().use { it.readText() }
         }
         val backup = backupAdapter.fromJson(json) ?: throw IllegalArgumentException("Invalid backup file")
-        
-        // 1. Clear database securely
-        dao.clearCourses()
-        dao.clearSubjects()
-        dao.clearChapters()
-        dao.clearTopics()
-        dao.clearAssignments()
-        dao.clearAttendance()
-        dao.clearPomodoro()
-        dao.clearActionLogs()
-        dao.clearNotes()
-        dao.clearTasks()
-        dao.clearAttachments()
-        dao.clearTestRecords()
-
-        // 2. Insert Subjects and map old IDs to newly generated auto-increment IDs
-        val oldToNewSubjectId = mutableMapOf<Int, Int>()
-        backup.subjects.forEach { subject ->
-            val oldId = subject.id
-            val newId = dao.insertSubject(subject.copy(id = 0)).toInt()
-            oldToNewSubjectId[oldId] = newId
-        }
-
-        // 3. Insert Courses and map old IDs to newly generated auto-increment IDs with remapped subjectId
-        val oldToNewCourseId = mutableMapOf<Int, Int>()
-        backup.courses.forEach { course ->
-            val oldId = course.id
-            val newSubjectId = course.subjectId?.let { oldToNewSubjectId[it] } ?: course.subjectId
-            val newId = dao.insertCourse(course.copy(id = 0, subjectId = newSubjectId)).toInt()
-            oldToNewCourseId[oldId] = newId
-        }
-
-        // 4. Insert Chapters with mapped Subject IDs
-        val oldToNewChapterId = mutableMapOf<Int, Int>()
-        backup.chapters?.forEach { chapter ->
-            val oldId = chapter.id
-            val newSubjectId = oldToNewSubjectId[chapter.subjectId] ?: chapter.subjectId
-            val newId = dao.insertChapter(chapter.copy(id = 0, subjectId = newSubjectId)).toInt()
-            oldToNewChapterId[oldId] = newId
-        }
-
-        // 5. Insert Topics with remapped Subject IDs and Chapter IDs
-        val oldToNewTopicId = mutableMapOf<Int, Int>()
-        backup.topics.forEach { topic ->
-            val oldId = topic.id
-            val newSubjectId = oldToNewSubjectId[topic.subjectId] ?: topic.subjectId
-            val newChapterId = topic.chapterId?.let { oldToNewChapterId[it] } ?: topic.chapterId
-            val newId = dao.insertTopic(topic.copy(id = 0, subjectId = newSubjectId, chapterId = newChapterId)).toInt()
-            oldToNewTopicId[oldId] = newId
-        }
-
-        // 6. Insert Assignments with remapped Course IDs
-        val oldToNewAssignmentId = mutableMapOf<Int, Int>()
-        backup.assignments.forEach { assignment ->
-            val oldId = assignment.id
-            val newCourseId = oldToNewCourseId[assignment.courseId] ?: assignment.courseId
-            val newSubjectId = assignment.subjectId?.let { oldToNewSubjectId[it] } ?: assignment.subjectId
-            val newId = dao.insertAssignment(assignment.copy(id = 0, courseId = newCourseId, subjectId = newSubjectId)).toInt()
-            oldToNewAssignmentId[oldId] = newId
-        }
-
-        // 7. Insert Tasks with remapped dependencies
-        val oldToNewTaskId = mutableMapOf<Int, Int>()
-        backup.tasks?.forEach { task ->
-            val oldId = task.id
-            val newSubjectId = task.subjectId?.let { oldToNewSubjectId[it] } ?: task.subjectId
-            val newChapterId = task.chapterId?.let { oldToNewChapterId[it] } ?: task.chapterId
-            val newTopicId = task.topicId?.let { oldToNewTopicId[it] } ?: task.topicId
-            val newCourseId = task.courseId?.let { oldToNewCourseId[it] } ?: task.courseId
-            val newAssignmentId = task.assignmentId?.let { oldToNewAssignmentId[it] } ?: task.assignmentId
-            val newId = dao.insertTask(task.copy(id = 0, subjectId = newSubjectId, chapterId = newChapterId, topicId = newTopicId, courseId = newCourseId, assignmentId = newAssignmentId)).toInt()
-            oldToNewTaskId[oldId] = newId
-        }
-
-        // 8. Insert Pomodoro Sessions with remapped IDs
-        backup.pomodoro?.forEach { session ->
-            val newSubjectId = session.subjectId?.let { oldToNewSubjectId[it] } ?: session.subjectId
-            val newCourseId = session.courseId?.let { oldToNewCourseId[it] } ?: session.courseId
-            val newAssignmentId = session.assignmentId?.let { oldToNewAssignmentId[it] } ?: session.assignmentId
-            val newTaskId = session.taskId?.let { oldToNewTaskId[it] } ?: session.taskId
-            dao.insertPomodoroSession(session.copy(id = 0, subjectId = newSubjectId, courseId = newCourseId, assignmentId = newAssignmentId, taskId = newTaskId))
-        }
-
-        // 9. Insert Attendance Records with remapped Course IDs
-        backup.attendance?.forEach { record ->
-            val newCourseId = oldToNewCourseId[record.courseId] ?: record.courseId
-            dao.insertAttendanceRecord(record.copy(id = 0, courseId = newCourseId))
-        }
-
-        // 10. Insert Action Logs
-        backup.actionLogs?.forEach { log ->
-            dao.insertActionLog(log.copy(id = 0))
-        }
-
-        // 11. Insert Notes with mapped Course/Subject IDs
-        backup.notes?.forEach { note ->
-            val newCourseId = note.courseId?.let { oldToNewCourseId[it] } ?: note.courseId
-            val newSubjectId = note.subjectId?.let { oldToNewSubjectId[it] } ?: note.subjectId
-            dao.insertNote(note.copy(id = 0, courseId = newCourseId, subjectId = newSubjectId))
-        }
-
-        // 12. Insert Attachments with mapped Course/Subject IDs
-        backup.attachments?.forEach { attachment ->
-            val newCourseId = attachment.courseId?.let { oldToNewCourseId[it] } ?: attachment.courseId
-            val newSubjectId = attachment.subjectId?.let { oldToNewSubjectId[it] } ?: attachment.subjectId
-            dao.insertAttachment(attachment.copy(id = 0, courseId = newCourseId, subjectId = newSubjectId))
-        }
-
-        // 13. Insert Test Records with mapped Course/Subject IDs
-        backup.testRecords?.forEach { test ->
-            val newCourseId = test.courseId?.let { oldToNewCourseId[it] } ?: test.courseId
-            val newSubjectId = test.subjectId?.let { oldToNewSubjectId[it] } ?: test.subjectId
-            dao.insertTestRecord(test.copy(id = 0, courseId = newCourseId, subjectId = newSubjectId))
-        }
-
-        return backup.settings
+        return backup
     }
+    suspend fun restoreBackupToDao(backup: lumia.tracker.model.ScholarBackup, targetDao: lumia.tracker.data.ScholarDao) {
+        targetDao.clearCourses()
+        targetDao.clearSubjects()
+        targetDao.clearChapters()
+        targetDao.clearTopics()
+        targetDao.clearAssignments()
+        targetDao.clearAttendance()
+        targetDao.clearPomodoro()
+        targetDao.clearActionLogs()
+        targetDao.clearNotes()
+        targetDao.clearTasks()
+        targetDao.clearAttachments()
+        targetDao.clearTestRecords()
+
+        backup.courses.forEach { targetDao.insertCourse(it) }
+        backup.subjects.forEach { targetDao.insertSubject(it) }
+        backup.chapters?.forEach { targetDao.insertChapter(it) }
+        backup.topics.forEach { targetDao.insertTopic(it) }
+        backup.assignments.forEach { targetDao.insertAssignment(it) }
+        backup.attendance?.forEach { targetDao.insertAttendanceRecord(it) }
+        backup.pomodoro?.forEach { targetDao.insertPomodoroSession(it) }
+        backup.actionLogs?.forEach { targetDao.insertActionLog(it) }
+        backup.notes?.forEach { targetDao.insertNote(it) }
+        backup.tasks?.forEach { targetDao.insertTask(it) }
+        backup.attachments?.forEach { targetDao.insertAttachment(it) }
+        backup.testRecords?.forEach { targetDao.insertTestRecord(it) }
+    }
+
 }
+

@@ -177,6 +177,150 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("onboarding_completed", true).apply()
     }
 
+    
+    private val _streakPercentage = MutableStateFlow(0f)
+    val streakPercentage = _streakPercentage.asStateFlow()
+
+    private val _streakCurrent = MutableStateFlow(prefs.getInt("streak_current", 0))
+    val streakCurrent = _streakCurrent.asStateFlow()
+
+    private val _streakLongest = MutableStateFlow(prefs.getInt("streak_longest", 0))
+    val streakLongest = _streakLongest.asStateFlow()
+
+    private val _streakRequirementTasks = MutableStateFlow(prefs.getInt("streak_req_tasks", 3))
+    val streakRequirementTasks = _streakRequirementTasks.asStateFlow()
+
+    private val _streakRequirementAssignments = MutableStateFlow(prefs.getInt("streak_req_assignments", 1))
+    val streakRequirementAssignments = _streakRequirementAssignments.asStateFlow()
+
+    private val _streakRequirementStudyMins = MutableStateFlow(prefs.getInt("streak_req_study_mins", 30))
+    val streakRequirementStudyMins = _streakRequirementStudyMins.asStateFlow()
+
+    private val _streakPartialThreshold = MutableStateFlow(prefs.getFloat("streak_partial_threshold", 0.5f))
+    val streakPartialThreshold = _streakPartialThreshold.asStateFlow()
+
+    private val _streakProgressColor = MutableStateFlow(prefs.getString("streak_progress_color", "#FF5722") ?: "#FF5722")
+    val streakProgressColor = _streakProgressColor.asStateFlow()
+
+    private val _streakBrightness = MutableStateFlow(prefs.getFloat("streak_brightness", 1.0f))
+    val streakBrightness = _streakBrightness.asStateFlow()
+
+    private val _streakAnimationOverride = MutableStateFlow(prefs.getString("streak_anim_override", "Default") ?: "Default")
+    val streakAnimationOverride = _streakAnimationOverride.asStateFlow()
+
+    fun updateStreakReqTasks(count: Int) {
+        _streakRequirementTasks.value = count
+        prefs.edit().putInt("streak_req_tasks", count).apply()
+        calculateTodayStreakProgress()
+    }
+    
+    fun updateStreakReqAssignments(count: Int) {
+        _streakRequirementAssignments.value = count
+        prefs.edit().putInt("streak_req_assignments", count).apply()
+        calculateTodayStreakProgress()
+    }
+
+    fun updateStreakReqStudyMins(mins: Int) {
+        _streakRequirementStudyMins.value = mins
+        prefs.edit().putInt("streak_req_study_mins", mins).apply()
+        calculateTodayStreakProgress()
+    }
+    
+    fun updateStreakPartialThreshold(thresh: Float) {
+        _streakPartialThreshold.value = thresh
+        prefs.edit().putFloat("streak_partial_threshold", thresh).apply()
+        calculateTodayStreakProgress()
+    }
+    
+    fun updateStreakProgressColor(colorHex: String) {
+        _streakProgressColor.value = colorHex
+        prefs.edit().putString("streak_progress_color", colorHex).apply()
+    }
+    
+    fun updateStreakBrightness(brightness: Float) {
+        _streakBrightness.value = brightness
+        prefs.edit().putFloat("streak_brightness", brightness).apply()
+    }
+    
+    fun updateStreakAnimationOverride(anim: String) {
+        _streakAnimationOverride.value = anim
+        prefs.edit().putString("streak_anim_override", anim).apply()
+    }
+
+    private fun calculateTodayStreakProgress() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val todayStart = java.util.Calendar.getInstance().apply {
+                set(java.util.Calendar.HOUR_OF_DAY, 0)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            val todayEnd = todayStart + 86400000L
+
+            val dao = repository.dao
+            val tasks = dao.exportAllTasks()
+            val assignments = dao.exportAllAssignments()
+            val pomodoros = dao.exportAllPomodoro()
+
+            val tasksToday = tasks.filter { it.dueDateMillis != null && it.dueDateMillis >= todayStart && it.dueDateMillis < todayEnd }
+            val assignmentsToday = assignments.filter { it.dueDateMillis >= todayStart && it.dueDateMillis < todayEnd }
+            val pomosToday = pomodoros.filter { it.dateMillis >= todayStart && it.dateMillis < todayEnd }
+
+            val plannedTasks = tasksToday.size
+            val plannedAssignments = assignmentsToday.size
+            
+            // Prioritize planned vs required
+            val requiredTasks = maxOf(plannedTasks, _streakRequirementTasks.value)
+            val requiredAssignments = maxOf(plannedAssignments, _streakRequirementAssignments.value)
+            val requiredPomos = _streakRequirementStudyMins.value
+            
+            val doneTasks = tasksToday.count { it.isCompleted }
+            val doneAssignments = assignmentsToday.count { it.isCompleted }
+            val donePomos = pomosToday.sumOf { it.durationMinutes }
+            
+            var totalRequired = 0f
+            var totalDone = 0f
+            
+            if (requiredTasks > 0) { totalRequired += 1f; totalDone += doneTasks.toFloat() / requiredTasks.toFloat() }
+            if (requiredAssignments > 0) { totalRequired += 1f; totalDone += doneAssignments.toFloat() / requiredAssignments.toFloat() }
+            if (requiredPomos > 0) { totalRequired += 1f; totalDone += donePomos.toFloat() / requiredPomos.toFloat() }
+            
+            val percentage = if (totalRequired == 0f) 0f else (totalDone / totalRequired).coerceIn(0f, 1f)
+            
+            withContext(Dispatchers.Main) {
+                _streakPercentage.value = percentage
+                
+                // Check if streak applies
+                val lastStreakDate = prefs.getLong("streak_last_date", 0L)
+                val threshold = _streakPartialThreshold.value
+                
+                if (percentage >= threshold && lastStreakDate < todayStart) {
+                    // Update streak
+                    val isConsecutive = (todayStart - lastStreakDate) <= 86400000L * 2
+                    val newCurrent = if (isConsecutive) _streakCurrent.value + 1 else 1
+                    
+                    _streakCurrent.value = newCurrent
+                    if (newCurrent > _streakLongest.value) {
+                        _streakLongest.value = newCurrent
+                        prefs.edit().putInt("streak_longest", newCurrent).apply()
+                    }
+                    
+                    prefs.edit()
+                        .putInt("streak_current", newCurrent)
+                        .putLong("streak_last_date", todayStart)
+                        .apply()
+                } else if (percentage < threshold && lastStreakDate < todayStart) {
+                    // Reset if yesterday was missed
+                    val yesterday = todayStart - 86400000L
+                    if (lastStreakDate < yesterday) {
+                        _streakCurrent.value = 0
+                        prefs.edit().putInt("streak_current", 0).apply()
+                    }
+                }
+            }
+        }
+    }
+
     private val _themeMode = MutableStateFlow(prefs.getString("theme_mode", "System") ?: "System")
     val themeMode = _themeMode.asStateFlow()
 
@@ -399,13 +543,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _systemPomodoroAutoLog = MutableStateFlow(prefs.getBoolean("system_pomodoro_auto_log", true))
     val systemPomodoroAutoLog = _systemPomodoroAutoLog.asStateFlow()
 
-    private val _featureRecommendationsEnabled = MutableStateFlow(prefs.getBoolean("feature_recommendations_enabled", true))
-    val featureRecommendationsEnabled = _featureRecommendationsEnabled.asStateFlow()
-
-    fun updateFeatureRecommendationsEnabled(enabled: Boolean) {
-        _featureRecommendationsEnabled.value = enabled
-        prefs.edit().putBoolean("feature_recommendations_enabled", enabled).apply()
-    }
 
     fun submitRecommendationFeedback(recommendationId: String, rating: Int) {
         // rating: 1 for positive, -1 for negative
@@ -1095,6 +1232,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             )
             logAction("Added course: $name")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1103,6 +1241,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             repository.deleteCourse(course)
             logAction("Deleted course: ${course.name}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1111,6 +1250,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             repository.updateCourse(course)
             logAction("Updated course: ${course.name}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1199,6 +1339,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             }
             logAction("Added task: ${task.title}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1209,6 +1350,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             val actionText = if (newlyCompleted) "Completed task: ${task.title}" else "Unmarked task: ${task.title}"
             logAction(actionText)
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1217,6 +1359,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             repository.updateTask(task)
             logAction("Updated task: ${task.title}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1224,6 +1367,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.updateTasks(tasks)
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1232,6 +1376,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             repository.deleteTask(task)
             logAction("Deleted task: ${task.title}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1244,6 +1389,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             lumia.tracker.util.ReminderScheduler.scheduleReminder(context, newId, title, desc, interconnections, dueDate)
             logAction("Added assignment: $title ($category)")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1254,6 +1400,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             val actionText = if (newlyCompleted) "Completed assignment: ${assignment.title}" else "Unmarked assignment: ${assignment.title}"
             logAction(actionText)
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1261,6 +1408,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.deleteAssignment(assignment)
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1269,6 +1417,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             repository.updateAssignment(assignment)
             logAction("Updated assignment: ${assignment.title}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1276,6 +1425,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.updateAssignments(assignments)
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1321,9 +1471,9 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         notificationManager.notify(notifId, notification)
     }
 
-    private fun gatherSettings(): Map<String, String> {
+    private fun gatherSettings(pref: android.content.SharedPreferences = prefs): Map<String, String> {
         val map = mutableMapOf<String, String>()
-        prefs.all.forEach { (key, value) ->
+        pref.all.forEach { (key, value) ->
             map[key] = value.toString()
         }
         return map
@@ -1435,13 +1585,74 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         refreshThemeBrightness()
     }
 
-    fun exportData(uri: Uri) {
+        fun exportData(uri: Uri, exportAll: Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val settings = gatherSettings()
-                getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
-                    repository.exportDataToStream(os, settings)
+                val moshi = com.squareup.moshi.Moshi.Builder().add(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()
+                val backupAdapter = moshi.adapter(lumia.tracker.model.ScholarBackup::class.java)
+                val fullBackupAdapter = moshi.adapter(lumia.tracker.model.FullAppBackup::class.java)
+
+                if (exportAll && activeProfile.value.isDefault) {
+                    val allProfs = profileManager.getAllProfiles()
+                    val profileBackupsJson = mutableMapOf<String, String>()
+                    for (prof in allProfs) {
+                        val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), prof.id)
+                        val profDao = db.scholarDao()
+                        val pref = profileManager.getProfilePrefs(prof.id)
+                        val sets = gatherSettings(pref)
+                        val pBackup = lumia.tracker.model.ScholarBackup(
+                            courses = profDao.exportAllCourses(),
+                            subjects = profDao.exportAllSubjects(),
+                            topics = profDao.exportAllTopics(),
+                            assignments = profDao.exportAllAssignments(),
+                            settings = sets,
+                            attendance = profDao.exportAllAttendance(),
+                            pomodoro = profDao.exportAllPomodoro(),
+                            actionLogs = profDao.exportAllActionLogs(),
+                            notes = profDao.exportAllNotes(),
+                            chapters = profDao.exportAllChapters(),
+                            tasks = profDao.exportAllTasks(),
+                            attachments = profDao.exportAllAttachments(),
+                            testRecords = profDao.exportAllTestRecords(),
+                            profile = prof
+                        )
+                        profileBackupsJson[prof.id] = backupAdapter.toJson(pBackup)
+                    }
+                    val fullAppBackup = lumia.tracker.model.FullAppBackup(
+                        profiles = allProfs,
+                        activeProfileId = profileManager.getActiveProfileId(),
+                        globalPrefs = emptyMap(),
+                        profileBackupsJson = profileBackupsJson
+                    )
+                    
+                    val mainBackup = lumia.tracker.model.ScholarBackup(isFullAppBackup = true, fullAppBackupJson = fullBackupAdapter.toJson(fullAppBackup))
+                    
+                    getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
+                        repository.exportDataToStream(os, mainBackup)
+                    }
+                } else {
+                    val currentProf = profileManager.getActiveProfile()
+                    val singleBackup = lumia.tracker.model.ScholarBackup(
+                        courses = repository.dao.exportAllCourses(),
+                        subjects = repository.dao.exportAllSubjects(),
+                        topics = repository.dao.exportAllTopics(),
+                        assignments = repository.dao.exportAllAssignments(),
+                        settings = gatherSettings(),
+                        attendance = repository.dao.exportAllAttendance(),
+                        pomodoro = repository.dao.exportAllPomodoro(),
+                        actionLogs = repository.dao.exportAllActionLogs(),
+                        notes = repository.dao.exportAllNotes(),
+                        chapters = repository.dao.exportAllChapters(),
+                        tasks = repository.dao.exportAllTasks(),
+                        attachments = repository.dao.exportAllAttachments(),
+                        testRecords = repository.dao.exportAllTestRecords(),
+                        profile = currentProf
+                    )
+                    getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
+                        repository.exportDataToStream(os, singleBackup)
+                    }
                 }
+                
                 _importExportStatus.value = "Secure backup binary package exported successfully"
             } catch (e: Exception) {
                 _importExportStatus.value = "Export failed: ${e.message}"
@@ -1449,19 +1660,75 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun importData(uri: Uri) {
+        fun importData(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                var settings: Map<String, String>? = null
+                var mainBackup: lumia.tracker.model.ScholarBackup? = null
                 getApplication<Application>().contentResolver.openInputStream(uri)?.use { ins ->
-                    settings = repository.importDataFromStream(ins)
+                    mainBackup = repository.importDataFromStream(ins)
                 }
-                loadSettings(settings)
+                
+                if (mainBackup == null) throw IllegalArgumentException("No data found")
+                
+                val moshi = com.squareup.moshi.Moshi.Builder().add(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()
+                
+                if (mainBackup!!.isFullAppBackup && mainBackup!!.fullAppBackupJson != null) {
+                    val fullBackupAdapter = moshi.adapter(lumia.tracker.model.FullAppBackup::class.java)
+                    val backupAdapter = moshi.adapter(lumia.tracker.model.ScholarBackup::class.java)
+                    val fullBackup = fullBackupAdapter.fromJson(mainBackup!!.fullAppBackupJson!!) ?: throw IllegalArgumentException("Invalid full backup")
+                    
+                    // Clear existing profiles
+                    val currentProfs = profileManager.getAllProfiles()
+                    for (prof in currentProfs) {
+                        if (prof.id != "DEFAULT") {
+                            profileManager.deleteProfile(prof.id)
+                        }
+                    }
+                    
+                    // Restore profiles
+                    for (prof in fullBackup.profiles) {
+                        if (prof.id == "DEFAULT") continue
+                        profileManager.addProfile(prof.name, prof.avatarEmoji, prof.alias, prof.starterTheme)
+                    }
+                    // Wait, addProfile generates new ID. We should update profiles!
+                    // Let's just save the entire list directly to ProfileManager via reflection or just use prefs
+                    val profListJson = moshi.adapter<List<lumia.tracker.model.UserProfile>>(com.squareup.moshi.Types.newParameterizedType(List::class.java, lumia.tracker.model.UserProfile::class.java)).toJson(fullBackup.profiles)
+                    profileManager.getProfilePrefs("").edit().putString("profiles_json", profListJson).commit() // Wait, ProfileManager uses global_profiles!
+                    val globalPrefs = getApplication<Application>().getSharedPreferences("global_profiles", android.content.Context.MODE_PRIVATE)
+                    globalPrefs.edit().putString("profiles_json", profListJson).commit()
+                    profileManager.setActiveProfileId(fullBackup.activeProfileId)
+                    
+                    // Restore each profile's data
+                    for ((profId, pJson) in fullBackup.profileBackupsJson) {
+                        val pBackup = backupAdapter.fromJson(pJson) ?: continue
+                        val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), profId)
+                        val pDao = db.scholarDao()
+                        repository.restoreBackupToDao(pBackup, pDao)
+                        
+                        // Restore settings
+                        pBackup.settings?.let { sets ->
+                            val pref = profileManager.getProfilePrefs(profId)
+                            val editor = pref.edit()
+                            sets.forEach { (key, value) -> editor.putString(key, value) }
+                            editor.commit()
+                        }
+                    }
+                    
+                } else {
+                    // Single profile restore
+                    repository.restoreBackupToDao(mainBackup!!, repository.dao)
+                    loadSettings(mainBackup!!.settings)
+                }
+
                 verifyFeatureEntitlements()
+        calculateTodayStreakProgress()
                 _importExportStatus.value = "Secure backup package imported and restored successfully"
+                activeProfile.value = profileManager.getActiveProfile()
+                allProfiles.value = profileManager.getAllProfiles()
                 lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
             } catch (e: Exception) {
-                _importExportStatus.value = "Import failed: Invalid file or wrong format"
+                _importExportStatus.value = "Import failed: ${e.message}"
             }
         }
     }
@@ -1946,12 +2213,36 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("show_action_history", enabled).apply()
     }
 
-    fun clearAllData() {
+        fun clearAllData() {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.clearAllData()
-            repository.clearActionLogs()
-
-            prefs.edit().clear().apply()
+            val prof = activeProfile.value
+            if (prof.isDefault) {
+                // Main user: Erase all users' data. Delete secondary users entirely.
+                val allProfs = profileManager.getAllProfiles()
+                for (p in allProfs) {
+                    if (p.id != "DEFAULT") {
+                        // Clear their db and prefs
+                        val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), p.id)
+                        db.clearAllTables()
+                        profileManager.getProfilePrefs(p.id).edit().clear().apply()
+                        profileManager.deleteProfile(p.id)
+                    } else {
+                        // Clear main user data
+                        val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), p.id)
+                        db.clearAllTables()
+                        profileManager.getProfilePrefs(p.id).edit().clear().apply()
+                    }
+                }
+                allProfiles.value = profileManager.getAllProfiles()
+            } else {
+                // Secondary user: Erase their own data and delete their account
+                val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), prof.id)
+                db.clearAllTables()
+                profileManager.getProfilePrefs(prof.id).edit().clear().apply()
+                profileManager.deleteProfile(prof.id)
+                switchProfileAndRestart(getApplication(), "DEFAULT")
+                return@launch
+            }
 
             _themeMode.value = "System"
             _themeColor.value = "Ocean"
@@ -1967,31 +2258,18 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             _betaGlassUi.value = false
             _betaGlassDynamic.value = true
             _betaFrostGlass.value = true
-            _betaNavBarSizeControls.value = false
-            _navBarGlassLinkedToMain.value = true
-            _navBarGlassBackdropStyle.value = "Translucent"
-            _navBarGlassDynamic.value = true
-            _betaEnhancedHeader.value = false
-            _betaMinimalistMode.value = false
-            _betaDynamicBackground.value = false
-            refreshThemeBrightness()
-            _dynamicAppIcon.value = false
-            _betaBetterTexts.value = false
-            _betaBetterTextsPalette.value = true
-            _safetyPinEnabled.value = true
-            _safetyPinConflictWarning.value = true
-            _safetyPinRecommendations.value = true
-            _showActionHistory.value = true
-            _systemAutoLinkByName.value = true
-            _systemEnableSynergy.value = true
-            _systemAutoCreateSubject.value = false
-            _systemFuseSubjectsCourses.value = true
-            _systemAdvancedTasks.value = true
-            _systemPomodoroAutoLog.value = true
+            
+            _aodTrueAodEnabled.value = false
+            _aodTrueAodMode.value = "Clock"
+            _aodDimnessLevel.value = 0.95f
+            _aodSensitivity.value = "highest"
+            _aodLockTimeout.value = 30
+            _aodMotionSensitivity.value = 3.0f
+            
 
-            repository.insertActionLog(ActionLog(actionText = "Cleared all application data and settings"))
-            _importExportStatus.value = "All data and settings erased successfully"
+            _importExportStatus.value = "All data and settings erased successfully" 
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 }
