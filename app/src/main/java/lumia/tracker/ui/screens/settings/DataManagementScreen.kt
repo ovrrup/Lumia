@@ -99,7 +99,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
     val dbStats by viewModel.dbStatistics.collectAsStateWithLifecycle()
     val defragText by viewModel.defragStatus.collectAsStateWithLifecycle()
-    val isAdvancedUnlocked = true
+    
 
     val context = LocalContext.current
     var showResetDialog by remember { mutableStateOf(false) }
@@ -239,7 +239,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
             // Advanced Data Management Section (Plus Feature)
             SettingsGroupCard(title = "Advanced Schema & Diagnostics", icon = Icons.Rounded.Storage) {
-                if (isAdvancedUnlocked) {
+                
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             "SQLite Local Schema Metrics",
@@ -332,7 +332,6 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             )
                         }
                     }
-                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

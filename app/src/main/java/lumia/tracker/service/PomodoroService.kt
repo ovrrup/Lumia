@@ -474,7 +474,7 @@ class PomodoroService : Service() {
             android.util.Log.d("PomodoroService", "SAVED AUTOMATIC FOCUS SESSION TO DB: $durationMinutes mins")
 
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val rewardNotification = NotificationCompat.Builder(applicationContext, "pomodoro_service")
+            val completionNotification = NotificationCompat.Builder(applicationContext, "pomodoro_service")
                 .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
                 .setContentTitle(if (isFullCompletion) "Focus Completed!" else "Focus Saved!")
                 .setContentText("Locked in $durationMinutes min study.")
@@ -482,7 +482,7 @@ class PomodoroService : Service() {
                 .setAutoCancel(true)
                 .setColor(lumia.tracker.util.NotificationHelper.getColor(applicationContext))
                 .build()
-            notificationManager.notify(2003, rewardNotification)
+            notificationManager.notify(2003, completionNotification)
             
         } catch (e: Exception) {
             android.util.Log.e("PomodoroService", "Failed to log and award pomodoro session", e)

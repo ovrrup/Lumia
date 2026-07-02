@@ -145,7 +145,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             SettingsCategoryHeading(title = "Interconnections", icon = Icons.Rounded.Settings)
 
             SettingsGroupCard(title = "Course & Subject Integration", icon = Icons.Rounded.Settings) {
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Auto-Link by Name",
                     subtitle = "Automatically couple Courses and study Subjects together if they share the same name (case-insensitive) when no explicit association is set.",
                     checked = autoLinkByName,
@@ -155,7 +155,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Course Synergy Score",
                     subtitle = "Measure alignments between lectures and study topics using a Dynamic Synergy Gauge in details screens.",
                     checked = enableSynergy,
@@ -165,7 +165,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Auto-Create Associated Subject",
                     subtitle = "Automatically create a matching Study Subject whenever you enroll in/add a new academic Course.",
                     checked = autoCreateSubject,
@@ -175,7 +175,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Fuse Subjects & Courses",
                     subtitle = "Embed subjects within courses to simplify navigation. Turn off to display 'Subjects' as a separate bottom tab.",
                     checked = fuseSubjectsCourses,
@@ -185,7 +185,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Advanced Tasks & Linkages",
                     subtitle = "Enable complex task tracking, including multi-linking with courses and assignments, plus advanced sorting and cross-referencing.",
                     checked = advancedTasks,
@@ -199,7 +199,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             SettingsCategoryHeading(title = "Pomodoro Integration", icon = Icons.Rounded.Timer)
 
             SettingsGroupCard(title = "Timer & Environment Behaviors", icon = Icons.Rounded.Timer) {
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Auto-Log Focus Sessions",
                     subtitle = "Automatically register and log Pomodoro 'Work' sessions into the database productivity history log upon completion.",
                     checked = viewModel.systemPomodoroAutoLog.collectAsStateWithLifecycle().value,
@@ -246,7 +246,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             Spacer(modifier = Modifier.height(16.dp))
 
             SettingsGroupCard(title = "Period Structure", icon = Icons.Rounded.List) {
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Enable Target Periods",
                     subtitle = "Allows restricting pomodoro loops to a fixed target instead of infinite repetetion.",
                     checked = viewModel.pomodoroEnablePeriodTarget.collectAsStateWithLifecycle().value,

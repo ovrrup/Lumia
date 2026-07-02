@@ -31,14 +31,8 @@ class AssignmentMonitorWorker(
 
             val enableDailyDigest = prefs.getBoolean("notif_enable_daily_digest", true)
             val formalTone = prefs.getBoolean("notif_formal_tone", true)
-            val enableStreaks = prefs.getBoolean("notif_enable_streaks", true)
 
-            // 1. Streak checks
-            if (enableStreaks) {
-                checkStreaks(prefs, formalTone)
-            }
-
-            // 2. Daily digest (Deadlines for Assignments and Tasks)
+            // Daily digest (Deadlines for Assignments and Tasks)
             if (enableDailyDigest) {
                 val allAssignments = database.scholarDao().exportAllAssignments()
                 val allTasks = database.scholarDao().exportAllTasks()
@@ -124,28 +118,6 @@ class AssignmentMonitorWorker(
         }
     }
     
-    private fun checkStreaks(prefs: android.content.SharedPreferences, formalTone: Boolean) {
-        val lastActionDate = prefs.getString("last_action_date_str", "") ?: ""
-        val currentStreak = prefs.getInt("current_streak", 0)
-        
-        if (currentStreak > 0 && lastActionDate.isNotEmpty()) {
-            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-            val today = sdf.format(java.util.Date())
-            try {
-                val lastDate = sdf.parse(lastActionDate)
-                if (lastDate != null) {
-                    val diff = ((sdf.parse(today)?.time ?: System.currentTimeMillis()) - lastDate.time) / 86400000L
-                    if (diff == 1L) {
-                        // At risk of breaking the streak tomorrow if not continued
-                        val title = if (formalTone) "Maintain Your Streak" else "Don't Break the Streak!"
-                        val msg = if (formalTone) "Your current streak is $currentStreak days. Study today to keep it going." else "You've survived $currentStreak days! Don't be lazy today to ruin it!"
-                        sendNotification("scholar_streak_channel", 1002, title, msg, lumia.tracker.util.NotificationHelper.getSmallIcon(), lumia.tracker.util.NotificationHelper.getColor(context))
-                    }
-                }
-            } catch (e: Exception) { }
-        }
-    }
-
     private fun sendNotification(channelId: String, notifId: Int, title: String, text: String, iconRes: Int, color: Int) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

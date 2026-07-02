@@ -96,7 +96,6 @@ import lumia.tracker.ui.components.BouncyTextButton
 @Composable
 fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) {
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
-    val isPremiumUnlocked = true
     val context = androidx.compose.ui.platform.LocalContext.current
 
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
@@ -180,18 +179,17 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
                 
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Pure Black Canvas",
                     subtitle = "Apply solid pitch-black background inside dark render style",
                     checked = pureBlackMode,
                     icon = Icons.Rounded.DarkMode,
                     enabled = themeMode != "Light",
-                    unavailableReason = "Requires System/Dark mode options.",
                     onCheckedChange = {
                         if (true) {
                             viewModel.updatePureBlackMode(it)
                         } else {
-                            val msg = "Pure Black Canvas is a premium Appearance setting."
+                            val msg = "Pure Black Canvas is a Appearance setting."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
@@ -250,7 +248,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "More Rounds Mode",
                     subtitle = "Replace all sharp-edged geometries with bouncy, spherical rounded layouts",
                     checked = moreRounds,
@@ -259,7 +257,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         if (true) {
                             viewModel.updateMoreRounds(it)
                         } else {
-                            val msg = "More Rounds is a premium Appearance setting."
+                            val msg = "More Rounds is a Appearance setting."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
@@ -296,16 +294,16 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             // 2. Glass UI Engine Card (Animated entry)
             AnimatedVisibility(visible = !betaMinimalistMode) {
                 SettingsGroupCard(title = "Aesthetic Glass Engine", icon = Icons.Rounded.Palette) {
-                    SettingsPremiumToggleItem(
+                    SettingsToggleItem(
                         title = "Frosted Glass UI",
-                        subtitle = "Enable premium translucent glass textures across screen panels",
+                        subtitle = "Enable translucent glass textures across screen panels",
                         checked = betaGlassUi,
                         icon = Icons.Rounded.Palette,
                         onCheckedChange = {
                             if (true) {
                                 viewModel.updateBetaGlassUi(it)
                             } else {
-                                val msg = "Frosted Glass is a premium Appearance setting."
+                                val msg = "Frosted Glass is a Appearance setting."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                             }
                         }
@@ -319,14 +317,14 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         ) {
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                             
-                            SettingsPremiumToggleItem(
+                            SettingsToggleItem(
                                 title = "Dynamic Color Tinting",
                                 subtitle = "Blend glass texture directly with active theme shades",
                                 checked = betaGlassDynamic,
                                 onCheckedChange = { viewModel.updateBetaGlassDynamic(it) }
                             )
 
-                            SettingsPremiumToggleItem(
+                            SettingsToggleItem(
                                 title = "Soft Frost Glaze",
                                 subtitle = "Apply high-end satin texture blur to the primary panel layers",
                                 checked = betaFrostGlass,
@@ -468,7 +466,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
 
                 // Toggle for forced glass navbar style
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Independent Glass Backdrop",
                     subtitle = "Force glass satin backdrop overlay specifically on bottom bar even if global Frosted UI is off",
                     checked = navBarGlassForceEnabled,
@@ -477,7 +475,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         if (true) {
                             viewModel.updateNavBarGlassForceEnabled(it)
                         } else {
-                            val msg = "Independent Glass is a premium Appearance setting."
+                            val msg = "Independent Glass is a Appearance setting."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
@@ -490,7 +488,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
 
                     // Sync with Dynamic Glass UI Toggle
-                    SettingsPremiumToggleItem(
+                    SettingsToggleItem(
                         title = "Sync with Global Glass Style",
                         subtitle = "Link the bottom navigation bar color, style, and glass type directly to the system-wide Glass UI theme setting.",
                         checked = navBarGlassLinkedToMain,
@@ -517,7 +515,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
 
                         // Navbar Dynamic Color Tinting Toggle
-                        SettingsPremiumToggleItem(
+                        SettingsToggleItem(
                             title = "Ambient Accent Tinting",
                             subtitle = "Infuse primary theme color highlight directly into the navigation glass backplane rendering.",
                             checked = navBarGlassDynamic,
@@ -769,53 +767,45 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             // 4. Interface Tweaks Card
             SettingsGroupCard(title = "Interface Modifiers", icon = Icons.Rounded.Settings) {
-                val isMinimalistUnlocked = true
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Minimalist Focus Mode",
                     subtitle = "Force-off and lock complex visuals for intense studying focus",
                     checked = betaMinimalistMode,
                     icon = Icons.Rounded.Star,
-                    enabled = isMinimalistUnlocked,
-                    unavailableReason = if (!isMinimalistUnlocked) "Locked." else null,
+                    
                     onCheckedChange = { viewModel.updateBetaMinimalistMode(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                val isDynamicIconUnlocked = true
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "UI-based Launcher Icon",
                     subtitle = "Match home screen app icon style with the active Lumia color scheme",
                     checked = dynamicAppIcon,
                     icon = Icons.Rounded.Palette,
-                    enabled = isDynamicIconUnlocked,
-                    unavailableReason = if (!isDynamicIconUnlocked) "Locked." else null,
+                    
                     onCheckedChange = { viewModel.updateDynamicAppIcon(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                val isEnhancedBlurUnlocked = true
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Enhanced Blur Navigation",
                     subtitle = "Apply a polished satin translucent backdrop to primary navigation header",
                     checked = betaEnhancedHeader,
-                    enabled = !betaMinimalistMode && isEnhancedBlurUnlocked,
+                    enabled = !betaMinimalistMode ,
                     icon = Icons.Rounded.Settings,
-                    unavailableReason = if (!isEnhancedBlurUnlocked) "Locked." else "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { viewModel.updateBetaEnhancedHeader(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                val isDynamicLightingUnlocked = true
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Dynamic Lighting Background",
                     subtitle = "Soft, vibrant animated background gradient shifts",
                     checked = betaDynamicBackground,
-                    enabled = !betaMinimalistMode && isDynamicLightingUnlocked,
+                    enabled = !betaMinimalistMode ,
                     icon = Icons.Rounded.Check,
-                    unavailableReason = if (!isDynamicLightingUnlocked) "Locked." else "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
                 )
 
@@ -872,25 +862,23 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             // 5. Legibility & Typography Card
             SettingsGroupCard(title = "Legibility & Typography", icon = Icons.Rounded.Edit) {
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Better Texts Rendering",
                     subtitle = "Enhance text readability, high contrasts and aesthetic typography",
                     checked = betaBetterTexts,
                     icon = Icons.Rounded.Edit,
                     enabled = !betaMinimalistMode,
-                    unavailableReason = "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { viewModel.updateBetaBetterTexts(it) }
                 )
 
                 AnimatedVisibility(visible = betaBetterTexts && !betaMinimalistMode) {
                     Column(modifier = Modifier.padding(start = 12.dp, top = 8.dp)) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-                        SettingsPremiumToggleItem(
+                        SettingsToggleItem(
                             title = "Complex Palette Text Shades",
                             subtitle = "Render text with warm color palette tones instead of absolute white/black",
                             checked = betaBetterTextsPalette,
                             enabled = betaBetterTexts && !betaMinimalistMode,
-                            unavailableReason = if (betaMinimalistMode) "Locked by Minimalist Focus Mode." else "Requires 'Better Texts Rendering' to be enabled.",
                             onCheckedChange = { viewModel.updateBetaBetterTextsPalette(it) }
                         )
                     }

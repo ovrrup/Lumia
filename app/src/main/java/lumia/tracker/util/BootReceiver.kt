@@ -63,7 +63,7 @@ class BootReceiver : BroadcastReceiver() {
                         }
                     }
                     
-                    // Trigger the monitor worker to ensure streaks, digest, and class attendance timings are properly configured for the current day
+                    // Trigger the monitor worker to ensure digest, and class attendance timings are properly configured for the current day
                     val workRequest = androidx.work.OneTimeWorkRequestBuilder<lumia.tracker.worker.AssignmentMonitorWorker>().build()
                     androidx.work.WorkManager.getInstance(context).enqueueUniqueWork("boot_assignment_monitor", androidx.work.ExistingWorkPolicy.REPLACE, workRequest)
                     

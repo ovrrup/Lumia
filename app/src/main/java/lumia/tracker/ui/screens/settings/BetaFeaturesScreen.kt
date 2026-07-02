@@ -178,54 +178,19 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
             }
         }
     ) { padding ->
-        val isUnlocked = true
-        if (!isUnlocked) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(Modifier.height(48.dp))
-                Icon(
-                    Icons.Rounded.Lock,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(72.dp)
-                )
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    "Mad Scientist Lab Locked",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(Modifier.height(8.dp))
-                val msg = "Experimental beta features and cutting-edge system options."
-                Text(
-                    msg,
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(24.dp))
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
 
-                // 1. Experimental Workflow
+            // 1. Experimental Workflow
             SettingsGroupCard(title = "Experimental Workflow", icon = Icons.Rounded.Edit) {
                 val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
                 val featureRecommendationsEnabled by viewModel.featureRecommendationsEnabled.collectAsStateWithLifecycle()
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Smart Recommendations",
                     subtitle = "Display serialized ML-based study recommendations in the Home tab.",
                     checked = featureRecommendationsEnabled,
@@ -235,7 +200,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Quick Notes Overlay",
                     subtitle = "Draft scratchpad canvas for immediate raw notes overlay panel.",
                     checked = betaNotes,
@@ -249,20 +214,19 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
             SettingsGroupCard(title = "Display Settings & Hooks", icon = Icons.Rounded.Settings) {
                 val betaMinimalistMode by viewModel.betaMinimalistMode.collectAsStateWithLifecycle()
                 val betaNavBarSizeControls by viewModel.betaNavBarSizeControls.collectAsStateWithLifecycle()
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Advanced NavBar Size Controls",
                     subtitle = "Expose precise custom sizing and shape sliders for the bottom navigation bar.",
                     checked = betaNavBarSizeControls,
                     icon = Icons.Rounded.Straighten,
                     enabled = !betaMinimalistMode,
-                    unavailableReason = "Locked by Minimalist Focus Mode.",
                     onCheckedChange = { handleToggle(it, "Advanced NavBar Size Controls", "Reveal precise geometry and padding sliders inside the design settings.") { isChecked -> viewModel.updateBetaNavBarSizeControls(isChecked) } }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
                 val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Display Action History",
                     subtitle = "Integrate detailed reactive logs list inside Analytics interface",
                     checked = showActionHistory,
@@ -272,7 +236,6 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            }
         }
     }
 }

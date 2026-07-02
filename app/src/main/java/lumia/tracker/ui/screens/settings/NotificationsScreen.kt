@@ -99,7 +99,6 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
     val context = androidx.compose.ui.platform.LocalContext.current
     val notifFormalTone by viewModel.notifFormalTone.collectAsStateWithLifecycle()
     val notifEnableDeadlines by viewModel.notifEnableDeadlines.collectAsStateWithLifecycle()
-    val notifEnableStreaks by viewModel.notifEnableStreaks.collectAsStateWithLifecycle()
     val notifEnableClasses by viewModel.notifEnableClasses.collectAsStateWithLifecycle()
     val notifEnableDailyDigest by viewModel.notifEnableDailyDigest.collectAsStateWithLifecycle()
 
@@ -150,7 +149,7 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
             lumia.tracker.ui.components.BatteryOptimizationPermissionPanel()
             
             SettingsGroupCard(title = "Notification Configuration", icon = Icons.Rounded.Notifications) {
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Formal Notification Tone",
                     subtitle = if (notifFormalTone) "Notifications will sound polite and professional" else "Notifications will sound taunting and strict to push you harder!",
                     checked = notifFormalTone,
@@ -167,15 +166,6 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
                     subtitle = "Get notified before assignment and task deadlines",
                     checked = notifEnableDeadlines,
                     onCheckedChange = { viewModel.updateNotifEnableDeadlines(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                SettingsToggleItem(
-                    title = "Streak Maintenance",
-                    subtitle = "Warnings when streak is at risk, and alerts on updates",
-                    checked = notifEnableStreaks,
-                    onCheckedChange = { viewModel.updateNotifEnableStreaks(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))

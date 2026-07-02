@@ -435,14 +435,13 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                                 0
                                             }
                                             if (studiedMinutes > 0 && modeString == "WORK") {
-                                                // viewModel.addPomodoroSession(
-                                                //     durationMinutes = studiedMinutes,
-                                                //     subjectId = selectedSubjectId,
-                                                //     courseId = selectedCourseId,
-                                                //     assignmentId = selectedAssignmentId,
-                                                //     taskId = selectedTaskId
-                                                // )
-                                                // viewModel.postNotification("Focus Completed!", "Saved session: $studiedMinutes min of focused study! You earned experience.", "POINTS")
+                                                viewModel.addPomodoroSession(
+                                                    durationMinutes = studiedMinutes,
+                                                    subjectId = selectedSubjectId,
+                                                    courseId = selectedCourseId,
+                                                    assignmentId = selectedAssignmentId,
+                                                    taskId = selectedTaskId
+                                                )
                                             } else if (studiedMinutes == 0 && modeString == "WORK") {
                                                 // Session cancelled
                                             }
@@ -455,7 +454,7 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                         } else {
                                             if (now - lastClickTime < 500) {
                                                 isExitButtonShown = true
-                                                android.widget.Toast.makeText(context, "Transformed! Click the Orange button to Save & Exit.", android.widget.Toast.LENGTH_SHORT).show()
+                                                android.widget.Toast.makeText(context, "Click the Stop button again to Save & Exit.", android.widget.Toast.LENGTH_SHORT).show()
                                                 lastClickTime = now
                                             } else {
                                                 val intent = android.content.Intent(context, lumia.tracker.service.PomodoroService::class.java).apply { action = "PAUSE_RESUME" }

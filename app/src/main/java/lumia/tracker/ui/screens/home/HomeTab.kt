@@ -135,7 +135,6 @@ fun HomeTab(
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
-    val streak by viewModel.currentStreak.collectAsStateWithLifecycle()
     val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -180,6 +179,9 @@ fun HomeTab(
                 lumia.tracker.ui.components.BatteryOptimizationPermissionPanel()
             }
             item {
+                // Stunning Visual Banner
+                lumia.tracker.ui.components.WelcomeMeshBanner()
+                Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     // Tasks Completed Card
                     GlassHeroCard(

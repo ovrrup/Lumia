@@ -79,8 +79,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
         ) {
             item {
                 Spacer(Modifier.height(16.dp))
-                // Profile Summary Card with Streaks display
-                val currentStreak by viewModel.currentStreak.collectAsStateWithLifecycle()
+                // Profile Summary Card
 
                 Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                     lumia.tracker.ui.components.GlassCard(
@@ -187,7 +186,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                 Spacer(Modifier.height(24.dp))
             }
             
-        // Progression removed
+        
 
 
             item {

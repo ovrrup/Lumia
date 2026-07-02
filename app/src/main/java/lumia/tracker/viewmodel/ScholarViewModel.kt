@@ -524,9 +524,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _notifEnableDeadlines = MutableStateFlow(prefs.getBoolean("notif_enable_deadlines", true))
     val notifEnableDeadlines = _notifEnableDeadlines.asStateFlow()
 
-    private val _notifEnableStreaks = MutableStateFlow(prefs.getBoolean("notif_enable_streaks", true))
-    val notifEnableStreaks = _notifEnableStreaks.asStateFlow()
-
     private val _notifEnableClasses = MutableStateFlow(prefs.getBoolean("notif_enable_classes", true))
     val notifEnableClasses = _notifEnableClasses.asStateFlow()
 
@@ -541,11 +538,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateNotifEnableDeadlines(enabled: Boolean) {
         _notifEnableDeadlines.value = enabled
         prefs.edit().putBoolean("notif_enable_deadlines", enabled).apply()
-    }
-
-    fun updateNotifEnableStreaks(enabled: Boolean) {
-        _notifEnableStreaks.value = enabled
-        prefs.edit().putBoolean("notif_enable_streaks", enabled).apply()
     }
 
     fun updateNotifEnableClasses(enabled: Boolean) {
@@ -836,31 +828,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _showActionHistory = MutableStateFlow(prefs.getBoolean("show_action_history", true))
     val showActionHistory = _showActionHistory.asStateFlow()
 
-    private val _currentStreak = MutableStateFlow(prefs.getInt("current_streak", 0))
-    val currentStreak = _currentStreak.asStateFlow()
-
     init {
         val database = AppDatabase.getDatabase(application)
         
         refreshThemeBrightness()
         verifyFeatureEntitlements()
-        
-        val lastActionDate = prefs.getString("last_action_date_str", "") ?: ""
-        if (lastActionDate.isNotEmpty()) {
-            val today = todayDateString()
-            if (lastActionDate != today) {
-                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-                try {
-                    val lastDate = sdf.parse(lastActionDate)
-                    if (lastDate != null) {
-                        val diff = ((sdf.parse(today)?.time ?: System.currentTimeMillis()) - lastDate.time) / 86400000L
-                        if (diff > 1L) {
-                            updateStreak(0)
-                        }
-                    }
-                } catch(e: Exception) {}
-            }
-        }
     }
 
     val courses: StateFlow<List<Course>> = repository.allCourses.stateIn(
@@ -1349,11 +1321,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         notificationManager.notify(notifId, notification)
     }
 
-    private fun updateStreak(streak: Int) {
-        _currentStreak.value = streak
-        prefs.edit().putInt("current_streak", streak).apply()
-    }
-
     private fun gatherSettings(): Map<String, String> {
         val map = mutableMapOf<String, String>()
         prefs.all.forEach { (key, value) ->
@@ -1381,11 +1348,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 }
                 "last_action_date_str" -> {
                     editor.putString(key, value)
-                }
-                "current_streak" -> {
-                    val intVal = value.toIntOrNull() ?: 0
-                    editor.putInt(key, intVal)
-                    _currentStreak.value = intVal
                 }
                 "glass_backdrop_style" -> {
                     editor.putString(key, value)
@@ -1509,7 +1471,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun verifyFeatureEntitlements() {
-        // Gamification has been removed, all features are enabled by default
+        
     }
 
     fun clearStatus() {
@@ -2026,7 +1988,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             _systemFuseSubjectsCourses.value = true
             _systemAdvancedTasks.value = true
             _systemPomodoroAutoLog.value = true
-            _currentStreak.value = 0
 
             repository.insertActionLog(ActionLog(actionText = "Cleared all application data and settings"))
             _importExportStatus.value = "All data and settings erased successfully"

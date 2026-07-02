@@ -171,7 +171,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
             Spacer(modifier = Modifier.height(16.dp))
 
             SettingsGroupCard(title = "Safety Guard Monitor", icon = Icons.Rounded.Lock) {
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "System Safety Watch",
                     subtitle = "Monitor settings state conflicts and offer smart ecosystem guidelines",
                     checked = safetyPinEnabled,
@@ -183,7 +183,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                        SettingsPremiumToggleItem(
+                        SettingsToggleItem(
                             title = "Active Conflict Warnings",
                             subtitle = "Immediate warning banner if toggles physically oppose each other structurally",
                             checked = safetyPinConflictWarning,
@@ -192,7 +192,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                        SettingsPremiumToggleItem(
+                        SettingsToggleItem(
                             title = "Aesthetic Recommendations",
                             subtitle = "Suggest complementary layout features whenever core styles change",
                             checked = safetyPinRecommendations,
@@ -205,7 +205,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
             Spacer(modifier = Modifier.height(16.dp))
 
             SettingsGroupCard(title = "Focus & AOD Safety Rules", icon = Icons.Rounded.Timer) {
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "True Black OLED Focus",
                     subtitle = "AOD focus screen will use solid #000000 pixels to conserve battery power on OLED hardware",
                     checked = aodTrueBlackOled,
@@ -215,7 +215,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Auto-Deactivate with Bright Themes",
                     subtitle = "Automatically replace True Black with a beautifully dimmed themed focus screen when using Light theme, dynamic layouts, or Glass UI",
                     checked = aodAutoDeactivateTrueBlack,
@@ -256,7 +256,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
                 
                 val aodLockScreenSupport by viewModel.aodLockScreenSupport.collectAsStateWithLifecycle()
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "Lock Screen Protection",
                     subtitle = "Allows AOD to safely bypass system lock screen without permanently turning screen on, ideal for extended focus",
                     checked = aodLockScreenSupport,
@@ -266,7 +266,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
-                SettingsPremiumToggleItem(
+                SettingsToggleItem(
                     title = "True Always-On Display",
                     subtitle = "Draw a full-screen SYSTEM OVERLAY clock directly over lockscreens, launchers and other apps for ultimate aesthetic hardware preservation.",
                     checked = aodTrueAodEnabled,
@@ -449,7 +449,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
                             
                             val isSecureLockEnabled = aodLockTimeout > 0
-                            SettingsPremiumToggleItem(
+                            SettingsToggleItem(
                                 title = "Secure Lock Fallback",
                                 subtitle = "Increase security and protect your physical screen: programmatically locks the system after AOD commences.",
                                 checked = isSecureLockEnabled,

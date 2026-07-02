@@ -265,7 +265,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                         if (subjTests.isNotEmpty()) {
                                             val subjAvg = subjTests.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }.average().toFloat()
                                             
-                                            val (badgeText, badgeColor) = when {
+                                            val (statusText, statusColor) = when {
                                                 subjAvg >= 85f -> "MASTER" to Color(0xFF2ECC71)
                                                 subjAvg >= 70f -> "PROFICIENT" to MaterialTheme.colorScheme.secondary
                                                 subjAvg >= 50f -> "DEVELOPING" to MaterialTheme.colorScheme.tertiary
@@ -281,10 +281,10 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                                     Text(subj.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(badgeColor.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                                                            .background(statusColor.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
                                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                                     ) {
-                                                        Text(badgeText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = badgeColor)
+                                                        Text(statusText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = statusColor)
                                                     }
                                                     Spacer(modifier = Modifier.width(8.dp))
                                                     Text("${subjAvg.toInt()}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
@@ -293,7 +293,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                                 LinearProgressIndicator(
                                                     progress = subjAvg / 100f,
                                                     modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                                                    color = badgeColor,
+                                                    color = statusColor,
                                                     trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                                                 )
                                             }
@@ -373,7 +373,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                             val tTests = allTestRecords.filter { it.topicId == tId }
                                             val tAvg = tTests.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }.average().toFloat()
                                             
-                                            val badgeColor = if (tAvg >= 80) Color(0xFF2ECC71) else if (tAvg >= 50) MaterialTheme.colorScheme.primary else Color(0xFFE74C3C)
+                                            val statusColor = if (tAvg >= 80) Color(0xFF2ECC71) else if (tAvg >= 50) MaterialTheme.colorScheme.primary else Color(0xFFE74C3C)
                                             val iconTint = if (topicObj.isCompleted) Color(0xFF2ECC71) else MaterialTheme.colorScheme.onSurfaceVariant
 
                                             Row(
@@ -403,7 +403,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                                     text = "${tAvg.toInt()}% Avg",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     fontWeight = FontWeight.Black,
-                                                    color = badgeColor
+                                                    color = statusColor
                                                 )
                                             }
                                         }
