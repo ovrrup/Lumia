@@ -3,12 +3,51 @@ import re
 with open("app/src/main/java/lumia/tracker/ui/components/StreakWidget.kt", "r") as f:
     content = f.read()
 
-# We need to replace the drawWithContent block.
-# Let's find it.
-start_str = ".drawWithContent {"
-end_str = "                }\n            }" # wait, let's just use regex
+# I need to replace from Row( or infiniteTransition down to the end of the file.
+idx = content.find("    val infiniteTransition = rememberInfiniteTransition")
 
-new_draw = """                .drawWithContent {
+if idx != -1:
+    top_part = content[:idx]
+    
+    new_bottom = """    val infiniteTransition = rememberInfiniteTransition(label = "wave")
+    val waveOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "wave_offset"
+    )
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier
+            .padding(end = 12.dp)
+            .height(40.dp)
+            .clip(CircleShape)
+            .bouncyClick(onClick = { navController.navigate("settings/streaks") })
+            .then(
+                if (applyGlass) Modifier.liquidGlass(CircleShape, tintAlpha = 0.15f)
+                else Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+            )
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = streakCurrent.toString(),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+        Icon(
+            imageVector = Icons.Rounded.LocalFireDepartment,
+            contentDescription = "Streak",
+            tint = Color.Black, // Black will be overwritten
+            modifier = Modifier
+                .size(24.dp)
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithContent {
                     drawContent()
                     
                     val progressHeight = 1f - animProgress
@@ -55,34 +94,10 @@ new_draw = """                .drawWithContent {
                             )
                         }
                     }
-                }"""
-
-# Actually, the file has a lot of things. Let's just use a python script to slice it.
-import sys
-
-# find .drawWithContent {
-idx1 = content.find(".drawWithContent {")
-if idx1 == -1:
-    print("Not found")
-    sys.exit(1)
-
-# find the matching closing brace
-brace_count = 0
-idx2 = -1
-for i in range(idx1 + 17, len(content)):
-    if content[i] == '{':
-        brace_count += 1
-    elif content[i] == '}':
-        if brace_count == 0:
-            idx2 = i
-            break
-        brace_count -= 1
-
-if idx2 == -1:
-    print("No closing brace")
-    sys.exit(1)
-
-new_content = content[:idx1] + new_draw + content[idx2+1:]
-
-with open("app/src/main/java/lumia/tracker/ui/components/StreakWidget.kt", "w") as f:
-    f.write(new_content)
+                }
+        )
+    }
+}
+"""
+    with open("app/src/main/java/lumia/tracker/ui/components/StreakWidget.kt", "w") as f:
+        f.write(top_part + new_bottom)

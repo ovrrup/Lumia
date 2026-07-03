@@ -146,7 +146,7 @@ class MainActivity : ComponentActivity() {
             }
 
             val startupState = remember { androidx.compose.runtime.mutableStateOf("splash") }
-            val actForStartup = androidx.compose.ui.platform.LocalContext.current as? MainActivity
+            val actForStartup = androidx.activity.compose.LocalActivity.current as? MainActivity
             androidx.compose.runtime.LaunchedEffect(actForStartup?.intent) {
                 if (actForStartup?.intent?.getBooleanExtra("OPEN_PROFILE_SELECTOR", false) == true) {
                     startupState.value = "selector"
@@ -239,7 +239,7 @@ class MainActivity : ComponentActivity() {
 
                     val navController = rememberNavController()
 
-                    val act = androidx.compose.ui.platform.LocalContext.current as? MainActivity
+                    val act = androidx.activity.compose.LocalActivity.current as? MainActivity
                     androidx.compose.runtime.LaunchedEffect(act?.intent) {
                         act?.intent?.let { intent ->
                             if (intent.action == "ACTION_OPEN_POMODORO" || intent.getBooleanExtra("OPEN_POMODORO", false)) {

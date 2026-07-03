@@ -104,12 +104,15 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     val context = LocalContext.current
     var showResetDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
+    var exportAllMode by remember { mutableStateOf(false) }
+    var showSuccessorDialog by remember { mutableStateOf(false) }
+    var resetTarget by remember { mutableStateOf("self") }
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri: Uri? ->
         if (uri != null) {
-            viewModel.exportData(uri)
+            viewModel.exportData(uri, exportAll = exportAllMode)
         }
     }
 
@@ -172,7 +175,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             val pomodoroSessionsCount by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
 
 
-                lumia.tracker.ui.components.GlassCard(
+            lumia.tracker.ui.components.GlassCard(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     shape = RoundedCornerShape(24.dp)
                 ) {
@@ -336,19 +339,22 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SettingsGroupCard(title = "Backup & Erasure Hub", icon = Icons.Rounded.Storage) {
+            SettingsGroupCard(title = "My Data Management", icon = Icons.Rounded.Person) {
                 SettingsActionItemInCard(
-                    title = "Export Secure Data Profile",
-                    subtitle = "Back up all settings, customisations, courses and assignments into a portable file",
+                    title = "Export My Data",
+                    subtitle = "Back up your own profile's settings, tasks, and data",
                     icon = Icons.Rounded.Upload,
-                    onClick = { showExportDialog = true }
+                    onClick = { 
+                        exportAllMode = false
+                        showExportDialog = true 
+                    }
                 )
                 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                 
                 SettingsActionItemInCard(
-                    title = "Import Secure Data Profile",
-                    subtitle = "Restore binary backup. Warning: Completely overwrites current active assets",
+                    title = "Import Data",
+                    subtitle = "Restore your profile's backup (Overwrites current profile)",
                     icon = Icons.Rounded.Download,
                     isDestructive = true,
                     onClick = { openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*")) }
@@ -357,12 +363,47 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                 
                 SettingsActionItemInCard(
-                    title = if (activeProfile.isDefault) "Full Environment Factory Erase (All Accounts)" else "Erase Data & Delete Account",
-                    subtitle = if (activeProfile.isDefault) "Permanently delete all data for all accounts on this device" else "Permanently delete your profile and all your data",
+                    title = "Erase My Data & Delete Account",
+                    subtitle = "Permanently delete your profile and all your data",
                     icon = Icons.Rounded.DeleteForever,
                     isDestructive = true,
-                    onClick = { showResetDialog = true }
+                    onClick = {
+                        if (activeProfile.isDefault) {
+                            showSuccessorDialog = true
+                        } else {
+                            showResetDialog = true
+                            resetTarget = "self"
+                        }
+                    }
                 )
+            }
+
+            if (activeProfile.isDefault) {
+                Spacer(modifier = Modifier.height(16.dp))
+                SettingsGroupCard(title = "Collective Data Management", icon = Icons.Rounded.Lock) {
+                    SettingsActionItemInCard(
+                        title = "Export All Accounts Data",
+                        subtitle = "Back up data for all users in the application",
+                        icon = Icons.Rounded.Upload,
+                        onClick = { 
+                            exportAllMode = true
+                            showExportDialog = true 
+                        }
+                    )
+                    
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                    
+                    SettingsActionItemInCard(
+                        title = "Factory Erase (All Accounts)",
+                        subtitle = "Permanently delete all data for all accounts",
+                        icon = Icons.Rounded.DeleteForever,
+                        isDestructive = true,
+                        onClick = { 
+                            showResetDialog = true
+                            resetTarget = "all"
+                        }
+                    )
+                }
             }
         }
     }
@@ -371,7 +412,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showExportDialog = false },
             title = { Text("Export Data & Settings") },
-            text = { Text(if (activeProfile.isDefault) "Export a backup of ALL user accounts?" else "Export a backup of YOUR data?") },
+            text = { Text(if (exportAllMode) "Export a backup of ALL user accounts?" else "Export a backup of YOUR data?") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -389,12 +430,16 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     if (showResetDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text(if (activeProfile.isDefault) "Erase All App Data?" else "Erase Data & Delete Account?") },
-            text = { Text(if (activeProfile.isDefault) "This action cannot be undone. ALL user accounts (except Main) and their data will be permanently removed." else "This action cannot be undone. Your profile and all your data will be permanently removed.", color = MaterialTheme.colorScheme.error) },
+            title = { Text(if (resetTarget == "all") "Erase All App Data?" else "Erase Data & Delete Account?") },
+            text = { Text(if (resetTarget == "all") "This action cannot be undone. ALL user accounts and their data will be permanently removed." else "This action cannot be undone. Your profile and all your data will be permanently removed.", color = MaterialTheme.colorScheme.error) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.clearAllData()
+                        if (resetTarget == "all") {
+                            viewModel.clearAllData()
+                        } else {
+                            viewModel.eraseMyDataAndAccount()
+                        }
                         showResetDialog = false
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
@@ -404,6 +449,91 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             },
             dismissButton = {
                 TextButton(onClick = { showResetDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showSuccessorDialog) {
+        val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
+        var createNew by remember { mutableStateOf(false) }
+        var selectedSuccessorId by remember { mutableStateOf("") }
+        var newName by remember { mutableStateOf("") }
+
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showSuccessorDialog = false },
+            title = { Text("Main Account Required", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Since you are the main account, you must select a successor to become the new main account before you can delete yourself.")
+                    Spacer(Modifier.height(16.dp))
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { createNew = false }) {
+                        androidx.compose.material3.RadioButton(
+                            selected = !createNew,
+                            onClick = { createNew = false }
+                        )
+                        Text("Select existing user")
+                    }
+                    if (!createNew) {
+                        val otherProfs = allProfiles.filter { it.id != activeProfile.id }
+                        if (otherProfs.isEmpty()) {
+                            Text("No other users found.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 32.dp))
+                        } else {
+                            if (selectedSuccessorId.isEmpty() && otherProfs.isNotEmpty()) selectedSuccessorId = otherProfs.first().id
+                            Column(modifier = Modifier.padding(start = 32.dp)) {
+                                otherProfs.forEach { prof ->
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { selectedSuccessorId = prof.id }) {
+                                        androidx.compose.material3.RadioButton(
+                                            selected = selectedSuccessorId == prof.id,
+                                            onClick = { selectedSuccessorId = prof.id }
+                                        )
+                                        Text(prof.name)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { createNew = true }) {
+                        androidx.compose.material3.RadioButton(
+                            selected = createNew,
+                            onClick = { createNew = true }
+                        )
+                        Text("Create new account")
+                    }
+                    if (createNew) {
+                        androidx.compose.material3.OutlinedTextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            label = { Text("New Account Name") },
+                            modifier = Modifier.padding(start = 32.dp).fillMaxWidth()
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                val canSubmit = if (createNew) newName.isNotBlank() else (selectedSuccessorId.isNotEmpty() && allProfiles.any { it.id != activeProfile.id })
+                TextButton(
+                    onClick = {
+                        viewModel.switchMainAccountAndDeleteCurrent(
+                            successorId = selectedSuccessorId,
+                            createNew = createNew,
+                            newName = newName,
+                            newAvatar = "😊"
+                        )
+                        showSuccessorDialog = false
+                    },
+                    enabled = canSubmit,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete My Account", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSuccessorDialog = false }) {
                     Text("Cancel")
                 }
             }

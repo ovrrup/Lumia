@@ -274,18 +274,27 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             val requiredAssignments = maxOf(plannedAssignments, _streakRequirementAssignments.value)
             val requiredPomos = _streakRequirementStudyMins.value
             
-            val doneTasks = tasksToday.count { it.isCompleted }
-            val doneAssignments = assignmentsToday.count { it.isCompleted }
+            val actionLogs = dao.exportAllActionLogs()
+            val completedTasksTodayCount = actionLogs.count { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed task:") }
+            val unmarkedTasksTodayCount = actionLogs.count { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked task:") }
+            val netDoneTasksToday = maxOf(0, completedTasksTodayCount - unmarkedTasksTodayCount)
+            
+            val completedAssignmentsTodayCount = actionLogs.count { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed assignment:") }
+            val unmarkedAssignmentsTodayCount = actionLogs.count { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked assignment:") }
+            val netDoneAssignmentsToday = maxOf(0, completedAssignmentsTodayCount - unmarkedAssignmentsTodayCount)
+
+            val doneTasks = maxOf(tasksToday.count { it.isCompleted }, netDoneTasksToday)
+            val doneAssignments = maxOf(assignmentsToday.count { it.isCompleted }, netDoneAssignmentsToday)
             val donePomos = pomosToday.sumOf { it.durationMinutes }
             
             var totalRequired = 0f
             var totalDone = 0f
             
-            if (requiredTasks > 0) { totalRequired += 1f; totalDone += doneTasks.toFloat() / requiredTasks.toFloat() }
-            if (requiredAssignments > 0) { totalRequired += 1f; totalDone += doneAssignments.toFloat() / requiredAssignments.toFloat() }
-            if (requiredPomos > 0) { totalRequired += 1f; totalDone += donePomos.toFloat() / requiredPomos.toFloat() }
+            if (requiredTasks > 0) { totalRequired += 1f; totalDone += (doneTasks.toFloat() / requiredTasks.toFloat()).coerceAtMost(1f) }
+            if (requiredAssignments > 0) { totalRequired += 1f; totalDone += (doneAssignments.toFloat() / requiredAssignments.toFloat()).coerceAtMost(1f) }
+            if (requiredPomos > 0) { totalRequired += 1f; totalDone += (donePomos.toFloat() / requiredPomos.toFloat()).coerceAtMost(1f) }
             
-            val percentage = if (totalRequired == 0f) 0f else (totalDone / totalRequired).coerceIn(0f, 1f)
+            val percentage = if (totalRequired == 0f) 1f else (totalDone / totalRequired).coerceIn(0f, 1f)
             
             withContext(Dispatchers.Main) {
                 _streakPercentage.value = percentage
@@ -1111,6 +1120,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 taskId = taskId
             ))
             logAction("Completed Pomodoro Session ($durationMinutes min)")
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
@@ -1680,14 +1691,14 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     // Clear existing profiles
                     val currentProfs = profileManager.getAllProfiles()
                     for (prof in currentProfs) {
-                        if (prof.id != "DEFAULT") {
+                        if (!prof.isDefault) {
                             profileManager.deleteProfile(prof.id)
                         }
                     }
                     
                     // Restore profiles
                     for (prof in fullBackup.profiles) {
-                        if (prof.id == "DEFAULT") continue
+                        if (prof.isDefault) continue
                         profileManager.addProfile(prof.name, prof.avatarEmoji, prof.alias, prof.starterTheme)
                     }
                     // Wait, addProfile generates new ID. We should update profiles!
@@ -2213,14 +2224,55 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("show_action_history", enabled).apply()
     }
 
-        fun clearAllData() {
+        
+    fun switchMainAccountAndDeleteCurrent(successorId: String, createNew: Boolean = false, newName: String = "", newAvatar: String = "") {
+        viewModelScope.launch(Dispatchers.IO) {
+            val prof = activeProfile.value
+            if (prof.isDefault) {
+                var newMainId = successorId
+                if (createNew) {
+                    newMainId = profileManager.addProfile(newName, newAvatar)
+                }
+                
+                // Update the successor to be default
+                val allProfs = profileManager.getAllProfiles()
+                val successor = allProfs.find { it.id == newMainId }
+                if (successor != null) {
+                    successor.isDefault = true
+                    profileManager.updateProfile(successor)
+                }
+                
+                // Clear this user's data
+                val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), prof.id)
+                db.clearAllTables()
+                profileManager.getProfilePrefs(prof.id).edit().clear().apply()
+                profileManager.deleteProfile(prof.id)
+                
+                switchProfileAndRestart(getApplication(), newMainId)
+            }
+        }
+    }
+
+    fun eraseMyDataAndAccount() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val prof = activeProfile.value
+            if (!prof.isDefault) {
+                val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), prof.id)
+                db.clearAllTables()
+                profileManager.getProfilePrefs(prof.id).edit().clear().apply()
+                profileManager.deleteProfile(prof.id)
+                switchProfileAndRestart(getApplication(), "DEFAULT") // Switch to a safe account
+            }
+        }
+    }
+fun clearAllData() {
         viewModelScope.launch(Dispatchers.IO) {
             val prof = activeProfile.value
             if (prof.isDefault) {
                 // Main user: Erase all users' data. Delete secondary users entirely.
                 val allProfs = profileManager.getAllProfiles()
                 for (p in allProfs) {
-                    if (p.id != "DEFAULT") {
+                    if (!p.isDefault) {
                         // Clear their db and prefs
                         val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), p.id)
                         db.clearAllTables()

@@ -39,8 +39,9 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.delay
 import lumia.tracker.service.PomodoroService
 import lumia.tracker.service.AodAccessibilityService
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @SuppressLint("StaticFieldLeak")
 object TrueAodManager {
@@ -188,13 +189,13 @@ fun TrueAodOverlayUi(
     onExitRequest: () -> Unit
 ) {
     val serviceState by PomodoroService.state.collectAsState()
-    val timeFormat = remember { DateTimeFormatter.ofPattern("HH:mm") }
-    var currentTimeStr by remember { mutableStateOf(LocalTime.now().format(timeFormat)) }
+    val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    var currentTimeStr by remember { mutableStateOf(timeFormat.format(Date())) }
 
     // Tick real time
     LaunchedEffect(Unit) {
         while (true) {
-            currentTimeStr = LocalTime.now().format(timeFormat)
+            currentTimeStr = timeFormat.format(Date())
             delay(1000)
         }
     }

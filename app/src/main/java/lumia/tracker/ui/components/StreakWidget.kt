@@ -78,87 +78,82 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
     val infiniteTransition = rememberInfiniteTransition(label = "wave")
     val waveOffset by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 2f * Math.PI.toFloat(),
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2000, easing = LinearEasing),
+            animation = tween(2000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "wave_offset"
     )
 
-    val progressHeight = 1f - animProgress
-
     Row(
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = modifier
             .padding(end = 12.dp)
-            .height(44.dp)
+            .height(40.dp)
             .clip(CircleShape)
             .bouncyClick(onClick = { navController.navigate("settings/streaks") })
             .then(
                 if (applyGlass) Modifier.liquidGlass(CircleShape, tintAlpha = 0.15f)
-                else Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), CircleShape)
+                else Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
             )
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
-        Box(
+        Text(
+            text = streakCurrent.toString(),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+        Icon(
+            imageVector = Icons.Rounded.LocalFireDepartment,
+            contentDescription = "Streak",
+            tint = Color.Black, // Black will be overwritten
             modifier = Modifier
                 .size(24.dp)
                 .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
                 .drawWithContent {
                     drawContent()
-                    if (applyGlass || applyBouncy) {
+                    
+                    val progressHeight = 1f - animProgress
+                    
+                    // Step 1: Fill entire icon with color
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(color.copy(alpha = 0.8f), color)
+                        ),
+                        blendMode = BlendMode.SrcIn
+                    )
+                    if (applyGlass) {
                         drawRect(
-                            color = color,
-                            blendMode = BlendMode.SrcIn
+                            color = Color.White.copy(alpha = 0.4f),
+                            blendMode = BlendMode.ColorDodge
                         )
-                        // Draw empty part with outline style or lower opacity
-                        clipRect(bottom = size.height * progressHeight) {
-                            drawRect(
-                                color = Color.Gray.copy(alpha = 0.3f),
-                                blendMode = BlendMode.SrcIn
-                            )
-                        }
+                    }
+
+                    // Step 2: Make the empty part gray
+                    if (animProgress < 1f) {
+                        val path = androidx.compose.ui.graphics.Path()
+                        path.moveTo(0f, 0f)
                         
-                        // Draw liquid wave if partially filled
-                        if (animProgress > 0f && animProgress < 1f) {
-                            val waveHeight = size.height * 0.1f
-                            val yOffset = size.height * progressHeight
-                            
-                            val path = androidx.compose.ui.graphics.Path()
-                            path.moveTo(0f, size.height)
+                        val yOffset = size.height * progressHeight
+                        if ((applyGlass || applyBouncy) && animProgress > 0f) {
+                            val waveHeight = size.height * 0.08f
                             path.lineTo(0f, yOffset)
-                            
                             for (x in 0..size.width.toInt() step 2) {
-                                val y = yOffset + sin((x.toFloat() / size.width) * Math.PI * 2 + waveOffset).toFloat() * waveHeight
+                                val y = yOffset + kotlin.math.sin((x.toFloat() / size.width) * Math.PI * 2 + waveOffset).toFloat() * waveHeight
                                 path.lineTo(x.toFloat(), y)
                             }
-                            
-                            path.lineTo(size.width, size.height)
-                            path.close()
-                            
-                            clipPath(path) {
-                                drawRect(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(color.copy(alpha = 0.8f), color)
-                                    ),
-                                    blendMode = BlendMode.SrcIn
-                                )
-                                if (applyGlass) {
-                                    drawRect(
-                                        color = Color.White.copy(alpha = 0.4f),
-                                        blendMode = BlendMode.ColorDodge
-                                    )
-                                }
-                            }
+                            path.lineTo(size.width, 0f)
+                        } else {
+                            path.lineTo(0f, yOffset)
+                            path.lineTo(size.width, yOffset)
+                            path.lineTo(size.width, 0f)
                         }
-                    } else {
-                        // Simple Material fill
-                        drawRect(
-                            color = color,
-                            blendMode = BlendMode.SrcIn
-                        )
-                        clipRect(bottom = size.height * progressHeight) {
+                        path.close()
+                        
+                        clipPath(path) {
                             drawRect(
                                 color = Color.Gray.copy(alpha = 0.3f),
                                 blendMode = BlendMode.SrcIn
@@ -166,21 +161,6 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
                         }
                     }
                 }
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.LocalFireDepartment,
-                contentDescription = "Streak Progress",
-                tint = Color.Black // Used as mask
-            )
-        }
-        
-        Spacer(modifier = Modifier.width(6.dp))
-        
-        Text(
-            text = "$streakCurrent",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Black,
-            color = if (animProgress >= 1f) color else MaterialTheme.colorScheme.onSurface
         )
     }
 }
