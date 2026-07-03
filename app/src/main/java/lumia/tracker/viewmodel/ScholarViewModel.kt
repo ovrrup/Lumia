@@ -178,7 +178,16 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     }
 
     
-    private val _streakPercentage = MutableStateFlow(0f)
+        private val _streakTotalNormal = MutableStateFlow(prefs.getInt("streak_total_normal", 0))
+    val streakTotalNormal = _streakTotalNormal.asStateFlow()
+
+    private val _streakTotalComplete = MutableStateFlow(prefs.getInt("streak_total_complete", 0))
+    val streakTotalComplete = _streakTotalComplete.asStateFlow()
+
+    private val _streakIsCompleteToday = MutableStateFlow(false)
+    val streakIsCompleteToday = _streakIsCompleteToday.asStateFlow()
+
+private val _streakPercentage = MutableStateFlow(0f)
     val streakPercentage = _streakPercentage.asStateFlow()
 
     private val _streakCurrent = MutableStateFlow(prefs.getInt("streak_current", 0))
@@ -270,8 +279,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             val plannedAssignments = assignmentsToday.size
             
             // Prioritize planned vs required
-            val requiredTasks = maxOf(plannedTasks, _streakRequirementTasks.value)
-            val requiredAssignments = maxOf(plannedAssignments, _streakRequirementAssignments.value)
+            val requiredTasks = if (plannedTasks > 0) plannedTasks else _streakRequirementTasks.value
+            val requiredAssignments = if (plannedAssignments > 0) plannedAssignments else _streakRequirementAssignments.value
             val requiredPomos = _streakRequirementStudyMins.value
             
             val actionLogs = dao.exportAllActionLogs()
@@ -303,21 +312,50 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 val lastStreakDate = prefs.getLong("streak_last_date", 0L)
                 val threshold = _streakPartialThreshold.value
                 
-                if (percentage >= threshold && lastStreakDate < todayStart) {
-                    // Update streak
-                    val isConsecutive = (todayStart - lastStreakDate) <= 86400000L * 2
-                    val newCurrent = if (isConsecutive) _streakCurrent.value + 1 else 1
+                val isComplete = (percentage >= threshold) && 
+                                 (plannedTasks == 0 || doneTasks >= plannedTasks) && 
+                                 (plannedAssignments == 0 || doneAssignments >= plannedAssignments) && 
+                                 (percentage >= 1.0f)
+                _streakIsCompleteToday.value = isComplete
+
+                val todayStr = todayDateString()
+                val statusToday = prefs.getString("streak_status_$todayStr", "none")
+
+                if (percentage >= threshold && statusToday != "complete") {
                     
-                    _streakCurrent.value = newCurrent
-                    if (newCurrent > _streakLongest.value) {
-                        _streakLongest.value = newCurrent
-                        prefs.edit().putInt("streak_longest", newCurrent).apply()
+                    if (statusToday == "none") {
+                        val isConsecutive = (todayStart - lastStreakDate) <= 86400000L * 2
+                        val newCurrent = if (isConsecutive) _streakCurrent.value + 1 else 1
+                        
+                        _streakCurrent.value = newCurrent
+                        if (newCurrent > _streakLongest.value) {
+                            _streakLongest.value = newCurrent
+                            prefs.edit().putInt("streak_longest", newCurrent).apply()
+                        }
+                        
+                        if (isComplete) {
+                            prefs.edit().putString("streak_status_$todayStr", "complete").apply()
+                            _streakTotalComplete.value += 1
+                        } else {
+                            prefs.edit().putString("streak_status_$todayStr", "normal").apply()
+                            _streakTotalNormal.value += 1
+                        }
+                        
+                        prefs.edit()
+                            .putInt("streak_current", newCurrent)
+                            .putLong("streak_last_date", todayStart)
+                            .putInt("streak_total_normal", _streakTotalNormal.value)
+                            .putInt("streak_total_complete", _streakTotalComplete.value)
+                            .apply()
+                    } else if (statusToday == "normal" && isComplete) {
+                        prefs.edit().putString("streak_status_$todayStr", "complete").apply()
+                        _streakTotalNormal.value -= 1
+                        _streakTotalComplete.value += 1
+                        prefs.edit()
+                            .putInt("streak_total_normal", _streakTotalNormal.value)
+                            .putInt("streak_total_complete", _streakTotalComplete.value)
+                            .apply()
                     }
-                    
-                    prefs.edit()
-                        .putInt("streak_current", newCurrent)
-                        .putLong("streak_last_date", todayStart)
-                        .apply()
                 } else if (percentage < threshold && lastStreakDate < todayStart) {
                     // Reset if yesterday was missed
                     val yesterday = todayStart - 86400000L

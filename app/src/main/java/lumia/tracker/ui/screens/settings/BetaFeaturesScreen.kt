@@ -146,12 +146,13 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
         )
     }
 
+    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             androidx.compose.foundation.layout.Box {
-                if (isGlass) {
+                if (betaEnhancedHeader || isGlass) {
                     androidx.compose.foundation.layout.Box(
                         modifier = Modifier
                             .matchParentSize()
@@ -171,8 +172,8 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                         }
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                        scrolledContainerColor = androidx.compose.ui.graphics.Color.Transparent
+                        containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                     )
                 )
             }

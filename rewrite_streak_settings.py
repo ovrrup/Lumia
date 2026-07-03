@@ -1,66 +1,11 @@
-package lumia.tracker.ui.screens.settings
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.ColorLens
-import androidx.compose.material.icons.rounded.List
-import androidx.compose.material.icons.rounded.LocalFireDepartment
-import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.Speed
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import lumia.tracker.ui.screens.SettingsGroupCard
-import lumia.tracker.ui.theme.bouncyClick
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import kotlin.math.roundToInt
-import lumia.tracker.ui.theme.LocalAppAnimationMode
-import lumia.tracker.ui.theme.LocalGlassMode
-import lumia.tracker.ui.theme.liquidGlass
-import lumia.tracker.viewmodel.ScholarViewModel
+import re
 
+with open("app/src/main/java/lumia/tracker/ui/screens/settings/StreakSettingsScreen.kt", "r") as f:
+    content = f.read()
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
-    val reqTasks by viewModel.streakRequirementTasks.collectAsStateWithLifecycle()
-    val reqAssignments by viewModel.streakRequirementAssignments.collectAsStateWithLifecycle()
-    val reqStudyMins by viewModel.streakRequirementStudyMins.collectAsStateWithLifecycle()
-    val partialThreshold by viewModel.streakPartialThreshold.collectAsStateWithLifecycle()
-    val colorHex by viewModel.streakProgressColor.collectAsStateWithLifecycle()
-    val brightness by viewModel.streakBrightness.collectAsStateWithLifecycle()
-    val animOverride by viewModel.streakAnimationOverride.collectAsStateWithLifecycle()
-
-    val isGlass = LocalGlassMode.current
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Streak Settings", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
-        },
-        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        LazyColumn(
+idx = content.find("        LazyColumn(")
+if idx != -1:
+    new_code = """        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
@@ -152,7 +97,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                                     .size(36.dp)
                                     .clip(CircleShape)
                                     .background(if (hex == "Theme") MaterialTheme.colorScheme.primary else Color(android.graphics.Color.parseColor(hex)))
-                                    .bouncyClick { viewModel.updateStreakProgressColor(hex) },
+                                    .clickable { viewModel.updateStreakProgressColor(hex) },
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (isSelected) {
@@ -182,7 +127,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .bouncyClick { viewModel.updateStreakAnimationOverride(style) }
+                                .clickable { viewModel.updateStreakAnimationOverride(style) }
                                 .padding(vertical = 12.dp, horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -201,3 +146,20 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
         }
     }
 }
+"""
+    content = content[:idx] + new_code
+
+    if "import androidx.compose.material.icons.rounded.List" not in content:
+        content = content.replace("import androidx.compose.material.icons.rounded.Check", "import androidx.compose.material.icons.rounded.Check\nimport androidx.compose.material.icons.rounded.List\nimport androidx.compose.material.icons.rounded.Speed\nimport androidx.compose.material.icons.rounded.Palette")
+
+    if "import androidx.compose.ui.text.style.TextAlign" not in content:
+        content = "import androidx.compose.ui.text.style.TextAlign\n" + content
+    if "import androidx.compose.foundation.shape.RoundedCornerShape" not in content:
+        content = "import androidx.compose.foundation.shape.RoundedCornerShape\n" + content
+
+    with open("app/src/main/java/lumia/tracker/ui/screens/settings/StreakSettingsScreen.kt", "w") as f:
+        f.write(content)
+    print("Replaced!")
+else:
+    print("Not found")
+
