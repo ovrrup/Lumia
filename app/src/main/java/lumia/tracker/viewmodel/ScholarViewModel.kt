@@ -279,18 +279,40 @@ private val _streakPercentage = MutableStateFlow(0f)
             val plannedAssignments = assignmentsToday.size
             
             // Prioritize planned vs required
-            val requiredTasks = if (plannedTasks > 0) plannedTasks else _streakRequirementTasks.value
-            val requiredAssignments = if (plannedAssignments > 0) plannedAssignments else _streakRequirementAssignments.value
+            val requiredTasks = maxOf(plannedTasks, _streakRequirementTasks.value)
+            val requiredAssignments = maxOf(plannedAssignments, _streakRequirementAssignments.value)
             val requiredPomos = _streakRequirementStudyMins.value
             
             val actionLogs = dao.exportAllActionLogs()
-            val completedTasksTodayCount = actionLogs.count { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed task:") }
-            val unmarkedTasksTodayCount = actionLogs.count { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked task:") }
-            val netDoneTasksToday = maxOf(0, completedTasksTodayCount - unmarkedTasksTodayCount)
+            val completedTasksToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed task:") }
+            val unmarkedTasksToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked task:") }
             
-            val completedAssignmentsTodayCount = actionLogs.count { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed assignment:") }
-            val unmarkedAssignmentsTodayCount = actionLogs.count { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked assignment:") }
-            val netDoneAssignmentsToday = maxOf(0, completedAssignmentsTodayCount - unmarkedAssignmentsTodayCount)
+            val completedTitles = completedTasksToday.map { it.actionText.removePrefix("Completed task: ").trim() }
+            val unmarkedTitles = unmarkedTasksToday.map { it.actionText.removePrefix("Unmarked task: ").trim() }
+            
+            val cCounts = completedTitles.groupingBy { it }.eachCount()
+            val uCounts = unmarkedTitles.groupingBy { it }.eachCount()
+            
+            var netDoneTasksToday = 0
+            for ((title, count) in cCounts) {
+                val uCount = uCounts[title] ?: 0
+                netDoneTasksToday += maxOf(0, count - uCount)
+            }
+            
+            val completedAssignmentsToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed assignment:") }
+            val unmarkedAssignmentsToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked assignment:") }
+            
+            val cAssignTitles = completedAssignmentsToday.map { it.actionText.removePrefix("Completed assignment: ").trim() }
+            val uAssignTitles = unmarkedAssignmentsToday.map { it.actionText.removePrefix("Unmarked assignment: ").trim() }
+            
+            val cAssignCounts = cAssignTitles.groupingBy { it }.eachCount()
+            val uAssignCounts = uAssignTitles.groupingBy { it }.eachCount()
+            
+            var netDoneAssignmentsToday = 0
+            for ((title, count) in cAssignCounts) {
+                val uCount = uAssignCounts[title] ?: 0
+                netDoneAssignmentsToday += maxOf(0, count - uCount)
+            }
 
             val doneTasks = maxOf(tasksToday.count { it.isCompleted }, netDoneTasksToday)
             val doneAssignments = maxOf(assignmentsToday.count { it.isCompleted }, netDoneAssignmentsToday)
@@ -303,7 +325,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             if (requiredAssignments > 0) { totalRequired += 1f; totalDone += (doneAssignments.toFloat() / requiredAssignments.toFloat()).coerceAtMost(1f) }
             if (requiredPomos > 0) { totalRequired += 1f; totalDone += (donePomos.toFloat() / requiredPomos.toFloat()).coerceAtMost(1f) }
             
-            val percentage = if (totalRequired == 0f) 1f else (totalDone / totalRequired).coerceIn(0f, 1f)
+            val percentage = if (totalRequired == 0f) 0f else (totalDone / totalRequired).coerceIn(0f, 1f)
             
             withContext(Dispatchers.Main) {
                 _streakPercentage.value = percentage
@@ -321,8 +343,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                 val todayStr = todayDateString()
                 val statusToday = prefs.getString("streak_status_$todayStr", "none")
 
-                if (percentage >= threshold && statusToday != "complete") {
-                    
+                if (percentage >= threshold) {
                     if (statusToday == "none") {
                         val isConsecutive = (todayStart - lastStreakDate) <= 86400000L * 2
                         val newCurrent = if (isConsecutive) _streakCurrent.value + 1 else 1
@@ -355,11 +376,38 @@ private val _streakPercentage = MutableStateFlow(0f)
                             .putInt("streak_total_normal", _streakTotalNormal.value)
                             .putInt("streak_total_complete", _streakTotalComplete.value)
                             .apply()
+                    } else if (statusToday == "complete" && !isComplete) {
+                        prefs.edit().putString("streak_status_$todayStr", "normal").apply()
+                        _streakTotalComplete.value -= 1
+                        _streakTotalNormal.value += 1
+                        prefs.edit()
+                            .putInt("streak_total_normal", _streakTotalNormal.value)
+                            .putInt("streak_total_complete", _streakTotalComplete.value)
+                            .apply()
                     }
-                } else if (percentage < threshold && lastStreakDate < todayStart) {
-                    // Reset if yesterday was missed
+                } else {
+                    if (statusToday != "none" && lastStreakDate == todayStart) {
+                        val newCurrent = maxOf(0, _streakCurrent.value - 1)
+                        _streakCurrent.value = newCurrent
+                        
+                        if (statusToday == "complete") {
+                            _streakTotalComplete.value -= 1
+                        } else if (statusToday == "normal") {
+                            _streakTotalNormal.value -= 1
+                        }
+                        
+                        prefs.edit()
+                            .putString("streak_status_$todayStr", "none")
+                            .putInt("streak_current", newCurrent)
+                            .putInt("streak_total_normal", _streakTotalNormal.value)
+                            .putInt("streak_total_complete", _streakTotalComplete.value)
+                            .putLong("streak_last_date", if (newCurrent > 0) todayStart - 86400000L else 0L)
+                            .apply()
+                    }
+                    
+                    val currentLastDate = prefs.getLong("streak_last_date", 0L)
                     val yesterday = todayStart - 86400000L
-                    if (lastStreakDate < yesterday) {
+                    if (currentLastDate < yesterday) {
                         _streakCurrent.value = 0
                         prefs.edit().putInt("streak_current", 0).apply()
                     }
@@ -1256,7 +1304,8 @@ private val _streakPercentage = MutableStateFlow(0f)
         schedule: String = "",
         description: String = "",
         subjectId: Int? = null,
-        tags: String = ""
+        tags: String = "",
+        subjectIds: String = ""
     ) {
         viewModelScope.launch {
             var finalSubjectId = subjectId
@@ -1276,7 +1325,8 @@ private val _streakPercentage = MutableStateFlow(0f)
                     schedule = schedule,
                     description = description,
                     subjectId = finalSubjectId,
-                    tags = tags
+                    tags = tags,
+                    subjectIds = subjectIds
                 )
             )
             logAction("Added course: $name")

@@ -118,79 +118,31 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
             fontWeight = FontWeight.Black,
             color = if (isCompleteToday) color else color.copy(alpha = 0.9f)
         )
-        Icon(
-            imageVector = Icons.Rounded.LocalFireDepartment,
-            contentDescription = "Streak",
-            tint = Color.Black, // Black will be overwritten
-            modifier = Modifier
-                .size(24.dp)
-                .graphicsLayer { 
-                    compositingStrategy = CompositingStrategy.Offscreen
-                    scaleX = completeScale
-                    scaleY = completeScale
-                }
-                .drawWithContent {
-                    drawContent()
-                    
-                    val progressHeight = 1f - animProgress
-                    
-                    // Step 1: Fill entire icon with color
-                    drawRect(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(color.copy(alpha = 0.6f), color)
-                        ),
-                        blendMode = BlendMode.SrcIn
-                    )
-                    
-                    if (isCompleteToday) {
-                        drawRect(
-                            brush = Brush.radialGradient(
-                                colors = listOf(Color.White.copy(alpha = 0.5f), Color.Transparent)
-                            ),
-                            blendMode = BlendMode.ColorDodge
-                        )
-                    } else if (applyGlass) {
-                        drawRect(
-                            color = Color.White.copy(alpha = 0.3f),
-                            blendMode = BlendMode.ColorDodge
-                        )
-                    }
-
-                    // Step 2: Make the empty part gray
-                    if (animProgress < 1f) {
-                        val path = androidx.compose.ui.graphics.Path()
-                        path.moveTo(0f, 0f)
-                        
-                        val yOffset = size.height * progressHeight
-                        if ((applyGlass || applyBouncy) && animProgress > 0f) {
-                            val waveHeight = size.height * 0.08f
-                            path.lineTo(0f, yOffset)
-                            
-                            var x = 0f
-                            val step = size.width / 40f
-                            while (x <= size.width) {
-                                // Fix looping wave offset issue
-                                val y = yOffset + kotlin.math.sin((x / size.width) * Math.PI * 2 + (waveOffset * Math.PI * 2)).toFloat() * waveHeight
-                                path.lineTo(x, y)
-                                x += step
-                            }
-                            
-                            path.lineTo(size.width, 0f)
-                        } else {
-                            path.lineTo(0f, yOffset)
-                            path.lineTo(size.width, yOffset)
-                            path.lineTo(size.width, 0f)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    progress = { animProgress },
+                    modifier = Modifier.size(28.dp),
+                    color = color,
+                    trackColor = color.copy(alpha = 0.2f),
+                    strokeWidth = 3.dp,
+                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                )
+                Icon(
+                    imageVector = Icons.Rounded.LocalFireDepartment,
+                    contentDescription = "Streak",
+                    tint = if (isCompleteToday) color else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier
+                        .size(18.dp)
+                        .graphicsLayer { 
+                            scaleX = completeScale
+                            scaleY = completeScale
                         }
-                        path.close()
-                        
-                        clipPath(path) {
-                            drawRect(
-                                color = Color.Gray.copy(alpha = 0.35f),
-                                blendMode = BlendMode.SrcIn
-                            )
-                        }
-                    }
-                }
-        )
+                )
+            }
+        }
     }
 }

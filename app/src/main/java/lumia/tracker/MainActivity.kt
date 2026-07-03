@@ -48,7 +48,6 @@ import androidx.work.WorkManager
 import lumia.tracker.ui.screens.CourseDetailScreen
 import lumia.tracker.ui.screens.DashboardScreen
 import lumia.tracker.ui.screens.SettingsScreen
-import lumia.tracker.ui.screens.SubjectDetailScreen
 import lumia.tracker.ui.theme.ScholarTheme
 import lumia.tracker.viewmodel.ScholarViewModel
 import lumia.tracker.worker.AssignmentMonitorWorker
@@ -414,13 +413,6 @@ class MainActivity : ComponentActivity() {
                         ) { backStackEntry ->
                             val id = backStackEntry.arguments?.getInt("id") ?: 0
                             CourseDetailScreen(navController = navController, viewModel = viewModel, courseId = id)
-                        }
-                        composable(
-                            "subjectDetail/{id}",
-                            arguments = listOf(navArgument("id") { type = NavType.IntType })
-                        ) { backStackEntry ->
-                            val id = backStackEntry.arguments?.getInt("id") ?: 0
-                            SubjectDetailScreen(navController = navController, viewModel = viewModel, subjectId = id)
                         }
                         composable("settings") {
                             SettingsScreen(

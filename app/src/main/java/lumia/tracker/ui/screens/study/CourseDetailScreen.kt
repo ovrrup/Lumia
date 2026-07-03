@@ -493,16 +493,6 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                                 Text("Tags: ${subj.tags}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
-                                        
-                                        BouncyIconButton(
-                                            onClick = { navController.navigate("subjectDetail/${subj.id}") }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.ChevronRight,
-                                                contentDescription = "Go to Study Subject",
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
                                     }
                                 }
 
@@ -552,32 +542,6 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     }
                                 }
                                 
-                                if (fuseSubjectsCourses) {
-                                    Spacer(Modifier.height(16.dp))
-                                    Text("Embedded Subject Hub", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
-                                    Spacer(Modifier.height(8.dp))
-                                    BouncyButton(onClick = { navController.navigate("subjectDetail/${linkedSubjects.first().id}") }, modifier = Modifier.fillMaxWidth()) {
-                                        Text("Open Subject Workspace")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else if (fuseSubjectsCourses) {
-                    item {
-                        lumia.tracker.ui.components.GlassCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("No Subject Linked", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Spacer(Modifier.height(4.dp))
-                                Text("Fuse a subject to unlock synergy and topics.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Spacer(Modifier.height(12.dp))
-                                BouncyOutlinedButton(onClick = { showLinkSubjectDialog = true }) {
-                                    Text("Link or Create Subject")
-                                }
                             }
                         }
                     }
@@ -1212,7 +1176,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             ) {
                                 Checkbox(
                                     checked = task.isCompleted,
-                                    onCheckedChange = { ch -> viewModel.updateTask(task.copy(isCompleted = ch)) }
+                                    onCheckedChange = { viewModel.toggleTaskCompleted(task) }
                                 )
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column(modifier = Modifier.weight(1f)) {

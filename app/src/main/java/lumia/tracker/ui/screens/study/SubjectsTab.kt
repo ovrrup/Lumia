@@ -107,9 +107,11 @@ fun SubjectsTab(
         } else {
             items(subjects, key = { it.id }) { subject ->
                 var expanded by remember { mutableStateOf(false) }
+                var showDetails by remember { mutableStateOf(false) }
+                
                 GlassCard(
-                    onClick = { navController.navigate("subjectDetail/${subject.id}") },
-                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showDetails = !showDetails },
+                    modifier = Modifier.fillMaxWidth().animateContentSize(),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
                 ) {
                     Column(
@@ -185,51 +187,41 @@ fun SubjectsTab(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                        
+                        if (showDetails) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            val courses by viewModel.courses.collectAsStateWithLifecycle()
+                            val linkedCourses = remember(courses, subject) {
+                                courses.filter { course ->
+                                    val splitIds = course.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }
+                                    course.subjectId == subject.id || splitIds.contains(subject.id)
+                                }
+                            }
+                            
+                            if (linkedCourses.isNotEmpty()) {
+                                Text("Linked Courses", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                linkedCourses.forEach { crs ->
+                                    Text("• ${crs.name}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            } else {
+                                Text("No courses linked.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
                 }
             }
         }
     }
     }
-
     if (subjectToEdit != null) {
-        var name by remember(subjectToEdit) { mutableStateOf(subjectToEdit?.name ?: "") }
-        var tags by remember(subjectToEdit) { mutableStateOf(subjectToEdit?.tags ?: "") }
-
-        AlertDialog(
-            onDismissRequest = { subjectToEdit = null },
-            title = { Text("Edit Subject") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Subject Name") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = tags,
-                        onValueChange = { tags = it },
-                        label = { Text("Tags (comma separated, optional)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                BouncyTextButton(onClick = {
-                    if (name.isNotBlank()) {
-                        subjectToEdit?.copy(
-                            name = name,
-                            tags = tags
-                        )?.let { viewModel.updateSubject(it) }
-                        subjectToEdit = null
-                    }
-                }) { Text("Save") }
-            },
-            dismissButton = {
-                BouncyTextButton(onClick = { subjectToEdit = null }) { Text("Cancel") }
-            }
+        lumia.tracker.ui.screens.study.EditSubjectDialog(
+            subject = subjectToEdit!!,
+            viewModel = viewModel,
+            onDismiss = { subjectToEdit = null }
         )
     }
 }
