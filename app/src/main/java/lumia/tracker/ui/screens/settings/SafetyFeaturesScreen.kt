@@ -267,8 +267,8 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
                 SettingsToggleItem(
-                    title = "True Always-On Display",
-                    subtitle = "Draw a full-screen SYSTEM OVERLAY clock directly over lockscreens, launchers and other apps for ultimate aesthetic hardware preservation.",
+                    title = "True Always-On Display (Technical Version)",
+                    subtitle = "Draw a full-screen SYSTEM OVERLAY clock directly over lockscreens, launchers and other apps. Available only in the Technical Version.",
                     checked = aodTrueAodEnabled,
                     icon = Icons.Rounded.CropFree,
                     onCheckedChange = { viewModel.updateAodTrueAodEnabled(it) }
@@ -284,7 +284,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = "True AOD Integration Mode",
+                                text = "True AOD Integration Mode (Technical Version)",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary

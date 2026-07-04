@@ -170,8 +170,8 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
 
         // Overlay
         PermissionCard(
-            title = "True AOD Overlay",
-            description = "Draw screen overlay clock directly over lockscreens. No battery strain.",
+            title = "True AOD Overlay (Technical Version)",
+            description = "Available in the Technical Version: Draw screen overlay clock directly over lockscreens. No battery strain.",
             icon = Icons.Rounded.AutoAwesome,
             isGranted = overlayGranted,
             onRequest = {
@@ -184,8 +184,8 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
 
         // Accessibility Service
         PermissionCard(
-            title = "AOD Accessibility",
-            description = "Recommended: Render screen-saver safely behind system security lock panels.",
+            title = "AOD Accessibility (Technical Version)",
+            description = "Available in the Technical Version: Render screen-saver safely behind system security lock panels.",
             icon = Icons.Rounded.FavoriteBorder,
             isGranted = accessibilityGranted,
             onRequest = {
