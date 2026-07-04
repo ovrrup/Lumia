@@ -13,6 +13,7 @@ import androidx.compose.material.icons.rounded.List
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,6 +44,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
     val colorHex by viewModel.streakProgressColor.collectAsStateWithLifecycle()
     val brightness by viewModel.streakBrightness.collectAsStateWithLifecycle()
     val animOverride by viewModel.streakAnimationOverride.collectAsStateWithLifecycle()
+    val notificationTone by viewModel.streakNotificationTone.collectAsStateWithLifecycle()
 
     val isGlass = LocalGlassMode.current
 
@@ -192,6 +194,36 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                             )
                             Spacer(modifier = Modifier.width(16.dp))
                             Text(style, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+
+            item {
+                SettingsGroupCard(title = "Notifications", icon = Icons.Rounded.Notifications) {
+                    Text("Notification Tone", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Select the tone of voice for your daily streak reminders.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                    )
+                    val tones = listOf("Motivational", "Aggressive")
+                    tones.forEach { tone ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .bouncyClick { viewModel.updateStreakNotificationTone(tone) }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = notificationTone == tone,
+                                onClick = { viewModel.updateStreakNotificationTone(tone) }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(tone, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }

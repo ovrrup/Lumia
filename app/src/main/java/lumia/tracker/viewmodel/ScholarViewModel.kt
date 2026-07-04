@@ -217,6 +217,14 @@ private val _streakPercentage = MutableStateFlow(0f)
     private val _streakAnimationOverride = MutableStateFlow(prefs.getString("streak_anim_override", "Default") ?: "Default")
     val streakAnimationOverride = _streakAnimationOverride.asStateFlow()
 
+    private val _streakNotificationTone = MutableStateFlow(prefs.getString("streak_notif_tone", "Motivational") ?: "Motivational")
+    val streakNotificationTone = _streakNotificationTone.asStateFlow()
+
+    fun updateStreakNotificationTone(tone: String) {
+        _streakNotificationTone.value = tone
+        prefs.edit().putString("streak_notif_tone", tone).apply()
+    }
+
     fun updateStreakReqTasks(count: Int) {
         _streakRequirementTasks.value = count
         prefs.edit().putInt("streak_req_tasks", count).apply()
@@ -342,6 +350,25 @@ private val _streakPercentage = MutableStateFlow(0f)
 
                 val todayStr = todayDateString()
                 val statusToday = prefs.getString("streak_status_$todayStr", "none")
+
+                if (isComplete && statusToday != "complete") {
+                    val tone = _streakNotificationTone.value
+                    val message = if (tone == "Motivational") {
+                        lumia.tracker.util.StreakNotifications.motivational.random()
+                    } else {
+                        lumia.tracker.util.StreakNotifications.aggressive.random()
+                    }
+                    val iconRes = lumia.tracker.util.NotificationHelper.getSmallIcon()
+                    val colorHex = if (_streakProgressColor.value == "Theme") "#3197D6" else _streakProgressColor.value
+                    sendInstantNotification(
+                        channelId = "scholar_streak_channel",
+                        notifId = 3001,
+                        title = "Streak Completed!",
+                        text = message,
+                        iconRes = iconRes,
+                        color = try { android.graphics.Color.parseColor(colorHex) } catch(e: Exception) { android.graphics.Color.parseColor("#3197D6") }
+                    )
+                }
 
                 if (percentage >= threshold) {
                     if (statusToday == "none") {
@@ -1433,7 +1460,8 @@ private val _streakPercentage = MutableStateFlow(0f)
                     "Task: ${task.title}",
                     task.description,
                     links.joinToString(", "),
-                    task.dueDateMillis
+                    task.dueDateMillis,
+                    "task"
                 )
             }
             logAction("Added task: ${task.title}")

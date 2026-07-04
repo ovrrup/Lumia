@@ -172,19 +172,18 @@ class AssignmentMonitorWorker(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        val title = if (formalTone) {
-            "Daily Digest: $totalCount items approaching"
-        } else {
-            "Wake up! $totalCount items are due soon"
-        }
-        val desc = if (formalTone) {
-            "You have $assignmentCount assignment(s) and $taskCount task(s) due within the next 24 hours."
-        } else {
-            "Tick tock! $assignmentCount assignment(s) and $taskCount task(s) are about to crush you if you don't act."
-        }
+        val baseTitle = "$totalCount items approaching"
+        val baseDesc = "You have $assignmentCount assignment(s) and $taskCount task(s) due within the next 24 hours."
+        
+        val (finalTitle, finalDesc) = lumia.tracker.util.NotificationContent.getPersonalizedContent(
+            type = "daily_digest",
+            title = baseTitle,
+            desc = baseDesc,
+            tone = if (formalTone) "Formal" else "Aggressive"
+        )
         
         val inboxStyle = NotificationCompat.InboxStyle()
-            .setBigContentTitle(title)
+            .setBigContentTitle(finalTitle)
             .setSummaryText("Daily Summary")
         
         var shown = 0
@@ -202,8 +201,8 @@ class AssignmentMonitorWorker(
 
         val notification = NotificationCompat.Builder(context, "scholar_monitor_channel")
             .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
-            .setContentTitle(title)
-            .setContentText(desc)
+            .setContentTitle(finalTitle)
+            .setContentText(finalDesc)
             .setStyle(inboxStyle)
             .setColor(lumia.tracker.util.NotificationHelper.getColor(context))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
