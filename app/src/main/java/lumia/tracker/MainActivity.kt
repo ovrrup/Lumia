@@ -414,6 +414,13 @@ class MainActivity : ComponentActivity() {
                             val id = backStackEntry.arguments?.getInt("id") ?: 0
                             CourseDetailScreen(navController = navController, viewModel = viewModel, courseId = id)
                         }
+                        composable(
+                            "subjectDetail/{id}",
+                            arguments = listOf(navArgument("id") { type = NavType.IntType })
+                        ) { backStackEntry ->
+                            val id = backStackEntry.arguments?.getInt("id") ?: 0
+                            lumia.tracker.ui.screens.study.SubjectDetailScreen(navController = navController, viewModel = viewModel, subjectId = id)
+                        }
                         composable("settings") {
                             SettingsScreen(
                                 navController = navController,

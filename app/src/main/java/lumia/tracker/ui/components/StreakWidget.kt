@@ -2,7 +2,6 @@ package lumia.tracker.ui.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -15,13 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,7 +25,6 @@ import lumia.tracker.ui.theme.LocalGlassMode
 import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
-import kotlin.math.sin
 
 @Composable
 fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modifier: Modifier = Modifier) {
@@ -47,7 +40,6 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
         Color(0xFFFF9800)
     }
 
-    // Adjust brightness
     val hsl = FloatArray(3)
     androidx.core.graphics.ColorUtils.colorToHSL(
         android.graphics.Color.argb(
@@ -62,37 +54,33 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
 
     val animationMode = LocalAppAnimationMode.current
     val isGlass = LocalGlassMode.current
-    
-    
+        
     val animOverride by viewModel.streakAnimationOverride.collectAsStateWithLifecycle()
     val applyGlass = animOverride == "Glass Liquid" || (animOverride == "Default" && isGlass)
-    val applyBouncy = animOverride == "Bouncy" || (animOverride == "Default" && animationMode == "Bouncy")
 
     val isCompleteToday by viewModel.streakIsCompleteToday.collectAsStateWithLifecycle()
 
     val animProgress by animateFloatAsState(
         targetValue = streakPercentage,
-        animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
         label = "streak_progress"
     )
 
-    // Wave animation for liquid effect
-    val infiniteTransition = rememberInfiniteTransition(label = "wave")
-    val waveOffset by infiniteTransition.animateFloat(
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 1f,
+        targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2500, easing = LinearEasing),
+            animation = tween(4000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "wave_offset"
+        label = "rotation"
     )
-    
     val completeScale by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = if (isCompleteToday) 1.15f else 1f,
+        targetValue = if (isCompleteToday) 1.2f else 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
+            animation = tween(1000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "complete_pulse"
@@ -100,17 +88,17 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
             .padding(end = 12.dp)
-            .height(40.dp)
+            .height(44.dp)
             .clip(CircleShape)
             .bouncyClick(onClick = { navController.navigate("settings/streaks") })
             .then(
                 if (applyGlass) Modifier.liquidGlass(CircleShape, tintAlpha = if(isCompleteToday) 0.3f else 0.15f)
                 else Modifier.background(if(isCompleteToday) color.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
             )
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = 14.dp, vertical = 6.dp)
     ) {
         Text(
             text = streakCurrent.toString(),
@@ -118,31 +106,47 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
             fontWeight = FontWeight.Black,
             color = if (isCompleteToday) color else color.copy(alpha = 0.9f)
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                androidx.compose.material3.CircularProgressIndicator(
-                    progress = { animProgress },
-                    modifier = Modifier.size(28.dp),
-                    color = color,
-                    trackColor = color.copy(alpha = 0.2f),
-                    strokeWidth = 3.dp,
-                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                )
-                Icon(
-                    imageVector = Icons.Rounded.LocalFireDepartment,
-                    contentDescription = "Streak",
-                    tint = if (isCompleteToday) color else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier
-                        .size(18.dp)
-                        .graphicsLayer { 
-                            scaleX = completeScale
-                            scaleY = completeScale
+        
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(28.dp)) {
+            // Iconic glowing ring
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { rotationZ = rotation }
+                    .drawWithContent {
+                        if (animProgress > 0) {
+                            drawArc(
+                                brush = Brush.sweepGradient(
+                                    colors = listOf(color.copy(alpha = 0.1f), color, color.copy(alpha = 0.1f))
+                                ),
+                                startAngle = -90f,
+                                sweepAngle = 360f * animProgress,
+                                useCenter = false,
+                                style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round)
+                            )
                         }
-                )
-            }
+                        if (isCompleteToday) {
+                            // Extra glow when complete
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(color.copy(alpha = 0.4f), Color.Transparent)
+                                ),
+                                radius = size.width
+                            )
+                        }
+                    }
+            )
+            Icon(
+                imageVector = Icons.Rounded.LocalFireDepartment,
+                contentDescription = "Streak",
+                tint = if (isCompleteToday) color else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .size(18.dp)
+                    .graphicsLayer { 
+                        scaleX = completeScale
+                        scaleY = completeScale
+                    }
+            )
         }
     }
 }
