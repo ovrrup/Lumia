@@ -22,7 +22,9 @@ import lumia.tracker.model.Course
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.GlassCard
 import lumia.tracker.viewmodel.ScholarViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CourseItemCard(
     course: Course,
@@ -31,6 +33,19 @@ fun CourseItemCard(
     viewModel: ScholarViewModel
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+    val linkedSubjects = remember(course, subjects) {
+        val list = mutableListOf<lumia.tracker.model.Subject>()
+        if (course.subjectIds.isNotBlank()) {
+            val ids = course.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }
+            list.addAll(subjects.filter { ids.contains(it.id) })
+        }
+        if (course.subjectId != null && list.none { it.id == course.subjectId }) {
+            subjects.find { it.id == course.subjectId }?.let { list.add(it) }
+        }
+        list.distinct()
+    }
+
     GlassCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().animateContentSize(),
@@ -143,6 +158,36 @@ fun CourseItemCard(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
+                }
+            }
+
+            if (linkedSubjects.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    for (subj in linkedSubjects) {
+                        SuggestionChip(
+                            onClick = { },
+                            label = { 
+                                Text(
+                                    text = subj.name,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            colors = SuggestionChipDefaults.suggestionChipColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
+                                labelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            ),
+                            border = SuggestionChipDefaults.suggestionChipBorder(
+                                enabled = true,
+                                borderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                            )
+                        )
+                    }
                 }
             }
         }

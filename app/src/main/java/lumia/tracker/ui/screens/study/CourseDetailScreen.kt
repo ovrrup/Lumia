@@ -1496,10 +1496,12 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             confirmButton = {
                 TextButton(onClick = {
                     if (createNew && newSubjectName.isNotBlank()) {
-                        val nextId = subjects.maxOfOrNull { it.id }?.plus(1) ?: 1
-                        viewModel.addSubject(newSubjectName, newSubjectTags)
-                        val updatedIds = (selectedExistingIds + nextId).distinct().joinToString(",")
-                        viewModel.updateCourse(course.copy(subjectIds = updatedIds, subjectId = nextId))
+                        viewModel.createSubjectAndLinkToCourse(
+                            name = newSubjectName,
+                            tags = newSubjectTags,
+                            course = course,
+                            existingSubjectIds = selectedExistingIds
+                        )
                         showLinkSubjectDialog = false
                     } else if (!createNew) {
                         val updatedIds = selectedExistingIds.joinToString(",")

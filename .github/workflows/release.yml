@@ -94,14 +94,64 @@ jobs:
           keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
         fi
 
-    - name: Build Release APKs
+    - name: Build Technical Release APKs
       run: gradle assembleRelease assembleReleaseCompressed --no-daemon -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=1024m" -Dkotlin.compiler.execution.strategy=in-process --no-parallel
       env:
         JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
         STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
         KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || 'android' }}
 
-    - name: Reorganize and Rename APKs
+    - name: Reorganize and Rename Technical APKs
+      run: |
+        # Process technical release APKs (Uncompressed)
+        cd app/build/outputs/apk/release/
+        echo "Listing initial technical release APKs:"
+        ls -la
+        for file in *.apk; do
+          if [ -f "$file" ]; then
+            new_name=$(echo "$file" | sed -e 's/^app/Lumia/' -e 's/-release/-technical/')
+            mv "$file" "$new_name"
+            echo "Renamed $file to $new_name"
+          fi
+        done
+        if [ -f "Lumia-universal-technical.apk" ]; then
+          cp Lumia-universal-technical.apk Lumia-technical.apk
+          echo "Copied Lumia-universal-technical.apk to Lumia-technical.apk"
+        fi
+        
+        # Process compressed release APKs
+        cd ../releaseCompressed/
+        echo "Listing initial compressed release APKs:"
+        ls -la
+        if [ -f "app-releaseCompressed-universal.apk" ]; then
+          cp app-releaseCompressed-universal.apk ../release/Lumia-universal-compressed-technical.apk
+          echo "Copied universal compressed APK to release folder"
+        fi
+        
+        # Move Technical APKs to a safe temporary folder
+        mkdir -p /tmp/technical-apks
+        mv ../release/Lumia*technical.apk /tmp/technical-apks/
+        echo "Moved Technical APKs to /tmp/technical-apks/:"
+        ls -la /tmp/technical-apks/
+
+    - name: Clean Build Cache
+      run: gradle clean
+
+    - name: Remove True AOD Feature (For Standard Build)
+      run: |
+        # Remove SYSTEM_ALERT_WINDOW permission
+        sed -i '/android.permission.SYSTEM_ALERT_WINDOW/d' app/src/main/AndroidManifest.xml
+        # Remove AodAccessibilityService from AndroidManifest
+        perl -0777 -pi -e 's/<service[^>]*AodAccessibilityService.*?<\/service>//gs' app/src/main/AndroidManifest.xml
+
+    - name: Build Standard Release APKs
+      run: gradle assembleRelease assembleReleaseCompressed --no-daemon -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=1024m" -Dkotlin.compiler.execution.strategy=in-process --no-parallel
+      env:
+        JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
+        STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
+        KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || 'android' }}
+
+    - name: Reorganize and Rename Standard APKs
       run: |
         # Process standard release APKs (Uncompressed)
         cd app/build/outputs/apk/release/
@@ -128,9 +178,10 @@ jobs:
           echo "Copied universal compressed APK to release folder"
         fi
         
-        cd ../release/
-        echo "Listing reorganized release APKs:"
-        ls -la
+        # Copy the Technical APKs back into the release directory
+        cp /tmp/technical-apks/Lumia* ../release/
+        echo "Listing combined release folder contents:"
+        ls -la ../release/
 
     - name: Generate FOSS Verification Checksums & Description
       id: description

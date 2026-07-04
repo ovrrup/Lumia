@@ -207,44 +207,42 @@ fun EditCourseDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 val subjects by viewModel.subjects.collectAsStateWithLifecycle()
-                if (subjects.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        "Link to Study Subject (Optional)",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    "Link to Study Subject (Optional)",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    FilterChip(
+                        selected = selectedSubjectIds.isEmpty(),
+                        onClick = { selectedSubjectIds = emptySet() },
+                        label = { Text("None") }
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    androidx.compose.foundation.layout.FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    subjects.forEach { subj ->
                         FilterChip(
-                            selected = selectedSubjectIds.isEmpty(),
-                            onClick = { selectedSubjectIds = emptySet() },
-                            label = { Text("None") }
-                        )
-                        subjects.forEach { subj ->
-                            FilterChip(
-                                selected = selectedSubjectIds.contains(subj.id),
-                                onClick = {
-                                    selectedSubjectIds = if (selectedSubjectIds.contains(subj.id)) {
-                                        selectedSubjectIds - subj.id
-                                    } else {
-                                        selectedSubjectIds + subj.id
-                                    }
-                                },
-                                label = { Text(subj.name) }
-                            )
-                        }
-                        FilterChip(
-                            selected = false,
-                            onClick = { showAddSubjectDialog = true },
-                            label = { Text("+ New Subject", color = MaterialTheme.colorScheme.tertiary) }
+                            selected = selectedSubjectIds.contains(subj.id),
+                            onClick = {
+                                selectedSubjectIds = if (selectedSubjectIds.contains(subj.id)) {
+                                    selectedSubjectIds - subj.id
+                                } else {
+                                    selectedSubjectIds + subj.id
+                                }
+                            },
+                            label = { Text(subj.name) }
                         )
                     }
+                    FilterChip(
+                        selected = false,
+                        onClick = { showAddSubjectDialog = true },
+                        label = { Text("+ New Subject", color = MaterialTheme.colorScheme.tertiary) }
+                    )
                 }
             }
         },

@@ -176,6 +176,15 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
                     checked = notifEnableDailyDigest,
                     onCheckedChange = { viewModel.updateNotifEnableDailyDigest(it) }
                 )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsToggleItem(
+                    title = "Class & Attendance Alerts",
+                    subtitle = "Get notified when classes start and end to log attendance",
+                    checked = notifEnableClasses,
+                    onCheckedChange = { viewModel.updateNotifEnableClasses(it) }
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))

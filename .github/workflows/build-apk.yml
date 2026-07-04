@@ -55,14 +55,14 @@ jobs:
         ls -la
         for file in *.apk; do
           if [ -f "$file" ]; then
-            new_name=$(echo "$file" | sed -e 's/^app/Lumia/' -e 's/-release//')
+            new_name=$(echo "$file" | sed -e 's/^app/Lumia/' -e 's/-release/-technical/')
             mv "$file" "$new_name"
             echo "Renamed $file to $new_name"
           fi
         done
-        if [ -f "Lumia-universal.apk" ]; then
-          cp Lumia-universal.apk Lumia.apk
-          echo "Copied Lumia-universal.apk to Lumia.apk"
+        if [ -f "Lumia-universal-technical.apk" ]; then
+          cp Lumia-universal-technical.apk Lumia-technical.apk
+          echo "Copied Lumia-universal-technical.apk to Lumia-technical.apk"
         fi
         
         # Process compressed release APKs
@@ -70,7 +70,7 @@ jobs:
         echo "Listing initial compressed release APKs:"
         ls -la
         if [ -f "app-releaseCompressed-universal.apk" ]; then
-          cp app-releaseCompressed-universal.apk ../release/Lumia-universal-compressed.apk
+          cp app-releaseCompressed-universal.apk ../release/Lumia-universal-compressed-technical.apk
           echo "Copied universal compressed APK to release folder"
         fi
         
@@ -81,6 +81,6 @@ jobs:
     - name: Upload APKs to Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: Lumia-Release-APKs
+        name: Lumia-Technical-Release-APKs
         path: |
           app/build/outputs/apk/release/Lumia*.apk

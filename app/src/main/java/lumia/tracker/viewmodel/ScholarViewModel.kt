@@ -1387,6 +1387,19 @@ private val _streakPercentage = MutableStateFlow(0f)
         }
     }
 
+    fun createSubjectAndLinkToCourse(name: String, tags: String = "", course: Course, existingSubjectIds: List<Int>) {
+        viewModelScope.launch {
+            val nextId = repository.insertSubject(Subject(name = name, tags = tags)).toInt()
+            logAction("Added subject: $name")
+            val updatedIds = (existingSubjectIds + nextId).distinct().joinToString(",")
+            val firstId = if (course.subjectId == null) nextId else course.subjectId
+            repository.updateCourse(course.copy(subjectIds = updatedIds, subjectId = firstId))
+            logAction("Linked subject: $name to course: ${course.name}")
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
+        }
+    }
+
     fun deleteSubject(subject: Subject) {
         viewModelScope.launch {
             repository.deleteSubject(subject)
@@ -1421,6 +1434,13 @@ private val _streakPercentage = MutableStateFlow(0f)
         viewModelScope.launch {
             repository.deleteTopic(topic)
             logAction("Deleted topic: ${topic.title}")
+        }
+    }
+
+    fun updateTopic(topic: Topic) {
+        viewModelScope.launch {
+            repository.updateTopic(topic)
+            logAction("Updated topic: ${topic.title}")
         }
     }
 

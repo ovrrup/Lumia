@@ -35,7 +35,7 @@ import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.GlassCard
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SubjectsTab(
     navController: NavController,
@@ -46,6 +46,7 @@ fun SubjectsTab(
 ) {
     var subjectToEdit by remember { mutableStateOf<lumia.tracker.model.Subject?>(null) }
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+    val courses by viewModel.courses.collectAsStateWithLifecycle()
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
 
@@ -108,6 +109,12 @@ fun SubjectsTab(
             items(subjects, key = { it.id }) { subject ->
                 var expanded by remember { mutableStateOf(false) }
                 var showDetails by remember { mutableStateOf(false) }
+                val linkedCourses = remember(courses, subject) {
+                    courses.filter { course ->
+                        course.subjectId == subject.id || 
+                        course.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }.contains(subject.id)
+                    }
+                }
                 
                 GlassCard(
                     onClick = { navController.navigate("subjectDetail/${subject.id}") },
@@ -186,6 +193,50 @@ fun SubjectsTab(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+
+                        if (linkedCourses.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Connected Courses",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                for (course in linkedCourses) {
+                                    val courseColor = try { 
+                                        androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(course.colorHex)) 
+                                    } catch (e: Exception) { 
+                                        MaterialTheme.colorScheme.secondary 
+                                    }
+                                    SuggestionChip(
+                                        onClick = { navController.navigate("courseDetail/${course.id}") },
+                                        label = { 
+                                            Text(
+                                                text = if (course.code.isNotBlank()) "${course.code}: ${course.name}" else course.name,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        },
+                                        colors = SuggestionChipDefaults.suggestionChipColors(
+                                            containerColor = courseColor.copy(alpha = 0.15f),
+                                            labelColor = courseColor
+                                        ),
+                                        border = SuggestionChipDefaults.suggestionChipBorder(
+                                            enabled = true,
+                                            borderColor = courseColor.copy(alpha = 0.3f)
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
                 }
