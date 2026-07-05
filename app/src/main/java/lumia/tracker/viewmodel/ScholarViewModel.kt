@@ -63,13 +63,13 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         app.sendBroadcast(android.content.Intent(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply { setComponent(android.content.ComponentName(app, lumia.tracker.util.ScholarCalendarWidgetProvider::class.java)) })
         app.sendBroadcast(android.content.Intent(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply { setComponent(android.content.ComponentName(app, lumia.tracker.util.ScholarPomodoroWidgetProvider::class.java)) })
 
-        val intent = android.content.Intent(context, lumia.tracker.MainActivity::class.java).apply {
+        val intent = android.content.Intent(app, lumia.tracker.MainActivity::class.java).apply {
             addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
         if (context is android.app.Activity) {
             context.finish()
         }
-        context.startActivity(intent)
+        app.startActivity(intent)
     }
     
     fun createProfile(name: String, avatar: String, alias: String = "", starterTheme: String = ""): String {
@@ -152,6 +152,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val repository = ScholarRepository(AppDatabase.getDatabase(application).scholarDao())
     
     private val prefs = profileManager.getProfilePrefs()
+
+    init {
+        calculateTodayStreakProgress()
+    }
 
     private val initiallyCompleted = run {
         var completed = prefs.getBoolean("onboarding_completed", false)
@@ -329,9 +333,28 @@ private val _streakPercentage = MutableStateFlow(0f)
             var totalRequired = 0f
             var totalDone = 0f
             
-            if (requiredTasks > 0) { totalRequired += 1f; totalDone += (doneTasks.toFloat() / requiredTasks.toFloat()).coerceAtMost(1f) }
-            if (requiredAssignments > 0) { totalRequired += 1f; totalDone += (doneAssignments.toFloat() / requiredAssignments.toFloat()).coerceAtMost(1f) }
-            if (requiredPomos > 0) { totalRequired += 1f; totalDone += (donePomos.toFloat() / requiredPomos.toFloat()).coerceAtMost(1f) }
+            val hasAnyTasks = tasks.isNotEmpty() || doneTasks > 0
+            val hasAnyAssignments = assignments.isNotEmpty() || doneAssignments > 0
+            val hasAnyPomos = pomodoros.isNotEmpty() || donePomos > 0
+
+            if (requiredTasks > 0 && hasAnyTasks) {
+                totalRequired += 1f
+                totalDone += (doneTasks.toFloat() / requiredTasks.toFloat()).coerceAtMost(1f)
+            }
+            if (requiredAssignments > 0 && hasAnyAssignments) {
+                totalRequired += 1f
+                totalDone += (doneAssignments.toFloat() / requiredAssignments.toFloat()).coerceAtMost(1f)
+            }
+            if (requiredPomos > 0 && hasAnyPomos) {
+                totalRequired += 1f
+                totalDone += (donePomos.toFloat() / requiredPomos.toFloat()).coerceAtMost(1f)
+            }
+
+            if (totalRequired == 0f) {
+                if (requiredTasks > 0) { totalRequired += 1f; totalDone += (doneTasks.toFloat() / requiredTasks.toFloat()).coerceAtMost(1f) }
+                if (requiredAssignments > 0) { totalRequired += 1f; totalDone += (doneAssignments.toFloat() / requiredAssignments.toFloat()).coerceAtMost(1f) }
+                if (requiredPomos > 0) { totalRequired += 1f; totalDone += (donePomos.toFloat() / requiredPomos.toFloat()).coerceAtMost(1f) }
+            }
             
             val percentage = if (totalRequired == 0f) 0f else (totalDone / totalRequired).coerceIn(0f, 1f)
             
@@ -1626,77 +1649,106 @@ private val _streakPercentage = MutableStateFlow(0f)
         return map
     }
 
+    private fun restoreProfileSettings(pref: android.content.SharedPreferences, settings: Map<String, String>) {
+        val editor = pref.edit()
+        val booleanKeys = setOf(
+            "onboarding_completed", "was_installed_before", "pure_black_mode", "beta_floating_nav",
+            "nav_bar_glass_force_enabled", "beta_notes", "more_rounds", "beta_glass_ui", "beta_glass_dynamic",
+            "beta_frost_glass", "beta_nav_bar_size_controls", "nav_bar_glass_linked_to_main", "nav_bar_glass_dynamic",
+            "beta_enhanced_header", "beta_minimalist_mode", "beta_dynamic_background", "system_auto_link_by_name",
+            "system_enable_synergy", "system_auto_create_subject", "system_fuse_subjects_courses", "system_advanced_tasks",
+            "system_pomodoro_auto_log", "feature_subject_enabled", "feature_self_study_enabled", "feature_analytics_enabled",
+            "feature_calendar_enabled", "feature_quick_notes_enabled", "pomodoro_enable_period_target", "notif_formal_tone",
+            "notif_enable_deadlines", "notif_enable_classes", "notif_enable_daily_digest", "aod_true_black_oled",
+            "aod_auto_deactivate_true_black", "aod_lock_screen_support", "aod_true_aod_enabled", "dynamic_app_icon",
+            "beta_better_texts", "beta_better_texts_palette", "safety_pin_enabled", "safety_pin_conflict_warning",
+            "safety_pin_recommendations", "show_action_history", "streak_is_complete_today"
+        )
+
+        val floatKeys = setOf(
+            "nav_bar_height", "nav_bar_padding_horizontal", "nav_bar_padding_bottom", "nav_bar_corner_radius",
+            "nav_bar_indicator_alpha", "glass_opacity_value", "nav_bar_glass_opacity_value", "aod_motion_sensitivity",
+            "aod_dimness_level", "streak_partial_threshold", "streak_brightness"
+        )
+
+        val intKeys = setOf(
+            "pomodoro_work_duration", "pomodoro_short_break_duration", "pomodoro_long_break_duration",
+            "pomodoro_period_sessions", "aod_burn_in_shift_speed", "aod_lock_timeout", "streak_total_normal",
+            "streak_total_complete", "streak_current", "streak_longest", "streak_req_tasks", "streak_req_assignments",
+            "streak_req_study_mins"
+        )
+
+        val longKeys = setOf("streak_last_date")
+
+        settings.forEach { (key, value) ->
+            try {
+                when {
+                    booleanKeys.contains(key) -> {
+                        val boolVal = value.toBooleanStrictOrNull() ?: (value == "1" || value.lowercase() == "true")
+                        editor.putBoolean(key, boolVal)
+                    }
+                    floatKeys.contains(key) || key.startsWith("dynamic_bg_light_brightness_") || key.startsWith("dynamic_bg_dark_brightness_") -> {
+                        val floatVal = value.toFloatOrNull() ?: 0f
+                        editor.putFloat(key, floatVal)
+                    }
+                    intKeys.contains(key) -> {
+                        val intVal = value.toIntOrNull() ?: 0
+                        editor.putInt(key, intVal)
+                    }
+                    longKeys.contains(key) -> {
+                        val longVal = value.toLongOrNull() ?: 0L
+                        editor.putLong(key, longVal)
+                    }
+                    else -> {
+                        editor.putString(key, value)
+                    }
+                }
+            } catch (e: Exception) {
+                editor.putString(key, value)
+            }
+        }
+        editor.commit()
+    }
+
     private fun loadSettings(settings: Map<String, String>?) {
         if (settings == null) return
         val editor = prefs.edit()
+        val booleanKeys = setOf(
+            "onboarding_completed", "was_installed_before", "pure_black_mode", "beta_floating_nav",
+            "nav_bar_glass_force_enabled", "beta_notes", "more_rounds", "beta_glass_ui", "beta_glass_dynamic",
+            "beta_frost_glass", "beta_nav_bar_size_controls", "nav_bar_glass_linked_to_main", "nav_bar_glass_dynamic",
+            "beta_enhanced_header", "beta_minimalist_mode", "beta_dynamic_background", "system_auto_link_by_name",
+            "system_enable_synergy", "system_auto_create_subject", "system_fuse_subjects_courses", "system_advanced_tasks",
+            "system_pomodoro_auto_log", "feature_subject_enabled", "feature_self_study_enabled", "feature_analytics_enabled",
+            "feature_calendar_enabled", "feature_quick_notes_enabled", "pomodoro_enable_period_target", "notif_formal_tone",
+            "notif_enable_deadlines", "notif_enable_classes", "notif_enable_daily_digest", "aod_true_black_oled",
+            "aod_auto_deactivate_true_black", "aod_lock_screen_support", "aod_true_aod_enabled", "dynamic_app_icon",
+            "beta_better_texts", "beta_better_texts_palette", "safety_pin_enabled", "safety_pin_conflict_warning",
+            "safety_pin_recommendations", "show_action_history", "streak_is_complete_today"
+        )
+
+        val floatKeys = setOf(
+            "nav_bar_height", "nav_bar_padding_horizontal", "nav_bar_padding_bottom", "nav_bar_corner_radius",
+            "nav_bar_indicator_alpha", "glass_opacity_value", "nav_bar_glass_opacity_value", "aod_motion_sensitivity",
+            "aod_dimness_level", "streak_partial_threshold", "streak_brightness"
+        )
+
+        val intKeys = setOf(
+            "pomodoro_work_duration", "pomodoro_short_break_duration", "pomodoro_long_break_duration",
+            "pomodoro_period_sessions", "aod_burn_in_shift_speed", "aod_lock_timeout", "streak_total_normal",
+            "streak_total_complete", "streak_current", "streak_longest", "streak_req_tasks", "streak_req_assignments",
+            "streak_req_study_mins"
+        )
+
+        val longKeys = setOf("streak_last_date")
+
         settings.forEach { (key, value) ->
-            when (key) {
-                "theme_mode" -> { editor.putString(key, value); _themeMode.value = value }
-                "theme_color" -> { editor.putString(key, value); _themeColor.value = value }
-                "custom_primary", "custom_primary_container", "custom_background", "custom_surface", "custom_text" -> {
-                    editor.putString(key, value)
-                    when (key) {
-                        "custom_primary" -> _customPrimary.value = value
-                        "custom_primary_container" -> _customPrimaryContainer.value = value
-                        "custom_background" -> _customBackground.value = value
-                        "custom_surface" -> _customSurface.value = value
-                        "custom_text" -> _customText.value = value
-                    }
-                }
-                "last_action_date_str" -> {
-                    editor.putString(key, value)
-                }
-                "glass_backdrop_style" -> {
-                    editor.putString(key, value)
-                    _glassBackdropStyle.value = value
-                }
-                "nav_bar_glass_backdrop_style" -> {
-                    editor.putString(key, value)
-                    _navBarGlassBackdropStyle.value = value
-                }
-                "glass_opacity_value" -> {
-                    val floatVal = value.toFloatOrNull() ?: 0.6f
-                    editor.putFloat(key, floatVal)
-                    _glassOpacityValue.value = floatVal
-                }
-                "dynamic_bg_light_brightness" -> {
-                    val floatVal = value.toFloatOrNull() ?: 0.75f
-                    editor.putFloat(key, floatVal)
-                    _dynamicBgLightBrightness.value = floatVal
-                    // also fallback to currently active theme if it's there
-                    val activeTheme = (settings["theme_color"] ?: "Ocean").lowercase()
-                    editor.putFloat("dynamic_bg_light_brightness_$activeTheme", floatVal)
-                }
-                "dynamic_bg_dark_brightness" -> {
-                    val floatVal = value.toFloatOrNull() ?: 0.45f
-                    editor.putFloat(key, floatVal)
-                    _dynamicBgDarkBrightness.value = floatVal
-                    // also fallback to currently active theme if it's there
-                    val activeTheme = (settings["theme_color"] ?: "Ocean").lowercase()
-                    editor.putFloat("dynamic_bg_dark_brightness_$activeTheme", floatVal)
-                }
-                else -> {
-                    if (key.startsWith("dynamic_bg_light_brightness_")) {
-                        val floatVal = value.toFloatOrNull() ?: 0.75f
-                        editor.putFloat(key, floatVal)
-                    } else if (key.startsWith("dynamic_bg_dark_brightness_")) {
-                        val floatVal = value.toFloatOrNull() ?: 0.45f
-                        editor.putFloat(key, floatVal)
-                    } else if (key == "pomodoro_work_duration" || key == "pomodoro_short_break_duration" || key == "pomodoro_long_break_duration") {
-                        val intVal = value.toIntOrNull() ?: return@forEach
-                        editor.putInt(key, intVal)
-                        when(key) {
-                            "pomodoro_work_duration" -> _pomodoroWorkDuration.value = intVal
-                            "pomodoro_short_break_duration" -> _pomodoroShortBreakDuration.value = intVal
-                            "pomodoro_long_break_duration" -> _pomodoroLongBreakDuration.value = intVal
-                        }
-                    } else if (key == "display_layout_mode") {
-                        editor.putString(key, value)
-                        _displayLayoutMode.value = value
-                    } else {
-                        val boolVal = value.toBooleanStrictOrNull() ?: return@forEach
+            try {
+                when {
+                    booleanKeys.contains(key) -> {
+                        val boolVal = value.toBooleanStrictOrNull() ?: (value == "1" || value.lowercase() == "true")
                         editor.putBoolean(key, boolVal)
-                        when(key) {
+                        when (key) {
                             "pure_black_mode" -> _pureBlackMode.value = boolVal
                             "beta_floating_nav" -> _betaFloatingNav.value = boolVal
                             "beta_notes" -> _betaNotes.value = boolVal
@@ -1723,9 +1775,75 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "beta_nav_bar_size_controls" -> _betaNavBarSizeControls.value = boolVal
                             "nav_bar_glass_linked_to_main" -> _navBarGlassLinkedToMain.value = boolVal
                             "nav_bar_glass_dynamic" -> _navBarGlassDynamic.value = boolVal
+                            "aod_true_aod_enabled" -> _aodTrueAodEnabled.value = boolVal
+                            "streak_is_complete_today" -> _streakIsCompleteToday.value = boolVal
+                        }
+                    }
+                    floatKeys.contains(key) || key.startsWith("dynamic_bg_light_brightness_") || key.startsWith("dynamic_bg_dark_brightness_") -> {
+                        val floatVal = value.toFloatOrNull() ?: 0f
+                        editor.putFloat(key, floatVal)
+                        when (key) {
+                            "nav_bar_height" -> _navBarHeight.value = floatVal
+                            "nav_bar_padding_horizontal" -> _navBarPaddingHorizontal.value = floatVal
+                            "nav_bar_padding_bottom" -> _navBarPaddingBottom.value = floatVal
+                            "nav_bar_corner_radius" -> _navBarCornerRadius.value = floatVal
+                            "nav_bar_indicator_alpha" -> _navBarIndicatorAlpha.value = floatVal
+                            "glass_opacity_value" -> _glassOpacityValue.value = floatVal
+                            "nav_bar_glass_opacity_value" -> _navBarGlassOpacityValue.value = floatVal
+                            "aod_motion_sensitivity" -> _aodMotionSensitivity.value = floatVal
+                            "aod_dimness_level" -> _aodDimnessLevel.value = floatVal
+                            "streak_partial_threshold" -> _streakPartialThreshold.value = floatVal
+                            "streak_brightness" -> _streakBrightness.value = floatVal
+                            "dynamic_bg_light_brightness" -> _dynamicBgLightBrightness.value = floatVal
+                            "dynamic_bg_dark_brightness" -> _dynamicBgDarkBrightness.value = floatVal
+                        }
+                    }
+                    intKeys.contains(key) -> {
+                        val intVal = value.toIntOrNull() ?: 0
+                        editor.putInt(key, intVal)
+                        when (key) {
+                            "pomodoro_work_duration" -> _pomodoroWorkDuration.value = intVal
+                            "pomodoro_short_break_duration" -> _pomodoroShortBreakDuration.value = intVal
+                            "pomodoro_long_break_duration" -> _pomodoroLongBreakDuration.value = intVal
+                            "pomodoro_period_sessions" -> _pomodoroPeriodSessions.value = intVal
+                            "aod_burn_in_shift_speed" -> _aodBurnInShiftSpeed.value = intVal
+                            "aod_lock_timeout" -> _aodLockTimeout.value = intVal
+                            "streak_total_normal" -> _streakTotalNormal.value = intVal
+                            "streak_total_complete" -> _streakTotalComplete.value = intVal
+                            "streak_current" -> _streakCurrent.value = intVal
+                            "streak_longest" -> _streakLongest.value = intVal
+                            "streak_req_tasks" -> _streakRequirementTasks.value = intVal
+                            "streak_req_assignments" -> _streakRequirementAssignments.value = intVal
+                            "streak_req_study_mins" -> _streakRequirementStudyMins.value = intVal
+                        }
+                    }
+                    longKeys.contains(key) -> {
+                        val longVal = value.toLongOrNull() ?: 0L
+                        editor.putLong(key, longVal)
+                    }
+                    else -> {
+                        editor.putString(key, value)
+                        when (key) {
+                            "theme_mode" -> _themeMode.value = value
+                            "theme_color" -> _themeColor.value = value
+                            "custom_primary" -> _customPrimary.value = value
+                            "custom_primary_container" -> _customPrimaryContainer.value = value
+                            "custom_background" -> _customBackground.value = value
+                            "custom_surface" -> _customSurface.value = value
+                            "custom_text" -> _customText.value = value
+                            "nav_bar_label_mode" -> _navBarLabelMode.value = value
+                            "glass_backdrop_style" -> _glassBackdropStyle.value = value
+                            "nav_bar_glass_backdrop_style" -> _navBarGlassBackdropStyle.value = value
+                            "aod_true_aod_mode" -> _aodTrueAodMode.value = value
+                            "aod_sensitivity" -> _aodSensitivity.value = value
+                            "streak_progress_color" -> _streakProgressColor.value = value
+                            "streak_anim_override" -> _streakAnimationOverride.value = value
+                            "streak_notif_tone" -> _streakNotificationTone.value = value
                         }
                     }
                 }
+            } catch (e: Exception) {
+                editor.putString(key, value)
             }
         }
         editor.apply()
@@ -1739,7 +1857,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                 val backupAdapter = moshi.adapter(lumia.tracker.model.ScholarBackup::class.java)
                 val fullBackupAdapter = moshi.adapter(lumia.tracker.model.FullAppBackup::class.java)
 
-                if (exportAll && activeProfile.value.isDefault) {
+                if (exportAll) {
                     val allProfs = profileManager.getAllProfiles()
                     val profileBackupsJson = mutableMapOf<String, String>()
                     for (prof in allProfs) {
@@ -1807,7 +1925,7 @@ private val _streakPercentage = MutableStateFlow(0f)
         }
     }
 
-        fun importData(uri: Uri) {
+    fun importData(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 var mainBackup: lumia.tracker.model.ScholarBackup? = null
@@ -1819,6 +1937,9 @@ private val _streakPercentage = MutableStateFlow(0f)
                 
                 val moshi = com.squareup.moshi.Moshi.Builder().add(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()
                 
+                // Clear any cached DB connections before overwriting databases
+                lumia.tracker.data.AppDatabase.clearInstances()
+
                 if (mainBackup!!.isFullAppBackup && mainBackup!!.fullAppBackupJson != null) {
                     val fullBackupAdapter = moshi.adapter(lumia.tracker.model.FullAppBackup::class.java)
                     val backupAdapter = moshi.adapter(lumia.tracker.model.ScholarBackup::class.java)
@@ -1837,27 +1958,32 @@ private val _streakPercentage = MutableStateFlow(0f)
                         if (prof.isDefault) continue
                         profileManager.addProfile(prof.name, prof.avatarEmoji, prof.alias, prof.starterTheme)
                     }
-                    // Wait, addProfile generates new ID. We should update profiles!
-                    // Let's just save the entire list directly to ProfileManager via reflection or just use prefs
                     val profListJson = moshi.adapter<List<lumia.tracker.model.UserProfile>>(com.squareup.moshi.Types.newParameterizedType(List::class.java, lumia.tracker.model.UserProfile::class.java)).toJson(fullBackup.profiles)
-                    profileManager.getProfilePrefs("").edit().putString("profiles_json", profListJson).commit() // Wait, ProfileManager uses global_profiles!
                     val globalPrefs = getApplication<Application>().getSharedPreferences("global_profiles", android.content.Context.MODE_PRIVATE)
                     globalPrefs.edit().putString("profiles_json", profListJson).commit()
                     profileManager.setActiveProfileId(fullBackup.activeProfileId)
                     
-                    // Restore each profile's data
+                    // Restore each profile's database & settings
                     for ((profId, pJson) in fullBackup.profileBackupsJson) {
                         val pBackup = backupAdapter.fromJson(pJson) ?: continue
                         val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), profId)
                         val pDao = db.scholarDao()
                         repository.restoreBackupToDao(pBackup, pDao)
                         
-                        // Restore settings
+                        // Restore settings with exact, type-safe matching
                         pBackup.settings?.let { sets ->
                             val pref = profileManager.getProfilePrefs(profId)
-                            val editor = pref.edit()
-                            sets.forEach { (key, value) -> editor.putString(key, value) }
-                            editor.commit()
+                            restoreProfileSettings(pref, sets)
+                        }
+                    }
+                    
+                    // Refresh current active UI with the restored settings of the active profile
+                    val activeId = fullBackup.activeProfileId
+                    val activeBackupJson = fullBackup.profileBackupsJson[activeId]
+                    if (activeBackupJson != null) {
+                        val activeBackup = backupAdapter.fromJson(activeBackupJson)
+                        if (activeBackup != null) {
+                            loadSettings(activeBackup.settings)
                         }
                     }
                     
@@ -1865,15 +1991,33 @@ private val _streakPercentage = MutableStateFlow(0f)
                     // Single profile restore
                     repository.restoreBackupToDao(mainBackup!!, repository.dao)
                     loadSettings(mainBackup!!.settings)
+                    mainBackup!!.profile?.let { importedProf ->
+                        val currentProf = profileManager.getActiveProfile()
+                        val updatedProf = currentProf.copy(
+                            name = importedProf.name,
+                            avatarEmoji = importedProf.avatarEmoji,
+                            alias = importedProf.alias,
+                            starterTheme = importedProf.starterTheme
+                        )
+                        profileManager.updateProfile(updatedProf)
+                    }
                 }
 
+                // Make sure cache instances are completely cleared and reset to target the updated SQLite tables
+                lumia.tracker.data.AppDatabase.clearInstances()
+
                 verifyFeatureEntitlements()
-        calculateTodayStreakProgress()
+                calculateTodayStreakProgress()
                 _importExportStatus.value = "Secure backup package imported and restored successfully"
                 activeProfile.value = profileManager.getActiveProfile()
                 allProfiles.value = profileManager.getAllProfiles()
                 lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
-            calculateTodayStreakProgress()
+                calculateTodayStreakProgress()
+
+                withContext(Dispatchers.Main) {
+                    val activeId = profileManager.getActiveProfileId()
+                    switchProfileAndRestart(getApplication(), activeId)
+                }
             } catch (e: Exception) {
                 _importExportStatus.value = "Import failed: ${e.message}"
             }

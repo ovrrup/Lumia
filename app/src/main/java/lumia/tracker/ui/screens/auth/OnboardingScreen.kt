@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -21,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -89,6 +92,7 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                     )
                     4 -> ProfileSetupPage(
                         isActive = pagerState.currentPage == page,
+                        viewModel = viewModel,
                         onSaved = { name, alias, theme, avatar ->
                             firstProfileName = name
                             firstProfileAlias = alias
@@ -102,7 +106,7 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                 }
             }
 
-            // Bottom bar
+            // Bottom navigation bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -127,7 +131,7 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                     }
                 }
 
-                // Wait logic: we only allow advancing to Permissions on our own, but Backup (we skip or import).
+                // Check general button visibility
                 val isButtonVisible = pagerState.currentPage in listOf(0, 1, 2, 4, 5)
                 
                 if (isButtonVisible) {
@@ -172,7 +176,7 @@ fun BackupOptionPage(
     onBackupImported: () -> Unit,
     onSkip: () -> Unit
 ) {
-    val scale by animateFloatAsState(if (isActive) 1f else 0.8f, tween(600), label = "backup_scale")
+    val scale by animateFloatAsState(if (isActive) 1f else 0.85f, tween(600), label = "backup_scale")
     val alpha by animateFloatAsState(if (isActive) 1f else 0f, tween(600), label = "backup_alpha")
     val context = LocalContext.current
     
@@ -187,11 +191,10 @@ fun BackupOptionPage(
         }
     )
     
-    // Automatically advance if imported successfully
     LaunchedEffect(importExportStatus) {
         if (importExportStatus?.contains("successfully", ignoreCase = true) == true) {
             android.widget.Toast.makeText(context, "Backup Restored Successfully!", android.widget.Toast.LENGTH_SHORT).show()
-            viewModel.clearImportExportStatus() // Make sure to reset it
+            viewModel.clearImportExportStatus() // Reset state
             onBackupImported()
         }
     }
@@ -206,69 +209,161 @@ fun BackupOptionPage(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Rounded.CloudDownload,
-            contentDescription = null,
+        Box(
             modifier = Modifier
-                .size(80.dp)
-                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                .padding(20.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.CloudDownload,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = "Welcome Back?",
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "If you have a previous Lumia backup file (.bin or .json), you can import it now. All your courses, subjects and settings will be restored instantly.",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
         )
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Restore academic data from a previous backup file, or start fresh with a clean profile setup.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center,
+            lineHeight = 20.sp
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
         
         if (!importExportStatus.isNullOrBlank() && importExportStatus?.contains("successfully", ignoreCase = true) != true) {
-            Text(
-                text = importExportStatus ?: "",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = importExportStatus ?: "",
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(12.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
         }
 
-        Button(
-            onClick = { filePickerLauncher.launch(arrayOf("*/*")) },
+        // Two beautifully styled choice cards for representation
+        Card(
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
-            modifier = Modifier.fillMaxWidth().height(56.dp)
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+            ),
+            onClick = { filePickerLauncher.launch(arrayOf("*/*")) }
         ) {
-            Text("Import Backup Data", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.FolderOpen,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Import Local Backup",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Restore all courses, settings, profiles, and logs instantly via your .bin or .json file.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
-        OutlinedButton(
-            onClick = onSkip,
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
-            modifier = Modifier.fillMaxWidth().height(56.dp)
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+            ),
+            onClick = onSkip
         ) {
-            Text("I'm a New User", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.tertiary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.AutoAwesome,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onTertiary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "I'm a New User",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Create a beautiful custom student profile and start tracking your academic journey from scratch.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
 fun VisualTourPage(isActive: Boolean) {
-    val scale by animateFloatAsState(if (isActive) 1f else 0.8f, tween(600), label = "tour_scale")
+    val scale by animateFloatAsState(if (isActive) 1f else 0.85f, tween(600), label = "tour_scale")
     val alpha by animateFloatAsState(if (isActive) 1f else 0f, tween(600), label = "tour_alpha")
 
     Column(
@@ -276,54 +371,125 @@ fun VisualTourPage(isActive: Boolean) {
             .fillMaxSize()
             .padding(24.dp)
             .scale(scale)
-            .alpha(alpha),
+            .alpha(alpha)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Rounded.Explore,
-            contentDescription = null,
+        Box(
             modifier = Modifier
-                .size(80.dp)
-                .background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape)
-                .padding(20.dp),
-            tint = MaterialTheme.colorScheme.tertiary
-        )
-        Spacer(modifier = Modifier.height(24.dp))
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.tertiaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Explore,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.tertiary
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "Your setup is complete!",
+            text = "Setup Complete!",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Black,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground
         )
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Lumia is optimized and ready. Explore the dynamic screens inside your cockpit:",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center,
+            lineHeight = 20.sp
+        )
 
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-            shape = RoundedCornerShape(16.dp),
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Visual Tour Cards in Grid or beautiful rows
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                TourItem(icon = Icons.Rounded.Dashboard, title = "Home Dashboard", desc = "Overview of your day and next classes")
-                TourItem(icon = Icons.Rounded.MenuBook, title = "Courses & Subjects", desc = "Manage your studying material and schedule")
-                TourItem(icon = Icons.Rounded.Timer, title = "Pomodoro Timer", desc = "Focus and track your study sessions")
-                TourItem(icon = Icons.Rounded.Settings, title = "Settings", desc = "Customize aesthetics and advanced toggles")
-            }
+            TourItemCard(
+                icon = Icons.Rounded.Dashboard,
+                title = "Home Dashboard",
+                desc = "Track schedules, daily streaks, task progress, and live indicators.",
+                tint = MaterialTheme.colorScheme.primary
+            )
+            TourItemCard(
+                icon = Icons.Rounded.MenuBook,
+                title = "Courses & Subjects",
+                desc = "Organize classes, calculate grade analytics, and manage coursework.",
+                tint = MaterialTheme.colorScheme.secondary
+            )
+            TourItemCard(
+                icon = Icons.Rounded.Timer,
+                title = "Pomodoro Timer",
+                desc = "Engage in deep focused study sessions with integrated statistics.",
+                tint = MaterialTheme.colorScheme.tertiary
+            )
+            TourItemCard(
+                icon = Icons.Rounded.Settings,
+                title = "Aesthetic Settings",
+                desc = "Customize glass transparency, accent themes, and widgets easily.",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
 @Composable
-fun TourItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, desc: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-        Spacer(modifier = Modifier.width(16.dp))
-        Column {
-            Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+fun TourItemCard(icon: ImageVector, title: String, desc: String, tint: Color) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(tint.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = desc,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 16.sp
+                )
+            }
         }
     }
 }
-

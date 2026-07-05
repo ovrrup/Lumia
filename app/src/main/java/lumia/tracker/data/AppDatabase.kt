@@ -22,7 +22,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun scholarDao(): ScholarDao
 
     companion object {
-        private val instances = mutableMapOf<String, AppDatabase>()
+        private val instances = java.util.concurrent.ConcurrentHashMap<String, AppDatabase>()
 
         val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
@@ -64,17 +64,19 @@ abstract class AppDatabase : RoomDatabase() {
             val profileId = forceProfileId ?: profMgr.getActiveProfileId()
             
             return instances[profileId] ?: synchronized(this) {
-                val dbName = if (profileId == "DEFAULT") "scholar_sync_database" else "scholar_sync_$profileId"
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    dbName
-                )
-                .addMigrations(MIGRATION_5_6, MIGRATION_12_13, MIGRATION_14_15, MIGRATION_16_17, MIGRATION_17_18)
-                .fallbackToDestructiveMigration()
-                .build()
-                instances[profileId] = instance
-                instance
+                instances[profileId] ?: run {
+                    val dbName = if (profileId == "DEFAULT") "scholar_sync_database" else "scholar_sync_$profileId"
+                    val instance = Room.databaseBuilder(
+                        context.applicationContext,
+                        AppDatabase::class.java,
+                        dbName
+                    )
+                    .addMigrations(MIGRATION_5_6, MIGRATION_12_13, MIGRATION_14_15, MIGRATION_16_17, MIGRATION_17_18)
+                    .fallbackToDestructiveMigration()
+                    .build()
+                    instances[profileId] = instance
+                    instance
+                }
             }
         }
         

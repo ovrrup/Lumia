@@ -118,7 +118,8 @@ fun CoursesTab(
                         course = course,
                         onClick = { navController.navigate("courseDetail/${course.id}") },
                         onEdit = { courseToEdit = course },
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        onSubjectClick = { subjId -> navController.navigate("subjectDetail/$subjId") }
                     )
                 }
             }

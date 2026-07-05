@@ -30,7 +30,8 @@ fun CourseItemCard(
     course: Course,
     onClick: () -> Unit,
     onEdit: () -> Unit,
-    viewModel: ScholarViewModel
+    viewModel: ScholarViewModel,
+    onSubjectClick: (Int) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
@@ -170,7 +171,7 @@ fun CourseItemCard(
                 ) {
                     for (subj in linkedSubjects) {
                         SuggestionChip(
-                            onClick = { },
+                            onClick = { onSubjectClick(subj.id) },
                             label = { 
                                 Text(
                                     text = subj.name,

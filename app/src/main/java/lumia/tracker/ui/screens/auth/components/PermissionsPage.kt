@@ -8,35 +8,19 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.rounded.Analytics
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.EditNote
-import androidx.compose.material.icons.rounded.Face
-import androidx.compose.material.icons.rounded.FavoriteBorder
-import androidx.compose.material.icons.rounded.Leaderboard
-import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material.icons.rounded.Token
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,21 +28,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.navigation.NavController
-import kotlinx.coroutines.launch
-import lumia.tracker.viewmodel.ScholarViewModel
 
 @Composable
 fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
-    val scale by animateFloatAsState(if (isActive) 1f else 0.8f, tween(600, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "perm_scale")
+    val scale by animateFloatAsState(if (isActive) 1f else 0.85f, tween(600), label = "perm_scale")
     val alpha by animateFloatAsState(if (isActive) 1f else 0f, tween(600), label = "perm_alpha")
 
     val context = LocalContext.current
@@ -121,116 +100,186 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(androidx.compose.foundation.rememberScrollState())
+            .verticalScroll(rememberScrollState())
             .padding(24.dp)
             .scale(scale)
             .alpha(alpha),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
+        // Redesigned Header Area
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(bottom = 8.dp)
         ) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.VerifiedUser,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Permissions",
-                style = MaterialTheme.typography.headlineMedium,
+                text = "System Integration",
+                style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Configure permissions to experience Lumia's full layout. Both True AOD overlay options are supported.",
-                style = MaterialTheme.typography.bodyLarge,
+                text = "Configure system access permissions to let Lumia track, schedule, and render displays accurately.",
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
-                lineHeight = 22.sp
+                lineHeight = 20.sp
             )
         }
 
-        // Notifications
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            PermissionCard(
-                title = "Notifications",
-                description = "For Pomodoro timer alerts and important task reminders.",
-                icon = Icons.Default.Notifications,
-                isGranted = notificationsGranted,
-                onRequest = { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }
+        // Section 1: Core Features Group Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
             )
-        } else {
-            PermissionCard(
-                title = "Notifications",
-                description = "For Pomodoro timer alerts and important task reminders.",
-                icon = Icons.Default.Notifications,
-                isGranted = true,
-                onRequest = { }
-            )
-        }
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Core Helpers",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
 
-        // Overlay
-        PermissionCard(
-            title = "True AOD Overlay (Technical Version)",
-            description = "Available in the Technical Version: Draw screen overlay clock directly over lockscreens. No battery strain.",
-            icon = Icons.Rounded.AutoAwesome,
-            isGranted = overlayGranted,
-            onRequest = {
-                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                    data = Uri.parse("package:${context.packageName}")
+                // Notifications
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    PermissionCard(
+                        title = "Notifications",
+                        description = "Triggers alerts for Pomodoro timer stages and due task schedules.",
+                        icon = Icons.Default.Notifications,
+                        isGranted = notificationsGranted,
+                        onRequest = { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }
+                    )
+                } else {
+                    PermissionCard(
+                        title = "Notifications",
+                        description = "Triggers alerts for Pomodoro timer stages and due task schedules.",
+                        icon = Icons.Default.Notifications,
+                        isGranted = true,
+                        onRequest = { }
+                    )
                 }
-                try { context.startActivity(intent) } catch (e: Exception) {}
-            }
-        )
 
-        // Accessibility Service
-        PermissionCard(
-            title = "AOD Accessibility (Technical Version)",
-            description = "Available in the Technical Version: Render screen-saver safely behind system security lock panels.",
-            icon = Icons.Rounded.FavoriteBorder,
-            isGranted = accessibilityGranted,
-            onRequest = {
-                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                try { context.startActivity(intent) } catch (e: Exception) {}
-            }
-        )
-
-        // Exact Alarms
-        PermissionCard(
-            title = "Exact Alarms",
-            description = "Ensure study timer precision even when the device goes into deep sleep.",
-            icon = Icons.Default.Timer,
-            isGranted = alarmsGranted,
-            onRequest = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                        data = Uri.parse("package:${context.packageName}")
+                // Exact Alarms
+                PermissionCard(
+                    title = "Exact Alarms",
+                    description = "Fires high-precision timers and daily agenda reminders reliably.",
+                    icon = Icons.Default.Timer,
+                    isGranted = alarmsGranted,
+                    onRequest = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                data = Uri.parse("package:${context.packageName}")
+                            }
+                            try { context.startActivity(intent) } catch (e: Exception) {}
+                        }
                     }
-                    try { context.startActivity(intent) } catch (e: Exception) {}
-                }
-            }
-        )
+                )
 
-        // Battery Optimization Exemption
-        PermissionCard(
-            title = "Exempt Battery Limit",
-            description = "Crucial without GMS: Allow Lumia to launch exact local alerts and syncs when deep idling.",
-            icon = Icons.Rounded.Analytics, // Using an available rounded icon
-            isGranted = batteryIgnoring,
-            onRequest = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    try {
-                        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                // Battery Exempt
+                PermissionCard(
+                    title = "Exempt Battery Limits",
+                    description = "Let Lumia run exact local timers and widget refreshes in idle mode.",
+                    icon = Icons.Rounded.FlashOn,
+                    isGranted = batteryIgnoring,
+                    onRequest = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            try {
+                                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                }
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                try {
+                                    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                    context.startActivity(intent)
+                                } catch (ex: Exception) {}
+                            }
+                        }
+                    }
+                )
+            }
+        }
+
+        // Section 2: Always On Display Services
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Always-On Displays",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+
+                // Overlay
+                PermissionCard(
+                    title = "True AOD Overlay",
+                    description = "Available in Technical Version: Draws high-contrast screensavers over secure locks.",
+                    icon = Icons.Rounded.Layers,
+                    isGranted = overlayGranted,
+                    onRequest = {
+                        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
                             data = Uri.parse("package:${context.packageName}")
                         }
-                        context.startActivity(intent)
-                    } catch (e: Exception) {
-                        try {
-                            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                            context.startActivity(intent)
-                        } catch (ex: Exception) {}
+                        try { context.startActivity(intent) } catch (e: Exception) {}
                     }
-                }
+                )
+
+                // Accessibility
+                PermissionCard(
+                    title = "AOD Accessibility",
+                    description = "Available in Technical Version: Suspends system overlays safely behind secure locked views.",
+                    icon = Icons.Rounded.AccessibilityNew,
+                    isGranted = accessibilityGranted,
+                    onRequest = {
+                        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                        try { context.startActivity(intent) } catch (e: Exception) {}
+                    }
+                )
             }
-        )
+        }
+        
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
