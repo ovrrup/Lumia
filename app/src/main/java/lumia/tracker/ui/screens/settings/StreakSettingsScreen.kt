@@ -22,6 +22,8 @@ import lumia.tracker.ui.theme.bouncyClick
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -68,6 +70,65 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 .padding(paddingValues),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item {
+                SettingsGroupCard(title = "Live Fire Chamber Preview", icon = Icons.Rounded.LocalFireDepartment) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(130.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Ambient backdrop glow reflecting the selected color
+                        val primary = MaterialTheme.colorScheme.primary
+                        val baseColor = if (colorHex == "Theme") primary else try {
+                            Color(android.graphics.Color.parseColor(colorHex))
+                        } catch (e: Exception) {
+                            Color(0xFFFF9800)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(110.dp)
+                                .background(
+                                    Brush.radialGradient(
+                                        colors = listOf(baseColor.copy(alpha = 0.2f * brightness), Color.Transparent)
+                                    )
+                                )
+                        )
+                        
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                "Live Chamber Preview",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            Box(
+                                modifier = Modifier
+                                    .graphicsLayer {
+                                        scaleX = 1.3f
+                                        scaleY = 1.3f
+                                    }
+                            ) {
+                                lumia.tracker.ui.components.StreakWidget(viewModel, navController)
+                            }
+                        }
+                    }
+                }
+            }
+
             item {
                 SettingsGroupCard(title = "Streak Goals", icon = Icons.Rounded.List) {
                     Text(
@@ -178,14 +239,19 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Animation Style (Override)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                    val styles = listOf("Default", "Material", "Bouncy", "Glass Liquid")
-                    styles.forEach { style ->
+                    val stylesWithDesc = listOf(
+                        "Default" to "Classic smooth rotation and clean fire pulse.",
+                        "Material" to "Expressive segment tracker with glowing corona aura.",
+                        "Bouncy" to "Energetic dancing flames with orbiting active sparks.",
+                        "Glass Liquid" to "Glossy frosted glass container with a fluid sine wave."
+                    )
+                    stylesWithDesc.forEach { (style, description) ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .bouncyClick { viewModel.updateStreakAnimationOverride(style) }
-                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                                .padding(vertical = 10.dp, horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
@@ -193,7 +259,14 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                                 onClick = { viewModel.updateStreakAnimationOverride(style) }
                             )
                             Spacer(modifier = Modifier.width(16.dp))
-                            Text(style, style = MaterialTheme.typography.bodyMedium)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(style, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }

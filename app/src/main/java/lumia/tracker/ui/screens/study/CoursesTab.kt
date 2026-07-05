@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import lumia.tracker.ui.theme.animateItemEntry
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Delete
@@ -110,13 +112,15 @@ fun CoursesTab(
                 }
             }
         } else {
-            items(courses, key = { it.id }) { course ->
-                lumia.tracker.ui.screens.study.CourseItemCard(
-                    course = course,
-                    onClick = { navController.navigate("courseDetail/${course.id}") },
-                    onEdit = { courseToEdit = course },
-                    viewModel = viewModel
-                )
+            itemsIndexed(courses, key = { _, course -> course.id }) { index, course ->
+                Box(modifier = Modifier.animateItemEntry(index)) {
+                    lumia.tracker.ui.screens.study.CourseItemCard(
+                        course = course,
+                        onClick = { navController.navigate("courseDetail/${course.id}") },
+                        onEdit = { courseToEdit = course },
+                        viewModel = viewModel
+                    )
+                }
             }
         }
     }

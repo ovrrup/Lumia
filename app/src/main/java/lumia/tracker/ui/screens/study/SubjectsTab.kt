@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import lumia.tracker.ui.theme.animateItemEntry
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Delete
@@ -106,7 +108,7 @@ fun SubjectsTab(
                 }
             }
         } else {
-            items(subjects, key = { it.id }) { subject ->
+            itemsIndexed(subjects, key = { _, subject -> subject.id }) { index, subject ->
                 var expanded by remember { mutableStateOf(false) }
                 var showDetails by remember { mutableStateOf(false) }
                 val linkedCourses = remember(courses, subject) {
@@ -118,7 +120,7 @@ fun SubjectsTab(
                 
                 GlassCard(
                     onClick = { navController.navigate("subjectDetail/${subject.id}") },
-                    modifier = Modifier.fillMaxWidth().animateContentSize(),
+                    modifier = Modifier.fillMaxWidth().animateContentSize().animateItemEntry(index),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
                 ) {
                     Column(

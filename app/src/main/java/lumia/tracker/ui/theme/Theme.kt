@@ -6,15 +6,11 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.*
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -482,3 +478,56 @@ fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Mod
         onClick = onClick
     )
 }
+
+@Composable
+fun Modifier.animateItemEntry(index: Int): Modifier {
+    val animationMode = LocalAppAnimationMode.current
+    if (animationMode == "None") return this
+    
+    val visibleState = remember { 
+        MutableTransitionState(false).apply { targetState = true } 
+    }
+    val transition = rememberTransition(visibleState, label = "itemEntry")
+    
+    val delay = (index * 45).coerceAtMost(300) // staggered delay with a reasonable cap
+    
+    val offset by transition.animateDp(
+        transitionSpec = {
+            if (animationMode == "Bouncy") {
+                spring(
+                    dampingRatio = 0.55f, 
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            } else {
+                tween(
+                    durationMillis = 350, 
+                    delayMillis = delay, 
+                    easing = FastOutSlowInEasing
+                )
+            }
+        },
+        label = "offset"
+    ) { state ->
+        if (state) 0.dp else 16.dp
+    }
+    
+    val alpha by transition.animateFloat(
+        transitionSpec = {
+            tween(
+                durationMillis = 300, 
+                delayMillis = delay, 
+                easing = LinearOutSlowInEasing
+            )
+        },
+        label = "alpha"
+    ) { state ->
+        if (state) 1f else 0f
+    }
+    
+    return this
+        .graphicsLayer {
+            translationY = offset.toPx()
+            this.alpha = alpha
+        }
+}
+
