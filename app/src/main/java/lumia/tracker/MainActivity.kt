@@ -62,14 +62,17 @@ class MainActivity : ComponentActivity() {
     private val viewModel: ScholarViewModel by viewModels()
 
     private val _crashData = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+    private val _intentFlow = kotlinx.coroutines.flow.MutableStateFlow<android.content.Intent?>(null)
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        _intentFlow.value = intent
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        _intentFlow.value = intent
         
         // Handle crash restarts
         val crashData = intent.getStringExtra("FATAL_CRASH_DATA")
@@ -238,15 +241,42 @@ class MainActivity : ComponentActivity() {
 
                     val navController = rememberNavController()
 
-                    val act = androidx.activity.compose.LocalActivity.current as? MainActivity
-                    androidx.compose.runtime.LaunchedEffect(act?.intent) {
-                        act?.intent?.let { intent ->
+                    val currentIntent by _intentFlow.collectAsStateWithLifecycle()
+                    androidx.compose.runtime.LaunchedEffect(currentIntent) {
+                        currentIntent?.let { intent ->
+                            var handled = false
+                            
+                            val openScreen = intent.getStringExtra("OPEN_SCREEN")
+                            if (!openScreen.isNullOrEmpty()) {
+                                navController.navigate(openScreen) {
+                                    launchSingleTop = true
+                                }
+                                intent.removeExtra("OPEN_SCREEN")
+                                handled = true
+                            }
+                            
+                            val openTab = intent.getIntExtra("OPEN_TAB", -1)
+                            if (openTab != -1) {
+                                viewModel.setSelectedDashboardTab(openTab)
+                                navController.navigate("dashboard") {
+                                    popUpTo("dashboard") { inclusive = false }
+                                    launchSingleTop = true
+                                }
+                                intent.removeExtra("OPEN_TAB")
+                                handled = true
+                            }
+                            
                             if (intent.action == "ACTION_OPEN_POMODORO" || intent.getBooleanExtra("OPEN_POMODORO", false)) {
                                 navController.navigate("pomodoro") {
                                     launchSingleTop = true
                                 }
                                 intent.removeExtra("OPEN_POMODORO")
                                 intent.action = null
+                                handled = true
+                            }
+                            
+                            if (handled) {
+                                _intentFlow.value = null
                             }
                         }
                     }
@@ -401,8 +431,30 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel
                             )
                         }
-                        composable("pomodoro") {
-                            lumia.tracker.ui.screens.PomodoroScreen(navController = navController, viewModel = viewModel)
+                        composable(
+                            "pomodoro?subjectId={subjectId}&courseId={courseId}&assignmentId={assignmentId}&taskId={taskId}&topicId={topicId}",
+                            arguments = listOf(
+                                navArgument("subjectId") { type = NavType.StringType; defaultValue = "" },
+                                navArgument("courseId") { type = NavType.StringType; defaultValue = "" },
+                                navArgument("assignmentId") { type = NavType.StringType; defaultValue = "" },
+                                navArgument("taskId") { type = NavType.StringType; defaultValue = "" },
+                                navArgument("topicId") { type = NavType.StringType; defaultValue = "" }
+                            )
+                        ) { backStackEntry ->
+                            val sId = backStackEntry.arguments?.getString("subjectId")?.toIntOrNull()
+                            val cId = backStackEntry.arguments?.getString("courseId")?.toIntOrNull()
+                            val aId = backStackEntry.arguments?.getString("assignmentId")?.toIntOrNull()
+                            val tId = backStackEntry.arguments?.getString("taskId")?.toIntOrNull()
+                            val topId = backStackEntry.arguments?.getString("topicId")?.toIntOrNull()
+                            lumia.tracker.ui.screens.PomodoroScreen(
+                                navController = navController,
+                                viewModel = viewModel,
+                                initialSubjectId = sId,
+                                initialCourseId = cId,
+                                initialAssignmentId = aId,
+                                initialTaskId = tId,
+                                initialTopicId = topId
+                            )
                         }
                         composable("notes") {
                             lumia.tracker.ui.screens.QuickNotesScreen(navController = navController)

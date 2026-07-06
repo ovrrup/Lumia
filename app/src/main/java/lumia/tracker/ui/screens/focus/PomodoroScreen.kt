@@ -49,7 +49,15 @@ import lumia.tracker.ui.components.BouncyTextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmodel.ScholarViewModel) {
+fun PomodoroScreen(
+    navController: NavController,
+    viewModel: lumia.tracker.viewmodel.ScholarViewModel,
+    initialSubjectId: Int? = null,
+    initialCourseId: Int? = null,
+    initialAssignmentId: Int? = null,
+    initialTaskId: Int? = null,
+    initialTopicId: Int? = null
+) {
     var timeLeft by remember { mutableStateOf(25 * 60) }
     var isRunning by remember { mutableStateOf(false) }
     var isAodMode by remember { mutableStateOf(false) }
@@ -60,11 +68,22 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
     val courses by viewModel.courses.collectAsStateWithLifecycle(emptyList<lumia.tracker.model.Course>())
     val assignmentsList by viewModel.assignments.collectAsStateWithLifecycle(emptyList<lumia.tracker.model.PracticeAssignment>())
     val tasks by viewModel.tasks.collectAsStateWithLifecycle(emptyList<lumia.tracker.model.Task>())
+    val allTopicsGlobal by viewModel.allTopics.collectAsStateWithLifecycle(emptyList<lumia.tracker.model.Topic>())
 
-    var selectedSubjectId by remember { mutableStateOf<Int?>(null) }
-    var selectedCourseId by remember { mutableStateOf<Int?>(null) }
-    var selectedAssignmentId by remember { mutableStateOf<Int?>(null) }
-    var selectedTaskId by remember { mutableStateOf<Int?>(null) }
+    var selectedSubjectId by remember { mutableStateOf<Int?>(initialSubjectId) }
+    var selectedCourseId by remember { mutableStateOf<Int?>(initialCourseId) }
+    var selectedAssignmentId by remember { mutableStateOf<Int?>(initialAssignmentId) }
+    var selectedTaskId by remember { mutableStateOf<Int?>(initialTaskId) }
+    var selectedTopicId by remember { mutableStateOf<Int?>(initialTopicId) }
+
+    val relevantTopics = remember(allTopicsGlobal, selectedSubjectId, selectedCourseId, courses) {
+        val finalSubjectId = selectedSubjectId ?: selectedCourseId?.let { cid -> courses.find { it.id == cid }?.subjectId }
+        if (finalSubjectId != null) {
+            allTopicsGlobal.filter { it.subjectId == finalSubjectId }
+        } else {
+            allTopicsGlobal
+        }
+    }
 
     var isPaused by remember { mutableStateOf(false) }
     var sessionsCompleted by remember { mutableStateOf(0) }
@@ -94,6 +113,7 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
             selectedCourseId = serviceState.courseId
             selectedAssignmentId = serviceState.assignmentId
             selectedTaskId = serviceState.taskId
+            selectedTopicId = serviceState.topicId
         } else {
             isRunning = false
             timeLeft = workDuration * 60
@@ -303,6 +323,48 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
+                            
+                            val activeCourse = selectedCourseId?.let { cid -> courses.find { it.id == cid } }
+                            val activeSubject = selectedSubjectId?.let { sid -> subjects.find { it.id == sid } }
+                            val activeTopic = selectedTopicId?.let { tid -> allTopicsGlobal.find { it.id == tid } }
+                            val activeAssignment = selectedAssignmentId?.let { aid -> assignmentsList.find { it.id == aid } }
+                            val activeTask = selectedTaskId?.let { tid -> tasks.find { it.id == tid } }
+                            
+                            val connectionText = when {
+                                activeTask != null -> "Task: ${activeTask.title}"
+                                activeAssignment != null -> "Assignment: ${activeAssignment.title}"
+                                activeTopic != null -> "Topic: ${activeTopic.title}"
+                                activeSubject != null && activeCourse != null -> "${activeCourse.name} - ${activeSubject.name}"
+                                activeCourse != null -> "Course: ${activeCourse.name}"
+                                activeSubject != null -> "Subject: ${activeSubject.name}"
+                                else -> null
+                            }
+                            
+                            if (connectionText != null) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.CheckCircle,
+                                        contentDescription = "Connected Context",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = connectionText,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -440,7 +502,8 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                                     subjectId = selectedSubjectId,
                                                     courseId = selectedCourseId,
                                                     assignmentId = selectedAssignmentId,
-                                                    taskId = selectedTaskId
+                                                    taskId = selectedTaskId,
+                                                    topicId = selectedTopicId
                                                 )
                                             } else if (studiedMinutes == 0 && modeString == "WORK") {
                                                 // Session cancelled
@@ -476,6 +539,7 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                             selectedCourseId?.let { putExtra("courseId", it) }
                                             selectedAssignmentId?.let { putExtra("assignmentId", it) }
                                             selectedTaskId?.let { putExtra("taskId", it) }
+                                            selectedTopicId?.let { putExtra("topicId", it) }
                                         }
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                             context.startForegroundService(intent)
@@ -597,7 +661,15 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    var expandedLink by remember { mutableStateOf(false) }
+                    var expandedLink by remember { 
+                        mutableStateOf(
+                            initialSubjectId != null || 
+                            initialCourseId != null || 
+                            initialAssignmentId != null || 
+                            initialTaskId != null || 
+                            initialTopicId != null
+                        ) 
+                    }
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth().clickable { expandedLink = !expandedLink },
@@ -605,7 +677,13 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("Link Session With Context", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Icon(if (expandedLink) Icons.Rounded.ArrowDropDown else Icons.Rounded.ArrowDropDown, contentDescription = null)
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowDropDown,
+                                contentDescription = null,
+                                modifier = Modifier.graphicsLayer {
+                                    rotationZ = if (expandedLink) 180f else 0f
+                                }
+                            )
                         }
                         if (expandedLink) {
                             Spacer(Modifier.height(16.dp))
@@ -622,6 +700,14 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                                 item { FilterChip(selected = selectedCourseId == null, onClick = { selectedCourseId = null }, label = { Text("None") }) }
                                 items(courses) { course ->
                                     FilterChip(selected = selectedCourseId == course.id, onClick = { selectedCourseId = course.id }, label = { Text(course.name) })
+                                }
+                            }
+
+                            Text("Topic (Optional)", style = MaterialTheme.typography.labelSmall)
+                            androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                item { FilterChip(selected = selectedTopicId == null, onClick = { selectedTopicId = null }, label = { Text("None") }) }
+                                items(relevantTopics) { topic ->
+                                    FilterChip(selected = selectedTopicId == topic.id, onClick = { selectedTopicId = topic.id }, label = { Text(topic.title) })
                                 }
                             }
 
@@ -683,10 +769,17 @@ fun PomodoroScreen(navController: NavController, viewModel: lumia.tracker.viewmo
                             Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                                 val courseName = session.courseId?.let { cid -> courses.find { it.id == cid }?.name }
                                 val subjectName = session.subjectId?.let { sid -> subjects.find { it.id == sid }?.name }
+                                val assignmentName = session.assignmentId?.let { aid -> assignmentsList.find { it.id == aid }?.title }
+                                val taskName = session.taskId?.let { tid -> tasks.find { it.id == tid }?.title }
+                                val topicName = session.topicId?.let { tid -> allTopicsGlobal.find { it.id == tid }?.title }
                                 val contextualText = when {
-                                    courseName != null && subjectName != null -> "Focus Session: $courseName - $subjectName"
-                                    courseName != null -> "Focus Session: $courseName"
-                                    subjectName != null -> "Focus Session: $subjectName"
+                                    topicName != null && courseName != null -> "Topic: $topicName ($courseName)"
+                                    topicName != null -> "Topic: $topicName"
+                                    assignmentName != null -> "Assignment: $assignmentName"
+                                    taskName != null -> "Task: $taskName"
+                                    courseName != null && subjectName != null -> "$courseName - $subjectName"
+                                    courseName != null -> "Course: $courseName"
+                                    subjectName != null -> "Subject: $subjectName"
                                     else -> "Focus Session"
                                 }
                                 Text(

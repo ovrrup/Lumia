@@ -200,6 +200,13 @@ private val _streakPercentage = MutableStateFlow(0f)
     private val _streakLongest = MutableStateFlow(prefs.getInt("streak_longest", 0))
     val streakLongest = _streakLongest.asStateFlow()
 
+    private val _selectedDashboardTab = MutableStateFlow(0)
+    val selectedDashboardTab = _selectedDashboardTab.asStateFlow()
+
+    fun setSelectedDashboardTab(tab: Int) {
+        _selectedDashboardTab.value = tab
+    }
+
     private val _streakRequirementTasks = MutableStateFlow(prefs.getInt("streak_req_tasks", 3))
     val streakRequirementTasks = _streakRequirementTasks.asStateFlow()
 
@@ -413,7 +420,8 @@ private val _streakPercentage = MutableStateFlow(0f)
                         title = "Streak Completed!",
                         text = message,
                         iconRes = iconRes,
-                        color = try { android.graphics.Color.parseColor(colorHex) } catch(e: Exception) { android.graphics.Color.parseColor("#3197D6") }
+                        color = try { android.graphics.Color.parseColor(colorHex) } catch(e: Exception) { android.graphics.Color.parseColor("#3197D6") },
+                        openScreen = "settings/streaks"
                     )
                 }
 
@@ -1269,7 +1277,7 @@ private val _streakPercentage = MutableStateFlow(0f)
         }
     }
 
-    fun addPomodoroSession(durationMinutes: Int, subjectId: Int? = null, courseId: Int? = null, assignmentId: Int? = null, taskId: Int? = null) {
+    fun addPomodoroSession(durationMinutes: Int, subjectId: Int? = null, courseId: Int? = null, assignmentId: Int? = null, taskId: Int? = null, topicId: Int? = null) {
         viewModelScope.launch {
             repository.insertPomodoroSession(lumia.tracker.model.PomodoroSession(
                 dateMillis = System.currentTimeMillis(),
@@ -1277,7 +1285,8 @@ private val _streakPercentage = MutableStateFlow(0f)
                 subjectId = subjectId,
                 courseId = courseId,
                 assignmentId = assignmentId,
-                taskId = taskId
+                taskId = taskId,
+                topicId = topicId
             ))
             logAction("Completed Pomodoro Session ($durationMinutes min)")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
@@ -1639,7 +1648,7 @@ private val _streakPercentage = MutableStateFlow(0f)
 
 
 
-    private fun sendInstantNotification(channelId: String, notifId: Int, title: String, text: String, iconRes: Int, color: Int) {
+    private fun sendInstantNotification(channelId: String, notifId: Int, title: String, text: String, iconRes: Int, color: Int, openScreen: String? = null, openTab: Int = -1) {
         val application = getApplication<Application>()
         val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -1649,7 +1658,15 @@ private val _streakPercentage = MutableStateFlow(0f)
             }
             notificationManager.createNotificationChannel(channel)
         }
-        val intent = android.content.Intent(application, lumia.tracker.MainActivity::class.java).apply { flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK }
+        val intent = android.content.Intent(application, lumia.tracker.MainActivity::class.java).apply { 
+            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK 
+            if (openScreen != null) {
+                putExtra("OPEN_SCREEN", openScreen)
+            }
+            if (openTab != -1) {
+                putExtra("OPEN_TAB", openTab)
+            }
+        }
         val pendingIntent = android.app.PendingIntent.getActivity(application, 0, intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
 
         val notification = androidx.core.app.NotificationCompat.Builder(application, channelId)

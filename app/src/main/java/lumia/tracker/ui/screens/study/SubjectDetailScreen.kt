@@ -500,6 +500,14 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                                         onDismissRequest = { showTopicMenu = false }
                                                     ) {
                                                         DropdownMenuItem(
+                                                            text = { Text("Start Pomodoro") },
+                                                            onClick = {
+                                                                showTopicMenu = false
+                                                                navController.navigate("pomodoro?subjectId=${subjectId}&topicId=${topic.id}")
+                                                            },
+                                                            leadingIcon = { Icon(Icons.Rounded.Timer, contentDescription = null) }
+                                                        )
+                                                        DropdownMenuItem(
                                                             text = { Text("Edit Topic") },
                                                             onClick = {
                                                                 showTopicMenu = false
@@ -648,6 +656,14 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                                         onDismissRequest = { showTopicMenu = false }
                                                     ) {
                                                         DropdownMenuItem(
+                                                            text = { Text("Start Pomodoro") },
+                                                            onClick = {
+                                                                showTopicMenu = false
+                                                                navController.navigate("pomodoro?subjectId=${subjectId}&topicId=${topic.id}")
+                                                            },
+                                                            leadingIcon = { Icon(Icons.Rounded.Timer, contentDescription = null) }
+                                                        )
+                                                        DropdownMenuItem(
                                                             text = { Text("Edit Topic") },
                                                             onClick = {
                                                                 showTopicMenu = false
@@ -739,6 +755,15 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                     expanded = showTaskMenu,
                                     onDismissRequest = { showTaskMenu = false }
                                 ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Start Pomodoro") },
+                                        onClick = {
+                                            showTaskMenu = false
+                                            val courseParam = task.courseId?.let { "&courseId=$it" } ?: ""
+                                            navController.navigate("pomodoro?subjectId=${subjectId}&taskId=${task.id}$courseParam")
+                                        },
+                                        leadingIcon = { Icon(Icons.Rounded.Timer, contentDescription = null) }
+                                    )
                                     DropdownMenuItem(
                                         text = { Text("Edit Task") },
                                         onClick = {
@@ -838,6 +863,15 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                     expanded = showAssignmentMenu,
                                     onDismissRequest = { showAssignmentMenu = false }
                                 ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Start Pomodoro") },
+                                        onClick = {
+                                            showAssignmentMenu = false
+                                            val courseParam = assignment.courseId?.let { "&courseId=$it" } ?: ""
+                                            navController.navigate("pomodoro?subjectId=${subjectId}&assignmentId=${assignment.id}$courseParam")
+                                        },
+                                        leadingIcon = { Icon(Icons.Rounded.Timer, contentDescription = null) }
+                                    )
                                     DropdownMenuItem(
                                         text = { Text("Edit Assignment") },
                                         onClick = {

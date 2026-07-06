@@ -817,23 +817,10 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                     val allTestRecordsGlobal by viewModel.allTestRecords.collectAsStateWithLifecycle(emptyList())
-                    val testRecords = remember(allTestRecordsGlobal, course, linkedSubjects, subjects, courses, systemAutoLinkByName) {
+                    val testRecords = remember(allTestRecordsGlobal, course) {
                         if (course != null) {
-                            val linkedSubjectIds = linkedSubjects.map { it.id }
-                            val linkedCourseIds = if (linkedSubjectIds.isNotEmpty()) {
-                                courses.filter { c -> 
-                                    linkedSubjectIds.contains(c.subjectId) || 
-                                    linkedSubjectIds.any { sid -> c.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }.contains(sid) } ||
-                                    (systemAutoLinkByName && linkedSubjects.any { s -> c.name.trim().lowercase() == s.name.trim().lowercase() })
-                                }.map { it.id }
-                            } else {
-                                emptyList()
-                            }
-
                             allTestRecordsGlobal.filter { test ->
-                                test.courseId == course.id || 
-                                (test.subjectId != null && linkedSubjectIds.contains(test.subjectId)) ||
-                                (test.courseId != null && linkedCourseIds.contains(test.courseId))
+                                test.courseId == course.id
                             }
                         } else {
                             emptyList()
@@ -844,10 +831,12 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         testRecords = testRecords,
                         topics = topics,
                         onAddTest = { newTest ->
-                            viewModel.addTestRecord(newTest.copy(courseId = courseId))
+                            val finalSubjectId = newTest.topicId?.let { tId -> topics.find { it.id == tId }?.subjectId }
+                            viewModel.addTestRecord(newTest.copy(courseId = courseId, subjectId = finalSubjectId))
                         },
                         onUpdateTest = { updatedTest ->
-                            viewModel.updateTestRecord(updatedTest)
+                            val finalSubjectId = updatedTest.topicId?.let { tId -> topics.find { it.id == tId }?.subjectId }
+                            viewModel.updateTestRecord(updatedTest.copy(subjectId = finalSubjectId))
                         },
                         onDeleteTest = { testToDelete ->
                             viewModel.deleteTestRecord(testToDelete)
@@ -1138,6 +1127,12 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     }
                                 }
                                 Row {
+                                    IconButton(onClick = { 
+                                        val subjectParam = course?.subjectId?.let { "&subjectId=$it" } ?: ""
+                                        navController.navigate("pomodoro?courseId=${courseId}&assignmentId=${assignment.id}$subjectParam")
+                                    }) {
+                                        Icon(Icons.Rounded.Timer, contentDescription = "Start Pomodoro", tint = MaterialTheme.colorScheme.primary)
+                                    }
                                     IconButton(onClick = { assignmentToEdit = assignment }) {
                                         Icon(Icons.Rounded.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
                                     }
@@ -1190,6 +1185,12 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     if (task.description.isNotBlank()) {
                                         Text(task.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
+                                }
+                                IconButton(onClick = { 
+                                    val subjectParam = course?.subjectId?.let { "&subjectId=$it" } ?: ""
+                                    navController.navigate("pomodoro?courseId=${courseId}&taskId=${task.id}$subjectParam")
+                                }) {
+                                    Icon(Icons.Rounded.Timer, contentDescription = "Start Pomodoro", tint = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }

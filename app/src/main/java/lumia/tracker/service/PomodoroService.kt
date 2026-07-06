@@ -28,6 +28,7 @@ data class PomodoroState(
     val courseId: Int? = null,
     val assignmentId: Int? = null,
     val taskId: Int? = null,
+    val topicId: Int? = null,
     val isAlarmActive: Boolean = false,
     val endedModeStr: String = ""
 )
@@ -116,6 +117,12 @@ class PomodoroService : Service() {
                 _state.value = _state.value.copy(taskId = value)
             }
 
+        var topicId: Int?
+            get() = _state.value.topicId
+            set(value) {
+                _state.value = _state.value.copy(topicId = value)
+            }
+
         fun updateState(block: (PomodoroState) -> PomodoroState) {
             _state.value = block(_state.value)
         }
@@ -143,6 +150,7 @@ class PomodoroService : Service() {
     private var courseId: Int? = null
     private var assignmentId: Int? = null
     private var taskId: Int? = null
+    private var topicId: Int? = null
     
     private var workDuration = 25 * 60
     private var shortBreakDuration = 5 * 60
@@ -206,6 +214,7 @@ class PomodoroService : Service() {
                 courseId = courseId,
                 assignmentId = assignmentId,
                 taskId = taskId,
+                topicId = topicId,
                 isAlarmActive = isAlarmActive,
                 endedModeStr = endedModeStr
             )
@@ -279,6 +288,7 @@ class PomodoroService : Service() {
             courseId = if (intent?.hasExtra("courseId") == true) intent.getIntExtra("courseId", -1).takeIf { it != -1 } else null
             assignmentId = if (intent?.hasExtra("assignmentId") == true) intent.getIntExtra("assignmentId", -1).takeIf { it != -1 } else null
             taskId = if (intent?.hasExtra("taskId") == true) intent.getIntExtra("taskId", -1).takeIf { it != -1 } else null
+            topicId = if (intent?.hasExtra("topicId") == true) intent.getIntExtra("topicId", -1).takeIf { it != -1 } else null
             
             sessionsCompleted = 0
             periodsCompleted = 0
@@ -338,6 +348,7 @@ class PomodoroService : Service() {
 
         val mainIntent = Intent(this, MainActivity::class.java).apply { 
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK 
+            putExtra("OPEN_POMODORO", true)
         }
         val mainPending = PendingIntent.getActivity(this, 0, mainIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
@@ -464,7 +475,8 @@ class PomodoroService : Service() {
                     subjectId = subjectId,
                     courseId = courseId,
                     assignmentId = assignmentId,
-                    taskId = taskId
+                    taskId = taskId,
+                    topicId = topicId
                 )
             )
             val actionLabel = if (isFullCompletion) "Completed" else "Focused partially on"
@@ -474,12 +486,19 @@ class PomodoroService : Service() {
             android.util.Log.d("PomodoroService", "SAVED AUTOMATIC FOCUS SESSION TO DB: $durationMinutes mins")
 
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val mainIntent = Intent(applicationContext, MainActivity::class.java).apply { 
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK 
+                putExtra("OPEN_POMODORO", true)
+            }
+            val mainPending = PendingIntent.getActivity(applicationContext, 101, mainIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
             val completionNotification = NotificationCompat.Builder(applicationContext, "pomodoro_service")
                 .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
                 .setContentTitle(if (isFullCompletion) "Focus Completed!" else "Focus Saved!")
                 .setContentText("Locked in $durationMinutes min study.")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true)
+                .setContentIntent(mainPending)
                 .setColor(lumia.tracker.util.NotificationHelper.getColor(applicationContext))
                 .build()
             notificationManager.notify(2003, completionNotification)
@@ -508,6 +527,7 @@ class PomodoroService : Service() {
             courseId?.let { finishedIntent.putExtra("courseId", it) }
             assignmentId?.let { finishedIntent.putExtra("assignmentId", it) }
             taskId?.let { finishedIntent.putExtra("taskId", it) }
+            topicId?.let { finishedIntent.putExtra("topicId", it) }
             sendBroadcast(finishedIntent)
             
             val mins = Math.max(1, originalTime / 60)

@@ -69,6 +69,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.viewmodel.ScholarViewModel
 import java.util.Date
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.lazy.LazyRow
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
@@ -101,6 +103,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
     val assignmentProgress = if (totalAssignments > 0) completedAssignments.toFloat() / totalAssignments else 0f
     
     val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
+    var selectedCourseId by remember { mutableStateOf(-1) }
 
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
@@ -253,58 +256,97 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )
+
+                    // Course Selector Filter Chips (Horizontal List)
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp, horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        item {
+                            FilterChip(
+                                selected = selectedCourseId == -1,
+                                onClick = { selectedCourseId = -1 },
+                                label = { Text("All Courses") }
+                            )
+                        }
+                        items(courses) { course ->
+                            FilterChip(
+                                selected = selectedCourseId == course.id,
+                                onClick = { selectedCourseId = course.id },
+                                label = { Text(course.name) }
+                            )
+                        }
+                    }
                     
                     lumia.tracker.ui.components.GlassCard(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                         shape = RoundedCornerShape(32.dp)
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
-                            val totalTests = allTestRecords.size
-                            val pctScores = allTestRecords.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }
-                            val overallAverage = pctScores.average().toFloat()
-                            val perfectScoresCount = allTestRecords.count { it.marksObtained == it.totalMarks && it.totalMarks > 0 }
+                            val filteredTestRecords = if (selectedCourseId == -1) allTestRecords else allTestRecords.filter { it.courseId == selectedCourseId }
+                            val totalTests = filteredTestRecords.size
+                            val pctScores = filteredTestRecords.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }
+                            val overallAverage = if (pctScores.isNotEmpty()) pctScores.average().toFloat() else 0f
+                            val perfectScoresCount = filteredTestRecords.count { it.marksObtained == it.totalMarks && it.totalMarks > 0 }
                             val passingTestsCount = pctScores.count { it >= 50f }
-                            val passRate = (passingTestsCount.toFloat() / totalTests * 100).toInt()
+                            val passRate = if (totalTests > 0) (passingTestsCount.toFloat() / totalTests * 100).toInt() else 0
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Overall GPA", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text("${overallAverage.toInt()}%", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                }
-                                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Tests Taken", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text("$totalTests", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                                }
-                                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Pass Rate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text("$passRate%", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = if (passRate >= 75) Color(0xFF2ECC71) else Color(0xFFE74C3C))
-                                }
-                            }
-
-                            if (perfectScoresCount > 0) {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Row(
+                            if (totalTests == 0) {
+                                Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                                        .padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
+                                        .padding(vertical = 16.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(imageVector = Icons.Rounded.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "$perfectScoresCount perfect scores achieved! Outstanding!",
+                                        text = "No tests logged for this course yet.",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("GPA / Average", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text("${overallAverage.toInt()}%", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("Tests Taken", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text("$totalTests", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                    }
+                                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("Pass Rate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text("$passRate%", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = if (passRate >= 75) Color(0xFF2ECC71) else Color(0xFFE74C3C))
+                                    }
+                                }
+
+                                if (perfectScoresCount > 0) {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(imageVector = Icons.Rounded.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "$perfectScoresCount perfect scores achieved! Outstanding!",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                    }
                                 }
                             }
 
@@ -315,7 +357,14 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
 
                                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     subjects.forEach { subj ->
-                                        val subjTests = allTestRecords.filter { it.subjectId == subj.id }
+                                        val subjTests = allTestRecords.filter { test ->
+                                            test.subjectId == subj.id ||
+                                            (test.topicId != null && topics.find { it.id == test.topicId }?.subjectId == subj.id) ||
+                                            (test.courseId != null && courses.find { it.id == test.courseId }?.let { c ->
+                                                c.subjectId == subj.id ||
+                                                c.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }.contains(subj.id)
+                                            } == true)
+                                        }
                                         if (subjTests.isNotEmpty()) {
                                             val subjAvg = subjTests.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }.average().toFloat()
                                             

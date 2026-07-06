@@ -287,6 +287,10 @@ fun AddEditTestRecordDialog(
     var tags by remember(testToEdit) { mutableStateOf(testToEdit?.tags ?: "") }
     var selectedTopicId by remember(testToEdit) { mutableStateOf<Int?>(testToEdit?.topicId) }
 
+    var titleError by remember { mutableStateOf<String?>(null) }
+    var marksObtainedError by remember { mutableStateOf<String?>(null) }
+    var totalMarksError by remember { mutableStateOf<String?>(null) }
+
     var topicDropdownExpanded by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -296,22 +300,37 @@ fun AddEditTestRecordDialog(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = { 
+                        title = it
+                        if (it.isNotBlank()) titleError = null
+                    },
                     label = { Text("Test Name (e.g. Midterm 1)") },
+                    isError = titleError != null,
+                    supportingText = titleError?.let { { Text(it) } },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = marksObtained,
-                        onValueChange = { marksObtained = it },
+                        onValueChange = { 
+                            marksObtained = it
+                            marksObtainedError = null
+                        },
                         label = { Text("Marks") },
+                        isError = marksObtainedError != null,
+                        supportingText = marksObtainedError?.let { { Text(it) } },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     OutlinedTextField(
                         value = totalMarks,
-                        onValueChange = { totalMarks = it },
+                        onValueChange = { 
+                            totalMarks = it
+                            totalMarksError = null
+                        },
                         label = { Text("Total") },
+                        isError = totalMarksError != null,
+                        supportingText = totalMarksError?.let { { Text(it) } },
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
@@ -381,20 +400,56 @@ fun AddEditTestRecordDialog(
         },
         confirmButton = {
             BouncyTextButton(onClick = {
-                if (title.isNotBlank() && totalMarks.toFloatOrNull() != null && marksObtained.toFloatOrNull() != null) {
+                var hasError = false
+                
+                if (title.isBlank()) {
+                    titleError = "Title is required"
+                    hasError = true
+                } else {
+                    titleError = null
+                }
+                
+                val obtainedVal = marksObtained.trim().toFloatOrNull()
+                if (obtainedVal == null) {
+                    marksObtainedError = "Invalid number"
+                    hasError = true
+                } else if (obtainedVal < 0f) {
+                    marksObtainedError = "Cannot be negative"
+                    hasError = true
+                } else {
+                    marksObtainedError = null
+                }
+                
+                val totalVal = totalMarks.trim().toFloatOrNull()
+                if (totalVal == null) {
+                    totalMarksError = "Invalid number"
+                    hasError = true
+                } else if (totalVal <= 0f) {
+                    totalMarksError = "Must be > 0"
+                    hasError = true
+                } else {
+                    totalMarksError = null
+                }
+                
+                if (obtainedVal != null && totalVal != null && obtainedVal > totalVal) {
+                    marksObtainedError = "Cannot exceed Total"
+                    hasError = true
+                }
+                
+                if (!hasError && obtainedVal != null && totalVal != null) {
                     val record = testToEdit?.copy(
-                        title = title,
-                        marksObtained = marksObtained.toFloat(),
-                        totalMarks = totalMarks.toFloat(),
-                        notes = notes,
-                        tags = tags,
+                        title = title.trim(),
+                        marksObtained = obtainedVal,
+                        totalMarks = totalVal,
+                        notes = notes.trim(),
+                        tags = tags.trim(),
                         topicId = selectedTopicId
                     ) ?: TestRecord(
-                        title = title,
-                        marksObtained = marksObtained.toFloat(),
-                        totalMarks = totalMarks.toFloat(),
-                        notes = notes,
-                        tags = tags,
+                        title = title.trim(),
+                        marksObtained = obtainedVal,
+                        totalMarks = totalVal,
+                        notes = notes.trim(),
+                        tags = tags.trim(),
                         topicId = selectedTopicId,
                         dateMillis = System.currentTimeMillis()
                     )

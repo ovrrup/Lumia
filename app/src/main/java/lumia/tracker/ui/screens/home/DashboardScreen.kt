@@ -125,7 +125,7 @@ import lumia.tracker.ui.components.BouncyTextButton
 @Composable
 fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
-    var selectedTab by remember { mutableStateOf(0) }
+    val selectedTab by viewModel.selectedDashboardTab.collectAsStateWithLifecycle()
     val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
     val navBarHeight by viewModel.navBarHeight.collectAsStateWithLifecycle()
     val navBarPaddingHorizontal by viewModel.navBarPaddingHorizontal.collectAsStateWithLifecycle()
@@ -249,7 +249,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
                             label = if (hideLabels) null else { { Text("Home") } },
                             selected = selectedTab == 0,
-                            onClick = { selectedTab = 0 },
+                            onClick = { viewModel.setSelectedDashboardTab(0) },
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
                         )
@@ -257,7 +257,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
                             label = if (hideLabels) null else { { Text("Courses") } },
                             selected = selectedTab == 1,
-                            onClick = { selectedTab = 1 },
+                            onClick = { viewModel.setSelectedDashboardTab(1) },
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
                         )
@@ -266,7 +266,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Tasks") },
                                 label = if (hideLabels) null else { { Text("Tasks") } },
                                 selected = selectedTab == 3,
-                                onClick = { selectedTab = 3 },
+                                onClick = { viewModel.setSelectedDashboardTab(3) },
                                 colors = navItemColors,
                                 alwaysShowLabel = labelModeAlways
                             )
@@ -276,7 +276,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
                                 label = if (hideLabels) null else { { Text("Analytics") } },
                                 selected = selectedTab == 4,
-                                onClick = { selectedTab = 4 },
+                                onClick = { viewModel.setSelectedDashboardTab(4) },
                                 colors = navItemColors,
                                 alwaysShowLabel = labelModeAlways
                             )
@@ -352,7 +352,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             bottomPadding = extendedPadding,
                             onAddCourseClick = { showAddCourseDialog = true },
                             onAddSubjectClick = { showAddSubjectDialog = true },
-                            onNavigateToTasks = { selectedTab = 3 }
+                            onNavigateToTasks = { viewModel.setSelectedDashboardTab(3) }
                         )
                         1 -> CoursesTab(
                             navController = navController,
@@ -418,7 +418,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
                         label = if (hideLabels) null else { { Text("Home") } },
                         selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
+                        onClick = { viewModel.setSelectedDashboardTab(0) },
                         colors = navItemColors,
                         alwaysShowLabel = labelModeAlways
                     )
@@ -426,7 +426,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
                         label = if (hideLabels) null else { { Text("Courses") } },
                         selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
+                        onClick = { viewModel.setSelectedDashboardTab(1) },
                         colors = navItemColors,
                         alwaysShowLabel = labelModeAlways
                     )
@@ -435,7 +435,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
                             label = if (hideLabels) null else { { Text("Subjects") } },
                             selected = selectedTab == 2,
-                            onClick = { selectedTab = 2 },
+                            onClick = { viewModel.setSelectedDashboardTab(2) },
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
                         )
@@ -445,7 +445,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Self Study") },
                             label = if (hideLabels) null else { { Text("Self Study") } },
                             selected = selectedTab == 3,
-                            onClick = { selectedTab = 3 },
+                            onClick = { viewModel.setSelectedDashboardTab(3) },
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
                         )
@@ -455,7 +455,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
                             label = if (hideLabels) null else { { Text("Analytics") } },
                             selected = selectedTab == 4,
-                            onClick = { selectedTab = 4 },
+                            onClick = { viewModel.setSelectedDashboardTab(4) },
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
                         )

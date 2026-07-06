@@ -17,7 +17,7 @@ import lumia.tracker.model.Task
 import lumia.tracker.model.Attachment
 import lumia.tracker.model.TestRecord
 
-@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class, AttendanceRecord::class, PomodoroSession::class, Note::class, Chapter::class, Task::class, Attachment::class, TestRecord::class], version = 18, exportSchema = false)
+@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class, AttendanceRecord::class, PomodoroSession::class, Note::class, Chapter::class, Task::class, Attachment::class, TestRecord::class], version = 19, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scholarDao(): ScholarDao
 
@@ -59,6 +59,12 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_18_19 = object : androidx.room.migration.Migration(18, 19) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE pomodoro_sessions ADD COLUMN topicId INTEGER")
+            }
+        }
+
         fun getDatabase(context: Context, forceProfileId: String? = null): AppDatabase {
             val profMgr = lumia.tracker.data.ProfileManager(context)
             val profileId = forceProfileId ?: profMgr.getActiveProfileId()
@@ -71,7 +77,7 @@ abstract class AppDatabase : RoomDatabase() {
                         AppDatabase::class.java,
                         dbName
                     )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_12_13, MIGRATION_14_15, MIGRATION_16_17, MIGRATION_17_18)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_12_13, MIGRATION_14_15, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19)
                     .fallbackToDestructiveMigration()
                     .build()
                     instances[profileId] = instance

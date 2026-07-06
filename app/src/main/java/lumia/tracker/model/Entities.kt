@@ -116,7 +116,8 @@ data class PomodoroSession(
     val subjectId: Int? = null,
     val courseId: Int? = null,
     val assignmentId: Int? = null,
-    val taskId: Int? = null
+    val taskId: Int? = null,
+    val topicId: Int? = null
 ) : Serializable
 
 @Entity(tableName = "notes")
