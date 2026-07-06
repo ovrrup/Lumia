@@ -31,6 +31,7 @@ import lumia.tracker.model.PracticeAssignment
 import lumia.tracker.model.Task
 import lumia.tracker.model.Topic
 import lumia.tracker.model.Note
+import lumia.tracker.model.Chapter
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
@@ -51,6 +52,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     val allTopics by viewModel.allTopics.collectAsStateWithLifecycle(emptyList())
     val allAssignments by viewModel.assignments.collectAsStateWithLifecycle()
     val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
+    val subjectChapters by viewModel.getChaptersForSubject(subjectId).collectAsStateWithLifecycle()
 
     // Filter elements
     val linkedCourses = remember(allCourses, subjectId) {
@@ -71,6 +73,10 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     val subjectTasks = remember(allTasks, subjectId) {
         allTasks.filter { it.subjectId == subjectId }
     }
+    val unassignedTopics = remember(subjectTopics, subjectChapters) {
+        val chapterIds = subjectChapters.map { it.id }
+        subjectTopics.filter { it.chapterId == null || !chapterIds.contains(it.chapterId) }
+    }
 
     // Dialog trigger states
     var showEditSubjectDialog by remember { mutableStateOf(false) }
@@ -81,13 +87,17 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     var noteToEdit by remember { mutableStateOf<Note?>(null) }
     var assignmentToEdit by remember { mutableStateOf<PracticeAssignment?>(null) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
+    var chapterToEdit by remember { mutableStateOf<Chapter?>(null) }
 
     var showAddTopicDialog by remember { mutableStateOf(false) }
     var showAddNoteDialog by remember { mutableStateOf(false) }
     var showAddAssignmentDialog by remember { mutableStateOf(false) }
     var showAddTaskDialog by remember { mutableStateOf(false) }
+    var showAddChapterDialog by remember { mutableStateOf(false) }
 
     var expandedMenu by remember { mutableStateOf(false) }
+    val expandedChapters = remember { mutableStateMapOf<Int, Boolean>() }
+    var selectedChapterForNewTopic by remember { mutableStateOf<Int?>(null) }
 
     if (subject == null) {
         Scaffold { padding ->
@@ -250,78 +260,414 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 }
             }
 
-            // 2. Study Topics Section
+            // 2. Study Outline (Chapters & Topics) Section
             item {
-                SectionHeader(
-                    title = "Study Outline & Topics",
-                    icon = Icons.Rounded.List,
-                    onAddClick = { showAddTopicDialog = true }
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Rounded.List, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Text("Study Outline", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        BouncyTextButton(
+                            onClick = { showAddChapterDialog = true }
+                        ) {
+                            Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Chapter", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                        BouncyTextButton(
+                            onClick = {
+                                selectedChapterForNewTopic = null
+                                showAddTopicDialog = true
+                            }
+                        ) {
+                            Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Topic", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                    }
+                }
             }
-            if (subjectTopics.isEmpty()) {
+            if (subjectChapters.isEmpty() && subjectTopics.isEmpty()) {
                 item {
-                    EmptySectionCard(
-                        text = "No study topics added yet. Map out your chapters, concepts, or exam portions here.",
-                        buttonText = "Add Topic",
-                        onClick = { showAddTopicDialog = true }
-                    )
+                    GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "No chapters or topics added yet. Group your learning materials under chapters and track topic completion.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                BouncyTextButton(onClick = { showAddChapterDialog = true }) {
+                                    Text("+ Add Chapter", fontWeight = FontWeight.Bold)
+                                }
+                                BouncyTextButton(onClick = {
+                                    selectedChapterForNewTopic = null
+                                    showAddTopicDialog = true
+                                }) {
+                                    Text("+ Add Topic", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
-                items(subjectTopics, key = { "topic_${it.id}" }) { topic ->
-                    var showTopicMenu by remember { mutableStateOf(false) }
+                items(subjectChapters, key = { "chapter_${it.id}" }) { chapter ->
+                    val isExpanded = expandedChapters.getOrDefault(chapter.id, true)
+                    val chapterTopics = remember(subjectTopics, chapter.id) {
+                        subjectTopics.filter { it.chapterId == chapter.id }
+                    }
+                    var showChapterMenu by remember { mutableStateOf(false) }
+
                     GlassCard(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().animateContentSize()
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            IconButton(onClick = { viewModel.toggleTopicCompleted(topic) }) {
-                                Icon(
-                                    imageVector = if (topic.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
-                                    contentDescription = "Toggle Complete",
-                                    tint = if (topic.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                                Text(
-                                    text = topic.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    textDecoration = if (topic.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-                                    color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
-                                )
-                                if (topic.tags.isNotBlank()) {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text("Tags: ${topic.tags}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                            Box {
-                                IconButton(onClick = { showTopicMenu = true }) {
-                                    Icon(Icons.Rounded.MoreVert, contentDescription = "Topic Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                DropdownMenu(
-                                    expanded = showTopicMenu,
-                                    onDismissRequest = { showTopicMenu = false }
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    modifier = Modifier.weight(1f).clickable {
+                                        expandedChapters[chapter.id] = !isExpanded
+                                    },
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Edit Topic") },
-                                        onClick = {
-                                            showTopicMenu = false
-                                            topicToEdit = topic
-                                        },
-                                        leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
+                                    Icon(
+                                        imageVector = if (isExpanded) Icons.Rounded.KeyboardArrowDown else Icons.Rounded.KeyboardArrowRight,
+                                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
-                                    DropdownMenuItem(
-                                        text = { Text("Delete Topic", color = MaterialTheme.colorScheme.error) },
-                                        onClick = {
-                                            showTopicMenu = false
-                                            viewModel.deleteTopic(topic)
-                                        },
-                                        leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f), shape = RoundedCornerShape(8.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Folder,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = chapter.name,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        if (chapter.tags.isNotBlank()) {
+                                            Text(
+                                                text = "Tags: ${chapter.tags}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                                
+                                Box {
+                                    IconButton(onClick = { showChapterMenu = true }) {
+                                        Icon(Icons.Rounded.MoreVert, contentDescription = "Chapter Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    DropdownMenu(
+                                        expanded = showChapterMenu,
+                                        onDismissRequest = { showChapterMenu = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("Add Topic Here") },
+                                            onClick = {
+                                                showChapterMenu = false
+                                                selectedChapterForNewTopic = chapter.id
+                                                showAddTopicDialog = true
+                                            },
+                                            leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null) }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Edit Chapter") },
+                                            onClick = {
+                                                showChapterMenu = false
+                                                chapterToEdit = chapter
+                                            },
+                                            leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Delete Chapter", color = MaterialTheme.colorScheme.error) },
+                                            onClick = {
+                                                showChapterMenu = false
+                                                viewModel.deleteChapter(chapter)
+                                            },
+                                            leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (chapter.description.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = chapter.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 32.dp, bottom = 4.dp)
+                                )
+                            }
+
+                            if (isExpanded) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                if (chapterTopics.isEmpty()) {
+                                    Text(
+                                        text = "No topics added to this chapter yet.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(start = 32.dp, top = 4.dp, bottom = 4.dp)
                                     )
+                                } else {
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.padding(start = 24.dp)
+                                    ) {
+                                        chapterTopics.forEach { topic ->
+                                            var showTopicMenu by remember { mutableStateOf(false) }
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .background(
+                                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
+                                                        shape = RoundedCornerShape(12.dp)
+                                                    )
+                                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                IconButton(
+                                                    onClick = { viewModel.toggleTopicCompleted(topic) },
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = if (topic.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                                                        contentDescription = "Toggle Complete",
+                                                        tint = if (topic.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                }
+                                                Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
+                                                    Text(
+                                                        text = topic.title,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        textDecoration = if (topic.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                                                        color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    if (topic.tags.isNotBlank()) {
+                                                        Text(
+                                                            text = "Tags: ${topic.tags}",
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
+                                                }
+                                                Box {
+                                                    IconButton(
+                                                        onClick = { showTopicMenu = true },
+                                                        modifier = Modifier.size(36.dp)
+                                                    ) {
+                                                        Icon(Icons.Rounded.MoreVert, contentDescription = "Topic Options", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                                                    }
+                                                    DropdownMenu(
+                                                        expanded = showTopicMenu,
+                                                        onDismissRequest = { showTopicMenu = false }
+                                                    ) {
+                                                        DropdownMenuItem(
+                                                            text = { Text("Edit Topic") },
+                                                            onClick = {
+                                                                showTopicMenu = false
+                                                                topicToEdit = topic
+                                                            },
+                                                            leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
+                                                        )
+                                                        DropdownMenuItem(
+                                                            text = { Text("Delete Topic", color = MaterialTheme.colorScheme.error) },
+                                                            onClick = {
+                                                                showTopicMenu = false
+                                                                viewModel.deleteTopic(topic)
+                                                            },
+                                                            leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    BouncyTextButton(
+                                        onClick = {
+                                            selectedChapterForNewTopic = chapter.id
+                                            showAddTopicDialog = true
+                                        }
+                                    ) {
+                                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Add Topic Here", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (unassignedTopics.isNotEmpty()) {
+                    item {
+                        var isExpandedUnassigned by remember { mutableStateOf(true) }
+                        GlassCard(
+                            modifier = Modifier.fillMaxWidth().animateContentSize()
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        modifier = Modifier.weight(1f).clickable {
+                                            isExpandedUnassigned = !isExpandedUnassigned
+                                        },
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isExpandedUnassigned) Icons.Rounded.KeyboardArrowDown else Icons.Rounded.KeyboardArrowRight,
+                                            contentDescription = if (isExpandedUnassigned) "Collapse" else "Expand",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f), shape = RoundedCornerShape(8.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.HelpOutline,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.secondary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "General / Unassigned Topics",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                }
+
+                                if (isExpandedUnassigned) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.padding(start = 24.dp)
+                                    ) {
+                                        unassignedTopics.forEach { topic ->
+                                            var showTopicMenu by remember { mutableStateOf(false) }
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .background(
+                                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
+                                                        shape = RoundedCornerShape(12.dp)
+                                                    )
+                                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                IconButton(
+                                                    onClick = { viewModel.toggleTopicCompleted(topic) },
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = if (topic.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                                                        contentDescription = "Toggle Complete",
+                                                        tint = if (topic.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                }
+                                                Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
+                                                    Text(
+                                                        text = topic.title,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        textDecoration = if (topic.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                                                        color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    if (topic.tags.isNotBlank()) {
+                                                        Text(
+                                                            text = "Tags: ${topic.tags}",
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
+                                                }
+                                                Box {
+                                                    IconButton(
+                                                        onClick = { showTopicMenu = true },
+                                                        modifier = Modifier.size(36.dp)
+                                                    ) {
+                                                        Icon(Icons.Rounded.MoreVert, contentDescription = "Topic Options", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                                                    }
+                                                    DropdownMenu(
+                                                        expanded = showTopicMenu,
+                                                        onDismissRequest = { showTopicMenu = false }
+                                                    ) {
+                                                        DropdownMenuItem(
+                                                            text = { Text("Edit Topic") },
+                                                            onClick = {
+                                                                showTopicMenu = false
+                                                                topicToEdit = topic
+                                                            },
+                                                            leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
+                                                        )
+                                                        DropdownMenuItem(
+                                                            text = { Text("Delete Topic", color = MaterialTheme.colorScheme.error) },
+                                                            onClick = {
+                                                                showTopicMenu = false
+                                                                viewModel.deleteTopic(topic)
+                                                            },
+                                                            leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -702,6 +1048,17 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     if (showAddTopicDialog || currentTopic != null) {
         var topicTitle by remember(currentTopic) { mutableStateOf(currentTopic?.title ?: "") }
         var topicTags by remember(currentTopic) { mutableStateOf(currentTopic?.tags ?: "") }
+        
+        var chapterDropdownExpanded by remember { mutableStateOf(false) }
+        val currentSelectedChapterId = remember(currentTopic, selectedChapterForNewTopic) {
+            currentTopic?.chapterId ?: selectedChapterForNewTopic
+        }
+        var chosenChapterId by remember(currentSelectedChapterId) { mutableStateOf(currentSelectedChapterId) }
+        val chosenChapterName = remember(chosenChapterId, subjectChapters) {
+            if (chosenChapterId == null) "No Chapter (General Topic)"
+            else subjectChapters.find { it.id == chosenChapterId }?.name ?: "No Chapter (General Topic)"
+        }
+
         AlertDialog(
             onDismissRequest = {
                 showAddTopicDialog = false
@@ -722,6 +1079,48 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         label = { Text("Tags (comma separated, optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Assign to Chapter", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedCard(
+                            onClick = { chapterDropdownExpanded = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(chosenChapterName, color = MaterialTheme.colorScheme.onSurface)
+                                Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
+                            }
+                        }
+                        DropdownMenu(
+                            expanded = chapterDropdownExpanded,
+                            onDismissRequest = { chapterDropdownExpanded = false },
+                            modifier = Modifier.fillMaxWidth(0.8f)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("No Chapter (General Topic)") },
+                                onClick = {
+                                    chosenChapterId = null
+                                    chapterDropdownExpanded = false
+                                }
+                            )
+                            subjectChapters.forEach { ch ->
+                                DropdownMenuItem(
+                                    text = { Text(ch.name) },
+                                    onClick = {
+                                        chosenChapterId = ch.id
+                                        chapterDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -731,13 +1130,15 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             viewModel.addTopic(
                                 subjectId = subjectId,
                                 title = topicTitle,
-                                tags = topicTags
+                                tags = topicTags,
+                                chapterId = chosenChapterId
                             )
                         } else {
                             viewModel.updateTopic(
                                 currentTopic.copy(
                                     title = topicTitle,
-                                    tags = topicTags
+                                    tags = topicTags,
+                                    chapterId = chosenChapterId
                                 )
                             )
                         }
@@ -750,6 +1151,74 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 BouncyTextButton(onClick = {
                     showAddTopicDialog = false
                     topicToEdit = null
+                }) { Text("Cancel") }
+            }
+        )
+    }
+
+    // Add / Edit Chapter Dialog
+    val currentChapter = chapterToEdit
+    if (showAddChapterDialog || currentChapter != null) {
+        var chapterName by remember(currentChapter) { mutableStateOf(currentChapter?.name ?: "") }
+        var chapterDesc by remember(currentChapter) { mutableStateOf(currentChapter?.description ?: "") }
+        var chapterTags by remember(currentChapter) { mutableStateOf(currentChapter?.tags ?: "") }
+        
+        AlertDialog(
+            onDismissRequest = {
+                showAddChapterDialog = false
+                chapterToEdit = null
+            },
+            title = { Text(if (currentChapter == null) "Add Chapter" else "Edit Chapter") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = chapterName,
+                        onValueChange = { chapterName = it },
+                        label = { Text("Chapter Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = chapterDesc,
+                        onValueChange = { chapterDesc = it },
+                        label = { Text("Description (Optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = chapterTags,
+                        onValueChange = { chapterTags = it },
+                        label = { Text("Tags (comma separated, optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                BouncyTextButton(onClick = {
+                    if (chapterName.isNotBlank()) {
+                        if (currentChapter == null) {
+                            viewModel.addChapter(
+                                name = chapterName,
+                                subjectId = subjectId,
+                                description = chapterDesc,
+                                tags = chapterTags
+                            )
+                        } else {
+                            viewModel.updateChapter(
+                                currentChapter.copy(
+                                    name = chapterName,
+                                    description = chapterDesc,
+                                    tags = chapterTags
+                                )
+                            )
+                        }
+                    }
+                    showAddChapterDialog = false
+                    chapterToEdit = null
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                BouncyTextButton(onClick = {
+                    showAddChapterDialog = false
+                    chapterToEdit = null
                 }) { Text("Cancel") }
             }
         )

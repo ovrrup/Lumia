@@ -296,6 +296,26 @@ private val _streakPercentage = MutableStateFlow(0f)
             val requiredPomos = _streakRequirementStudyMins.value
             
             val actionLogs = dao.exportAllActionLogs()
+            
+            // To prevent exploits (completing deleted or past tasks/assignments):
+            // 1. Get currently existing completed tasks and assignments
+            val existingCompletedTasks = tasks.filter { it.isCompleted }
+            val existingCompletedAssignments = assignments.filter { it.isCompleted }
+
+            // 2. Filter existing completed elements that are NOT old:
+            // - A task is not old if its due date is today or in the future, OR if it has no due date and was created today or later.
+            val eligibleTasksCompletedTodayTitles = existingCompletedTasks.filter { task ->
+                val isNotOld = (task.dueDateMillis != null && task.dueDateMillis >= todayStart) || 
+                               (task.dueDateMillis == null && task.createdAt >= todayStart)
+                isNotOld
+            }.map { it.title }.toSet()
+
+            // - An assignment is not old if its due date is today or in the future.
+            val eligibleAssignmentsCompletedTodayTitles = existingCompletedAssignments.filter { assignment ->
+                val isNotOld = assignment.dueDateMillis >= todayStart
+                isNotOld
+            }.map { it.title }.toSet()
+
             val completedTasksToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed task:") }
             val unmarkedTasksToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked task:") }
             
@@ -307,8 +327,10 @@ private val _streakPercentage = MutableStateFlow(0f)
             
             var netDoneTasksToday = 0
             for ((title, count) in cCounts) {
-                val uCount = uCounts[title] ?: 0
-                netDoneTasksToday += maxOf(0, count - uCount)
+                if (title in eligibleTasksCompletedTodayTitles) {
+                    val uCount = uCounts[title] ?: 0
+                    netDoneTasksToday += maxOf(0, count - uCount)
+                }
             }
             
             val completedAssignmentsToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed assignment:") }
@@ -322,8 +344,10 @@ private val _streakPercentage = MutableStateFlow(0f)
             
             var netDoneAssignmentsToday = 0
             for ((title, count) in cAssignCounts) {
-                val uCount = uAssignCounts[title] ?: 0
-                netDoneAssignmentsToday += maxOf(0, count - uCount)
+                if (title in eligibleAssignmentsCompletedTodayTitles) {
+                    val uCount = uAssignCounts[title] ?: 0
+                    netDoneAssignmentsToday += maxOf(0, count - uCount)
+                }
             }
 
             val doneTasks = maxOf(tasksToday.count { it.isCompleted }, netDoneTasksToday)
