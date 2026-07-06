@@ -70,11 +70,21 @@ fun PomodoroScreen(
     val tasks by viewModel.tasks.collectAsStateWithLifecycle(emptyList<lumia.tracker.model.Task>())
     val allTopicsGlobal by viewModel.allTopics.collectAsStateWithLifecycle(emptyList<lumia.tracker.model.Topic>())
 
-    var selectedSubjectId by remember { mutableStateOf<Int?>(initialSubjectId) }
-    var selectedCourseId by remember { mutableStateOf<Int?>(initialCourseId) }
-    var selectedAssignmentId by remember { mutableStateOf<Int?>(initialAssignmentId) }
-    var selectedTaskId by remember { mutableStateOf<Int?>(initialTaskId) }
-    var selectedTopicId by remember { mutableStateOf<Int?>(initialTopicId) }
+    var selectedSubjectId by remember(initialSubjectId) { mutableStateOf<Int?>(initialSubjectId) }
+    var selectedCourseId by remember(initialCourseId) { mutableStateOf<Int?>(initialCourseId) }
+    var selectedAssignmentId by remember(initialAssignmentId) { mutableStateOf<Int?>(initialAssignmentId) }
+    var selectedTaskId by remember(initialTaskId) { mutableStateOf<Int?>(initialTaskId) }
+    var selectedTopicId by remember(initialTopicId) { mutableStateOf<Int?>(initialTopicId) }
+
+    val updateServiceContext = { key: String, value: Int? ->
+        if (isRunning) {
+            val updateIntent = android.content.Intent(context, lumia.tracker.service.PomodoroService::class.java).apply {
+                action = "UPDATE_CONTEXT"
+                putExtra(key, value ?: -1)
+            }
+            context.startService(updateIntent)
+        }
+    }
 
     val relevantTopics = remember(allTopicsGlobal, selectedSubjectId, selectedCourseId, courses) {
         val finalSubjectId = selectedSubjectId ?: selectedCourseId?.let { cid -> courses.find { it.id == cid }?.subjectId }
@@ -689,42 +699,42 @@ fun PomodoroScreen(
                             Spacer(Modifier.height(16.dp))
                             Text("Subject (Optional)", style = MaterialTheme.typography.labelSmall)
                             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                item { FilterChip(selected = selectedSubjectId == null, onClick = { selectedSubjectId = null }, label = { Text("None") }) }
+                                item { FilterChip(selected = selectedSubjectId == null, onClick = { selectedSubjectId = null; updateServiceContext("subjectId", null) }, label = { Text("None") }) }
                                 items(subjects) { subj ->
-                                    FilterChip(selected = selectedSubjectId == subj.id, onClick = { selectedSubjectId = subj.id }, label = { Text(subj.name) })
+                                    FilterChip(selected = selectedSubjectId == subj.id, onClick = { selectedSubjectId = subj.id; updateServiceContext("subjectId", subj.id) }, label = { Text(subj.name) })
                                 }
                             }
 
                             Text("Course (Optional)", style = MaterialTheme.typography.labelSmall)
                             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                item { FilterChip(selected = selectedCourseId == null, onClick = { selectedCourseId = null }, label = { Text("None") }) }
+                                item { FilterChip(selected = selectedCourseId == null, onClick = { selectedCourseId = null; updateServiceContext("courseId", null) }, label = { Text("None") }) }
                                 items(courses) { course ->
-                                    FilterChip(selected = selectedCourseId == course.id, onClick = { selectedCourseId = course.id }, label = { Text(course.name) })
+                                    FilterChip(selected = selectedCourseId == course.id, onClick = { selectedCourseId = course.id; updateServiceContext("courseId", course.id) }, label = { Text(course.name) })
                                 }
                             }
 
                             Text("Topic (Optional)", style = MaterialTheme.typography.labelSmall)
                             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                item { FilterChip(selected = selectedTopicId == null, onClick = { selectedTopicId = null }, label = { Text("None") }) }
+                                item { FilterChip(selected = selectedTopicId == null, onClick = { selectedTopicId = null; updateServiceContext("topicId", null) }, label = { Text("None") }) }
                                 items(relevantTopics) { topic ->
-                                    FilterChip(selected = selectedTopicId == topic.id, onClick = { selectedTopicId = topic.id }, label = { Text(topic.title) })
+                                    FilterChip(selected = selectedTopicId == topic.id, onClick = { selectedTopicId = topic.id; updateServiceContext("topicId", topic.id) }, label = { Text(topic.title) })
                                 }
                             }
 
                             val courseAssignments = if (selectedCourseId != null) assignmentsList.filter { it.courseId == selectedCourseId } else assignmentsList
                             Text("Assignment (Optional)", style = MaterialTheme.typography.labelSmall)
                             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                item { FilterChip(selected = selectedAssignmentId == null, onClick = { selectedAssignmentId = null }, label = { Text("None") }) }
+                                item { FilterChip(selected = selectedAssignmentId == null, onClick = { selectedAssignmentId = null; updateServiceContext("assignmentId", null) }, label = { Text("None") }) }
                                 items(courseAssignments) { assignment ->
-                                    FilterChip(selected = selectedAssignmentId == assignment.id, onClick = { selectedAssignmentId = assignment.id }, label = { Text(assignment.title) })
+                                    FilterChip(selected = selectedAssignmentId == assignment.id, onClick = { selectedAssignmentId = assignment.id; updateServiceContext("assignmentId", assignment.id) }, label = { Text(assignment.title) })
                                 }
                             }
 
                             Text("Task (Optional)", style = MaterialTheme.typography.labelSmall)
                             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                item { FilterChip(selected = selectedTaskId == null, onClick = { selectedTaskId = null }, label = { Text("None") }) }
+                                item { FilterChip(selected = selectedTaskId == null, onClick = { selectedTaskId = null; updateServiceContext("taskId", null) }, label = { Text("None") }) }
                                 items(tasks) { task ->
-                                    FilterChip(selected = selectedTaskId == task.id, onClick = { selectedTaskId = task.id }, label = { Text(task.title) })
+                                    FilterChip(selected = selectedTaskId == task.id, onClick = { selectedTaskId = task.id; updateServiceContext("taskId", task.id) }, label = { Text(task.title) })
                                 }
                             }
                         }

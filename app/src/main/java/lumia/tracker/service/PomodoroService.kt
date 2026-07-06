@@ -274,6 +274,28 @@ class PomodoroService : Service() {
             finishSession(skipped = true)
             return START_NOT_STICKY
         }
+        
+        if (action == "UPDATE_CONTEXT") {
+            if (intent != null) {
+                if (intent.hasExtra("subjectId")) {
+                    subjectId = intent.getIntExtra("subjectId", -1).takeIf { it != -1 }
+                }
+                if (intent.hasExtra("courseId")) {
+                    courseId = intent.getIntExtra("courseId", -1).takeIf { it != -1 }
+                }
+                if (intent.hasExtra("assignmentId")) {
+                    assignmentId = intent.getIntExtra("assignmentId", -1).takeIf { it != -1 }
+                }
+                if (intent.hasExtra("taskId")) {
+                    taskId = intent.getIntExtra("taskId", -1).takeIf { it != -1 }
+                }
+                if (intent.hasExtra("topicId")) {
+                    topicId = intent.getIntExtra("topicId", -1).takeIf { it != -1 }
+                }
+                syncToState()
+            }
+            return START_NOT_STICKY
+        }
 
         if (action == "START" || action == "RESET") {
             stopAlarmSound()
@@ -347,7 +369,7 @@ class PomodoroService : Service() {
         }
 
         val mainIntent = Intent(this, MainActivity::class.java).apply { 
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK 
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP 
             putExtra("OPEN_POMODORO", true)
         }
         val mainPending = PendingIntent.getActivity(this, 0, mainIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
@@ -487,7 +509,7 @@ class PomodoroService : Service() {
 
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val mainIntent = Intent(applicationContext, MainActivity::class.java).apply { 
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK 
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP 
                 putExtra("OPEN_POMODORO", true)
             }
             val mainPending = PendingIntent.getActivity(applicationContext, 101, mainIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)

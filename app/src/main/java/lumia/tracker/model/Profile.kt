@@ -10,6 +10,7 @@ data class UserProfile(
     var isDefault: Boolean = false,
     var starterTheme: String = "",
     val alias: String = "",
-    var createdAt: Long? = null
+    var createdAt: Long? = null,
+    val avatarBase64: String? = null
 )
 

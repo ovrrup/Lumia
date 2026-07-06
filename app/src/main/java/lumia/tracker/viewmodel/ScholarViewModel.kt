@@ -1537,7 +1537,9 @@ private val _streakPercentage = MutableStateFlow(0f)
                     task.description,
                     links.joinToString(", "),
                     task.dueDateMillis,
-                    "task"
+                    "task",
+                    courseId = task.courseId,
+                    subjectId = task.subjectId
                 )
             }
             logAction("Added task: ${task.title}")
@@ -1589,7 +1591,11 @@ private val _streakPercentage = MutableStateFlow(0f)
             val context = getApplication<Application>().applicationContext
             var interconnections = "Course: " + (courses.value.find { it.id == courseId }?.name ?: "Unknown")
             if (tags.isNotBlank()) interconnections += ", Tags: $tags"
-            lumia.tracker.util.ReminderScheduler.scheduleReminder(context, newId, title, desc, interconnections, dueDate)
+            lumia.tracker.util.ReminderScheduler.scheduleReminder(
+                context, newId, title, desc, interconnections, dueDate,
+                courseId = courseId,
+                subjectId = subjectId
+            )
             logAction("Added assignment: $title ($category)")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
@@ -1659,7 +1665,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             notificationManager.createNotificationChannel(channel)
         }
         val intent = android.content.Intent(application, lumia.tracker.MainActivity::class.java).apply { 
-            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK 
+            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP 
             if (openScreen != null) {
                 putExtra("OPEN_SCREEN", openScreen)
             }
@@ -1900,8 +1906,25 @@ private val _streakPercentage = MutableStateFlow(0f)
 
                 if (exportAll) {
                     val allProfs = profileManager.getAllProfiles()
+                    val mappedProfs = allProfs.map { prof ->
+                        val isLocal = prof.avatarEmoji.startsWith("/") || prof.avatarEmoji.startsWith("file://") || prof.avatarEmoji.startsWith("content://")
+                        val base64 = if (isLocal) {
+                            try {
+                                val cleanPath = prof.avatarEmoji.removePrefix("file://").removePrefix("content://")
+                                val file = java.io.File(cleanPath)
+                                if (file.exists()) {
+                                    val bytes = file.readBytes()
+                                    android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                                } else null
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                null
+                            }
+                        } else null
+                        if (base64 != null) prof.copy(avatarBase64 = base64) else prof
+                    }
                     val profileBackupsJson = mutableMapOf<String, String>()
-                    for (prof in allProfs) {
+                    for (prof in mappedProfs) {
                         val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), prof.id)
                         val profDao = db.scholarDao()
                         val pref = profileManager.getProfilePrefs(prof.id)
@@ -1925,7 +1948,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                         profileBackupsJson[prof.id] = backupAdapter.toJson(pBackup)
                     }
                     val fullAppBackup = lumia.tracker.model.FullAppBackup(
-                        profiles = allProfs,
+                        profiles = mappedProfs,
                         activeProfileId = profileManager.getActiveProfileId(),
                         globalPrefs = emptyMap(),
                         profileBackupsJson = profileBackupsJson
@@ -1938,6 +1961,22 @@ private val _streakPercentage = MutableStateFlow(0f)
                     }
                 } else {
                     val currentProf = profileManager.getActiveProfile()
+                    val isLocal = currentProf.avatarEmoji.startsWith("/") || currentProf.avatarEmoji.startsWith("file://") || currentProf.avatarEmoji.startsWith("content://")
+                    val base64 = if (isLocal) {
+                        try {
+                            val cleanPath = currentProf.avatarEmoji.removePrefix("file://").removePrefix("content://")
+                            val file = java.io.File(cleanPath)
+                            if (file.exists()) {
+                                val bytes = file.readBytes()
+                                android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                            } else null
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            null
+                        }
+                    } else null
+                    val currentProfWithPic = if (base64 != null) currentProf.copy(avatarBase64 = base64) else currentProf
+
                     val singleBackup = lumia.tracker.model.ScholarBackup(
                         courses = repository.dao.exportAllCourses(),
                         subjects = repository.dao.exportAllSubjects(),
@@ -1952,7 +1991,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                         tasks = repository.dao.exportAllTasks(),
                         attachments = repository.dao.exportAllAttachments(),
                         testRecords = repository.dao.exportAllTestRecords(),
-                        profile = currentProf
+                        profile = currentProfWithPic
                     )
                     getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
                         repository.exportDataToStream(os, singleBackup)
@@ -1963,6 +2002,24 @@ private val _streakPercentage = MutableStateFlow(0f)
             } catch (e: Exception) {
                 _importExportStatus.value = "Export failed: ${e.message}"
             }
+        }
+    }
+
+    private fun restoreProfileAvatar(prof: lumia.tracker.model.UserProfile): lumia.tracker.model.UserProfile {
+        val b64 = prof.avatarBase64
+        if (b64.isNullOrBlank()) return prof
+        return try {
+            val bytes = android.util.Base64.decode(b64, android.util.Base64.DEFAULT)
+            val context = getApplication<Application>().applicationContext
+            val avatarDir = java.io.File(context.filesDir, "avatars").apply { mkdirs() }
+            val destFile = java.io.File(avatarDir, "profile_avatar_${System.currentTimeMillis()}_restored_${prof.id.take(5)}.jpg")
+            java.io.FileOutputStream(destFile).use { fos ->
+                fos.write(bytes)
+            }
+            prof.copy(avatarEmoji = destFile.absolutePath, avatarBase64 = null)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            prof
         }
     }
 
@@ -1986,6 +2043,10 @@ private val _streakPercentage = MutableStateFlow(0f)
                     val backupAdapter = moshi.adapter(lumia.tracker.model.ScholarBackup::class.java)
                     val fullBackup = fullBackupAdapter.fromJson(mainBackup!!.fullAppBackupJson!!) ?: throw IllegalArgumentException("Invalid full backup")
                     
+                    val restoredProfiles = fullBackup.profiles.map { prof ->
+                        restoreProfileAvatar(prof)
+                    }
+
                     // Clear existing profiles
                     val currentProfs = profileManager.getAllProfiles()
                     for (prof in currentProfs) {
@@ -1995,11 +2056,11 @@ private val _streakPercentage = MutableStateFlow(0f)
                     }
                     
                     // Restore profiles
-                    for (prof in fullBackup.profiles) {
+                    for (prof in restoredProfiles) {
                         if (prof.isDefault) continue
                         profileManager.addProfile(prof.name, prof.avatarEmoji, prof.alias, prof.starterTheme)
                     }
-                    val profListJson = moshi.adapter<List<lumia.tracker.model.UserProfile>>(com.squareup.moshi.Types.newParameterizedType(List::class.java, lumia.tracker.model.UserProfile::class.java)).toJson(fullBackup.profiles)
+                    val profListJson = moshi.adapter<List<lumia.tracker.model.UserProfile>>(com.squareup.moshi.Types.newParameterizedType(List::class.java, lumia.tracker.model.UserProfile::class.java)).toJson(restoredProfiles)
                     val globalPrefs = getApplication<Application>().getSharedPreferences("global_profiles", android.content.Context.MODE_PRIVATE)
                     globalPrefs.edit().putString("profiles_json", profListJson).commit()
                     profileManager.setActiveProfileId(fullBackup.activeProfileId)
@@ -2033,12 +2094,13 @@ private val _streakPercentage = MutableStateFlow(0f)
                     repository.restoreBackupToDao(mainBackup!!, repository.dao)
                     loadSettings(mainBackup!!.settings)
                     mainBackup!!.profile?.let { importedProf ->
+                        val restoredProf = restoreProfileAvatar(importedProf)
                         val currentProf = profileManager.getActiveProfile()
                         val updatedProf = currentProf.copy(
-                            name = importedProf.name,
-                            avatarEmoji = importedProf.avatarEmoji,
-                            alias = importedProf.alias,
-                            starterTheme = importedProf.starterTheme
+                            name = restoredProf.name,
+                            avatarEmoji = restoredProf.avatarEmoji,
+                            alias = restoredProf.alias,
+                            starterTheme = restoredProf.starterTheme
                         )
                         profileManager.updateProfile(updatedProf)
                     }

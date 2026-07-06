@@ -38,7 +38,9 @@ class BootReceiver : BroadcastReceiver() {
                                     title = assignment.title,
                                     desc = assignment.description,
                                     interconnections = assignment.tags,
-                                    triggerTime = alarmTime
+                                    triggerTime = alarmTime,
+                                    courseId = assignment.courseId,
+                                    subjectId = assignment.subjectId
                                 )
                                 scheduledCount++
                             }
@@ -56,7 +58,10 @@ class BootReceiver : BroadcastReceiver() {
                                     title = task.title,
                                     desc = task.description,
                                     interconnections = task.tags,
-                                    triggerTime = alarmTime
+                                    triggerTime = alarmTime,
+                                    type = "task",
+                                    courseId = task.courseId,
+                                    subjectId = task.subjectId
                                 )
                                 scheduledCount++
                             }

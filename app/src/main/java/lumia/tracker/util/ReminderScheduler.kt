@@ -86,7 +86,24 @@ class ReminderReceiver : BroadcastReceiver() {
         }
 
         val mainIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            if (typeExtra == "task") {
+                putExtra("OPEN_TAB", 3)
+            } else if (intent.hasExtra("courseId")) {
+                val cId = intent.getIntExtra("courseId", -1)
+                if (cId != -1) {
+                    putExtra("OPEN_SCREEN", "courseDetail/$cId")
+                }
+            } else if (intent.hasExtra("subjectId")) {
+                val sId = intent.getIntExtra("subjectId", -1)
+                if (sId != -1) {
+                    putExtra("OPEN_SCREEN", "subjectDetail/$sId")
+                }
+            } else if (typeExtra == "class_start" || typeExtra == "class_end") {
+                putExtra("OPEN_TAB", 1) // Courses tab
+            } else {
+                putExtra("OPEN_TAB", 3) // Self Study & Tasks tab
+            }
         }
         val mainPendingIntent = PendingIntent.getActivity(
             context, assignmentId, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -139,26 +156,26 @@ class ReminderReceiver : BroadcastReceiver() {
 }
 
 object ReminderScheduler {
-    fun scheduleReminder(context: Context, assignmentId: Int, title: String, desc: String, interconnections: String, timestamp: Long, type: String = "assignment") {
+    fun scheduleReminder(context: Context, assignmentId: Int, title: String, desc: String, interconnections: String, timestamp: Long, type: String = "assignment", courseId: Int? = null, subjectId: Int? = null) {
         // Remind 1 hour before due date
         val triggerTime = timestamp - (1000 * 60 * 60)
         
         // Ensure we don't schedule in the past
         if (triggerTime > System.currentTimeMillis()) {
-            scheduleReminderExact(context, assignmentId, title, desc, interconnections, triggerTime, type)
+            scheduleReminderExact(context, assignmentId, title, desc, interconnections, triggerTime, type, courseId, subjectId)
         }
     }
 
-    fun scheduleClassReminder(context: Context, classId: Int, title: String, desc: String, timestamp: Long, type: String = "class_start") {
+    fun scheduleClassReminder(context: Context, classId: Int, title: String, desc: String, timestamp: Long, type: String = "class_start", courseId: Int? = null) {
         val profMgr = lumia.tracker.data.ProfileManager(context)
         val prefs = profMgr.getProfilePrefs()
         if (!prefs.getBoolean("notif_enable_classes", true)) return
         if (timestamp > System.currentTimeMillis()) {
-            scheduleReminderExact(context, classId + (if(type == "class_start") 50000 else 60000), title, desc, "", timestamp, type)
+            scheduleReminderExact(context, classId + (if(type == "class_start") 50000 else 60000), title, desc, "", timestamp, type, courseId = courseId)
         }
     }
 
-    fun scheduleReminderExact(context: Context, assignmentId: Int, title: String, desc: String, interconnections: String, triggerTime: Long, type: String = "assignment") {
+    fun scheduleReminderExact(context: Context, assignmentId: Int, title: String, desc: String, interconnections: String, triggerTime: Long, type: String = "assignment", courseId: Int? = null, subjectId: Int? = null) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, ReminderReceiver::class.java).apply {
             putExtra("assignment_id", assignmentId)
@@ -166,6 +183,8 @@ object ReminderScheduler {
             putExtra("desc", desc)
             putExtra("interconnections", interconnections)
             putExtra("type", type)
+            if (courseId != null) putExtra("courseId", courseId)
+            if (subjectId != null) putExtra("subjectId", subjectId)
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,
