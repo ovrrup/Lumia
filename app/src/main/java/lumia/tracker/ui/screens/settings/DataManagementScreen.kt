@@ -345,6 +345,13 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
             // Tag Connectivity & Alignment Card
             SettingsGroupCard(title = "Tag Connectivity & Maintenance", icon = Icons.Rounded.LocalOffer) {
+                SettingsActionItemInCard(
+                    title = "Tag Management (Network Explorer)",
+                    subtitle = "View connection graphs and customize tag aesthetics",
+                    icon = Icons.Rounded.LocalOffer,
+                    onClick = { navController.navigate("tags_hub") }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         "Align Tag Databases",

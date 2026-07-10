@@ -194,16 +194,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         actions = {
                             val moreRounds = lumia.tracker.ui.theme.LocalMoreRounds.current
                             val moreRoundsMode = lumia.tracker.ui.theme.LocalMoreRoundsMode.current
-                            lumia.tracker.ui.components.BouncyIconButton(
-                                onClick = { navController.navigate("tags_hub") },
-                                modifier = Modifier.padding(end = 4.dp).testTag("open_tags_hub_button")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.LocalOffer,
-                                    contentDescription = "Tags Network Explorer",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
                             lumia.tracker.ui.components.StreakWidget(viewModel, navController)
                             val isMrGlass = moreRounds && moreRoundsMode == "Glass"
                             val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
