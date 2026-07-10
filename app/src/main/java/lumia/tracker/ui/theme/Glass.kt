@@ -37,8 +37,8 @@ fun Modifier.liquidGlass(
     val backdropStyle = backdropStyleOverride ?: LocalGlassBackdropStyle.current
     val opacitySetting = opacityOverride ?: LocalGlassOpacityValue.current
     
-    val baseAlpha1 = if (isDarkTheme) (0.50f + (tintAlpha * 0.12f)) else (0.76f + (tintAlpha * 0.15f))
-    val baseAlpha2 = if (isDarkTheme) (0.30f + (tintAlpha * 0.08f)) else (0.52f + (tintAlpha * 0.10f))
+    val baseAlpha1 = if (isDarkTheme) (0.32f + (tintAlpha * 0.16f)) else (0.76f + (tintAlpha * 0.15f))
+    val baseAlpha2 = if (isDarkTheme) (0.16f + (tintAlpha * 0.10f)) else (0.52f + (tintAlpha * 0.10f))
 
     val finalAlpha1 = when (backdropStyle) {
         "Opaque", "Solid" -> 1.0f
@@ -52,14 +52,30 @@ fun Modifier.liquidGlass(
     }
 
     val backColor1 = if (backdropStyle == "Opaque" || backdropStyle == "Solid") {
-        if (isDarkTheme) surfaceColor.mix(tintColor, 0.96f) else surfaceColor.mix(tintColor, 0.95f)
+        if (isDarkTheme) {
+            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.90f).mix(tintColor, 0.92f)
+        } else {
+            surfaceColor.mix(tintColor, 0.95f)
+        }
     } else {
-        surfaceColor.mix(tintColor, if (isDarkTheme) 0.94f else 0.93f)
+        if (isDarkTheme) {
+            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.92f).mix(tintColor, 0.88f)
+        } else {
+            surfaceColor.mix(tintColor, 0.93f)
+        }
     }
     val backColor2 = if (backdropStyle == "Opaque" || backdropStyle == "Solid") {
-        if (isDarkTheme) surfaceColor.mix(tintColor, 0.98f) else surfaceColor.mix(tintColor, 0.97f)
+        if (isDarkTheme) {
+            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.95f).mix(tintColor, 0.96f)
+        } else {
+            surfaceColor.mix(tintColor, 0.97f)
+        }
     } else {
-        surfaceColor.mix(tintColor, 0.97f)
+        if (isDarkTheme) {
+            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.96f).mix(tintColor, 0.93f)
+        } else {
+            surfaceColor.mix(tintColor, 0.97f)
+        }
     }
 
     // Smooth vertically blended glass filling.
@@ -76,8 +92,9 @@ fun Modifier.liquidGlass(
     val borderBrush = Brush.linearGradient(
         colors = if (isDarkTheme) {
             listOf(
-                outlineVariant.copy(alpha = 0.15f),
-                outlineVariant.copy(alpha = 0.04f)
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                outlineVariant.copy(alpha = 0.12f),
+                Color.Transparent
             )
         } else {
             listOf(
