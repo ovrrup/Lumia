@@ -1,0 +1,8 @@
+Lumia is a beautiful, 100% offline-first academic tracker and focus cockpit designed to help students organize their studies, monitor attendance, track tasks, practice assignments, and manage focus sessions.
+
+Key Features:
+• Elegant Material 3 user interface with customizable theme modes and liquid glass panels.
+• Zero telemetry, zero tracking, and fully serverless operation—all your academic data stays securely on your device.
+• Multi-profile system to manage distinct workflows or users seamlessly.
+• Integrated Pomodoro timer, course timetables, chapter-wise topic tracking, grade/test logs, and attachment managers.
+• True Always-on Display support with customized widgets to view schedules instantly.

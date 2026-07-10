@@ -23,6 +23,7 @@ class ScholarRepository(val dao: ScholarDao) {
     val allPomodoroSessions: Flow<List<lumia.tracker.model.PomodoroSession>> = dao.getAllPomodoroSessions()
     val allNotes: Flow<List<lumia.tracker.model.Note>> = dao.getAllNotes()
     val allTasks: Flow<List<Task>> = dao.getAllTasks()
+    val allChapters: Flow<List<Chapter>> = dao.getAllChaptersFlow()
     val allAttachments: Flow<List<lumia.tracker.model.Attachment>> = dao.getAllAttachments()
     val allTopics: Flow<List<Topic>> = dao.getAllTopicsReactive()
 
@@ -95,6 +96,7 @@ class ScholarRepository(val dao: ScholarDao) {
         dao.clearTasks()
         dao.clearAttachments()
         dao.clearTestRecords()
+        dao.clearTagCustomizations()
     }
 
     private val moshi = com.squareup.moshi.Moshi.Builder().addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()
@@ -139,6 +141,7 @@ class ScholarRepository(val dao: ScholarDao) {
         targetDao.clearTasks()
         targetDao.clearAttachments()
         targetDao.clearTestRecords()
+        targetDao.clearTagCustomizations()
 
         backup.courses.forEach { targetDao.insertCourse(it) }
         backup.subjects.forEach { targetDao.insertSubject(it) }
@@ -152,6 +155,7 @@ class ScholarRepository(val dao: ScholarDao) {
         backup.tasks?.forEach { targetDao.insertTask(it) }
         backup.attachments?.forEach { targetDao.insertAttachment(it) }
         backup.testRecords?.forEach { targetDao.insertTestRecord(it) }
+        backup.tagCustomizations?.forEach { targetDao.insertTagCustomization(it) }
     }
 
 }

@@ -255,7 +255,7 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
                 // Overlay
                 PermissionCard(
                     title = "True AOD Overlay",
-                    description = "Available in Technical Version: Draws high-contrast screensavers over secure locks.",
+                    description = "Advanced Overlay: Draws high-contrast screensavers over secure locks for always-on display.",
                     icon = Icons.Rounded.Layers,
                     isGranted = overlayGranted,
                     onRequest = {
@@ -269,7 +269,7 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
                 // Accessibility
                 PermissionCard(
                     title = "AOD Accessibility",
-                    description = "Available in Technical Version: Suspends system overlays safely behind secure locked views.",
+                    description = "Advanced Overlay Helper: Suspends system overlays safely behind secure locked views.",
                     icon = Icons.Rounded.AccessibilityNew,
                     isGranted = accessibilityGranted,
                     onRequest = {

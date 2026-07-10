@@ -14,6 +14,7 @@ import lumia.tracker.model.ActionLog
 import lumia.tracker.model.Chapter
 import lumia.tracker.model.Task
 import lumia.tracker.model.Attachment
+import lumia.tracker.model.TagCustomization
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -190,6 +191,9 @@ interface ScholarDao {
     @Query("SELECT * FROM chapters")
     suspend fun exportAllChapters(): List<Chapter>
 
+    @Query("SELECT * FROM chapters")
+    fun getAllChaptersFlow(): Flow<List<Chapter>>
+
     @Query("DELETE FROM chapters")
     suspend fun clearChapters()
 
@@ -231,4 +235,23 @@ interface ScholarDao {
 
     @Query("SELECT * FROM attachments")
     suspend fun exportAllAttachments(): List<Attachment>
+
+    // Tag Customizations
+    @Query("SELECT * FROM tag_customizations ORDER BY tagName ASC")
+    fun getAllTagCustomizations(): Flow<List<TagCustomization>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTagCustomization(customization: TagCustomization)
+
+    @Update
+    suspend fun updateTagCustomization(customization: TagCustomization)
+
+    @Delete
+    suspend fun deleteTagCustomization(customization: TagCustomization)
+
+    @Query("SELECT * FROM tag_customizations")
+    suspend fun exportAllTagCustomizations(): List<TagCustomization>
+
+    @Query("DELETE FROM tag_customizations")
+    suspend fun clearTagCustomizations()
 }

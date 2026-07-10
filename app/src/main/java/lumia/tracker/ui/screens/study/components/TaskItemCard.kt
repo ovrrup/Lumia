@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import lumia.tracker.ui.theme.bouncyScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,13 +29,16 @@ import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.GlassCard
 import lumia.tracker.ui.theme.glassBar
 import lumia.tracker.viewmodel.ScholarViewModel
+import lumia.tracker.ui.util.getTagColors
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 
 @Composable
-fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit, modifier: Modifier = Modifier) {
+fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit, modifier: Modifier = Modifier, navController: NavController? = null) {
     GlassCard(onClick = onEdit, modifier = modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
@@ -70,10 +74,39 @@ fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit, mo
                 // Show links if any
                 if (task.tags.isNotBlank()) {
                     Spacer(Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Sell, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.width(4.dp))
-                        Text(task.tags, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        task.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { tag ->
+                            val colors = getTagColors(tag)
+                            Box(
+                                modifier = Modifier
+                                    .background(colors.first, RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        navController?.navigate("tags_hub?selectedTag=$tag")
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Rounded.LocalOffer,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(10.dp),
+                                        tint = colors.second
+                                    )
+                                    Spacer(Modifier.width(2.dp))
+                                    Text(
+                                        text = tag,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = colors.second,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
                 

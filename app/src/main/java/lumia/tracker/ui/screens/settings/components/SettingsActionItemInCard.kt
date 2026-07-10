@@ -100,19 +100,20 @@ fun SettingsActionItemInCard(
     isDestructive: Boolean = false,
     onClick: () -> Unit
 ) {
+    var showInfo by remember { mutableStateOf(false) }
     val contentColor = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(vertical = 12.dp, horizontal = 4.dp),
+            .padding(vertical = 8.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(32.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .background(
                     if (isDestructive) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
                     else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
@@ -123,19 +124,56 @@ fun SettingsActionItemInCard(
                 imageVector = icon,
                 contentDescription = null,
                 tint = if (isDestructive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(16.dp)
             )
         }
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = contentColor)
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.width(12.dp))
+        
+        Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = title, 
+                style = MaterialTheme.typography.bodyMedium, 
+                fontWeight = FontWeight.SemiBold, 
+                color = contentColor
+            )
+            
+            if (subtitle.isNotBlank()) {
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(
+                    onClick = { showInfo = true },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Info,
+                        contentDescription = "Info",
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
+        
         Icon(
             imageVector = Icons.Rounded.ChevronRight,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             modifier = Modifier.size(20.dp)
+        )
+    }
+
+    if (showInfo) {
+        AlertDialog(
+            onDismissRequest = { showInfo = false },
+            icon = { Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
+            text = { Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            confirmButton = {
+                TextButton(onClick = { showInfo = false }) {
+                    Text("Got it")
+                }
+            },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     }
 }

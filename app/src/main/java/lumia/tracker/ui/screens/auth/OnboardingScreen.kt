@@ -217,7 +217,7 @@ fun BackupOptionPage(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Rounded.CloudDownload,
+                imageVector = Icons.Rounded.SettingsBackupRestore,
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
                 tint = MaterialTheme.colorScheme.primary

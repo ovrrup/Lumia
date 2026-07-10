@@ -101,23 +101,25 @@ fun SettingsToggleItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    var showInfo by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
-            modifier = Modifier.weight(1f).padding(end = 16.dp).alpha(if (enabled) 1f else 0.5f),
+            modifier = Modifier.weight(1f).padding(end = 12.dp).alpha(if (enabled) 1f else 0.5f),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (icon != null) {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
                         .background(
                             if (checked && enabled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                             else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -128,20 +130,53 @@ fun SettingsToggleItem(
                         imageVector = icon,
                         contentDescription = null,
                         tint = if (checked && enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(12.dp))
             }
-            Column {
-                Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = title, 
+                style = MaterialTheme.typography.bodyMedium, 
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (subtitle.isNotBlank()) {
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(
+                    onClick = { showInfo = true },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Info,
+                        contentDescription = "Info",
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
         }
         Switch(
             checked = checked,
             enabled = enabled,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier.scale(0.85f)
+        )
+    }
+
+    if (showInfo) {
+        AlertDialog(
+            onDismissRequest = { showInfo = false },
+            icon = { Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
+            text = { Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            confirmButton = {
+                TextButton(onClick = { showInfo = false }) {
+                    Text("Got it")
+                }
+            },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     }
 }

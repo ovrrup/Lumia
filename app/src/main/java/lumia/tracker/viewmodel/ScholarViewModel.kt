@@ -14,6 +14,7 @@ import lumia.tracker.model.Topic
 import lumia.tracker.model.ActionLog
 import lumia.tracker.model.Chapter
 import lumia.tracker.model.Task
+import lumia.tracker.model.TagCustomization
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -123,6 +124,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             stats["Tasks"] = repository.dao.exportAllTasks().size
             stats["Focus Sessions"] = repository.dao.exportAllPomodoro().size
             stats["Total Attachments"] = repository.dao.exportAllAttachments().size
+            stats["Tag Customizations"] = repository.dao.exportAllTagCustomizations().size
             _dbStatistics.value = stats
         }
     }
@@ -161,8 +163,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         var completed = prefs.getBoolean("onboarding_completed", false)
         val wasInstalledBefore = prefs.getBoolean("was_installed_before", false)
         if (!wasInstalledBefore) {
-            val dbFile = application.getDatabasePath("scholar_sync_database")
-            val isUpdate = prefs.all.filterKeys { it != "was_installed_before" && it != "onboarding_completed" }.isNotEmpty() || dbFile.exists()
+            val hasAnyDb = application.databaseList().any { it.startsWith("scholar_sync") }
+            val isUpdate = prefs.all.filterKeys { it != "was_installed_before" && it != "onboarding_completed" }.isNotEmpty() || hasAnyDb
             if (isUpdate) {
                 completed = true
                 prefs.edit().putBoolean("onboarding_completed", true).putBoolean("was_installed_before", true).apply()
@@ -1185,7 +1187,19 @@ private val _streakPercentage = MutableStateFlow(0f)
         initialValue = emptyList()
     )
 
+    val allTagCustomizations: StateFlow<List<TagCustomization>> = repository.dao.getAllTagCustomizations().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     val allTopics: StateFlow<List<Topic>> = repository.allTopics.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val allChapters: StateFlow<List<Chapter>> = repository.allChapters.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
@@ -1433,6 +1447,190 @@ private val _streakPercentage = MutableStateFlow(0f)
             logAction("Updated course: ${course.name}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+        }
+    }
+
+    fun renameTagGlobally(oldTag: String, newTag: String) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val oldLower = oldTag.trim().lowercase()
+            val cleanNew = newTag.trim()
+            if (oldLower.isBlank() || cleanNew.isBlank()) return@launch
+
+            // 1. Courses
+            repository.dao.exportAllCourses().forEach { course ->
+                val list = course.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == oldLower }) {
+                    val updatedTags = list.map { if (it.lowercase() == oldLower) cleanNew else it }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateCourse(course.copy(tags = updatedTags))
+                }
+            }
+
+            // 2. Subjects
+            repository.dao.exportAllSubjects().forEach { subject ->
+                val list = subject.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == oldLower }) {
+                    val updatedTags = list.map { if (it.lowercase() == oldLower) cleanNew else it }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateSubject(subject.copy(tags = updatedTags))
+                }
+            }
+
+            // 3. Chapters
+            repository.dao.exportAllChapters().forEach { chapter ->
+                val list = chapter.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == oldLower }) {
+                    val updatedTags = list.map { if (it.lowercase() == oldLower) cleanNew else it }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateChapter(chapter.copy(tags = updatedTags))
+                }
+            }
+
+            // 4. Topics
+            repository.dao.exportAllTopics().forEach { topic ->
+                val list = topic.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == oldLower }) {
+                    val updatedTags = list.map { if (it.lowercase() == oldLower) cleanNew else it }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateTopic(topic.copy(tags = updatedTags))
+                }
+            }
+
+            // 5. Assignments
+            repository.dao.exportAllAssignments().forEach { assignment ->
+                val list = assignment.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == oldLower }) {
+                    val updatedTags = list.map { if (it.lowercase() == oldLower) cleanNew else it }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateAssignment(assignment.copy(tags = updatedTags))
+                }
+            }
+
+            // 6. Tasks
+            repository.dao.exportAllTasks().forEach { task ->
+                val list = task.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == oldLower }) {
+                    val updatedTags = list.map { if (it.lowercase() == oldLower) cleanNew else it }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateTask(task.copy(tags = updatedTags))
+                }
+            }
+
+            // 7. TestRecords
+            repository.dao.exportAllTestRecords().forEach { record ->
+                val list = record.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == oldLower }) {
+                    val updatedTags = list.map { if (it.lowercase() == oldLower) cleanNew else it }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateTestRecord(record.copy(tags = updatedTags))
+                }
+            }
+
+            // 8. TagCustomizations
+            val oldCustom = repository.dao.exportAllTagCustomizations().find { it.tagName.lowercase() == oldLower }
+            if (oldCustom != null) {
+                repository.dao.deleteTagCustomization(oldCustom)
+                repository.dao.insertTagCustomization(oldCustom.copy(tagName = cleanNew.lowercase()))
+            }
+            
+            logAction("Renamed tag globally: '$oldTag' -> '$cleanNew'")
+        }
+    }
+
+    fun deleteTagGlobally(tagToDelete: String) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val lower = tagToDelete.trim().lowercase()
+            if (lower.isBlank()) return@launch
+
+            // 1. Courses
+            repository.dao.exportAllCourses().forEach { course ->
+                val list = course.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == lower }) {
+                    val updatedTags = list.filter { it.lowercase() != lower }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateCourse(course.copy(tags = updatedTags))
+                }
+            }
+
+            // 2. Subjects
+            repository.dao.exportAllSubjects().forEach { subject ->
+                val list = subject.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == lower }) {
+                    val updatedTags = list.filter { it.lowercase() != lower }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateSubject(subject.copy(tags = updatedTags))
+                }
+            }
+
+            // 3. Chapters
+            repository.dao.exportAllChapters().forEach { chapter ->
+                val list = chapter.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == lower }) {
+                    val updatedTags = list.filter { it.lowercase() != lower }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateChapter(chapter.copy(tags = updatedTags))
+                }
+            }
+
+            // 4. Topics
+            repository.dao.exportAllTopics().forEach { topic ->
+                val list = topic.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == lower }) {
+                    val updatedTags = list.filter { it.lowercase() != lower }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateTopic(topic.copy(tags = updatedTags))
+                }
+            }
+
+            // 5. Assignments
+            repository.dao.exportAllAssignments().forEach { assignment ->
+                val list = assignment.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == lower }) {
+                    val updatedTags = list.filter { it.lowercase() != lower }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateAssignment(assignment.copy(tags = updatedTags))
+                }
+            }
+
+            // 6. Tasks
+            repository.dao.exportAllTasks().forEach { task ->
+                val list = task.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == lower }) {
+                    val updatedTags = list.filter { it.lowercase() != lower }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateTask(task.copy(tags = updatedTags))
+                }
+            }
+
+            // 7. TestRecords
+            repository.dao.exportAllTestRecords().forEach { record ->
+                val list = record.tags.split(",").map { it.trim() }
+                if (list.any { it.lowercase() == lower }) {
+                    val updatedTags = list.filter { it.lowercase() != lower }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                    repository.updateTestRecord(record.copy(tags = updatedTags))
+                }
+            }
+
+            // 8. TagCustomizations
+            val oldCustom = repository.dao.exportAllTagCustomizations().find { it.tagName.lowercase() == lower }
+            if (oldCustom != null) {
+                repository.dao.deleteTagCustomization(oldCustom)
+            }
+            
+            logAction("Deleted tag globally: '$tagToDelete'")
+        }
+    }
+
+    fun insertTagCustomization(tagName: String, colorHex: String, description: String, isFavorite: Boolean = false) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val normalized = tagName.trim().lowercase()
+            if (normalized.isNotBlank()) {
+                val custom = TagCustomization(
+                    tagName = normalized,
+                    colorHex = colorHex,
+                    description = description,
+                    isFavorite = isFavorite,
+                    lastUsedMillis = System.currentTimeMillis()
+                )
+                repository.dao.insertTagCustomization(custom)
+            }
+        }
+    }
+
+    fun deleteTagCustomization(tagName: String) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val normalized = tagName.trim().lowercase()
+            if (normalized.isNotBlank()) {
+                val custom = TagCustomization(tagName = normalized)
+                repository.dao.deleteTagCustomization(custom)
+            }
         }
     }
 

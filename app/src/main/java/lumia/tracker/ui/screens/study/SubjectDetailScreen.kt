@@ -6,6 +6,8 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -37,6 +39,7 @@ import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.GlassCard
 import lumia.tracker.viewmodel.ScholarViewModel
+import lumia.tracker.ui.util.getTagColors
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -183,7 +186,40 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             Column {
                                 Text(subject.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
                                 if (subject.tags.isNotBlank()) {
-                                    Text("Tags: ${subject.tags}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    @OptIn(ExperimentalLayoutApi::class)
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        subject.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { tag ->
+                                            val colors = getTagColors(tag)
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(colors.first, RoundedCornerShape(8.dp))
+                                                    .clickable {
+                                                        navController.navigate("tags_hub?selectedTag=$tag")
+                                                    }
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(
+                                                        Icons.Rounded.LocalOffer,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(10.dp),
+                                                        tint = colors.second
+                                                    )
+                                                    Spacer(Modifier.width(2.dp))
+                                                    Text(
+                                                        text = tag,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = colors.second,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

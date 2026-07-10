@@ -198,8 +198,9 @@ data class ScholarBackup(
     val chapters: List<Chapter>? = emptyList(),
     val tasks: List<Task>? = emptyList(),
     val attachments: List<Attachment>? = emptyList(),
-    val testRecords: List<TestRecord>? = emptyList()
-    , val profile: UserProfile? = null
+    val testRecords: List<TestRecord>? = emptyList(),
+    val tagCustomizations: List<TagCustomization>? = emptyList(),
+    val profile: UserProfile? = null
     , val isFullAppBackup: Boolean = false
     , val fullAppBackupJson: String? = null
 ) : Serializable

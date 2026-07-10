@@ -15,10 +15,39 @@ class ProfileManager(private val context: Context) {
     private val profileAdapter = moshi.adapter<List<UserProfile>>(profileListType)
 
     fun getAllProfiles(): List<UserProfile> {
-        val json = prefs.getString("profiles_json", null) ?: return initDefaultProfile()
+        val json = prefs.getString("profiles_json", null)
+        if (json.isNullOrEmpty()) {
+            return initDefaultProfile()
+        }
         return try {
-            profileAdapter.fromJson(json) ?: initDefaultProfile()
+            val list = profileAdapter.fromJson(json)
+            if (!list.isNullOrEmpty()) {
+                // Successfully parsed! Back it up.
+                prefs.edit().putString("profiles_json_backup", json).apply()
+                list
+            } else {
+                initDefaultProfile()
+            }
         } catch (e: Exception) {
+            android.util.Log.e("ProfileManager", "Failed to parse profiles_json. Attempting recovery...", e)
+            // Save corrupted for safety
+            prefs.edit().putString("profiles_json_corrupted", json).apply()
+            
+            // Try to load backup
+            val backupJson = prefs.getString("profiles_json_backup", null)
+            if (!backupJson.isNullOrEmpty()) {
+                try {
+                    val backupList = profileAdapter.fromJson(backupJson)
+                    if (!backupList.isNullOrEmpty()) {
+                        // Restore backup to active profiles
+                        prefs.edit().putString("profiles_json", backupJson).apply()
+                        return backupList
+                    }
+                } catch (be: Exception) {
+                    android.util.Log.e("ProfileManager", "Failed to parse profiles_json_backup", be)
+                }
+            }
+            
             initDefaultProfile()
         }
     }

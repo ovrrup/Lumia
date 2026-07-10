@@ -48,6 +48,7 @@ import androidx.work.WorkManager
 import lumia.tracker.ui.screens.CourseDetailScreen
 import lumia.tracker.ui.screens.DashboardScreen
 import lumia.tracker.ui.screens.SettingsScreen
+import lumia.tracker.ui.screens.search.SearchScreen
 import lumia.tracker.ui.theme.ScholarTheme
 import lumia.tracker.viewmodel.ScholarViewModel
 import lumia.tracker.worker.AssignmentMonitorWorker
@@ -429,6 +430,23 @@ class MainActivity : ComponentActivity() {
                             DashboardScreen(
                                 navController = navController,
                                 viewModel = viewModel
+                            )
+                        }
+                        composable("search") {
+                            SearchScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable(
+                            "tags_hub?selectedTag={selectedTag}",
+                            arguments = listOf(navArgument("selectedTag") { type = NavType.StringType; defaultValue = "" })
+                        ) { backStackEntry ->
+                            val selectedTag = backStackEntry.arguments?.getString("selectedTag") ?: ""
+                            lumia.tracker.ui.screens.study.TagsHubScreen(
+                                navController = navController,
+                                viewModel = viewModel,
+                                initialTag = selectedTag
                             )
                         }
                         composable(

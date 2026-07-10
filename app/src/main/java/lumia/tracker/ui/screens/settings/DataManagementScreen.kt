@@ -50,6 +50,7 @@ import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.LocalOffer
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.CropFree
@@ -88,6 +89,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.viewmodel.ScholarViewModel
+import lumia.tracker.model.TagCustomization
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
@@ -99,6 +101,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
     val dbStats by viewModel.dbStatistics.collectAsStateWithLifecycle()
     val defragText by viewModel.defragStatus.collectAsStateWithLifecycle()
+    val tagCustomizations by viewModel.allTagCustomizations.collectAsStateWithLifecycle()
     
 
     val context = LocalContext.current
@@ -336,6 +339,105 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             )
                         }
                     }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Tag Connectivity & Alignment Card
+            SettingsGroupCard(title = "Tag Connectivity & Maintenance", icon = Icons.Rounded.LocalOffer) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "Align Tag Databases",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Synchronize academic entities, remove orphaned tag customizations, and verify integrity of tag associations.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    var alignStatus by remember { mutableStateOf("") }
+                    var loadingAlign by remember { mutableStateOf(false) }
+                    val scope = rememberCoroutineScope()
+
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                loadingAlign = true
+                                alignStatus = "Verifying tag mappings..."
+                                kotlinx.coroutines.delay(1000)
+                                // Scan all tags and sync
+                                val tagsInDb = mutableSetOf<String>()
+                                viewModel.courses.value.forEach { c -> c.tags.split(",").forEach { if(it.isNotBlank()) tagsInDb.add(it.trim().lowercase()) } }
+                                viewModel.subjects.value.forEach { s -> s.tags.split(",").forEach { if(it.isNotBlank()) tagsInDb.add(it.trim().lowercase()) } }
+                                viewModel.allTopics.value.forEach { t -> t.tags.split(",").forEach { if(it.isNotBlank()) tagsInDb.add(it.trim().lowercase()) } }
+                                viewModel.tasks.value.forEach { t -> t.tags.split(",").forEach { if(it.isNotBlank()) tagsInDb.add(it.trim().lowercase()) } }
+                                viewModel.allChapters.value.forEach { ch -> ch.tags.split(",").forEach { if(it.isNotBlank()) tagsInDb.add(it.trim().lowercase()) } }
+                                viewModel.allTestRecords.value.forEach { tr -> tr.tags.split(",").forEach { if(it.isNotBlank()) tagsInDb.add(it.trim().lowercase()) } }
+
+                                val customizations = tagCustomizations
+                                var deletedOrphans = 0
+                                customizations.forEach { cust ->
+                                    if (!tagsInDb.contains(cust.tagName)) {
+                                        viewModel.deleteTagCustomization(cust.tagName)
+                                        deletedOrphans++
+                                    }
+                                }
+                                alignStatus = "Aligned! ${tagsInDb.size} active tags mapped. Cleaned $deletedOrphans orphaned customizations."
+                                loadingAlign = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
+                        enabled = !loadingAlign,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Scan & Align Tag Associations")
+                        }
+                    }
+
+                    if (alignStatus.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = alignStatus,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                            Text("Clear Custom Colors & Notes", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            Text("Erase all tag customizations (custom colors, notes, favorite states) but keep associations intact.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    tagCustomizations.forEach { viewModel.deleteTagCustomization(it.tagName) }
+                                    alignStatus = "Cleared all tag metadata customizations!"
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer),
+                            modifier = Modifier.wrapContentSize()
+                        ) {
+                            Text("Reset Metas")
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

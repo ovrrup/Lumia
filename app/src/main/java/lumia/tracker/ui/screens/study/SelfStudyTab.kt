@@ -207,7 +207,8 @@ fun SelfStudyTab(
                                 task = task, 
                                 viewModel = viewModel, 
                                 onEdit = { taskToEdit = task },
-                                modifier = Modifier.detectReorderAfterLongPress(reorderableState)
+                                modifier = Modifier.detectReorderAfterLongPress(reorderableState),
+                                navController = navController
                             )
                         }
                     }
@@ -218,7 +219,7 @@ fun SelfStudyTab(
                             Text(tag, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(top = 8.dp))
                         }
                         items(tTasks, key = { it.id }) { task ->
-                            TaskItemCard(task = task, viewModel = viewModel, onEdit = { taskToEdit = task })
+                            TaskItemCard(task = task, viewModel = viewModel, onEdit = { taskToEdit = task }, navController = navController)
                         }
                     }
                 } else if (groupBy == "Priority") {
@@ -230,7 +231,7 @@ fun SelfStudyTab(
                                 Text(pLabel, style = MaterialTheme.typography.labelLarge, color = if (pLabel.startsWith("High")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(top = 8.dp))
                             }
                             items(tTasks, key = { it.id }) { task ->
-                                TaskItemCard(task = task, viewModel = viewModel, onEdit = { taskToEdit = task })
+                                TaskItemCard(task = task, viewModel = viewModel, onEdit = { taskToEdit = task }, navController = navController)
                             }
                         }
                     }

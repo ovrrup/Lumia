@@ -72,6 +72,9 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material.icons.rounded.LocalOffer
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -176,9 +179,31 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     }
                     CenterAlignedTopAppBar(
                         title = { Text(titleText, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                        navigationIcon = {
+                            lumia.tracker.ui.components.BouncyIconButton(
+                                onClick = { navController.navigate("search") },
+                                modifier = Modifier.padding(start = 12.dp).testTag("open_search_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Search,
+                                    contentDescription = "Open Global Search",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        },
                         actions = {
                             val moreRounds = lumia.tracker.ui.theme.LocalMoreRounds.current
                             val moreRoundsMode = lumia.tracker.ui.theme.LocalMoreRoundsMode.current
+                            lumia.tracker.ui.components.BouncyIconButton(
+                                onClick = { navController.navigate("tags_hub") },
+                                modifier = Modifier.padding(end = 4.dp).testTag("open_tags_hub_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.LocalOffer,
+                                    contentDescription = "Tags Network Explorer",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                             lumia.tracker.ui.components.StreakWidget(viewModel, navController)
                             val isMrGlass = moreRounds && moreRoundsMode == "Glass"
                             val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()

@@ -501,11 +501,7 @@ fun PomodoroScreen(
                                         if (isExitButtonShown) {
                                             // Exit and Save study progress safely!
                                             val studiedSeconds = totalTime - timeLeft
-                                            val studiedMinutes = if (studiedSeconds > 0) {
-                                                Math.max(1, (studiedSeconds + 30) / 60)
-                                            } else {
-                                                0
-                                            }
+                                            val studiedMinutes = studiedSeconds / 60
                                             if (studiedMinutes > 0 && modeString == "WORK") {
                                                 viewModel.addPomodoroSession(
                                                     durationMinutes = studiedMinutes,

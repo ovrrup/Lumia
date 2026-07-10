@@ -1,0 +1,1 @@
+Beautiful offline-first academic tracker and focus cockpit with Material 3

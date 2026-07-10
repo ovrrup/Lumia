@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -127,52 +127,84 @@ fun OnboardingPage(icon: ImageVector, title: String, description: String, isActi
 
 @Composable
 fun GlassmorphicRepresentation() {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // Decorative glowing background circles simulating modern gradient blobs
-        val primaryColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-        val tertiaryColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.4f)
+        // Glowing background blobs for high-fidelity glass backdrop
+        val blob1Color = primaryColor.copy(alpha = 0.35f)
+        val blob2Color = tertiaryColor.copy(alpha = 0.25f)
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawCircle(
-                color = primaryColor,
-                radius = 160f,
-                center = androidx.compose.ui.geometry.Offset(size.width * 0.2f, size.height * 0.3f)
+                color = blob1Color,
+                radius = size.width * 0.4f,
+                center = androidx.compose.ui.geometry.Offset(size.width * 0.2f, size.height * 0.25f)
             )
             drawCircle(
-                color = tertiaryColor,
-                radius = 200f,
-                center = androidx.compose.ui.geometry.Offset(size.width * 0.8f, size.height * 0.7f)
+                color = blob2Color,
+                radius = size.width * 0.45f,
+                center = androidx.compose.ui.geometry.Offset(size.width * 0.85f, size.height * 0.75f)
             )
         }
 
-        // Layered Frosted Card
-        Box(
+        // Mock Phone Interface Layer
+        Column(
             modifier = Modifier
-                .align(Alignment.Center)
-                .fillMaxWidth(0.85f)
-                .height(180.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color.White.copy(alpha = 0.08f))
-                .border(
-                    width = 1.dp,
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.25f),
-                            Color.White.copy(alpha = 0.03f)
-                        )
-                    ),
-                    shape = RoundedCornerShape(24.dp)
-                )
-                .padding(20.dp)
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Header of simulated card
+            // 1. Mock Phone Status Bar & App Bar
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Status Bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "09:41",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Wifi,
+                            contentDescription = null,
+                            modifier = Modifier.size(10.dp),
+                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                        )
+                        Icon(
+                            imageVector = Icons.Rounded.SignalCellular4Bar,
+                            contentDescription = null,
+                            modifier = Modifier.size(10.dp),
+                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                        )
+                        Icon(
+                            imageVector = Icons.Rounded.BatteryChargingFull,
+                            contentDescription = null,
+                            modifier = Modifier.size(10.dp),
+                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // App Bar
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -181,87 +213,265 @@ fun GlassmorphicRepresentation() {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(28.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.15f)),
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
+                            Text("🎓", fontSize = 14.sp)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                "Frosted Card",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurface
+                                text = "Lumia Tracker",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                "Active Theme: Ocean",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                text = "Academic Cockpit",
+                                fontSize = 8.sp,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                             )
                         }
                     }
-                    Box(
+                    // Streak Badge
+                    Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Icon(
+                            imageVector = Icons.Rounded.LocalFireDepartment,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            "LIVE",
-                            style = MaterialTheme.typography.labelSmall,
+                            text = "5",
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
                 }
+            }
 
-                // Divider line
+            // 2. Mock Welcome Mesh Banner (Actual Welcome Banner look)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                primaryColor.copy(alpha = 0.35f),
+                                secondaryColor.copy(alpha = 0.25f),
+                                tertiaryColor.copy(alpha = 0.2f)
+                            )
+                        )
+                    )
+                    .border(
+                        width = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Column {
+                    Text(
+                        text = "Welcome to Lumia",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Your personalized companion",
+                        fontSize = 8.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // 3. Mock Row of Glass Statistics Cards (Matches actual GlassHeroCard stats)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Tasks Done
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Color.White.copy(alpha = 0.12f))
-                )
-
-                // Simulated details
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .weight(1f)
+                        .height(65.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = if (isDark) 0.05f else 0.45f))
+                        .border(
+                            width = 0.8.dp,
+                            brush = Brush.verticalGradient(
+                                listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .padding(8.dp)
                 ) {
-                    Column {
-                        Text(
-                            "Focus Time",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.TaskAlt,
+                            contentDescription = null,
+                            tint = primaryColor,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .background(primaryColor.copy(alpha = 0.12f), CircleShape)
+                                .padding(3.dp)
                         )
-                        Text(
-                            "3h 45m",
-                            fontWeight = FontWeight.Black,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            Text(
+                                "Tasks Done",
+                                fontSize = 8.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "8",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            "Daily Goal",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                }
+
+                // Courses
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(65.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = if (isDark) 0.05f else 0.45f))
+                        .border(
+                            width = 0.8.dp,
+                            brush = Brush.verticalGradient(
+                                listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.05f))
+                            ),
+                            shape = RoundedCornerShape(16.dp)
                         )
-                        Text(
-                            "92% Done",
-                            fontWeight = FontWeight.Black,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.tertiary
+                        .padding(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.MenuBook,
+                            contentDescription = null,
+                            tint = secondaryColor,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .background(secondaryColor.copy(alpha = 0.12f), CircleShape)
+                                .padding(3.dp)
                         )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            Text(
+                                "Enrolled",
+                                fontSize = 8.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "4",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
+                }
+            }
+
+            // 4. Floating bottom navigation bar matching the actual app's nav bar style
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .height(34.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White.copy(alpha = if (isDark) 0.12f else 0.65f))
+                    .border(
+                        width = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(16.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Home (Selected)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(primaryColor.copy(alpha = 0.15f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Home,
+                                contentDescription = null,
+                                tint = primaryColor,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = "Home",
+                                fontSize = 7.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = primaryColor
+                            )
+                        }
+                    }
+
+                    // Courses
+                    Icon(
+                        imageVector = Icons.Rounded.MenuBook,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        modifier = Modifier.size(12.dp)
+                    )
+
+                    // Focus
+                    Icon(
+                        imageVector = Icons.Rounded.Timer,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        modifier = Modifier.size(12.dp)
+                    )
+
+                    // Settings
+                    Icon(
+                        imageVector = Icons.Rounded.Settings,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        modifier = Modifier.size(12.dp)
+                    )
                 }
             }
         }

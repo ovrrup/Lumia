@@ -1,0 +1,5 @@
+Lumia v1.0.6:
+• Improved stability and fixed critical profile-loading errors.
+• Added automatic data recovery and safe backward compatibility for older profiles.
+• Strengthened database update softpad preventing unexpected resets.
+• Cleaned up unused dependencies for an optimized, F-Droid compliant, lightweight footprint.
