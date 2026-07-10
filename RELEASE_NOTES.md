@@ -1,5 +1,10 @@
 # Lumia Release Notes
 
+## 🌟 What's New in v1.0.6 (Onboarding Polish & Tag Consolidation)
+- **High-Fidelity Onboarding Overhaul**: Completely redesigned the onboarding illustration layer with interactive, high-fidelity glassmorphic mockup panels representing Lumia's actual student cockpit interface—complete with custom status bars, streak indicator badges, the welcome mesh banner, courses progress statistics, and floating navigation bars.
+- **Refined Navigation Architecture**: Re-located the central **Tag Management (Network Explorer)** feature out of the active student dashboard action-bar and directly into the main Settings dashboard. This unifies visual settings and provides a clutter-free daily study dashboard.
+- **Under-the-Hood Hardening**: Re-audited codebases for potential performance issues, resolved edge-case exceptions, and cleaned up temporary build-scripts to secure an ultra-smooth, fast, and crash-free v1.0.6 release.
+
 ## WARNING: CRITICAL APP REINSTALLATION REQUIRED
 Due to updates to our application's Package ID and code-signing credentials, version 1.0.5 acts as a clean break.
 Installing this update directly over older installations may cause duplicate apps to show up on your home screen or raise package configuration conflicts.

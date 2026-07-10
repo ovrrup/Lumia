@@ -73,6 +73,7 @@ import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Straighten
 import androidx.compose.material.icons.rounded.BlurOn
+import androidx.compose.material.icons.rounded.LocalOffer
 import androidx.compose.material.icons.rounded.InvertColors
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -181,6 +182,15 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     subtitle = "Advanced background features and interconnections",
                     icon = Icons.Rounded.Settings,
                     onClick = { navController.navigate("settings/system") }
+                )
+                
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsActionItemInCard(
+                    title = "Tag Management",
+                    subtitle = "Customize tag aesthetics and view their academic connections",
+                    icon = Icons.Rounded.LocalOffer,
+                    onClick = { navController.navigate("tags_hub") }
                 )
                 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
