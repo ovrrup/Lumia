@@ -36,8 +36,11 @@ jobs:
 
     - name: Setup Signing Key
       run: |
-        if [ -n "${{ secrets.RELEASE_KEYSTORE }}" ]; then
-          echo "Decoding release keystore from secrets..."
+        if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+          echo "Decoding release keystore from secrets.KEYSTORE_BASE64..."
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > my-upload-key.jks
+        elif [ -n "${{ secrets.RELEASE_KEYSTORE }}" ]; then
+          echo "Decoding release keystore from secrets.RELEASE_KEYSTORE..."
           echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > my-upload-key.jks
         elif [ -f "debug.keystore.base64" ]; then
           echo "Using persistent debug keystore for development build..."
@@ -51,8 +54,9 @@ jobs:
       run: gradle assembleRelease assembleReleaseCompressed --no-daemon -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=1024m" -Dkotlin.compiler.execution.strategy=in-process --no-parallel
       env:
         JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
-        STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
-        KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || 'android' }}
+        STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.RELEASE_KEY_PASSWORD || 'android' }}
+        KEY_ALIAS: ${{ secrets.ALIAS || 'upload' }}
 
     - name: Reorganize and Rename APKs
       run: |
