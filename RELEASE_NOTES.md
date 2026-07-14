@@ -1,11 +1,9 @@
 # Lumia Release Notes
 
-## 🌟 What's New in v1.0.7 (Redesigned Dark Obsidian Glass Theme)
+## 🌟 What's New in v1.0.6 (Glass Redesign, Onboarding Polish & Tag Consolidation)
 - **Dynamic Obsidian Infusion**: Completely redesigned the glass UI color blending algorithms for dark mode. Cards, hero banners, progress pills, and navigation elements now dynamically infuse a portion of the active theme's primary color (Twilight, Gold, Emerald, Rose, etc.) into the backing canvas, generating a luxurious, customized semi-translucent obsidian sheen.
 - **Iridescent Glass Border Refinements**: Introduced a new, high-contrast iridescent glowing border gradient. Rather than using static outline shades, dark mode card edges now render light-refracting gradient highlights that transition beautifully from primary-toned glow highlights to satin transparency.
 - **Enhanced Contrast & Transparency**: Recalibrated opacity and alpha constants in dark mode to maximize translucent readability, making underlying mesh shapes and dynamic background blobs stand out with unparalleled depth and clarity.
-
-## 🌟 What's New in v1.0.6 (Onboarding Polish & Tag Consolidation)
 - **High-Fidelity Onboarding Overhaul**: Completely redesigned the onboarding illustration layer with interactive, high-fidelity glassmorphic mockup panels representing Lumia's actual student cockpit interface—complete with custom status bars, streak indicator badges, the welcome mesh banner, courses progress statistics, and floating navigation bars.
 - **Refined Navigation Architecture**: Re-located the central **Tag Management (Network Explorer)** feature out of the active student dashboard action-bar and directly into the main Settings dashboard. This unifies visual settings and provides a clutter-free daily study dashboard.
 - **Under-the-Hood Hardening**: Re-audited codebases for potential performance issues, resolved edge-case exceptions, and cleaned up temporary build-scripts to secure an ultra-smooth, fast, and crash-free v1.0.6 release.
