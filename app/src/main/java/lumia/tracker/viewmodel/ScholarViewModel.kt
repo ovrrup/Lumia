@@ -769,6 +769,91 @@ private val _streakPercentage = MutableStateFlow(0f)
         prefs.edit().putBoolean("feature_quick_notes_enabled", enabled).apply()
     }
 
+    private val _tabHomeLabel = MutableStateFlow(prefs.getString("tab_home_label", "Home") ?: "Home")
+    val tabHomeLabel = _tabHomeLabel.asStateFlow()
+
+    private val _tabHomeIcon = MutableStateFlow(prefs.getString("tab_home_icon", "Home") ?: "Home")
+    val tabHomeIcon = _tabHomeIcon.asStateFlow()
+
+    private val _tabCoursesLabel = MutableStateFlow(prefs.getString("tab_courses_label", "Courses") ?: "Courses")
+    val tabCoursesLabel = _tabCoursesLabel.asStateFlow()
+
+    private val _tabCoursesIcon = MutableStateFlow(prefs.getString("tab_courses_icon", "MenuBook") ?: "MenuBook")
+    val tabCoursesIcon = _tabCoursesIcon.asStateFlow()
+
+    private val _tabSubjectsLabel = MutableStateFlow(prefs.getString("tab_subjects_label", "Subjects") ?: "Subjects")
+    val tabSubjectsLabel = _tabSubjectsLabel.asStateFlow()
+
+    private val _tabSubjectsIcon = MutableStateFlow(prefs.getString("tab_subjects_icon", "FolderOpen") ?: "FolderOpen")
+    val tabSubjectsIcon = _tabSubjectsIcon.asStateFlow()
+
+    private val _tabSelfStudyLabel = MutableStateFlow(prefs.getString("tab_self_study_label", "Self Study") ?: "Self Study")
+    val tabSelfStudyLabel = _tabSelfStudyLabel.asStateFlow()
+
+    private val _tabSelfStudyIcon = MutableStateFlow(prefs.getString("tab_self_study_icon", "AutoStories") ?: "AutoStories")
+    val tabSelfStudyIcon = _tabSelfStudyIcon.asStateFlow()
+
+    private val _tabAnalyticsLabel = MutableStateFlow(prefs.getString("tab_analytics_label", "Analytics") ?: "Analytics")
+    val tabAnalyticsLabel = _tabAnalyticsLabel.asStateFlow()
+
+    private val _tabAnalyticsIcon = MutableStateFlow(prefs.getString("tab_analytics_icon", "Analytics") ?: "Analytics")
+    val tabAnalyticsIcon = _tabAnalyticsIcon.asStateFlow()
+
+    private val _tabCalendarLabel = MutableStateFlow(prefs.getString("tab_calendar_label", "Calendar") ?: "Calendar")
+    val tabCalendarLabel = _tabCalendarLabel.asStateFlow()
+
+    private val _tabCalendarIcon = MutableStateFlow(prefs.getString("tab_calendar_icon", "CalendarMonth") ?: "CalendarMonth")
+    val tabCalendarIcon = _tabCalendarIcon.asStateFlow()
+
+    fun updateTabHomeLabel(value: String) {
+        _tabHomeLabel.value = value
+        prefs.edit().putString("tab_home_label", value).apply()
+    }
+    fun updateTabHomeIcon(value: String) {
+        _tabHomeIcon.value = value
+        prefs.edit().putString("tab_home_icon", value).apply()
+    }
+    fun updateTabCoursesLabel(value: String) {
+        _tabCoursesLabel.value = value
+        prefs.edit().putString("tab_courses_label", value).apply()
+    }
+    fun updateTabCoursesIcon(value: String) {
+        _tabCoursesIcon.value = value
+        prefs.edit().putString("tab_courses_icon", value).apply()
+    }
+    fun updateTabSubjectsLabel(value: String) {
+        _tabSubjectsLabel.value = value
+        prefs.edit().putString("tab_subjects_label", value).apply()
+    }
+    fun updateTabSubjectsIcon(value: String) {
+        _tabSubjectsIcon.value = value
+        prefs.edit().putString("tab_subjects_icon", value).apply()
+    }
+    fun updateTabSelfStudyLabel(value: String) {
+        _tabSelfStudyLabel.value = value
+        prefs.edit().putString("tab_self_study_label", value).apply()
+    }
+    fun updateTabSelfStudyIcon(value: String) {
+        _tabSelfStudyIcon.value = value
+        prefs.edit().putString("tab_self_study_icon", value).apply()
+    }
+    fun updateTabAnalyticsLabel(value: String) {
+        _tabAnalyticsLabel.value = value
+        prefs.edit().putString("tab_analytics_label", value).apply()
+    }
+    fun updateTabAnalyticsIcon(value: String) {
+        _tabAnalyticsIcon.value = value
+        prefs.edit().putString("tab_analytics_icon", value).apply()
+    }
+    fun updateTabCalendarLabel(value: String) {
+        _tabCalendarLabel.value = value
+        prefs.edit().putString("tab_calendar_label", value).apply()
+    }
+    fun updateTabCalendarIcon(value: String) {
+        _tabCalendarIcon.value = value
+        prefs.edit().putString("tab_calendar_icon", value).apply()
+    }
+
     val allAttachments = repository.allAttachments.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -2084,6 +2169,18 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "streak_progress_color" -> _streakProgressColor.value = value
                             "streak_anim_override" -> _streakAnimationOverride.value = value
                             "streak_notif_tone" -> _streakNotificationTone.value = value
+                            "tab_home_label" -> _tabHomeLabel.value = value
+                            "tab_home_icon" -> _tabHomeIcon.value = value
+                            "tab_courses_label" -> _tabCoursesLabel.value = value
+                            "tab_courses_icon" -> _tabCoursesIcon.value = value
+                            "tab_subjects_label" -> _tabSubjectsLabel.value = value
+                            "tab_subjects_icon" -> _tabSubjectsIcon.value = value
+                            "tab_self_study_label" -> _tabSelfStudyLabel.value = value
+                            "tab_self_study_icon" -> _tabSelfStudyIcon.value = value
+                            "tab_analytics_label" -> _tabAnalyticsLabel.value = value
+                            "tab_analytics_icon" -> _tabAnalyticsIcon.value = value
+                            "tab_calendar_label" -> _tabCalendarLabel.value = value
+                            "tab_calendar_icon" -> _tabCalendarIcon.value = value
                         }
                     }
                 }
@@ -2225,34 +2322,49 @@ private val _streakPercentage = MutableStateFlow(0f)
     fun importData(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                var mainBackup: lumia.tracker.model.ScholarBackup? = null
+                var retrievedBackup: lumia.tracker.model.ScholarBackup? = null
                 getApplication<Application>().contentResolver.openInputStream(uri)?.use { ins ->
-                    mainBackup = repository.importDataFromStream(ins)
+                    retrievedBackup = repository.importDataFromStream(ins)
                 }
                 
-                if (mainBackup == null) throw IllegalArgumentException("No data found")
+                val backup = retrievedBackup ?: throw IllegalArgumentException("No data found")
                 
                 val moshi = com.squareup.moshi.Moshi.Builder().add(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()
                 
                 // Clear any cached DB connections before overwriting databases
                 lumia.tracker.data.AppDatabase.clearInstances()
 
-                if (mainBackup!!.isFullAppBackup && mainBackup!!.fullAppBackupJson != null) {
+                val fullBackupJson = backup.fullAppBackupJson
+                if (backup.isFullAppBackup == true && fullBackupJson != null) {
                     val fullBackupAdapter = moshi.adapter(lumia.tracker.model.FullAppBackup::class.java)
                     val backupAdapter = moshi.adapter(lumia.tracker.model.ScholarBackup::class.java)
-                    val fullBackup = fullBackupAdapter.fromJson(mainBackup!!.fullAppBackupJson!!) ?: throw IllegalArgumentException("Invalid full backup")
+                    val fullBackup = fullBackupAdapter.fromJson(fullBackupJson) ?: throw IllegalArgumentException("Invalid full backup")
                     
-                    val restoredProfiles = fullBackup.profiles.map { prof ->
-                        restoreProfileAvatar(prof)
+                    val rawProfiles = fullBackup.profiles ?: emptyList()
+                    val restoredProfiles = rawProfiles.map { prof ->
+                        val safeProf = lumia.tracker.model.UserProfile(
+                            id = (prof.id as? String) ?: java.util.UUID.randomUUID().toString(),
+                            name = (prof.name as? String) ?: "Main User",
+                            avatarEmoji = (prof.avatarEmoji as? String) ?: "A",
+                            isDefault = (prof.isDefault as? Boolean) == true || prof.id == "DEFAULT",
+                            starterTheme = (prof.starterTheme as? String) ?: "Default",
+                            alias = (prof.alias as? String) ?: "",
+                            createdAt = (prof.createdAt as? Long) ?: System.currentTimeMillis(),
+                            avatarBase64 = prof.avatarBase64 as? String
+                        )
+                        restoreProfileAvatar(safeProf)
                     }
 
                     val profListJson = moshi.adapter<List<lumia.tracker.model.UserProfile>>(com.squareup.moshi.Types.newParameterizedType(List::class.java, lumia.tracker.model.UserProfile::class.java)).toJson(restoredProfiles)
                     val globalPrefs = getApplication<Application>().getSharedPreferences("global_profiles", android.content.Context.MODE_PRIVATE)
                     globalPrefs.edit().putString("profiles_json", profListJson).commit()
-                    profileManager.setActiveProfileId(fullBackup.activeProfileId)
+                    
+                    val activeId = fullBackup.activeProfileId ?: "DEFAULT"
+                    profileManager.setActiveProfileId(activeId)
                     
                     // Restore each profile's database & settings
-                    for ((profId, pJson) in fullBackup.profileBackupsJson) {
+                    val backupsMap = fullBackup.profileBackupsJson ?: emptyMap()
+                    for ((profId, pJson) in backupsMap) {
                         val pBackup = backupAdapter.fromJson(pJson) ?: continue
                         val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), profId)
                         val pDao = db.scholarDao()
@@ -2266,8 +2378,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                     }
                     
                     // Refresh current active UI with the restored settings of the active profile
-                    val activeId = fullBackup.activeProfileId
-                    val activeBackupJson = fullBackup.profileBackupsJson[activeId]
+                    val activeBackupJson = backupsMap[activeId]
                     if (activeBackupJson != null) {
                         val activeBackup = backupAdapter.fromJson(activeBackupJson)
                         if (activeBackup != null) {
@@ -2277,16 +2388,16 @@ private val _streakPercentage = MutableStateFlow(0f)
                     
                 } else {
                     // Single profile restore
-                    repository.restoreBackupToDao(mainBackup!!, repository.dao)
-                    loadSettings(mainBackup!!.settings)
-                    mainBackup!!.profile?.let { importedProf ->
+                    repository.restoreBackupToDao(backup, repository.dao)
+                    loadSettings(backup.settings)
+                    backup.profile?.let { importedProf ->
                         val restoredProf = restoreProfileAvatar(importedProf)
                         val currentProf = profileManager.getActiveProfile()
                         val updatedProf = currentProf.copy(
-                            name = restoredProf.name,
-                            avatarEmoji = restoredProf.avatarEmoji,
-                            alias = restoredProf.alias,
-                            starterTheme = restoredProf.starterTheme
+                            name = (restoredProf.name as? String) ?: currentProf.name,
+                            avatarEmoji = (restoredProf.avatarEmoji as? String) ?: currentProf.avatarEmoji,
+                            alias = (restoredProf.alias as? String) ?: currentProf.alias,
+                            starterTheme = (restoredProf.starterTheme as? String) ?: currentProf.starterTheme
                         )
                         profileManager.updateProfile(updatedProf)
                     }

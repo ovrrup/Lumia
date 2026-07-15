@@ -246,9 +246,9 @@ fun SubjectsTab(
         }
     }
     }
-    if (subjectToEdit != null) {
+    subjectToEdit?.let { subject ->
         lumia.tracker.ui.screens.study.EditSubjectDialog(
-            subject = subjectToEdit!!,
+            subject = subject,
             viewModel = viewModel,
             onDismiss = { subjectToEdit = null }
         )

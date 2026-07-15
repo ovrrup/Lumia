@@ -68,9 +68,36 @@ class ScholarRepository(val dao: ScholarDao) {
     suspend fun updateAttendanceRecord(record: lumia.tracker.model.AttendanceRecord) = dao.updateAttendanceRecord(record)
     suspend fun deleteAttendanceRecord(record: lumia.tracker.model.AttendanceRecord) = dao.deleteAttendanceRecord(record)
     
-    suspend fun insertActionLog(log: ActionLog) = dao.insertActionLog(log)
+    suspend fun insertActionLog(log: ActionLog) {
+        val existing = dao.exportAllActionLogs()
+        val isDuplicate = existing.any {
+            Math.abs(it.timestampMillis - log.timestampMillis) < 15000 &&
+            it.actionText == log.actionText
+        }
+        if (!isDuplicate) {
+            dao.insertActionLog(log)
+        } else {
+            android.util.Log.d("ScholarRepository", "Skipped duplicate ActionLog insertion.")
+        }
+    }
     suspend fun clearActionLogs() = dao.clearActionLogs()
-    suspend fun insertPomodoroSession(session: lumia.tracker.model.PomodoroSession) = dao.insertPomodoroSession(session)
+    suspend fun insertPomodoroSession(session: lumia.tracker.model.PomodoroSession) {
+        val existing = dao.exportAllPomodoro()
+        val isDuplicate = existing.any {
+            Math.abs(it.dateMillis - session.dateMillis) < 15000 &&
+            it.durationMinutes == session.durationMinutes &&
+            it.subjectId == session.subjectId &&
+            it.courseId == session.courseId &&
+            it.assignmentId == session.assignmentId &&
+            it.taskId == session.taskId &&
+            it.topicId == session.topicId
+        }
+        if (!isDuplicate) {
+            dao.insertPomodoroSession(session)
+        } else {
+            android.util.Log.d("ScholarRepository", "Skipped duplicate PomodoroSession insertion.")
+        }
+    }
     
     suspend fun insertNote(note: lumia.tracker.model.Note) = dao.insertNote(note)
     suspend fun updateNote(note: lumia.tracker.model.Note) = dao.updateNote(note)

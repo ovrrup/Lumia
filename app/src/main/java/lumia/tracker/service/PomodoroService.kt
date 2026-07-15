@@ -237,6 +237,10 @@ class PomodoroService : Service() {
         isServiceRunning = true
 
         if (action == "STOP") {
+            val alreadySaved = intent?.getBooleanExtra("alreadySaved", false) ?: false
+            if (alreadySaved) {
+                hasSavedCurrentSession = true
+            }
             saveElapsedWorkSessionIfNeeded()
             stopAlarmSound()
             stopSelf()

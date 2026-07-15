@@ -201,15 +201,15 @@ data class ScholarBackup(
     val testRecords: List<TestRecord>? = emptyList(),
     val tagCustomizations: List<TagCustomization>? = emptyList(),
     val profile: UserProfile? = null
-    , val isFullAppBackup: Boolean = false
+    , val isFullAppBackup: Boolean? = false
     , val fullAppBackupJson: String? = null
 ) : Serializable
 
 @JsonClass(generateAdapter = true)
 data class FullAppBackup(
-    val version: Int = 1,
-    val profiles: List<UserProfile> = emptyList(),
-    val activeProfileId: String = "",
-    val globalPrefs: Map<String, String> = emptyMap(),
-    val profileBackupsJson: Map<String, String> = emptyMap() // Map of ProfileID -> ScholarBackup JSON
+    val version: Int? = 1,
+    val profiles: List<UserProfile>? = emptyList(),
+    val activeProfileId: String? = "",
+    val globalPrefs: Map<String, String>? = emptyMap(),
+    val profileBackupsJson: Map<String, String>? = emptyMap() // Map of ProfileID -> ScholarBackup JSON
 )

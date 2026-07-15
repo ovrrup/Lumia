@@ -37,9 +37,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.scale
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -226,7 +225,221 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 )
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 3. Tab Personalization (Experimental)
+            SettingsGroupCard(title = "Navigation Tab Customizer", icon = Icons.Rounded.ViewQuilt) {
+                val tabHomeLabel by viewModel.tabHomeLabel.collectAsStateWithLifecycle()
+                val tabHomeIconName by viewModel.tabHomeIcon.collectAsStateWithLifecycle()
+                val tabCoursesLabel by viewModel.tabCoursesLabel.collectAsStateWithLifecycle()
+                val tabCoursesIconName by viewModel.tabCoursesIcon.collectAsStateWithLifecycle()
+                val tabSubjectsLabel by viewModel.tabSubjectsLabel.collectAsStateWithLifecycle()
+                val tabSubjectsIconName by viewModel.tabSubjectsIcon.collectAsStateWithLifecycle()
+                val tabSelfStudyLabel by viewModel.tabSelfStudyLabel.collectAsStateWithLifecycle()
+                val tabSelfStudyIconName by viewModel.tabSelfStudyIcon.collectAsStateWithLifecycle()
+                val tabAnalyticsLabel by viewModel.tabAnalyticsLabel.collectAsStateWithLifecycle()
+                val tabAnalyticsIconName by viewModel.tabAnalyticsIcon.collectAsStateWithLifecycle()
+                val tabCalendarLabel by viewModel.tabCalendarLabel.collectAsStateWithLifecycle()
+                val tabCalendarIconName by viewModel.tabCalendarIcon.collectAsStateWithLifecycle()
+
+                val featureSubjectEnabled by viewModel.featureSubjectEnabled.collectAsStateWithLifecycle()
+                val featureSelfStudyEnabled by viewModel.featureSelfStudyEnabled.collectAsStateWithLifecycle()
+                val featureAnalyticsEnabled by viewModel.featureAnalyticsEnabled.collectAsStateWithLifecycle()
+                val featureCalendarEnabled by viewModel.featureCalendarEnabled.collectAsStateWithLifecycle()
+
+                Text(
+                    text = "Personalize Tab Labels & Icons",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                Text(
+                    text = "Experimentally rewrite titles and select unique icons to customize your bottom navigation tabs.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                TabCustomizerItem(
+                    title = "Home Tab",
+                    label = tabHomeLabel,
+                    onLabelChange = { viewModel.updateTabHomeLabel(it) },
+                    currentIcon = tabHomeIconName,
+                    onIconSelect = { viewModel.updateTabHomeIcon(it) },
+                    iconOptions = listOf("Home", "School", "Star", "Person", "List")
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TabCustomizerItem(
+                    title = "Courses Tab",
+                    label = tabCoursesLabel,
+                    onLabelChange = { viewModel.updateTabCoursesLabel(it) },
+                    currentIcon = tabCoursesIconName,
+                    onIconSelect = { viewModel.updateTabCoursesIcon(it) },
+                    iconOptions = listOf("MenuBook", "Class", "AutoStories", "Folder")
+                )
+
+                if (featureSubjectEnabled) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TabCustomizerItem(
+                        title = "Subjects Tab",
+                        label = tabSubjectsLabel,
+                        onLabelChange = { viewModel.updateTabSubjectsLabel(it) },
+                        currentIcon = tabSubjectsIconName,
+                        onIconSelect = { viewModel.updateTabSubjectsIcon(it) },
+                        iconOptions = listOf("FolderOpen", "Category", "Folder", "List")
+                    )
+                }
+
+                if (featureSelfStudyEnabled) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TabCustomizerItem(
+                        title = "Self Study Tab",
+                        label = tabSelfStudyLabel,
+                        onLabelChange = { viewModel.updateTabSelfStudyLabel(it) },
+                        currentIcon = tabSelfStudyIconName,
+                        onIconSelect = { viewModel.updateTabSelfStudyIcon(it) },
+                        iconOptions = listOf("AutoStories", "Timer", "History", "PlayArrow")
+                    )
+                }
+
+                if (featureCalendarEnabled) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TabCustomizerItem(
+                        title = "Calendar Tab",
+                        label = tabCalendarLabel,
+                        onLabelChange = { viewModel.updateTabCalendarLabel(it) },
+                        currentIcon = tabCalendarIconName,
+                        onIconSelect = { viewModel.updateTabCalendarIcon(it) },
+                        iconOptions = listOf("CalendarMonth", "DateRange", "Schedule", "History")
+                    )
+                }
+
+                if (featureAnalyticsEnabled) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TabCustomizerItem(
+                        title = "Analytics Tab",
+                        label = tabAnalyticsLabel,
+                        onLabelChange = { viewModel.updateTabAnalyticsLabel(it) },
+                        currentIcon = tabAnalyticsIconName,
+                        onIconSelect = { viewModel.updateTabAnalyticsIcon(it) },
+                        iconOptions = listOf("Analytics", "CheckCircle", "Timer", "Star")
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TabCustomizerItem(
+    title: String,
+    label: String,
+    onLabelChange: (String) -> Unit,
+    currentIcon: String,
+    onIconSelect: (String) -> Unit,
+    iconOptions: List<String>
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = label,
+                onValueChange = onLabelChange,
+                label = { Text("Tab Label") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                )
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "Choose Icon:",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                iconOptions.forEach { iconName ->
+                    val isSelected = currentIcon == iconName
+                    val iconVector = getBetaTabIcon(iconName)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                            .clickable { onIconSelect(iconName) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = iconVector,
+                            contentDescription = iconName,
+                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                   else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun getBetaTabIcon(iconName: String): androidx.compose.ui.graphics.vector.ImageVector {
+    return when (iconName) {
+        "Home" -> Icons.Rounded.Home
+        "School" -> Icons.Rounded.School
+        "Star" -> Icons.Rounded.Star
+        "Person" -> Icons.Rounded.Person
+        "List" -> Icons.Rounded.List
+        
+        "MenuBook" -> Icons.AutoMirrored.Rounded.MenuBook
+        "Class" -> Icons.Rounded.Class
+        "AutoStories" -> Icons.Rounded.AutoStories
+        "Folder" -> Icons.Rounded.Folder
+        
+        "FolderOpen" -> Icons.Rounded.FolderOpen
+        "Category" -> Icons.Rounded.Category
+        
+        "Timer" -> Icons.Rounded.Timer
+        "History" -> Icons.Rounded.History
+        "PlayArrow" -> Icons.Rounded.PlayArrow
+        
+        "CalendarMonth" -> Icons.Rounded.CalendarMonth
+        "DateRange" -> Icons.Rounded.DateRange
+        "Schedule" -> Icons.Rounded.Schedule
+        
+        "Analytics" -> Icons.Rounded.Analytics
+        "CheckCircle" -> Icons.Rounded.CheckCircle
+        
+        else -> Icons.Rounded.Home
     }
 }

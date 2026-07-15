@@ -68,6 +68,9 @@ import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ViewQuilt
 import androidx.compose.material.icons.rounded.Accessibility
+import androidx.compose.material.icons.rounded.FolderOpen
+import androidx.compose.material.icons.rounded.AutoStories
+import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.Link
@@ -100,6 +103,12 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
     val autoCreateSubject by viewModel.systemAutoCreateSubject.collectAsStateWithLifecycle()
     val fuseSubjectsCourses by viewModel.systemFuseSubjectsCourses.collectAsStateWithLifecycle()
     val advancedTasks by viewModel.systemAdvancedTasks.collectAsStateWithLifecycle()
+
+    val featureSubjectEnabled by viewModel.featureSubjectEnabled.collectAsStateWithLifecycle()
+    val featureSelfStudyEnabled by viewModel.featureSelfStudyEnabled.collectAsStateWithLifecycle()
+    val featureAnalyticsEnabled by viewModel.featureAnalyticsEnabled.collectAsStateWithLifecycle()
+    val featureCalendarEnabled by viewModel.featureCalendarEnabled.collectAsStateWithLifecycle()
+    val featureQuickNotesEnabled by viewModel.featureQuickNotesEnabled.collectAsStateWithLifecycle()
 
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
@@ -141,6 +150,60 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 .verticalScroll(rememberScrollState()),
         ) {
             Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsCategoryHeading(title = "Core Features Manager", icon = Icons.Rounded.ViewQuilt)
+
+            SettingsGroupCard(title = "App Feature Modules", icon = Icons.Rounded.ViewQuilt) {
+                SettingsToggleItem(
+                    title = "Subjects Tab",
+                    subtitle = "Allows tracking specific focus subjects. Hides the Subjects tab when disabled.",
+                    checked = featureSubjectEnabled,
+                    icon = Icons.Rounded.FolderOpen,
+                    onCheckedChange = { viewModel.updateFeatureSubjectEnabled(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsToggleItem(
+                    title = "Self Study & Tasks Tab",
+                    subtitle = "Enable tasks and customizable study logs tab in the navigation bar.",
+                    checked = featureSelfStudyEnabled,
+                    icon = Icons.Rounded.AutoStories,
+                    onCheckedChange = { viewModel.updateFeatureSelfStudyEnabled(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsToggleItem(
+                    title = "Calendar & Schedule Tab",
+                    subtitle = "Display scheduled lectures and courses on a weekly Calendar view.",
+                    checked = featureCalendarEnabled,
+                    icon = Icons.Rounded.DateRange,
+                    onCheckedChange = { viewModel.updateFeatureCalendarEnabled(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsToggleItem(
+                    title = "Quick Notes Utility",
+                    subtitle = "Enable access to the Quick Notes workspace from home screen.",
+                    checked = featureQuickNotesEnabled,
+                    icon = Icons.Rounded.Edit,
+                    onCheckedChange = { viewModel.updateFeatureQuickNotesEnabled(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                SettingsToggleItem(
+                    title = "Analytics Dashboard Tab",
+                    subtitle = "Access dynamic graphical focus stats, activity insights, and streak logs.",
+                    checked = featureAnalyticsEnabled,
+                    icon = Icons.Rounded.Analytics,
+                    onCheckedChange = { viewModel.updateFeatureAnalyticsEnabled(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             SettingsCategoryHeading(title = "Interconnections", icon = Icons.Rounded.Settings)
 

@@ -516,7 +516,10 @@ fun PomodoroScreen(
                                             }
                                             isRunning = false
                                             isExitButtonShown = false
-                                            val intent = android.content.Intent(context, lumia.tracker.service.PomodoroService::class.java).apply { action = "STOP" }
+                                            val intent = android.content.Intent(context, lumia.tracker.service.PomodoroService::class.java).apply { 
+                                                action = "STOP"
+                                                putExtra("alreadySaved", true)
+                                            }
                                             context.startService(intent)
                                             timeLeft = workDuration * 60
                                             totalTime = workDuration * 60

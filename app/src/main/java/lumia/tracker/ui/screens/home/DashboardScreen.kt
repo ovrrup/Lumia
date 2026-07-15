@@ -29,11 +29,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
-import androidx.compose.material.icons.rounded.Analytics
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.LocalFireDepartment
-import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -144,6 +141,26 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     val featureAnalyticsEnabled by viewModel.featureAnalyticsEnabled.collectAsStateWithLifecycle()
     val featureCalendarEnabled by viewModel.featureCalendarEnabled.collectAsStateWithLifecycle()
     val featureQuickNotesEnabled by viewModel.featureQuickNotesEnabled.collectAsStateWithLifecycle()
+
+    val tabHomeLabel by viewModel.tabHomeLabel.collectAsStateWithLifecycle()
+    val tabHomeIconName by viewModel.tabHomeIcon.collectAsStateWithLifecycle()
+    val tabCoursesLabel by viewModel.tabCoursesLabel.collectAsStateWithLifecycle()
+    val tabCoursesIconName by viewModel.tabCoursesIcon.collectAsStateWithLifecycle()
+    val tabSubjectsLabel by viewModel.tabSubjectsLabel.collectAsStateWithLifecycle()
+    val tabSubjectsIconName by viewModel.tabSubjectsIcon.collectAsStateWithLifecycle()
+    val tabSelfStudyLabel by viewModel.tabSelfStudyLabel.collectAsStateWithLifecycle()
+    val tabSelfStudyIconName by viewModel.tabSelfStudyIcon.collectAsStateWithLifecycle()
+    val tabAnalyticsLabel by viewModel.tabAnalyticsLabel.collectAsStateWithLifecycle()
+    val tabAnalyticsIconName by viewModel.tabAnalyticsIcon.collectAsStateWithLifecycle()
+    val tabCalendarLabel by viewModel.tabCalendarLabel.collectAsStateWithLifecycle()
+    val tabCalendarIconName by viewModel.tabCalendarIcon.collectAsStateWithLifecycle()
+
+    val tabHomeIcon = getTabIcon(tabHomeIconName)
+    val tabCoursesIcon = getTabIcon(tabCoursesIconName)
+    val tabSubjectsIcon = getTabIcon(tabSubjectsIconName)
+    val tabSelfStudyIcon = getTabIcon(tabSelfStudyIconName)
+    val tabAnalyticsIcon = getTabIcon(tabAnalyticsIconName)
+    val tabCalendarIcon = getTabIcon(tabCalendarIconName)
     
     var showAddCourseDialog by remember { mutableStateOf(false) }
     var showAddSubjectDialog by remember { mutableStateOf(false) }
@@ -157,11 +174,13 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             containerColor = androidx.compose.ui.graphics.Color.Transparent,
             topBar = {
                 val titleText = when (selectedTab) {
-                    0 -> stringResource(id = R.string.app_name)
-                    1 -> "Your Courses"
-                    2 -> "Your Subjects"
-                    3 -> "Self Study & Tasks"
-                    else -> "Analytics"
+                    0 -> tabHomeLabel
+                    1 -> tabCoursesLabel
+                    2 -> tabSubjectsLabel
+                    3 -> tabSelfStudyLabel
+                    4 -> tabAnalyticsLabel
+                    5 -> tabCalendarLabel
+                    else -> stringResource(id = R.string.app_name)
                 }
                 androidx.compose.foundation.layout.Box {
                     if (betaEnhancedHeader || isGlass) {
@@ -261,35 +280,55 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         val hideLabels = navBarLabelMode == "Hidden"
                         
                         NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
-                            label = if (hideLabels) null else { { Text("Home") } },
+                            icon = { Icon(tabHomeIcon, contentDescription = tabHomeLabel) },
+                            label = if (hideLabels) null else { { Text(tabHomeLabel) } },
                             selected = selectedTab == 0,
                             onClick = { viewModel.setSelectedDashboardTab(0) },
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
                         )
                         NavigationBarItem(
-                            icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
-                            label = if (hideLabels) null else { { Text("Courses") } },
+                            icon = { Icon(tabCoursesIcon, contentDescription = tabCoursesLabel) },
+                            label = if (hideLabels) null else { { Text(tabCoursesLabel) } },
                             selected = selectedTab == 1,
                             onClick = { viewModel.setSelectedDashboardTab(1) },
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
                         )
+                        if (featureSubjectEnabled && !fuseSubjectsCourses) {
+                            NavigationBarItem(
+                                icon = { Icon(tabSubjectsIcon, contentDescription = tabSubjectsLabel) },
+                                label = if (hideLabels) null else { { Text(tabSubjectsLabel) } },
+                                selected = selectedTab == 2,
+                                onClick = { viewModel.setSelectedDashboardTab(2) },
+                                colors = navItemColors,
+                                alwaysShowLabel = labelModeAlways
+                            )
+                        }
                         if (featureSelfStudyEnabled) {
                             NavigationBarItem(
-                                icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Tasks") },
-                                label = if (hideLabels) null else { { Text("Tasks") } },
+                                icon = { Icon(tabSelfStudyIcon, contentDescription = tabSelfStudyLabel) },
+                                label = if (hideLabels) null else { { Text(tabSelfStudyLabel) } },
                                 selected = selectedTab == 3,
                                 onClick = { viewModel.setSelectedDashboardTab(3) },
                                 colors = navItemColors,
                                 alwaysShowLabel = labelModeAlways
                             )
                         }
+                        if (featureCalendarEnabled) {
+                            NavigationBarItem(
+                                icon = { Icon(tabCalendarIcon, contentDescription = tabCalendarLabel) },
+                                label = if (hideLabels) null else { { Text(tabCalendarLabel) } },
+                                selected = selectedTab == 5,
+                                onClick = { viewModel.setSelectedDashboardTab(5) },
+                                colors = navItemColors,
+                                alwaysShowLabel = labelModeAlways
+                            )
+                        }
                         if (featureAnalyticsEnabled) {
                             NavigationBarItem(
-                                icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
-                                label = if (hideLabels) null else { { Text("Analytics") } },
+                                icon = { Icon(tabAnalyticsIcon, contentDescription = tabAnalyticsLabel) },
+                                label = if (hideLabels) null else { { Text(tabAnalyticsLabel) } },
                                 selected = selectedTab == 4,
                                 onClick = { viewModel.setSelectedDashboardTab(4) },
                                 colors = navItemColors,
@@ -389,6 +428,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             bottomPadding = extendedPadding
                         )
                         4 -> AnalyticsTab(navController = navController, viewModel = viewModel, paddingValues = extendedPadding)
+                        5 -> CalendarTab(navController = navController, viewModel = viewModel, bottomPadding = extendedPadding)
                     }
                 }
             }
@@ -430,16 +470,16 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     val hideLabels = navBarLabelMode == "Hidden"
 
                     NavigationBarItem(
-                        icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
-                        label = if (hideLabels) null else { { Text("Home") } },
+                        icon = { Icon(tabHomeIcon, contentDescription = tabHomeLabel) },
+                        label = if (hideLabels) null else { { Text(tabHomeLabel) } },
                         selected = selectedTab == 0,
                         onClick = { viewModel.setSelectedDashboardTab(0) },
                         colors = navItemColors,
                         alwaysShowLabel = labelModeAlways
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
-                        label = if (hideLabels) null else { { Text("Courses") } },
+                        icon = { Icon(tabCoursesIcon, contentDescription = tabCoursesLabel) },
+                        label = if (hideLabels) null else { { Text(tabCoursesLabel) } },
                         selected = selectedTab == 1,
                         onClick = { viewModel.setSelectedDashboardTab(1) },
                         colors = navItemColors,
@@ -447,8 +487,8 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     )
                     if (featureSubjectEnabled && !fuseSubjectsCourses) {
                         NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
-                            label = if (hideLabels) null else { { Text("Subjects") } },
+                            icon = { Icon(tabSubjectsIcon, contentDescription = tabSubjectsLabel) },
+                            label = if (hideLabels) null else { { Text(tabSubjectsLabel) } },
                             selected = selectedTab == 2,
                             onClick = { viewModel.setSelectedDashboardTab(2) },
                             colors = navItemColors,
@@ -457,18 +497,28 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     }
                     if (featureSelfStudyEnabled) {
                         NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Self Study") },
-                            label = if (hideLabels) null else { { Text("Self Study") } },
+                            icon = { Icon(tabSelfStudyIcon, contentDescription = tabSelfStudyLabel) },
+                            label = if (hideLabels) null else { { Text(tabSelfStudyLabel) } },
                             selected = selectedTab == 3,
                             onClick = { viewModel.setSelectedDashboardTab(3) },
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
                         )
                     }
+                    if (featureCalendarEnabled) {
+                        NavigationBarItem(
+                            icon = { Icon(tabCalendarIcon, contentDescription = tabCalendarLabel) },
+                            label = if (hideLabels) null else { { Text(tabCalendarLabel) } },
+                            selected = selectedTab == 5,
+                            onClick = { viewModel.setSelectedDashboardTab(5) },
+                            colors = navItemColors,
+                            alwaysShowLabel = labelModeAlways
+                        )
+                    }
                     if (featureAnalyticsEnabled) {
                         NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
-                            label = if (hideLabels) null else { { Text("Analytics") } },
+                            icon = { Icon(tabAnalyticsIcon, contentDescription = tabAnalyticsLabel) },
+                            label = if (hideLabels) null else { { Text(tabAnalyticsLabel) } },
                             selected = selectedTab == 4,
                             onClick = { viewModel.setSelectedDashboardTab(4) },
                             colors = navItemColors,
@@ -491,5 +541,36 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             viewModel = viewModel,
             onDismiss = { showAddSubjectDialog = false }
         )
+    }
+}
+
+fun getTabIcon(iconName: String): androidx.compose.ui.graphics.vector.ImageVector {
+    return when (iconName) {
+        "Home" -> Icons.Rounded.Home
+        "School" -> Icons.Rounded.School
+        "Star" -> Icons.Rounded.Star
+        "Person" -> Icons.Rounded.Person
+        "List" -> Icons.Rounded.List
+        
+        "MenuBook" -> Icons.AutoMirrored.Rounded.MenuBook
+        "Class" -> Icons.Rounded.Class
+        "AutoStories" -> Icons.Rounded.AutoStories
+        "Folder" -> Icons.Rounded.Folder
+        
+        "FolderOpen" -> Icons.Rounded.FolderOpen
+        "Category" -> Icons.Rounded.Category
+        
+        "Timer" -> Icons.Rounded.Timer
+        "History" -> Icons.Rounded.History
+        "PlayArrow" -> Icons.Rounded.PlayArrow
+        
+        "CalendarMonth" -> Icons.Rounded.CalendarMonth
+        "DateRange" -> Icons.Rounded.DateRange
+        "Schedule" -> Icons.Rounded.Schedule
+        
+        "Analytics" -> Icons.Rounded.Analytics
+        "CheckCircle" -> Icons.Rounded.CheckCircle
+        
+        else -> Icons.Rounded.Home
     }
 }

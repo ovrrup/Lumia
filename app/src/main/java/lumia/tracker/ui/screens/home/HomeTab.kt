@@ -259,7 +259,7 @@ fun HomeTab(
             }
 
 
-            if (betaNotes) {
+            if (featureQuickNotesEnabled && betaNotes) {
                 item(key = "student_tools_title") {
                     Text(
                         "Student Tools",
@@ -361,9 +361,9 @@ fun HomeTab(
                         ) {
                             for (i in -daysBefore..2) {
                                 val calOffset = todayCalendar.clone() as java.util.Calendar
-                                val targetOffset = selectedDateOffset + i
+                                val targetOffset = i
                                 calOffset.add(java.util.Calendar.DAY_OF_MONTH, targetOffset)
-                                val isSelected = i == 0
+                                val isSelected = selectedDateOffset == targetOffset
                                 val dayLetter = java.text.SimpleDateFormat("E", java.util.Locale.getDefault()).format(calOffset.time).take(1)
                                 val dayNumber = calOffset.get(java.util.Calendar.DAY_OF_MONTH).toString()
                                 

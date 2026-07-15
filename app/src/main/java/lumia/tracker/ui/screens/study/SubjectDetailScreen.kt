@@ -1372,8 +1372,9 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
-                    val dateLabel = if (taskDueDate != null) {
-                        SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(taskDueDate!!)
+                    val localTaskDueDate = taskDueDate
+                    val dateLabel = if (localTaskDueDate != null) {
+                        SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(localTaskDueDate)
                     } else {
                         "No Due Date"
                     }
@@ -1385,7 +1386,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable {
                                 val cal = Calendar.getInstance()
-                                if (taskDueDate != null) cal.timeInMillis = taskDueDate!!
+                                taskDueDate?.let { cal.timeInMillis = it }
                                 DatePickerDialog(
                                     context,
                                     { _, year, month, dayOfMonth ->

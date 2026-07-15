@@ -22,9 +22,21 @@ class ProfileManager(private val context: Context) {
         return try {
             val list = profileAdapter.fromJson(json)
             if (!list.isNullOrEmpty()) {
+                val sanitized = list.map { prof ->
+                    UserProfile(
+                        id = (prof.id as? String) ?: java.util.UUID.randomUUID().toString(),
+                        name = (prof.name as? String) ?: "Main User",
+                        avatarEmoji = (prof.avatarEmoji as? String) ?: "A",
+                        isDefault = (prof.isDefault as? Boolean) == true || prof.id == "DEFAULT",
+                        starterTheme = (prof.starterTheme as? String) ?: "Default",
+                        alias = (prof.alias as? String) ?: "",
+                        createdAt = (prof.createdAt as? Long) ?: System.currentTimeMillis(),
+                        avatarBase64 = prof.avatarBase64 as? String
+                    )
+                }
                 // Successfully parsed! Back it up.
                 prefs.edit().putString("profiles_json_backup", json).apply()
-                list
+                sanitized
             } else {
                 initDefaultProfile()
             }

@@ -126,9 +126,9 @@ fun CoursesTab(
         }
     }
     }
-    if (courseToEdit != null) {
+    courseToEdit?.let { course ->
         lumia.tracker.ui.screens.study.EditCourseDialog(
-            course = courseToEdit!!,
+            course = course,
             viewModel = viewModel,
             onDismiss = { courseToEdit = null }
         )
