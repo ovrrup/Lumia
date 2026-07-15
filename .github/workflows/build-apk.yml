@@ -35,21 +35,19 @@ jobs:
         elif [ -n "${{ secrets.RELEASE_KEYSTORE }}" ]; then
           echo "Decoding release keystore from secrets.RELEASE_KEYSTORE..."
           echo "${{ secrets.RELEASE_KEYSTORE }}" | base64 --decode > my-upload-key.jks
-        elif [ -f "debug.keystore.base64" ]; then
-          echo "Using persistent debug keystore for development build..."
-          base64 --decode debug.keystore.base64 > my-upload-key.jks
         else
-          echo "Generating development release keystore..."
-          keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Lumia Release"
+          echo "ERROR: Release signing keystore secret is missing!"
+          echo "Signed APKs are mandatory for this workflow. Build failed."
+          exit 1
         fi
 
     - name: Build Release APKs
       run: gradle assembleRelease assembleReleaseCompressed --no-daemon -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=1024m" -Dkotlin.compiler.execution.strategy=in-process --no-parallel
       env:
         JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
-        STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.RELEASE_KEYSTORE_PASSWORD || 'android' }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.RELEASE_KEY_PASSWORD || 'android' }}
-        KEY_ALIAS: ${{ secrets.ALIAS || 'upload' }}
+        STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.RELEASE_KEYSTORE_PASSWORD }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.RELEASE_KEY_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.ALIAS }}
 
     - name: Reorganize and Rename APKs
       run: |

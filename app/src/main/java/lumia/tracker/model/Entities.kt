@@ -186,10 +186,10 @@ data class Attachment(
 
 @JsonClass(generateAdapter = true)
 data class ScholarBackup(
-    val courses: List<Course> = emptyList(),
-    val subjects: List<Subject> = emptyList(),
-    val topics: List<Topic> = emptyList(),
-    val assignments: List<PracticeAssignment> = emptyList(),
+    val courses: List<Course>? = emptyList(),
+    val subjects: List<Subject>? = emptyList(),
+    val topics: List<Topic>? = emptyList(),
+    val assignments: List<PracticeAssignment>? = emptyList(),
     val settings: Map<String, String>? = null,
     val attendance: List<AttendanceRecord>? = emptyList(),
     val pomodoro: List<PomodoroSession>? = emptyList(),

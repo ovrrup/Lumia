@@ -254,4 +254,43 @@ interface ScholarDao {
 
     @Query("DELETE FROM tag_customizations")
     suspend fun clearTagCustomizations()
+
+    @androidx.room.Transaction
+    suspend fun restoreBackup(backup: lumia.tracker.model.ScholarBackup) {
+        // Clear children first to respect SQLite foreign key constraints
+        clearTopics()
+        clearChapters()
+        clearAssignments()
+        clearAttendance()
+        
+        // Clear parent tables next
+        clearCourses()
+        clearSubjects()
+        
+        // Clear other tables
+        clearPomodoro()
+        clearActionLogs()
+        clearNotes()
+        clearTasks()
+        clearAttachments()
+        clearTestRecords()
+        clearTagCustomizations()
+
+        // Insert parents first, then children to respect SQLite foreign key constraints
+        backup.courses?.forEach { insertCourse(it) }
+        backup.subjects?.forEach { insertSubject(it) }
+        backup.chapters?.forEach { insertChapter(it) }
+        backup.topics?.forEach { insertTopic(it) }
+        backup.assignments?.forEach { insertAssignment(it) }
+        backup.attendance?.forEach { insertAttendanceRecord(it) }
+        
+        // Insert remaining non-constrained tables
+        backup.pomodoro?.forEach { insertPomodoroSession(it) }
+        backup.actionLogs?.forEach { insertActionLog(it) }
+        backup.notes?.forEach { insertNote(it) }
+        backup.tasks?.forEach { insertTask(it) }
+        backup.attachments?.forEach { insertAttachment(it) }
+        backup.testRecords?.forEach { insertTestRecord(it) }
+        backup.tagCustomizations?.forEach { insertTagCustomization(it) }
+    }
 }

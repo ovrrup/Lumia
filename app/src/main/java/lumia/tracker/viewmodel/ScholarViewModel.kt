@@ -2210,7 +2210,8 @@ private val _streakPercentage = MutableStateFlow(0f)
             val bytes = android.util.Base64.decode(b64, android.util.Base64.DEFAULT)
             val context = getApplication<Application>().applicationContext
             val avatarDir = java.io.File(context.filesDir, "avatars").apply { mkdirs() }
-            val destFile = java.io.File(avatarDir, "profile_avatar_${System.currentTimeMillis()}_restored_${prof.id.take(5)}.jpg")
+            val safeId = (prof.id ?: "").take(5)
+            val destFile = java.io.File(avatarDir, "profile_avatar_${System.currentTimeMillis()}_restored_${safeId}.jpg")
             java.io.FileOutputStream(destFile).use { fos ->
                 fos.write(bytes)
             }
@@ -2245,19 +2246,6 @@ private val _streakPercentage = MutableStateFlow(0f)
                         restoreProfileAvatar(prof)
                     }
 
-                    // Clear existing profiles
-                    val currentProfs = profileManager.getAllProfiles()
-                    for (prof in currentProfs) {
-                        if (!prof.isDefault) {
-                            profileManager.deleteProfile(prof.id)
-                        }
-                    }
-                    
-                    // Restore profiles
-                    for (prof in restoredProfiles) {
-                        if (prof.isDefault) continue
-                        profileManager.addProfile(prof.name, prof.avatarEmoji, prof.alias, prof.starterTheme)
-                    }
                     val profListJson = moshi.adapter<List<lumia.tracker.model.UserProfile>>(com.squareup.moshi.Types.newParameterizedType(List::class.java, lumia.tracker.model.UserProfile::class.java)).toJson(restoredProfiles)
                     val globalPrefs = getApplication<Application>().getSharedPreferences("global_profiles", android.content.Context.MODE_PRIVATE)
                     globalPrefs.edit().putString("profiles_json", profListJson).commit()
