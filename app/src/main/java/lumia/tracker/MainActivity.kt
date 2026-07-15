@@ -477,6 +477,9 @@ class MainActivity : ComponentActivity() {
                         composable("notes") {
                             lumia.tracker.ui.screens.QuickNotesScreen(navController = navController)
                         }
+                        composable("myspace") {
+                            lumia.tracker.ui.screens.MySpaceScreen(navController = navController, viewModel = viewModel)
+                        }
                         composable(
                             "courseDetail/{id}",
                             arguments = listOf(navArgument("id") { type = NavType.IntType })

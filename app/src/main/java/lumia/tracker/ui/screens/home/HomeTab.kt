@@ -34,6 +34,8 @@ import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Spa
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -140,6 +142,7 @@ fun HomeTab(
     val context = LocalContext.current
 
     val featureQuickNotesEnabled by viewModel.featureQuickNotesEnabled.collectAsStateWithLifecycle()
+    val selfStudyEnabled by viewModel.featureSelfStudyEnabled.collectAsStateWithLifecycle()
 
     var courseToEdit by remember { mutableStateOf<lumia.tracker.model.Course?>(null) }
     var subjectToEdit by remember { mutableStateOf<lumia.tracker.model.Subject?>(null) }
@@ -259,7 +262,7 @@ fun HomeTab(
             }
 
 
-            if (featureQuickNotesEnabled && betaNotes) {
+            if ((featureQuickNotesEnabled && betaNotes) || selfStudyEnabled) {
                 item(key = "student_tools_title") {
                     Text(
                         "Student Tools",
@@ -269,27 +272,56 @@ fun HomeTab(
                     )
                 }
 
-                item(key = "notes_tool") {
-                    GlassCard(
-                        onClick = { navController.navigate("notes") },
-                        modifier = Modifier.animateItem().fillMaxWidth().height(100.dp),
-                        shape = RoundedCornerShape(24.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                if (selfStudyEnabled) {
+                    item(key = "myspace_tool") {
+                        GlassCard(
+                            onClick = { navController.navigate("myspace") },
+                            modifier = Modifier.animateItem().fillMaxWidth().height(100.dp),
+                            shape = RoundedCornerShape(24.dp)
                         ) {
-                            Column {
-                                Text("Quick Notes", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                                Text("Draft scratchpad canvas", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text("My Space", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                                    Text("Frictionless, personalized focus vibe", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
+                                }
+                                Icon(
+                                    imageVector = Icons.Rounded.Spa,
+                                    contentDescription = "My Space",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape).padding(8.dp)
+                                )
                             }
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Notes,
-                                contentDescription = "Quick Notes",
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f), CircleShape).padding(8.dp)
-                            )
+                        }
+                    }
+                }
+
+                if (featureQuickNotesEnabled && betaNotes) {
+                    item(key = "notes_tool") {
+                        GlassCard(
+                            onClick = { navController.navigate("notes") },
+                            modifier = Modifier.animateItem().fillMaxWidth().height(100.dp),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text("Quick Notes", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                                    Text("Draft scratchpad canvas", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
+                                }
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.Notes,
+                                    contentDescription = "Quick Notes",
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f), CircleShape).padding(8.dp)
+                                )
+                            }
                         }
                     }
                 }

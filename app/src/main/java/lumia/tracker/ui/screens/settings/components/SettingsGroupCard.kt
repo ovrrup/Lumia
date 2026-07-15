@@ -96,10 +96,12 @@ import lumia.tracker.ui.components.BouncyTextButton
 fun SettingsGroupCard(
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    infoText: String = "",
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
+    var showInfoDialog by remember { mutableStateOf(false) }
     
     Column(
         modifier = modifier
@@ -109,7 +111,9 @@ fun SettingsGroupCard(
         if (title.isNotEmpty()) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 8.dp, bottom = 8.dp)
             ) {
                 if (icon != null) {
                     Icon(
@@ -126,9 +130,39 @@ fun SettingsGroupCard(
                         letterSpacing = 1.5.sp
                     ),
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                    modifier = Modifier.weight(1f)
                 )
+                if (infoText.isNotEmpty()) {
+                    IconButton(
+                        onClick = { showInfoDialog = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Info,
+                            contentDescription = "Info",
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
             }
+        }
+
+        if (showInfoDialog && infoText.isNotEmpty()) {
+            AlertDialog(
+                onDismissRequest = { showInfoDialog = false },
+                icon = { Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                title = { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
+                text = { Text(infoText, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                confirmButton = {
+                    TextButton(onClick = { showInfoDialog = false }) {
+                        Text("Got it")
+                    }
+                },
+                shape = RoundedCornerShape(24.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            )
         }
         
         if (isGlass) {

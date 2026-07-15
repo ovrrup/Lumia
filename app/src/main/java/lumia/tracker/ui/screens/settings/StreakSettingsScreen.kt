@@ -130,14 +130,12 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             }
 
             item {
-                SettingsGroupCard(title = "Streak Goals", icon = Icons.Rounded.List) {
-                    Text(
-                        "Set minimum daily requirements for a complete streak. Note: If you plan more than these limits, you'll need to complete all planned items to maintain your streak.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                    
+                SettingsGroupCard(
+                    title = "Streak Goals", 
+                    icon = Icons.Rounded.List,
+                    infoText = "Set minimum daily requirements for a complete streak. Note: If you plan more than these limits, you'll need to complete all planned items to maintain your streak."
+                ) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     // Tasks Requirement
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Tasks", modifier = Modifier.weight(1f))
@@ -178,13 +176,12 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             }
             
             item {
-                SettingsGroupCard(title = "Streak Threshold", icon = Icons.Rounded.Speed) {
-                    Text(
-                        "Set the minimum completion percentage needed for the day to count as a normal streak.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
+                SettingsGroupCard(
+                    title = "Streak Threshold", 
+                    icon = Icons.Rounded.Speed,
+                    infoText = "Set the minimum completion percentage needed for the day to count as a normal streak."
+                ) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Threshold", modifier = Modifier.weight(1f))
@@ -273,14 +270,13 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             }
 
             item {
-                SettingsGroupCard(title = "Notifications", icon = Icons.Rounded.Notifications) {
+                SettingsGroupCard(
+                    title = "Notifications", 
+                    icon = Icons.Rounded.Notifications,
+                    infoText = "Select the tone of voice for your daily streak reminders."
+                ) {
                     Text("Notification Tone", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                    Text(
-                        "Select the tone of voice for your daily streak reminders.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
-                    )
+                    Spacer(modifier = Modifier.height(4.dp))
                     val tones = listOf("Motivational", "Aggressive")
                     tones.forEach { tone ->
                         Row(

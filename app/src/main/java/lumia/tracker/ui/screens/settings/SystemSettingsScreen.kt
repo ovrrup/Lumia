@@ -308,7 +308,11 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SettingsGroupCard(title = "Period Structure", icon = Icons.Rounded.List) {
+            SettingsGroupCard(
+                title = "Period Structure", 
+                icon = Icons.Rounded.List,
+                infoText = "Allows restricting Pomodoro loops to a fixed target. Session configurations control the number of study/work intervals before a long break is triggered."
+            ) {
                 SettingsToggleItem(
                     title = "Enable Target Periods",
                     subtitle = "Allows restricting pomodoro loops to a fixed target instead of infinite repetetion.",
@@ -322,7 +326,6 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 Column(modifier = Modifier.padding(16.dp)) {
                     val periodSessions by viewModel.pomodoroPeriodSessions.collectAsStateWithLifecycle()
                     Text("Sessions per Period: $periodSessions", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text("Number of study/work sessions before a long break.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     androidx.compose.material3.Slider(
                         value = periodSessions.toFloat(),
                         onValueChange = { viewModel.updatePomodoroPeriodSessions(it.toInt()) },
