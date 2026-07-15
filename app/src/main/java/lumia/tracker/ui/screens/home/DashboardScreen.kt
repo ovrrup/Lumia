@@ -52,6 +52,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -196,12 +197,12 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                         )
                     }
-                    CenterAlignedTopAppBar(
+                    TopAppBar(
                         title = { Text(titleText, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                         navigationIcon = {
                             lumia.tracker.ui.components.BouncyIconButton(
                                 onClick = { navController.navigate("search") },
-                                modifier = Modifier.padding(start = 12.dp).testTag("open_search_button")
+                                modifier = Modifier.padding(start = 4.dp).testTag("open_search_button")
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Search,
@@ -214,12 +215,13 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             val moreRounds = lumia.tracker.ui.theme.LocalMoreRounds.current
                             val moreRoundsMode = lumia.tracker.ui.theme.LocalMoreRoundsMode.current
                             lumia.tracker.ui.components.StreakWidget(viewModel, navController)
+                            Spacer(modifier = Modifier.width(8.dp))
                             val isMrGlass = moreRounds && moreRoundsMode == "Glass"
                             val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
                             androidx.compose.foundation.layout.Box(
                                 modifier = Modifier
-                                    .padding(end = 16.dp)
-                                    .size(44.dp)
+                                    .padding(end = 12.dp)
+                                    .size(40.dp)
                                     .then(if (isMrGlass) Modifier else Modifier.shadow(elevation = 8.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
                                     .then(if (isMrGlass) Modifier.liquidGlass(CircleShape, tintAlpha = 0.25f) else Modifier.background(MaterialTheme.colorScheme.primaryContainer, CircleShape))
                                     .clip(CircleShape)
@@ -252,7 +254,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             }
                         },
                         scrollBehavior = scrollBehavior,
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
                             scrolledContainerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp).copy(alpha = 0.5f)
                         )
@@ -311,16 +313,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 label = if (hideLabels) null else { { Text(tabSelfStudyLabel) } },
                                 selected = selectedTab == 3,
                                 onClick = { viewModel.setSelectedDashboardTab(3) },
-                                colors = navItemColors,
-                                alwaysShowLabel = labelModeAlways
-                            )
-                        }
-                        if (featureCalendarEnabled) {
-                            NavigationBarItem(
-                                icon = { Icon(tabCalendarIcon, contentDescription = tabCalendarLabel) },
-                                label = if (hideLabels) null else { { Text(tabCalendarLabel) } },
-                                selected = selectedTab == 5,
-                                onClick = { viewModel.setSelectedDashboardTab(5) },
                                 colors = navItemColors,
                                 alwaysShowLabel = labelModeAlways
                             )
@@ -428,7 +420,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             bottomPadding = extendedPadding
                         )
                         4 -> AnalyticsTab(navController = navController, viewModel = viewModel, paddingValues = extendedPadding)
-                        5 -> CalendarTab(navController = navController, viewModel = viewModel, bottomPadding = extendedPadding)
                     }
                 }
             }
@@ -501,16 +492,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             label = if (hideLabels) null else { { Text(tabSelfStudyLabel) } },
                             selected = selectedTab == 3,
                             onClick = { viewModel.setSelectedDashboardTab(3) },
-                            colors = navItemColors,
-                            alwaysShowLabel = labelModeAlways
-                        )
-                    }
-                    if (featureCalendarEnabled) {
-                        NavigationBarItem(
-                            icon = { Icon(tabCalendarIcon, contentDescription = tabCalendarLabel) },
-                            label = if (hideLabels) null else { { Text(tabCalendarLabel) } },
-                            selected = selectedTab == 5,
-                            onClick = { viewModel.setSelectedDashboardTab(5) },
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
                         )

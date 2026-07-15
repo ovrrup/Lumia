@@ -468,6 +468,7 @@ fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Mod
         label = "bouncyClickScale"
     )
     
+    val context = androidx.compose.ui.platform.LocalContext.current
     return this.graphicsLayer {
         scaleX = scale
         scaleY = scale
@@ -475,7 +476,10 @@ fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Mod
         interactionSource = interactionSource,
         indication = androidx.compose.material3.ripple(),
         enabled = enabled,
-        onClick = onClick
+        onClick = {
+            lumia.tracker.utils.SoundManager.playClick(context)
+            onClick()
+        }
     )
 }
 

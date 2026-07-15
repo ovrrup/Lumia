@@ -16,6 +16,8 @@ import lumia.tracker.ui.theme.LocalMoreRoundsMode
 import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.mix
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import lumia.tracker.utils.SoundManager
 
 @Composable
 fun BouncyButton(
@@ -48,8 +50,13 @@ fun BouncyButton(
         )
     } else colors
 
+    val context = LocalContext.current
+    
     Button(
-        onClick = onClick,
+        onClick = {
+            SoundManager.playClick(context)
+            onClick()
+        },
         modifier = finalModifier,
         enabled = enabled,
         shape = shape,
@@ -82,8 +89,13 @@ fun BouncyIconButton(
         modifier.bouncyScale(interactionSource)
     }
 
+    val context = LocalContext.current
+    
     IconButton(
-        onClick = onClick,
+        onClick = {
+            SoundManager.playClick(context)
+            onClick()
+        },
         modifier = finalModifier,
         enabled = enabled,
         colors = colors,
@@ -116,8 +128,13 @@ fun BouncyTextButton(
         modifier.bouncyScale(interactionSource)
     }
 
+    val context = LocalContext.current
+    
     TextButton(
-        onClick = onClick,
+        onClick = {
+            SoundManager.playClick(context)
+            onClick()
+        },
         modifier = finalModifier,
         enabled = enabled,
         shape = shape,
@@ -163,8 +180,13 @@ fun BouncyOutlinedButton(
         ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent)
     } else colors
 
+    val context = LocalContext.current
+    
     OutlinedButton(
-        onClick = onClick,
+        onClick = {
+            SoundManager.playClick(context)
+            onClick()
+        },
         modifier = finalModifier,
         enabled = enabled,
         shape = shape,
@@ -200,8 +222,13 @@ fun BouncyFloatingActionButton(
         modifier.bouncyScale(interactionSource)
     }
 
+    val context = LocalContext.current
+    
     FloatingActionButton(
-        onClick = onClick,
+        onClick = {
+            SoundManager.playClick(context)
+            onClick()
+        },
         modifier = finalModifier,
         shape = shape,
         containerColor = if (isGlass) Color.Transparent else containerColor,

@@ -336,12 +336,9 @@ fun AddEditTestRecordDialog(
                     )
                 }
 
-                OutlinedTextField(
-                    value = tags,
-                    onValueChange = { tags = it },
-                    label = { Text("Tags (comma separated, e.g. final, unit-1)") },
-                    placeholder = { Text("exam, unit-2, tricky") },
-                    leadingIcon = { Icon(Icons.Rounded.Label, contentDescription = null) },
+                TagMultiSelect(
+                    tagsString = tags,
+                    onTagsChanged = { tags = it },
                     modifier = Modifier.fillMaxWidth()
                 )
 

@@ -35,6 +35,7 @@ import lumia.tracker.model.Topic
 import lumia.tracker.model.Note
 import lumia.tracker.model.Chapter
 import lumia.tracker.ui.components.BouncyIconButton
+import lumia.tracker.ui.components.TagMultiSelect
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.GlassCard
@@ -1143,11 +1144,10 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         label = { Text("Topic Title") },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    OutlinedTextField(
-                        value = topicTags,
-                        onValueChange = { topicTags = it },
-                        label = { Text("Tags (comma separated, optional)") },
-                        modifier = Modifier.fillMaxWidth()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    lumia.tracker.ui.components.TagMultiSelect(
+                        tagsString = topicTags,
+                        onTagsChanged = { topicTags = it }
                     )
                     
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1253,11 +1253,10 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         label = { Text("Description (Optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    OutlinedTextField(
-                        value = chapterTags,
-                        onValueChange = { chapterTags = it },
-                        label = { Text("Tags (comma separated, optional)") },
-                        modifier = Modifier.fillMaxWidth()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TagMultiSelect(
+                        tagsString = chapterTags,
+                        onTagsChanged = { chapterTags = it }
                     )
                 }
             },
@@ -1348,6 +1347,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         var taskTitle by remember(currentTask) { mutableStateOf(currentTask?.title ?: "") }
         var taskDescription by remember(currentTask) { mutableStateOf(currentTask?.description ?: "") }
         var taskDueDate by remember(currentTask) { mutableStateOf(currentTask?.dueDateMillis) }
+        var taskTags by remember(currentTask) { mutableStateOf(currentTask?.tags ?: "") }
         
         AlertDialog(
             onDismissRequest = {
@@ -1368,6 +1368,11 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         onValueChange = { taskDescription = it },
                         label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    lumia.tracker.ui.components.TagMultiSelect(
+                        tagsString = taskTags,
+                        onTagsChanged = { taskTags = it }
                     )
                     
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1421,6 +1426,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                     description = taskDescription,
                                     dueDateMillis = taskDueDate,
                                     subjectId = subjectId,
+                                    tags = taskTags,
                                     isCompleted = false
                                 )
                             )
@@ -1429,6 +1435,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 currentTask.copy(
                                     title = taskTitle,
                                     description = taskDescription,
+                                    tags = taskTags,
                                     dueDateMillis = taskDueDate
                                 )
                             )
@@ -1478,13 +1485,12 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    OutlinedTextField(
-                        value = assignmentTags,
-                        onValueChange = { assignmentTags = it },
-                        label = { Text("Tags (optional)") },
-                        modifier = Modifier.fillMaxWidth()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    lumia.tracker.ui.components.TagMultiSelect(
+                        tagsString = assignmentTags,
+                        onTagsChanged = { assignmentTags = it }
                     )
-
+                    
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("Category", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                     Row(

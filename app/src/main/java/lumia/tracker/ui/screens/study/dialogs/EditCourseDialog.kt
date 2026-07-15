@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.model.Course
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.components.TagMultiSelect
 import lumia.tracker.viewmodel.ScholarViewModel
 import java.util.Locale
 
@@ -200,10 +201,9 @@ fun EditCourseDialog(
                     maxLines = 3
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = tags,
-                    onValueChange = { tags = it },
-                    label = { Text("Tags (Optional, comma separated)") },
+                TagMultiSelect(
+                    tagsString = tags,
+                    onTagsChanged = { tags = it },
                     modifier = Modifier.fillMaxWidth()
                 )
                 val subjects by viewModel.subjects.collectAsStateWithLifecycle()

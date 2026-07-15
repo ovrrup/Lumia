@@ -701,6 +701,14 @@ private val _streakPercentage = MutableStateFlow(0f)
     private val _betaMinimalistMode = MutableStateFlow(prefs.getBoolean("beta_minimalist_mode", false))
     val betaMinimalistMode = _betaMinimalistMode.asStateFlow()
 
+    private val _soundEffectsEnabled = MutableStateFlow(prefs.getBoolean("sound_effects_enabled", true))
+    val soundEffectsEnabled = _soundEffectsEnabled.asStateFlow()
+
+    fun updateSoundEffectsEnabled(enabled: Boolean) {
+        _soundEffectsEnabled.value = enabled
+        prefs.edit().putBoolean("sound_effects_enabled", enabled).apply()
+    }
+
     private val _betaDynamicBackground = MutableStateFlow(prefs.getBoolean("beta_dynamic_background", false))
     val betaDynamicBackground = _betaDynamicBackground.asStateFlow()
 
@@ -1992,7 +2000,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             "notif_enable_deadlines", "notif_enable_classes", "notif_enable_daily_digest", "aod_true_black_oled",
             "aod_auto_deactivate_true_black", "aod_lock_screen_support", "aod_true_aod_enabled", "dynamic_app_icon",
             "beta_better_texts", "beta_better_texts_palette", "safety_pin_enabled", "safety_pin_conflict_warning",
-            "safety_pin_recommendations", "show_action_history", "streak_is_complete_today"
+            "safety_pin_recommendations", "show_action_history", "streak_is_complete_today", "sound_effects_enabled"
         )
 
         val floatKeys = setOf(
@@ -2054,7 +2062,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             "notif_enable_deadlines", "notif_enable_classes", "notif_enable_daily_digest", "aod_true_black_oled",
             "aod_auto_deactivate_true_black", "aod_lock_screen_support", "aod_true_aod_enabled", "dynamic_app_icon",
             "beta_better_texts", "beta_better_texts_palette", "safety_pin_enabled", "safety_pin_conflict_warning",
-            "safety_pin_recommendations", "show_action_history", "streak_is_complete_today"
+            "safety_pin_recommendations", "show_action_history", "streak_is_complete_today", "sound_effects_enabled"
         )
 
         val floatKeys = setOf(
@@ -2105,6 +2113,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "beta_nav_bar_size_controls" -> _betaNavBarSizeControls.value = boolVal
                             "nav_bar_glass_linked_to_main" -> _navBarGlassLinkedToMain.value = boolVal
                             "nav_bar_glass_dynamic" -> _navBarGlassDynamic.value = boolVal
+                            "sound_effects_enabled" -> _soundEffectsEnabled.value = boolVal
                             "aod_true_aod_enabled" -> _aodTrueAodEnabled.value = boolVal
                             "streak_is_complete_today" -> _streakIsCompleteToday.value = boolVal
                         }

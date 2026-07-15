@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.components.TagMultiSelect
 import lumia.tracker.viewmodel.ScholarViewModel
 
 @Composable
@@ -27,11 +28,9 @@ fun AddSubjectDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = tags,
-                    onValueChange = { tags = it },
-                    label = { Text("Tags (comma separated, optional)") },
-                    modifier = Modifier.fillMaxWidth()
+                TagMultiSelect(
+                    tagsString = tags,
+                    onTagsChanged = { tags = it }
                 )
             }
         },

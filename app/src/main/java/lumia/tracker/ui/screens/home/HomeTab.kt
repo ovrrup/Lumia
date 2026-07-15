@@ -26,6 +26,10 @@ import androidx.compose.foundation.verticalScroll
 // ... the rest of the imports ...
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -262,7 +266,7 @@ fun HomeTab(
             }
 
 
-            if ((featureQuickNotesEnabled && betaNotes) || selfStudyEnabled) {
+            if (featureQuickNotesEnabled && betaNotes) {
                 item(key = "student_tools_title") {
                     Text(
                         "Student Tools",
@@ -270,33 +274,6 @@ fun HomeTab(
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.animateItem().padding(vertical = 8.dp)
                     )
-                }
-
-                if (selfStudyEnabled) {
-                    item(key = "myspace_tool") {
-                        GlassCard(
-                            onClick = { navController.navigate("myspace") },
-                            modifier = Modifier.animateItem().fillMaxWidth().height(100.dp),
-                            shape = RoundedCornerShape(24.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text("My Space", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-                                    Text("Frictionless, personalized focus vibe", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
-                                }
-                                Icon(
-                                    imageVector = Icons.Rounded.Spa,
-                                    contentDescription = "My Space",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape).padding(8.dp)
-                                )
-                            }
-                        }
-                    }
                 }
 
                 if (featureQuickNotesEnabled && betaNotes) {
@@ -329,15 +306,23 @@ fun HomeTab(
             
             item(key = "today_classes_calendar") {
                 Spacer(modifier = Modifier.height(16.dp))
-                val baseCalendar = java.util.Calendar.getInstance()
-                baseCalendar.add(java.util.Calendar.DAY_OF_MONTH, selectedDateOffset)
-                val currentDayOfWeekStr = java.text.SimpleDateFormat("EEEE", java.util.Locale.getDefault()).format(baseCalendar.time)
-                val todayDayNum = baseCalendar.get(java.util.Calendar.DAY_OF_MONTH)
-                val todayMonthStr = java.text.SimpleDateFormat("MMM", java.util.Locale.getDefault()).format(baseCalendar.time)
+                val todayCalendar = java.util.Calendar.getInstance()
+                
+                val selectedCalendar = todayCalendar.clone() as java.util.Calendar
+                selectedCalendar.add(java.util.Calendar.DAY_OF_MONTH, selectedDateOffset)
+                
+                val currentDayOfWeekStr = java.text.SimpleDateFormat("EEEE", java.util.Locale.getDefault()).format(selectedCalendar.time)
+                val todayDayNum = selectedCalendar.get(java.util.Calendar.DAY_OF_MONTH)
+                val todayMonthStr = java.text.SimpleDateFormat("MMM", java.util.Locale.getDefault()).format(selectedCalendar.time)
                 
                 val scheduledCourses = courses.filter { course ->
                     course.scheduleDays.contains(currentDayOfWeekStr, ignoreCase = true)
                 }
+
+                val headerTitle = if (selectedDateOffset == 0) "Today's Classes" 
+                                  else if (selectedDateOffset == 1) "Tomorrow's Classes" 
+                                  else if (selectedDateOffset == -1) "Yesterday's Classes" 
+                                  else "$currentDayOfWeekStr's Classes"
 
                 GlassCard(
                     modifier = Modifier.animateItem().fillMaxWidth(),
@@ -353,9 +338,9 @@ fun HomeTab(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = if (selectedDateOffset == 0) "Today's Classes" else if (selectedDateOffset == 1) "Tomorrow's Classes" else if (selectedDateOffset == -1) "Yesterday's Classes" else "$currentDayOfWeekStr's Classes",
+                                    text = headerTitle,
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.primary
@@ -367,59 +352,111 @@ fun HomeTab(
                                 )
                             }
                             
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                                    .clickable { selectedDateOffset = 0 }, // reset to today
-                                contentAlignment = Alignment.Center
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Icon(
-                                    Icons.Rounded.CalendarMonth,
-                                    contentDescription = "Today",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
+                                // Previous day nudge
+                                IconButton(
+                                    onClick = { selectedDateOffset -= 1 },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.ChevronLeft,
+                                        contentDescription = "Previous Day",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                // Reset to today
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                                        .clickable { selectedDateOffset = 0 },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.CalendarMonth,
+                                        contentDescription = "Today",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+
+                                // Next day nudge
+                                IconButton(
+                                    onClick = { selectedDateOffset += 1 },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.ChevronRight,
+                                        contentDescription = "Next Day",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
                         
                         Spacer(modifier = Modifier.height(20.dp))
                         
-                        // We will build a sleek horizontal list of dates for the surrounding 5 days
-                        val daysBefore = 2
-                        val todayCalendar = java.util.Calendar.getInstance()
-                        Row(
+                        // Scrollable dates from -15 to +15 days
+                        val lazyRowState = rememberLazyListState(initialFirstVisibleItemIndex = 12)
+                        
+                        LazyRow(
+                            state = lazyRowState,
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            for (i in -daysBefore..2) {
+                            val offsets = (-15..15).toList()
+                            items(offsets) { offset ->
                                 val calOffset = todayCalendar.clone() as java.util.Calendar
-                                val targetOffset = i
-                                calOffset.add(java.util.Calendar.DAY_OF_MONTH, targetOffset)
-                                val isSelected = selectedDateOffset == targetOffset
-                                val dayLetter = java.text.SimpleDateFormat("E", java.util.Locale.getDefault()).format(calOffset.time).take(1)
+                                calOffset.add(java.util.Calendar.DAY_OF_MONTH, offset)
+                                val isSelected = selectedDateOffset == offset
+                                val isToday = offset == 0
+                                val dayLetter = java.text.SimpleDateFormat("E", java.util.Locale.getDefault()).format(calOffset.time).take(3)
                                 val dayNumber = calOffset.get(java.util.Calendar.DAY_OF_MONTH).toString()
                                 
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .padding(horizontal = 4.dp)
+                                        .width(56.dp)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                                        .clickable { selectedDateOffset = targetOffset }
+                                        .background(
+                                            if (isSelected) MaterialTheme.colorScheme.primary 
+                                            else if (isToday) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                            else Color.Transparent
+                                        )
+                                        .then(
+                                            if (isToday && !isSelected) {
+                                                Modifier.border(
+                                                    1.5.dp, 
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), 
+                                                    RoundedCornerShape(16.dp)
+                                                )
+                                            } else {
+                                                Modifier
+                                            }
+                                        )
+                                        .clickable { selectedDateOffset = offset }
                                         .padding(vertical = 12.dp)
                                 ) {
                                     Text(
                                         text = dayLetter,
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary 
+                                                else if (isToday) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = dayNumber,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary 
+                                                else if (isToday) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
@@ -436,7 +473,7 @@ fun HomeTab(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    "No classes scheduled for ${if (selectedDateOffset == 0) "today" else "this day"}.",
+                                    "No classes scheduled for $currentDayOfWeekStr.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
