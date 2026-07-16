@@ -29,6 +29,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.Color
 import lumia.tracker.ui.theme.glassBar
+import lumia.tracker.ui.theme.LocalMoreRounds
+import lumia.tracker.ui.theme.LocalMoreRoundsMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,35 +45,19 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
     Scaffold(
         containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
-            androidx.compose.foundation.layout.Box {
-                if (betaEnhancedHeader || isGlass) {
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
-                    )
+            lumia.tracker.ui.components.UniversalCapsuleHeader(
+                title = "Profile & Menu",
+                onBackClick = { navController.navigateUp() },
+                actions = {
+                    IconButton(onClick = { showEditDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Edit,
+                            contentDescription = "Edit Profile",
+                            tint = if (isGlass || (LocalMoreRounds.current && LocalMoreRoundsMode.current == "Glass")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
-                TopAppBar(
-                    title = { Text("Profile & Menu", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { showEditDialog = true }) {
-                            Icon(Icons.Rounded.Edit, contentDescription = "Edit Profile")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = if (betaEnhancedHeader || isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                        scrolledContainerColor = if (betaEnhancedHeader || isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-                        titleContentColor = MaterialTheme.colorScheme.onBackground,
-                        actionIconContentColor = MaterialTheme.colorScheme.onBackground,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onBackground
-                    )
-                )
-            }
+            )
         }
     ) { padding ->
         LazyColumn(

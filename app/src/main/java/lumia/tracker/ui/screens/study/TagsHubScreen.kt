@@ -145,29 +145,9 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "Tags Network & Manager",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                },
-                navigationIcon = {
-                    BouncyIconButton(
-                        onClick = { navController.navigateUp() },
-                        modifier = Modifier.testTag("tags_hub_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.Transparent
-                )
+            lumia.tracker.ui.components.UniversalCapsuleHeader(
+                title = "Tags Network & Manager",
+                onBackClick = { navController.navigateUp() }
             )
         },
         containerColor = Color.Transparent

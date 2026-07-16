@@ -71,13 +71,9 @@ fun PdfViewerScreen(navController: NavController, filePath: String?, fileName: S
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(fileName ?: "PDF Viewer", fontWeight = FontWeight.Bold, maxLines = 1) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                }
+            lumia.tracker.ui.components.UniversalCapsuleHeader(
+                title = fileName ?: "PDF Viewer",
+                onBackClick = { navController.popBackStack() }
             )
         }
     ) { padding ->

@@ -394,36 +394,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            androidx.compose.foundation.layout.Box {
-                if (betaEnhancedHeader || isGlass) {
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
-                    )
-                    // Sleek divider line for clean separation and anchoring
-                    androidx.compose.material3.HorizontalDivider(
-                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                    )
-                }
-                LargeTopAppBar(
-                    title = { Text(course.name, fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        BouncyIconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    scrollBehavior = scrollBehavior,
-                    colors = TopAppBarDefaults.largeTopAppBarColors(
-                        containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface,
-                        scrolledContainerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
-                    )
-                )
-            }
+            lumia.tracker.ui.components.UniversalCapsuleHeader(
+                title = course.name,
+                onBackClick = { navController.popBackStack() }
+            )
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {

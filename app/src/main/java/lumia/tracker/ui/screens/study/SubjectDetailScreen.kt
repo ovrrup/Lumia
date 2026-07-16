@@ -114,17 +114,17 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(subject.name, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
+            lumia.tracker.ui.components.UniversalCapsuleHeader(
+                title = subject.name,
+                onBackClick = { navController.popBackStack() },
                 actions = {
                     Box {
                         IconButton(onClick = { expandedMenu = true }) {
-                            Icon(Icons.Rounded.MoreVert, contentDescription = "More")
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = "More",
+                                tint = if (lumia.tracker.ui.theme.LocalGlassMode.current || (lumia.tracker.ui.theme.LocalMoreRounds.current && lumia.tracker.ui.theme.LocalMoreRoundsMode.current == "Glass")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
                         }
                         DropdownMenu(
                             expanded = expandedMenu,
@@ -148,8 +148,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             )
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                }
             )
         }
     ) { padding ->

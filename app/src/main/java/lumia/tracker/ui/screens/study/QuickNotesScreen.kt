@@ -65,14 +65,9 @@ fun QuickNotesScreen(navController: NavController) {
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text("Quick Notes", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    BouncyIconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+            lumia.tracker.ui.components.UniversalCapsuleHeader(
+                title = "Quick Notes",
+                onBackClick = { navController.popBackStack() }
             )
         },
         floatingActionButton = {

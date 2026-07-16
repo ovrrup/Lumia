@@ -131,16 +131,6 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
         item {
-            Text(
-                text = "Analytics",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-
-        item {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // NEW: Study Sessions Today counter
                 Card(

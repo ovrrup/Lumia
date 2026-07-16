@@ -52,14 +52,9 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Streak Settings", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            lumia.tracker.ui.components.UniversalCapsuleHeader(
+                title = "Streak Settings",
+                onBackClick = { navController.popBackStack() }
             )
         },
         containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background

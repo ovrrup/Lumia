@@ -167,11 +167,10 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     var showAddSubjectDialog by remember { mutableStateOf(false) }
 
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+            modifier = Modifier.fillMaxSize(),
             containerColor = androidx.compose.ui.graphics.Color.Transparent,
             bottomBar = {
                 if (!betaFloatingNav) {
@@ -246,14 +245,14 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             val extendedPadding = if (betaFloatingNav) {
                 PaddingValues(
                     start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-                    top = padding.calculateTopPadding() + 80.dp,
+                    top = 64.dp,
                     end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
                     bottom = padding.calculateBottomPadding() + navBarHeight.dp + navBarPaddingBottom.dp + 16.dp
                 )
             } else {
                 PaddingValues(
                     start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-                    top = padding.calculateTopPadding() + 80.dp,
+                    top = 64.dp,
                     end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
                     bottom = padding.calculateBottomPadding()
                 )
@@ -432,16 +431,24 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             val moreRounds = lumia.tracker.ui.theme.LocalMoreRounds.current
             val moreRoundsMode = lumia.tracker.ui.theme.LocalMoreRoundsMode.current
             val isMrGlass = moreRounds && moreRoundsMode == "Glass"
+            val useGlassHeader = isGlass || isMrGlass
             val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
+            
+            val titleText = when (selectedTab) {
+                0 -> tabHomeLabel
+                1 -> tabCoursesLabel
+                2 -> tabSubjectsLabel
+                3 -> tabSelfStudyLabel
+                4 -> tabAnalyticsLabel
+                5 -> tabCalendarLabel
+                else -> stringResource(id = R.string.app_name)
+            }
             
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier
                     .then(
-                        if (isMrGlass) {
-                            Modifier.liquidGlass(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
-                                tintAlpha = 0.35f
-                            )
+                        if (useGlassHeader) {
+                            Modifier.glassPill(shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp))
                         } else {
                             Modifier
                                 .shadow(elevation = 12.dp, shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp), spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
@@ -453,10 +460,28 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
                     )
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                Text(
+                    text = titleText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Black,
+                    color = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(end = 4.dp)
+                )
+
+                // Elegant vertical separator
+                Box(
+                    modifier = Modifier
+                        .height(18.dp)
+                        .width(1.dp)
+                        .background(
+                            color = (if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.15f)
+                        )
+                )
+
                 lumia.tracker.ui.components.BouncyIconButton(
                     onClick = { navController.navigate("search") },
                     modifier = Modifier.size(36.dp).testTag("open_search_button")
@@ -474,8 +499,8 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 androidx.compose.foundation.layout.Box(
                     modifier = Modifier
                         .size(32.dp)
-                        .then(if (isMrGlass) Modifier else Modifier.shadow(elevation = 4.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)))
-                        .then(if (isMrGlass) Modifier.liquidGlass(CircleShape, tintAlpha = 0.25f) else Modifier.background(MaterialTheme.colorScheme.primaryContainer, CircleShape))
+                        .then(if (useGlassHeader) Modifier else Modifier.shadow(elevation = 4.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)))
+                        .then(if (useGlassHeader) Modifier.liquidGlass(CircleShape, tintAlpha = 0.25f) else Modifier.background(MaterialTheme.colorScheme.primaryContainer, CircleShape))
                         .clip(CircleShape)
                         .bouncyClick(
                             onClick = { navController.navigate("profile_menu") }
@@ -499,7 +524,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         Text(
                             text = fallback,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (isMrGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
+                            color = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
                             fontWeight = FontWeight.Bold
                         )
                     }

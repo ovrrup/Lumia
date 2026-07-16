@@ -291,14 +291,9 @@ fun PomodoroScreen(
         Scaffold(
             containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
             topBar = {
-                TopAppBar(
-                    title = { Text("Pomodoro Timer", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        BouncyIconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                lumia.tracker.ui.components.UniversalCapsuleHeader(
+                    title = "Pomodoro Timer",
+                    onBackClick = { navController.popBackStack() }
                 )
             }
         ) { padding ->

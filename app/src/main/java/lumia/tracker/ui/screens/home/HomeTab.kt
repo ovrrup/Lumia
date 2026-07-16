@@ -165,10 +165,9 @@ fun HomeTab(
 
     var selectedDateOffset by remember { androidx.compose.runtime.mutableIntStateOf(0) }
 
-    Scaffold(
-        containerColor = androidx.compose.ui.graphics.Color.Transparent,
-        floatingActionButton = {}
-    ) { padding ->
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(

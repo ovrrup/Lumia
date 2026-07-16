@@ -100,15 +100,6 @@ fun SelfStudyTab(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Text(
-                    text = "Self Study",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Black,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-            item {
                 lumia.tracker.ui.components.NotificationPermissionPanel()
                 lumia.tracker.ui.components.ExactAlarmPermissionPanel()
                 lumia.tracker.ui.components.BatteryOptimizationPermissionPanel()
