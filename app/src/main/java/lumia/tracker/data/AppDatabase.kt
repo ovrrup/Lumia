@@ -17,10 +17,14 @@ import lumia.tracker.model.Task
 import lumia.tracker.model.Attachment
 import lumia.tracker.model.TestRecord
 import lumia.tracker.model.TagCustomization
+import lumia.tracker.kost.KostBehaviorEvent
+import lumia.tracker.kost.KostPatternReport
+import lumia.tracker.kost.KostDao
 
-@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class, AttendanceRecord::class, PomodoroSession::class, Note::class, Chapter::class, Task::class, Attachment::class, TestRecord::class, TagCustomization::class], version = 20, exportSchema = false)
+@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class, AttendanceRecord::class, PomodoroSession::class, Note::class, Chapter::class, Task::class, Attachment::class, TestRecord::class, TagCustomization::class, KostBehaviorEvent::class, KostPatternReport::class], version = 21, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scholarDao(): ScholarDao
+    abstract fun kostDao(): KostDao
 
     companion object {
         private val instances = java.util.concurrent.ConcurrentHashMap<String, AppDatabase>()

@@ -153,6 +153,55 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     
     private val repository = ScholarRepository(AppDatabase.getDatabase(application).scholarDao())
     
+    val kostRepository = lumia.tracker.kost.KostRepository(
+        AppDatabase.getDatabase(application).scholarDao(),
+        AppDatabase.getDatabase(application).kostDao()
+    )
+
+    val kostEvents: StateFlow<List<lumia.tracker.kost.KostBehaviorEvent>> = kostRepository.allEvents
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val latestKostReport: StateFlow<lumia.tracker.kost.KostPatternReport?> = kostRepository.latestReport
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    private val _kostAnalysisState = MutableStateFlow<String?>(null)
+    val kostAnalysisState = _kostAnalysisState.asStateFlow()
+
+    fun logKostEvent(
+        category: String,
+        action: String,
+        durationMillis: Long? = null,
+        rating: Float? = null,
+        performanceMetric: Float? = null,
+        tagString: String = "",
+        description: String = "",
+        metadata: Map<String, Any> = emptyMap()
+    ) {
+        viewModelScope.launch {
+            kostRepository.logEvent(category, action, durationMillis, rating, performanceMetric, tagString, description, metadata)
+        }
+    }
+
+    fun runKostAIAnalysis() {
+        viewModelScope.launch {
+            _kostAnalysisState.value = "Analyzing complete dataset and studying behavioral patterns..."
+            val result = kostRepository.runKostAnalysis()
+            if (result.isSuccess) {
+                _kostAnalysisState.value = "Analysis successful! Pattern recognition trained."
+            } else {
+                _kostAnalysisState.value = "Analysis failed: ${result.exceptionOrNull()?.message}"
+            }
+        }
+    }
+    
     private val prefs = profileManager.getProfilePrefs()
 
     init {
@@ -1381,6 +1430,16 @@ private val _streakPercentage = MutableStateFlow(0f)
                 set(java.util.Calendar.MILLISECOND, 0)
             }.timeInMillis
             repository.insertAttendanceRecord(lumia.tracker.model.AttendanceRecord(courseId = courseId, dateMillis = normalized, status = status))
+            kostRepository.logEvent(
+                category = "ATTENDANCE",
+                action = "MARK_ATTENDANCE",
+                description = "Marked attendance: $status",
+                metadata = mapOf(
+                    "courseId" to courseId,
+                    "date" to normalized,
+                    "status" to status
+                )
+            )
         }
     }
 
@@ -1396,6 +1455,20 @@ private val _streakPercentage = MutableStateFlow(0f)
                 topicId = topicId
             ))
             logAction("Completed Pomodoro Session ($durationMinutes min)")
+            kostRepository.logEvent(
+                category = "POMODORO",
+                action = "COMPLETE_SESSION",
+                durationMillis = durationMinutes.toLong() * 60L * 1000L,
+                description = "Completed Pomodoro Session ($durationMinutes min)",
+                metadata = mapOf(
+                    "durationMinutes" to durationMinutes,
+                    "courseId" to (courseId ?: 0),
+                    "subjectId" to (subjectId ?: 0),
+                    "assignmentId" to (assignmentId ?: 0),
+                    "taskId" to (taskId ?: 0),
+                    "topicId" to (topicId ?: 0)
+                )
+            )
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }
@@ -1466,6 +1539,23 @@ private val _streakPercentage = MutableStateFlow(0f)
         viewModelScope.launch {
             repository.insertTestRecord(record)
             logAction("Logged test record '${record.title}' with score ${record.marksObtained}/${record.totalMarks}")
+            val percentage = if (record.totalMarks > 0f) (record.marksObtained / record.totalMarks) * 100f else 0f
+            kostRepository.logEvent(
+                category = "TEST",
+                action = "SCORE_TEST",
+                performanceMetric = percentage,
+                tagString = record.tags,
+                description = "Logged test record '${record.title}' with score ${record.marksObtained}/${record.totalMarks}",
+                metadata = mapOf(
+                    "title" to record.title,
+                    "marksObtained" to record.marksObtained,
+                    "totalMarks" to record.totalMarks,
+                    "percentage" to percentage,
+                    "courseId" to (record.courseId ?: 0),
+                    "subjectId" to (record.subjectId ?: 0),
+                    "topicId" to (record.topicId ?: 0)
+                )
+            )
         }
     }
 
@@ -1473,6 +1563,23 @@ private val _streakPercentage = MutableStateFlow(0f)
         viewModelScope.launch {
             repository.updateTestRecord(record)
             logAction("Updated test record '${record.title}'")
+            val percentage = if (record.totalMarks > 0f) (record.marksObtained / record.totalMarks) * 100f else 0f
+            kostRepository.logEvent(
+                category = "TEST",
+                action = "UPDATE_TEST",
+                performanceMetric = percentage,
+                tagString = record.tags,
+                description = "Updated test record '${record.title}'",
+                metadata = mapOf(
+                    "title" to record.title,
+                    "marksObtained" to record.marksObtained,
+                    "totalMarks" to record.totalMarks,
+                    "percentage" to percentage,
+                    "courseId" to (record.courseId ?: 0),
+                    "subjectId" to (record.subjectId ?: 0),
+                    "topicId" to (record.topicId ?: 0)
+                )
+            )
         }
     }
 
@@ -1834,6 +1941,21 @@ private val _streakPercentage = MutableStateFlow(0f)
                 )
             }
             logAction("Added task: ${task.title}")
+            kostRepository.logEvent(
+                category = "PLAN",
+                action = "CREATE_TASK",
+                rating = task.priority.toFloat(),
+                tagString = task.tags,
+                description = "Created task: ${task.title}",
+                metadata = mapOf(
+                    "taskId" to newId,
+                    "title" to task.title,
+                    "description" to task.description,
+                    "dueDate" to (task.dueDateMillis ?: 0L),
+                    "courseId" to (task.courseId ?: 0),
+                    "subjectId" to (task.subjectId ?: 0)
+                )
+            )
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }
@@ -1845,6 +1967,19 @@ private val _streakPercentage = MutableStateFlow(0f)
             repository.updateTask(task.copy(isCompleted = newlyCompleted))
             val actionText = if (newlyCompleted) "Completed task: ${task.title}" else "Unmarked task: ${task.title}"
             logAction(actionText)
+            kostRepository.logEvent(
+                category = "PLAN",
+                action = if (newlyCompleted) "COMPLETE_TASK" else "UNMARK_TASK",
+                performanceMetric = if (newlyCompleted) 1.0f else 0.0f,
+                tagString = task.tags,
+                description = if (newlyCompleted) "Completed task: ${task.title}" else "Uncompleted task: ${task.title}",
+                metadata = mapOf(
+                    "taskId" to task.id,
+                    "title" to task.title,
+                    "isCompleted" to newlyCompleted,
+                    "dueDate" to (task.dueDateMillis ?: 0L)
+                )
+            )
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }
@@ -1888,6 +2023,21 @@ private val _streakPercentage = MutableStateFlow(0f)
                 subjectId = subjectId
             )
             logAction("Added assignment: $title ($category)")
+            kostRepository.logEvent(
+                category = "ASSIGNMENT",
+                action = "CREATE_ASSIGNMENT",
+                tagString = tags,
+                description = "Created assignment: $title ($category)",
+                metadata = mapOf(
+                    "assignmentId" to newId,
+                    "title" to title,
+                    "description" to desc,
+                    "dueDate" to dueDate,
+                    "category" to category,
+                    "courseId" to courseId,
+                    "subjectId" to (subjectId ?: 0)
+                )
+            )
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }
@@ -1899,6 +2049,19 @@ private val _streakPercentage = MutableStateFlow(0f)
             repository.updateAssignment(assignment.copy(isCompleted = newlyCompleted))
             val actionText = if (newlyCompleted) "Completed assignment: ${assignment.title}" else "Unmarked assignment: ${assignment.title}"
             logAction(actionText)
+            kostRepository.logEvent(
+                category = "ASSIGNMENT",
+                action = if (newlyCompleted) "COMPLETE_ASSIGNMENT" else "UNMARK_ASSIGNMENT",
+                performanceMetric = if (newlyCompleted) 1.0f else 0.0f,
+                tagString = assignment.tags,
+                description = if (newlyCompleted) "Completed assignment: ${assignment.title}" else "Uncompleted assignment: ${assignment.title}",
+                metadata = mapOf(
+                    "assignmentId" to assignment.id,
+                    "title" to assignment.title,
+                    "isCompleted" to newlyCompleted,
+                    "dueDate" to assignment.dueDateMillis
+                )
+            )
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }

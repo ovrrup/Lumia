@@ -62,25 +62,20 @@ fun QuickNotesScreen(navController: NavController) {
     var newNoteText by remember { mutableStateOf("") }
 
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
-    Scaffold(
-        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        topBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = "Quick Notes",
-                onBackClick = { navController.popBackStack() }
-            )
-        },
-        floatingActionButton = {
-            BouncyFloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Rounded.Add, "Add Note")
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+            floatingActionButton = {
+                BouncyFloatingActionButton(onClick = { showAddDialog = true }) {
+                    Icon(Icons.Rounded.Add, "Add Note")
+                }
             }
-        }
-    ) { padding ->
-        LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 80.dp),
-            modifier = Modifier.padding(padding).fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        ) { padding ->
+            LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 88.dp, bottom = 80.dp),
+                modifier = Modifier.padding(bottom = padding.calculateBottomPadding()).fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
             if (notesList.isEmpty()) {
                 item {
                     Text(
@@ -115,6 +110,11 @@ fun QuickNotesScreen(navController: NavController) {
                 }
             }
         }
+    }
+        lumia.tracker.ui.components.UniversalCapsuleHeader(
+            title = "Quick Notes",
+            onBackClick = { navController.popBackStack() }
+        )
     }
 
     if (showAddDialog) {

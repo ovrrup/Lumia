@@ -1,5 +1,6 @@
 package lumia.tracker.ui.screens
 
+import lumia.tracker.ui.components.glassHeaderCapsule
 import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.glassBar
 import lumia.tracker.ui.theme.navGlassBar
@@ -446,20 +447,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier
-                    .then(
-                        if (useGlassHeader) {
-                            Modifier.glassPill(shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp))
-                        } else {
-                            Modifier
-                                .shadow(elevation = 12.dp, shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp), spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-                                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp), androidx.compose.foundation.shape.RoundedCornerShape(32.dp))
-                        }
-                    )
-                    .border(
-                        width = 1.2.dp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
-                    )
+                    .glassHeaderCapsule(useGlass = useGlassHeader, shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp))
                     .padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)

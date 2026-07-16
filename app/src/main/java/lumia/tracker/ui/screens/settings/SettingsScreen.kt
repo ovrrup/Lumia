@@ -103,22 +103,17 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
 
-    Scaffold(
-        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        topBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = "Settings Hub",
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .padding(bottom = padding.calculateBottomPadding())
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                Spacer(modifier = Modifier.height(88.dp))
 
             // Personalization Card
             SettingsGroupCard(title = "Personalization", icon = Icons.Rounded.Palette) {
@@ -227,4 +222,10 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = "Settings Hub",
+        onBackClick = { navController.popBackStack() }
+    )
+}
 }

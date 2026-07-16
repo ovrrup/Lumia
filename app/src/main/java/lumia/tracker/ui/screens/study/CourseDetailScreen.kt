@@ -392,22 +392,17 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
-    Scaffold(
-        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        topBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = course.name,
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 120.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize().reorderable(reorderableState)
-            ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background
+        ) { padding ->
+            Column(modifier = Modifier.padding(bottom = padding.calculateBottomPadding()).fillMaxSize()) {
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 88.dp, bottom = 120.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize().reorderable(reorderableState)
+                ) {
                 if (course.instructor.isNotBlank() || course.schedule.isNotBlank() || course.description.isNotBlank()) {
                     item {
                         lumia.tracker.ui.components.GlassCard(
@@ -1396,6 +1391,12 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             }
         }
     }
+
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = course.name,
+        onBackClick = { navController.popBackStack() }
+    )
+}
 
     if (showLinkSubjectDialog) {
         var createNew by remember { mutableStateOf(false) }

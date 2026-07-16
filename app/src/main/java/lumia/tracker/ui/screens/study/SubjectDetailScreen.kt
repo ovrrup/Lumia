@@ -112,53 +112,17 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         return
     }
 
-    Scaffold(
-        topBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = subject.name,
-                onBackClick = { navController.popBackStack() },
-                actions = {
-                    Box {
-                        IconButton(onClick = { expandedMenu = true }) {
-                            Icon(
-                                imageVector = Icons.Rounded.MoreVert,
-                                contentDescription = "More",
-                                tint = if (lumia.tracker.ui.theme.LocalGlassMode.current || (lumia.tracker.ui.theme.LocalMoreRounds.current && lumia.tracker.ui.theme.LocalMoreRoundsMode.current == "Glass")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = expandedMenu,
-                            onDismissRequest = { expandedMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Edit Subject") },
-                                onClick = {
-                                    expandedMenu = false
-                                    showEditSubjectDialog = true
-                                },
-                                leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Delete Subject", color = MaterialTheme.colorScheme.error) },
-                                onClick = {
-                                    expandedMenu = false
-                                    showDeleteConfirmDialog = true
-                                },
-                                leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
-                            )
-                        }
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (lumia.tracker.ui.theme.LocalGlassMode.current) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .padding(bottom = padding.calculateBottomPadding())
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 88.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
             // Stats Banner Card
             item {
                 GlassCard(
@@ -1096,6 +1060,44 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             }
         }
     }
+
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = subject.name,
+        onBackClick = { navController.popBackStack() },
+        actions = {
+            Box {
+                IconButton(onClick = { expandedMenu = true }) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = "More",
+                        tint = if (lumia.tracker.ui.theme.LocalGlassMode.current || (lumia.tracker.ui.theme.LocalMoreRounds.current && lumia.tracker.ui.theme.LocalMoreRoundsMode.current == "Glass")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                DropdownMenu(
+                    expanded = expandedMenu,
+                    onDismissRequest = { expandedMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Edit Subject") },
+                        onClick = {
+                            expandedMenu = false
+                            showEditSubjectDialog = true
+                        },
+                        leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete Subject", color = MaterialTheme.colorScheme.error) },
+                        onClick = {
+                            expandedMenu = false
+                            showDeleteConfirmDialog = true
+                        },
+                        leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                    )
+                }
+            }
+        }
+    )
+}
 
     // --- DIALOGS ---
 
