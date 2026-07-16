@@ -173,94 +173,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
         Scaffold(
             modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
             containerColor = androidx.compose.ui.graphics.Color.Transparent,
-            topBar = {
-                val titleText = when (selectedTab) {
-                    0 -> tabHomeLabel
-                    1 -> tabCoursesLabel
-                    2 -> tabSubjectsLabel
-                    3 -> tabSelfStudyLabel
-                    4 -> tabAnalyticsLabel
-                    5 -> tabCalendarLabel
-                    else -> stringResource(id = R.string.app_name)
-                }
-                androidx.compose.foundation.layout.Box {
-                    if (betaEnhancedHeader || isGlass) {
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
-                        )
-                        // Sleek divider line for clean separation and anchoring
-                        androidx.compose.material3.HorizontalDivider(
-                            modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
-                            thickness = 1.dp,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                        )
-                    }
-                    TopAppBar(
-                        title = { Text(titleText, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
-                        navigationIcon = {
-                            lumia.tracker.ui.components.BouncyIconButton(
-                                onClick = { navController.navigate("search") },
-                                modifier = Modifier.padding(start = 4.dp).testTag("open_search_button")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Search,
-                                    contentDescription = "Open Global Search",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        },
-                        actions = {
-                            val moreRounds = lumia.tracker.ui.theme.LocalMoreRounds.current
-                            val moreRoundsMode = lumia.tracker.ui.theme.LocalMoreRoundsMode.current
-                            lumia.tracker.ui.components.StreakWidget(viewModel, navController)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            val isMrGlass = moreRounds && moreRoundsMode == "Glass"
-                            val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
-                            androidx.compose.foundation.layout.Box(
-                                modifier = Modifier
-                                    .padding(end = 12.dp)
-                                    .size(40.dp)
-                                    .then(if (isMrGlass) Modifier else Modifier.shadow(elevation = 8.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
-                                    .then(if (isMrGlass) Modifier.liquidGlass(CircleShape, tintAlpha = 0.25f) else Modifier.background(MaterialTheme.colorScheme.primaryContainer, CircleShape))
-                                    .clip(CircleShape)
-                                    .bouncyClick(
-                                        onClick = { navController.navigate("profile_menu") }
-                                    ),
-                                contentAlignment = androidx.compose.ui.Alignment.Center
-                            ) {
-                                val isLocalImage = activeProfile.avatarEmoji.startsWith("/") || activeProfile.avatarEmoji.startsWith("file://") || activeProfile.avatarEmoji.startsWith("content://")
-                                if (isLocalImage) {
-                                    coil.compose.AsyncImage(
-                                        model = activeProfile.avatarEmoji,
-                                        contentDescription = "Profile Picture",
-                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                } else {
-                                    val fallback = if (activeProfile.avatarEmoji.isNotBlank() && activeProfile.avatarEmoji.length <= 2 && activeProfile.avatarEmoji != "A" && activeProfile.avatarEmoji != "U") {
-                                        activeProfile.avatarEmoji.uppercase()
-                                    } else {
-                                        activeProfile.name.take(2).uppercase()
-                                    }
-                                    Text(
-                                        text = fallback,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = if (isMrGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        },
-                        scrollBehavior = scrollBehavior,
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                            scrolledContainerColor = if (betaEnhancedHeader || isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp).copy(alpha = 0.5f)
-                        )
-                    )
-                }
-            },
             bottomBar = {
                 if (!betaFloatingNav) {
                     val useGlass = isGlass || navBarGlassForceEnabled
@@ -334,14 +246,14 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             val extendedPadding = if (betaFloatingNav) {
                 PaddingValues(
                     start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-                    top = 0.dp,
+                    top = padding.calculateTopPadding() + 80.dp,
                     end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
                     bottom = padding.calculateBottomPadding() + navBarHeight.dp + navBarPaddingBottom.dp + 16.dp
                 )
             } else {
                 PaddingValues(
                     start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-                    top = 0.dp,
+                    top = padding.calculateTopPadding() + 80.dp,
                     end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
                     bottom = padding.calculateBottomPadding()
                 )
@@ -504,6 +416,91 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             onClick = { viewModel.setSelectedDashboardTab(4) },
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
+                        )
+                    }
+                }
+            }
+        }
+        
+        // Floating utility capsule on the top right
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier
+                .align(androidx.compose.ui.Alignment.TopEnd)
+                .padding(top = 16.dp, end = 16.dp)
+                .windowInsetsPadding(WindowInsets.statusBars)
+        ) {
+            val moreRounds = lumia.tracker.ui.theme.LocalMoreRounds.current
+            val moreRoundsMode = lumia.tracker.ui.theme.LocalMoreRoundsMode.current
+            val isMrGlass = moreRounds && moreRoundsMode == "Glass"
+            val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
+            
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier
+                    .then(
+                        if (isMrGlass) {
+                            Modifier.liquidGlass(
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
+                                tintAlpha = 0.35f
+                            )
+                        } else {
+                            Modifier
+                                .shadow(elevation = 12.dp, shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp), spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp), androidx.compose.foundation.shape.RoundedCornerShape(32.dp))
+                        }
+                    )
+                    .border(
+                        width = 1.2.dp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                lumia.tracker.ui.components.BouncyIconButton(
+                    onClick = { navController.navigate("search") },
+                    modifier = Modifier.size(36.dp).testTag("open_search_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Search,
+                        contentDescription = "Open Global Search",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                lumia.tracker.ui.components.StreakWidget(viewModel, navController)
+                
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .then(if (isMrGlass) Modifier else Modifier.shadow(elevation = 4.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)))
+                        .then(if (isMrGlass) Modifier.liquidGlass(CircleShape, tintAlpha = 0.25f) else Modifier.background(MaterialTheme.colorScheme.primaryContainer, CircleShape))
+                        .clip(CircleShape)
+                        .bouncyClick(
+                            onClick = { navController.navigate("profile_menu") }
+                        ),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    val isLocalImage = activeProfile.avatarEmoji.startsWith("/") || activeProfile.avatarEmoji.startsWith("file://") || activeProfile.avatarEmoji.startsWith("content://")
+                    if (isLocalImage) {
+                        coil.compose.AsyncImage(
+                            model = activeProfile.avatarEmoji,
+                            contentDescription = "Profile Picture",
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        val fallback = if (activeProfile.avatarEmoji.isNotBlank() && activeProfile.avatarEmoji.length <= 2 && activeProfile.avatarEmoji != "A" && activeProfile.avatarEmoji != "U") {
+                            activeProfile.avatarEmoji.uppercase()
+                        } else {
+                            activeProfile.name.take(2).uppercase()
+                        }
+                        Text(
+                            text = fallback,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isMrGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }

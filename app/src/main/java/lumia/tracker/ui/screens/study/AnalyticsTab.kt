@@ -132,11 +132,11 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
         ) {
         item {
             Text(
-                text = "Overview",
-                style = MaterialTheme.typography.headlineMedium,
+                text = "Analytics",
+                style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 8.dp)
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(vertical = 8.dp)
             )
         }
 

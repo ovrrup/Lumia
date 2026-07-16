@@ -748,7 +748,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 items(subjectTasks, key = { "task_${it.id}" }) { task ->
                     var showTaskMenu by remember { mutableStateOf(false) }
                     GlassCard(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -756,41 +757,85 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = { viewModel.toggleTaskCompleted(task) }) {
+                            lumia.tracker.ui.components.BouncyIconButton(
+                                onClick = { viewModel.toggleTaskCompleted(task) },
+                                modifier = Modifier.size(36.dp)
+                            ) {
                                 Icon(
                                     imageVector = if (task.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
                                     contentDescription = "Toggle Complete",
-                                    tint = if (task.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = if (task.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
-                            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                                 Text(
                                     text = task.title,
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontWeight = FontWeight.Bold,
                                     textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
                                     color = if (task.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
                                 )
                                 if (task.description.isNotBlank()) {
                                     Spacer(modifier = Modifier.height(2.dp))
-                                    Text(task.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        text = task.description, 
+                                        style = MaterialTheme.typography.bodyMedium, 
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
-                                if (task.dueDateMillis != null) {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    val formattedDate = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(task.dueDateMillis)
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Icon(Icons.Rounded.CalendarToday, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.primary)
-                                        Text("Due: $formattedDate", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                
+                                val tagsList = task.tags.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                                if (tagsList.isNotEmpty() || task.dueDateMillis != null) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically, 
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        if (task.dueDateMillis != null) {
+                                            val formattedDate = SimpleDateFormat("MMM dd", Locale.getDefault()).format(task.dueDateMillis)
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically, 
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                modifier = Modifier.background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f), RoundedCornerShape(8.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Icon(Icons.Rounded.CalendarToday, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onErrorContainer)
+                                                Text(formattedDate, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+                                        if (tagsList.isNotEmpty()) {
+                                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                tagsList.take(2).forEach { tag ->
+                                                    val tagColors = getTagColors(tag)
+                                                    Text(
+                                                        text = tag,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = tagColors.second,
+                                                        modifier = Modifier
+                                                            .background(tagColors.first, RoundedCornerShape(8.dp))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
                             Box {
-                                IconButton(onClick = { showTaskMenu = true }) {
+                                lumia.tracker.ui.components.BouncyIconButton(
+                                    onClick = { showTaskMenu = true },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
                                     Icon(Icons.Rounded.MoreVert, contentDescription = "Task Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 DropdownMenu(
                                     expanded = showTaskMenu,
-                                    onDismissRequest = { showTaskMenu = false }
+                                    onDismissRequest = { showTaskMenu = false },
+                                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp))
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text("Start Pomodoro") },
@@ -807,7 +852,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                             showTaskMenu = false
                                             taskToEdit = task
                                         },
-                                        leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
+                                        leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
                                     )
                                     DropdownMenuItem(
                                         text = { Text("Delete Task", color = MaterialTheme.colorScheme.error) },
@@ -844,7 +889,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 items(subjectAssignments, key = { "assignment_${it.id}" }) { assignment ->
                     var showAssignmentMenu by remember { mutableStateOf(false) }
                     GlassCard(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -852,19 +898,23 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = { viewModel.toggleAssignmentCompleted(assignment) }) {
+                            lumia.tracker.ui.components.BouncyIconButton(
+                                onClick = { viewModel.toggleAssignmentCompleted(assignment) },
+                                modifier = Modifier.size(36.dp)
+                            ) {
                                 Icon(
                                     imageVector = if (assignment.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
                                     contentDescription = "Toggle Complete",
-                                    tint = if (assignment.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = if (assignment.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
-                            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(
                                         text = assignment.title,
                                         style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold,
+                                        fontWeight = FontWeight.Bold,
                                         textDecoration = if (assignment.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
                                         color = if (assignment.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.weight(1f, fill = false)
@@ -881,24 +931,64 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 }
                                 if (assignment.description.isNotBlank()) {
                                     Spacer(modifier = Modifier.height(2.dp))
-                                    Text(assignment.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        text = assignment.description, 
+                                        style = MaterialTheme.typography.bodyMedium, 
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
-                                if (assignment.dueDateMillis > 0) {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    val formattedDate = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(assignment.dueDateMillis)
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Icon(Icons.Rounded.Alarm, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.error)
-                                        Text("Due: $formattedDate", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                                
+                                val tagsList = assignment.tags.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                                if (tagsList.isNotEmpty() || assignment.dueDateMillis > 0) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically, 
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        if (assignment.dueDateMillis > 0) {
+                                            val formattedDate = SimpleDateFormat("MMM dd", Locale.getDefault()).format(assignment.dueDateMillis)
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically, 
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                modifier = Modifier.background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f), RoundedCornerShape(8.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Icon(Icons.Rounded.Alarm, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onErrorContainer)
+                                                Text(formattedDate, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+                                        if (tagsList.isNotEmpty()) {
+                                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                tagsList.take(2).forEach { tag ->
+                                                    val tagColors = getTagColors(tag)
+                                                    Text(
+                                                        text = tag,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = tagColors.second,
+                                                        modifier = Modifier
+                                                            .background(tagColors.first, RoundedCornerShape(8.dp))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
                             Box {
-                                IconButton(onClick = { showAssignmentMenu = true }) {
+                                lumia.tracker.ui.components.BouncyIconButton(
+                                    onClick = { showAssignmentMenu = true },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
                                     Icon(Icons.Rounded.MoreVert, contentDescription = "Assignment Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 DropdownMenu(
                                     expanded = showAssignmentMenu,
-                                    onDismissRequest = { showAssignmentMenu = false }
+                                    onDismissRequest = { showAssignmentMenu = false },
+                                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp))
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text("Start Pomodoro") },
@@ -915,7 +1005,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                             showAssignmentMenu = false
                                             assignmentToEdit = assignment
                                         },
-                                        leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
+                                        leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
                                     )
                                     DropdownMenuItem(
                                         text = { Text("Delete Assignment", color = MaterialTheme.colorScheme.error) },
@@ -1354,22 +1444,55 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 showAddTaskDialog = false
                 taskToEdit = null
             },
-            title = { Text(if (currentTask == null) "Add Task" else "Edit Task") },
+            title = { 
+                Text(
+                    if (currentTask == null) "Add New Task" else "Edit Task",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Black
+                ) 
+            },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = taskTitle,
                         onValueChange = { taskTitle = it },
                         label = { Text("Task Title") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.TaskAlt,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = taskDescription,
                         onValueChange = { taskDescription = it },
                         label = { Text("Description") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Edit,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
                     lumia.tracker.ui.components.TagMultiSelect(
                         tagsString = taskTags,
                         onTagsChanged = { taskTags = it }
@@ -1670,22 +1793,32 @@ fun EmptySectionCard(
     buttonText: String,
     onClick: () -> Unit
 ) {
-    GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp))
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            Icon(
+                imageVector = Icons.Rounded.AddCircleOutline,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                modifier = Modifier.size(48.dp).padding(bottom = 12.dp)
+            )
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 12.dp)
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(bottom = 16.dp)
             )
-            BouncyTextButton(onClick = onClick) {
+            lumia.tracker.ui.components.BouncyButton(onClick = onClick) {
                 Text(buttonText, fontWeight = FontWeight.Bold)
             }
         }
