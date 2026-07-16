@@ -76,6 +76,13 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_20_21 = object : androidx.room.migration.Migration(20, 21) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `kost_behavior_events` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `category` TEXT NOT NULL, `action` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `durationMillis` INTEGER, `rating` REAL, `performanceMetric` REAL, `tagString` TEXT NOT NULL, `description` TEXT NOT NULL, `metadataJson` TEXT NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `kost_pattern_reports` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `generatedAt` INTEGER NOT NULL, `summary` TEXT NOT NULL, `insightsJson` TEXT NOT NULL, `modelAccuracyMetric` REAL NOT NULL, `actionPlanSuggestions` TEXT NOT NULL)")
+            }
+        }
+
         fun getDatabase(context: Context, forceProfileId: String? = null): AppDatabase {
             val profMgr = lumia.tracker.data.ProfileManager(context)
             val profileId = forceProfileId ?: profMgr.getActiveProfileId()
@@ -88,7 +95,7 @@ abstract class AppDatabase : RoomDatabase() {
                         AppDatabase::class.java,
                         dbName
                     )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_12_13, MIGRATION_14_15, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_12_13, MIGRATION_14_15, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
                     .fallbackToDestructiveMigration()
                     .fallbackToDestructiveMigrationOnDowngrade()
                     .build()
