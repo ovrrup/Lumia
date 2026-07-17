@@ -447,8 +447,9 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier
+                    .height(44.dp)
                     .glassHeaderCapsule(useGlass = useGlassHeader, shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp))
-                    .padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                    .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {

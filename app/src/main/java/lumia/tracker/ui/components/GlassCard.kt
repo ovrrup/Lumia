@@ -1,22 +1,17 @@
 package lumia.tracker.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.draw.clip
-import lumia.tracker.ui.theme.glassCard
-import androidx.compose.foundation.background
-import lumia.tracker.ui.theme.glassHero
-import lumia.tracker.ui.theme.LocalGlassMode
-import lumia.tracker.ui.theme.bouncyClick
 
+/**
+ * High-fidelity card using the custom "Liquid Glass" design language.
+ */
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
@@ -25,41 +20,33 @@ fun GlassCard(
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val isGlass = LocalGlassMode.current
-    if (isGlass) {
-        Box(
-            modifier = modifier
-                .clip(shape)
-                .then(if (onClick != null) Modifier.bouncyClick(onClick = onClick) else Modifier)
-        ) {
-            Box(modifier = Modifier.matchParentSize().glassCard(shape))
-            val tint = containerColor?.copy(alpha = 0.3f) ?: Color.Transparent
-            Box(modifier = Modifier.matchParentSize().background(tint))
-            content()
+    val cornerRadius = if (shape is RoundedCornerShape) {
+        val name = shape.toString()
+        when {
+            name.contains("32.dp") -> 32.dp
+            name.contains("24.dp") -> 24.dp
+            name.contains("16.dp") -> 16.dp
+            name.contains("12.dp") -> 12.dp
+            name.contains("8.dp") -> 8.dp
+            else -> 24.dp
         }
     } else {
-        if (onClick != null) {
-            Surface(
-                modifier = modifier.bouncyClick(onClick = onClick),
-                shape = shape,
-                color = containerColor ?: MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = if (containerColor == null) 2.dp else 0.dp
-            ) {
-                Box(content = content)
-            }
-        } else {
-            Surface(
-                modifier = modifier,
-                shape = shape,
-                color = containerColor ?: MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = if (containerColor == null) 2.dp else 0.dp
-            ) {
-                Box(content = content)
-            }
-        }
+        24.dp
     }
+
+    LiquidGlassSurface(
+        modifier = modifier,
+        cornerRadius = cornerRadius,
+        tintColor = containerColor ?: Color.White,
+        tintAlpha = 0.12f,
+        onClick = onClick,
+        content = content
+    )
 }
 
+/**
+ * Specially tuned Glass Card for premium/hero focal points.
+ */
 @Composable
 fun GlassHeroCard(
     modifier: Modifier = Modifier,
@@ -67,35 +54,24 @@ fun GlassHeroCard(
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val isGlass = LocalGlassMode.current
-    if (isGlass) {
-        Box(
-            modifier = modifier
-                .clip(shape)
-                .then(if (onClick != null) Modifier.bouncyClick(onClick = onClick) else Modifier)
-        ) {
-            Box(modifier = Modifier.matchParentSize().glassHero(shape))
-            content()
+    val cornerRadius = if (shape is RoundedCornerShape) {
+        val name = shape.toString()
+        when {
+            name.contains("32.dp") -> 32.dp
+            name.contains("24.dp") -> 24.dp
+            name.contains("16.dp") -> 16.dp
+            else -> 32.dp
         }
     } else {
-        if (onClick != null) {
-            Surface(
-                modifier = modifier.bouncyClick(onClick = onClick),
-                shape = shape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                tonalElevation = 0.dp
-            ) {
-                Box(content = content)
-            }
-        } else {
-            Surface(
-                modifier = modifier,
-                shape = shape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                tonalElevation = 0.dp
-            ) {
-                Box(content = content)
-            }
-        }
+        32.dp
     }
+
+    LiquidGlassSurface(
+        modifier = modifier,
+        cornerRadius = cornerRadius,
+        tintColor = MaterialTheme.colorScheme.primaryContainer,
+        tintAlpha = 0.22f,
+        onClick = onClick,
+        content = content
+    )
 }

@@ -49,7 +49,10 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                 title = "Profile & Menu",
                 onBackClick = { navController.navigateUp() },
                 actions = {
-                    IconButton(onClick = { showEditDialog = true }) {
+                    lumia.tracker.ui.components.BouncyIconButton(
+                        onClick = { showEditDialog = true },
+                        modifier = Modifier.size(36.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Rounded.Edit,
                             contentDescription = "Edit Profile",

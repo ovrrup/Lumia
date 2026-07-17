@@ -104,6 +104,7 @@ fun UniversalCapsuleHeader(
     ) {
         Row(
             modifier = Modifier
+                .height(44.dp)
                 .glassHeaderCapsule(useGlass = useGlassHeader, shape = RoundedCornerShape(32.dp))
                 .padding(
                     start = if (onBackClick != null) 4.dp else 12.dp,

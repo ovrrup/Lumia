@@ -1066,7 +1066,10 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         onBackClick = { navController.popBackStack() },
         actions = {
             Box {
-                IconButton(onClick = { expandedMenu = true }) {
+                lumia.tracker.ui.components.BouncyIconButton(
+                    onClick = { expandedMenu = true },
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.MoreVert,
                         contentDescription = "More",

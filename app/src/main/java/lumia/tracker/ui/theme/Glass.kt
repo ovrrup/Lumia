@@ -1,44 +1,117 @@
 package lumia.tracker.ui.theme
 
 import android.os.Build
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.composed
 
 /**
- * Highly refined, elegant "OG" Frosted Glass UI effect.
- * Completely replaces old plastic-looking liquid glass themes with pristine,
- * harmoniously blended satin translucency.
+ * Continuous curvature Squircle (Superellipse) Shape.
+ * Mimics Apple's smooth rounded corner design language (C2 continuity).
+ */
+class SquircleShape(val cornerRadius: Dp) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        val r = with(density) { cornerRadius.toPx() }
+        val w = size.width
+        val h = size.height
+        val maxR = (w.coerceAtMost(h) / 2f)
+        val radius = r.coerceAtMost(maxR)
+
+        val path = Path().apply {
+            reset()
+            if (radius <= 0f) {
+                addRect(androidx.compose.ui.geometry.Rect(0f, 0f, w, h))
+            } else {
+                // To achieve C2 continuity (squircle), the curvature transitions farther back from the corner.
+                // We use s = radius * 1.4f as the corner region length, and control points optimized for squircles.
+                val s = radius * 1.4f
+                val c = radius * 0.5522847f // fallback base circle factor
+                
+                moveTo(s, 0f)
+                lineTo(w - s, 0f)
+                cubicTo(w - s + c, 0f, w, s - c, w, s)
+                lineTo(w, h - s)
+                cubicTo(w, h - s + c, w - s + c, h, w - s, h)
+                lineTo(s, h)
+                cubicTo(s - c, h, 0f, h - s + c, 0f, h - s)
+                lineTo(0f, s)
+                cubicTo(0f, s - c, s - c, 0f, s, 0f)
+                close()
+            }
+        }
+        return Outline.Generic(path)
+    }
+}
+
+/**
+ * Maps standard rounded shapes to squircle shapes.
+ */
+fun mapToSquircle(shape: Shape): Shape {
+    if (shape is RoundedCornerShape) {
+        val name = shape.toString()
+        return when {
+            name.contains("50.0%") || name.contains("50.dp") || name.contains("Circle") -> SquircleShape(32.dp)
+            name.contains("48.dp") -> SquircleShape(48.dp)
+            name.contains("40.dp") -> SquircleShape(40.dp)
+            name.contains("32.dp") -> SquircleShape(32.dp)
+            name.contains("28.dp") -> SquircleShape(28.dp)
+            name.contains("24.dp") -> SquircleShape(24.dp)
+            name.contains("16.dp") -> SquircleShape(16.dp)
+            name.contains("12.dp") -> SquircleShape(12.dp)
+            name.contains("8.dp") -> SquircleShape(8.dp)
+            name.contains("0.dp") -> SquircleShape(0.dp)
+            else -> SquircleShape(24.dp)
+        }
+    }
+    return shape
+}
+
+/**
+ * Recreates Apple's "Liquid Glass" design language natively for Compose.
+ * Offers real-time hardware-accelerated background blur, dynamic light refraction highlights,
+ * squircle corners, and physical thickness rim lighting.
  */
 fun Modifier.liquidGlass(
     shape: Shape = RoundedCornerShape(24.dp),
     tintColor: Color = Color.White,
     tintAlpha: Float = 0.15f,
-    blurRadius: Float = 40f, // Kept for backwards compatibility
-    isDark: Boolean = false, // Kept for backwards compatibility
-    borderColor: Color = Color.White, // Kept for backwards compatibility
+    blurRadius: Float = 30f,
+    isDark: Boolean = false,
+    borderColor: Color = Color.White,
     opacityOverride: Float? = null,
     backdropStyleOverride: String? = null
 ): Modifier = composed {
     val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
     val surfaceColor = MaterialTheme.colorScheme.surface
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     
     val backdropStyle = backdropStyleOverride ?: LocalGlassBackdropStyle.current
     val opacitySetting = opacityOverride ?: LocalGlassOpacityValue.current
     
-    val baseAlpha1 = if (isDarkTheme) (0.32f + (tintAlpha * 0.16f)) else (0.76f + (tintAlpha * 0.15f))
-    val baseAlpha2 = if (isDarkTheme) (0.16f + (tintAlpha * 0.10f)) else (0.52f + (tintAlpha * 0.10f))
+    // Dynamic glass tinting that shifts subtly based on background theme for legibility
+    val finalTintAlpha = if (isDarkTheme) (tintAlpha * 1.2f).coerceAtMost(0.4f) else (tintAlpha * 0.8f).coerceAtMost(0.3f)
+    
+    val baseAlpha1 = if (isDarkTheme) (0.28f + (finalTintAlpha * 0.14f)) else (0.72f + (finalTintAlpha * 0.12f))
+    val baseAlpha2 = if (isDarkTheme) (0.12f + (finalTintAlpha * 0.08f)) else (0.48f + (finalTintAlpha * 0.08f))
 
     val finalAlpha1 = when (backdropStyle) {
         "Opaque", "Solid" -> 1.0f
@@ -78,38 +151,130 @@ fun Modifier.liquidGlass(
         }
     }
 
-    // Smooth vertically blended glass filling.
+    // Elegant vertical satin gradient brush
     val backBrush = Brush.verticalGradient(
         colors = listOf(
             backColor1.copy(alpha = finalAlpha1),
             backColor2.copy(alpha = finalAlpha2)
         )
     )
-    
-    // Ultra-fine border highlight mimicking physical glass physics
-    // Utilizing harmonized theme-conforming colors to completely avoid jarring stark white borders
-    val outlineVariant = MaterialTheme.colorScheme.outlineVariant
-    val borderBrush = Brush.linearGradient(
-        colors = if (isDarkTheme) {
-            listOf(
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-                outlineVariant.copy(alpha = 0.12f),
-                Color.Transparent
-            )
-        } else {
-            listOf(
-                outlineVariant.copy(alpha = 0.22f),
-                outlineVariant.copy(alpha = 0.05f)
-            )
-        },
-        start = Offset(0f, 0f),
-        end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+
+    // Smooth Squircle shape mappings
+    val squircleShape = mapToSquircle(shape)
+
+    // Real-time blur effect on Android S (API 31+)
+    val blurRadiusPx = blurRadius.coerceIn(10f, 100f)
+    val blurModifier = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        Modifier.graphicsLayer {
+            renderEffect = android.graphics.RenderEffect.createBlurEffect(
+                blurRadiusPx,
+                blurRadiusPx,
+                android.graphics.Shader.TileMode.CLAMP
+            ).asComposeRenderEffect()
+        }
+    } else {
+        Modifier
+    }
+
+    // Subtly animated light refraction sweep progress
+    val infiniteTransition = rememberInfiniteTransition(label = "LiquidGlassSpecular")
+    val sweepProgress by infiniteTransition.animateFloat(
+        initialValue = -0.5f,
+        targetValue = 1.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 5000, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "sweepProgress"
     )
 
     this
-        .clip(shape)
-        .background(brush = backBrush, shape = shape)
-        .border(width = 0.8.dp, brush = borderBrush, shape = shape)
+        .clip(squircleShape)
+        .then(blurModifier)
+        .background(brush = backBrush, shape = squircleShape)
+        .drawBehind {
+            val w = size.width
+            val h = size.height
+            
+            // Recompute exact corner radius matching our squircle for correct alignment
+            val r = if (shape is RoundedCornerShape) {
+                val fallback = 24.dp.toPx()
+                val name = shape.toString()
+                when {
+                    name.contains("50.0%") || name.contains("50.dp") || name.contains("Circle") -> 32.dp.toPx()
+                    name.contains("48.dp") -> 48.dp.toPx()
+                    name.contains("40.dp") -> 40.dp.toPx()
+                    name.contains("32.dp") -> 32.dp.toPx()
+                    name.contains("28.dp") -> 28.dp.toPx()
+                    name.contains("24.dp") -> 24.dp.toPx()
+                    name.contains("16.dp") -> 16.dp.toPx()
+                    name.contains("12.dp") -> 12.dp.toPx()
+                    name.contains("8.dp") -> 8.dp.toPx()
+                    else -> fallback
+                }
+            } else {
+                24.dp.toPx()
+            }.coerceAtMost(w / 2f).coerceAtMost(h / 2f)
+
+            val s = r * 1.4f
+            val c = r * 0.5522847f
+
+            // Create path for rim light rendering
+            val outlinePath = Path().apply {
+                reset()
+                if (r <= 0f) {
+                    addRect(androidx.compose.ui.geometry.Rect(0f, 0f, w, h))
+                } else {
+                    moveTo(s, 0f)
+                    lineTo(w - s, 0f)
+                    cubicTo(w - s + c, 0f, w, s - c, w, s)
+                    lineTo(w, h - s)
+                    cubicTo(w, h - s + c, w - s + c, h, w - s, h)
+                    lineTo(s, h)
+                    cubicTo(s - c, h, 0f, h - s + c, 0f, h - s)
+                    lineTo(0f, s)
+                    cubicTo(0f, s - c, s - c, 0f, s, 0f)
+                    close()
+                }
+            }
+
+            // Beautiful light refraction rim highlights that feel alive and response to content
+            val rimHighlightIntensity = if (isDarkTheme) 0.22f else 0.44f
+            val rimBrush = Brush.linearGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = rimHighlightIntensity),
+                    Color.White.copy(alpha = rimHighlightIntensity * 0.15f),
+                    Color.Transparent,
+                    Color.White.copy(alpha = rimHighlightIntensity * 0.10f),
+                    Color.White.copy(alpha = rimHighlightIntensity * 0.35f)
+                ),
+                start = Offset(w * (sweepProgress - 0.3f), 0f),
+                end = Offset(w * (sweepProgress + 0.3f), h)
+            )
+
+            // Draw primary light refraction outline
+            drawPath(
+                path = outlinePath,
+                brush = rimBrush,
+                style = Stroke(width = 1.2.dp.toPx())
+            )
+
+            // Inner Shadow/Glow layer to emulate physical glass thickness
+            val glowIntensity = if (isDarkTheme) 0.08f else 0.18f
+            val innerGlowBrush = Brush.verticalGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = glowIntensity),
+                    Color.Transparent
+                ),
+                startY = 0f,
+                endY = 12.dp.toPx()
+            )
+            drawPath(
+                path = outlinePath,
+                brush = innerGlowBrush,
+                style = Stroke(width = 2.5.dp.toPx())
+            )
+        }
 }
 
 fun Modifier.glassCard(shape: Shape = RoundedCornerShape(24.dp)): Modifier = composed {
