@@ -159,122 +159,25 @@ fun Modifier.liquidGlass(
         )
     )
 
-    // Smooth Squircle shape mappings
-    val squircleShape = mapToSquircle(shape)
-
-    // Real-time blur effect on Android S (API 31+)
-    val blurRadiusPx = blurRadius.coerceIn(10f, 100f)
-    val blurModifier = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        Modifier.graphicsLayer {
-            renderEffect = android.graphics.RenderEffect.createBlurEffect(
-                blurRadiusPx,
-                blurRadiusPx,
-                android.graphics.Shader.TileMode.CLAMP
-            ).asComposeRenderEffect()
-        }
-    } else {
-        Modifier
-    }
-
-    // Subtly animated light refraction sweep progress
-    val infiniteTransition = rememberInfiniteTransition(label = "LiquidGlassSpecular")
-    val sweepProgress by infiniteTransition.animateFloat(
-        initialValue = -0.5f,
-        targetValue = 1.5f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 5000, easing = LinearOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "sweepProgress"
+    // Beautiful light refraction rim highlights that are static, clean, and highly visible
+    val rimHighlightIntensity = if (isDarkTheme) 0.25f else 0.45f
+    val rimBrush = Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = rimHighlightIntensity),
+            Color.White.copy(alpha = rimHighlightIntensity * 0.15f),
+            Color.Transparent,
+            Color.White.copy(alpha = rimHighlightIntensity * 0.35f)
+        )
     )
 
     this
-        .clip(squircleShape)
-        .then(blurModifier)
-        .background(brush = backBrush, shape = squircleShape)
-        .drawBehind {
-            val w = size.width
-            val h = size.height
-            
-            // Recompute exact corner radius matching our squircle for correct alignment
-            val r = if (shape is RoundedCornerShape) {
-                val fallback = 24.dp.toPx()
-                val name = shape.toString()
-                when {
-                    name.contains("50.0%") || name.contains("50.dp") || name.contains("Circle") -> 32.dp.toPx()
-                    name.contains("48.dp") -> 48.dp.toPx()
-                    name.contains("40.dp") -> 40.dp.toPx()
-                    name.contains("32.dp") -> 32.dp.toPx()
-                    name.contains("28.dp") -> 28.dp.toPx()
-                    name.contains("24.dp") -> 24.dp.toPx()
-                    name.contains("16.dp") -> 16.dp.toPx()
-                    name.contains("12.dp") -> 12.dp.toPx()
-                    name.contains("8.dp") -> 8.dp.toPx()
-                    else -> fallback
-                }
-            } else {
-                24.dp.toPx()
-            }.coerceAtMost(w / 2f).coerceAtMost(h / 2f)
-
-            val s = r * 1.4f
-            val c = r * 0.5522847f
-
-            // Create path for rim light rendering
-            val outlinePath = Path().apply {
-                reset()
-                if (r <= 0f) {
-                    addRect(androidx.compose.ui.geometry.Rect(0f, 0f, w, h))
-                } else {
-                    moveTo(s, 0f)
-                    lineTo(w - s, 0f)
-                    cubicTo(w - s + c, 0f, w, s - c, w, s)
-                    lineTo(w, h - s)
-                    cubicTo(w, h - s + c, w - s + c, h, w - s, h)
-                    lineTo(s, h)
-                    cubicTo(s - c, h, 0f, h - s + c, 0f, h - s)
-                    lineTo(0f, s)
-                    cubicTo(0f, s - c, s - c, 0f, s, 0f)
-                    close()
-                }
-            }
-
-            // Beautiful light refraction rim highlights that feel alive and response to content
-            val rimHighlightIntensity = if (isDarkTheme) 0.22f else 0.44f
-            val rimBrush = Brush.linearGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = rimHighlightIntensity),
-                    Color.White.copy(alpha = rimHighlightIntensity * 0.15f),
-                    Color.Transparent,
-                    Color.White.copy(alpha = rimHighlightIntensity * 0.10f),
-                    Color.White.copy(alpha = rimHighlightIntensity * 0.35f)
-                ),
-                start = Offset(w * (sweepProgress - 0.3f), 0f),
-                end = Offset(w * (sweepProgress + 0.3f), h)
-            )
-
-            // Draw primary light refraction outline
-            drawPath(
-                path = outlinePath,
-                brush = rimBrush,
-                style = Stroke(width = 1.2.dp.toPx())
-            )
-
-            // Inner Shadow/Glow layer to emulate physical glass thickness
-            val glowIntensity = if (isDarkTheme) 0.08f else 0.18f
-            val innerGlowBrush = Brush.verticalGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = glowIntensity),
-                    Color.Transparent
-                ),
-                startY = 0f,
-                endY = 12.dp.toPx()
-            )
-            drawPath(
-                path = outlinePath,
-                brush = innerGlowBrush,
-                style = Stroke(width = 2.5.dp.toPx())
-            )
-        }
+        .clip(shape)
+        .background(brush = backBrush, shape = shape)
+        .border(
+            width = 1.dp,
+            brush = rimBrush,
+            shape = shape
+        )
 }
 
 fun Modifier.glassCard(shape: Shape = RoundedCornerShape(24.dp)): Modifier = composed {

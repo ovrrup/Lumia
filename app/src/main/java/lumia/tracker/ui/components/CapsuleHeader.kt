@@ -104,6 +104,7 @@ fun UniversalCapsuleHeader(
     ) {
         Row(
             modifier = Modifier
+                .fillMaxWidth()
                 .height(44.dp)
                 .glassHeaderCapsule(useGlass = useGlassHeader, shape = RoundedCornerShape(32.dp))
                 .padding(
@@ -147,6 +148,8 @@ fun UniversalCapsuleHeader(
             )
 
             if (actions != null) {
+                Spacer(modifier = Modifier.weight(1f))
+                
                 // Vertical separator
                 Box(
                     modifier = Modifier

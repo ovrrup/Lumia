@@ -84,6 +84,11 @@ class MainActivity : ComponentActivity() {
 
         lumia.tracker.util.LogDog.setup(applicationContext)
         
+        // Initialize notification channels
+        lumia.tracker.util.NotificationHelper.createNotificationChannels(applicationContext)
+        // Ensure all active assignment, task, and class reminders are scheduled on start
+        lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(applicationContext)
+        
         try {
             val workRequest = PeriodicWorkRequestBuilder<AssignmentMonitorWorker>(1, TimeUnit.DAYS)
                 .setInitialDelay(1, TimeUnit.HOURS)

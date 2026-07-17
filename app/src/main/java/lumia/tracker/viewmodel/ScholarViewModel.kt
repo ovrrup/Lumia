@@ -991,21 +991,38 @@ private val _streakPercentage = MutableStateFlow(0f)
     fun updateNotifFormalTone(enabled: Boolean) {
         _notifFormalTone.value = enabled
         prefs.edit().putBoolean("notif_formal_tone", enabled).apply()
+        lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
     }
 
     fun updateNotifEnableDeadlines(enabled: Boolean) {
         _notifEnableDeadlines.value = enabled
         prefs.edit().putBoolean("notif_enable_deadlines", enabled).apply()
+        lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
     }
 
     fun updateNotifEnableClasses(enabled: Boolean) {
         _notifEnableClasses.value = enabled
         prefs.edit().putBoolean("notif_enable_classes", enabled).apply()
+        lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
     }
 
     fun updateNotifEnableDailyDigest(enabled: Boolean) {
         _notifEnableDailyDigest.value = enabled
         prefs.edit().putBoolean("notif_enable_daily_digest", enabled).apply()
+        lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
+        if (enabled) {
+            triggerMonitorWorkerNow()
+        }
+    }
+
+    fun triggerMonitorWorkerNow() {
+        val context = getApplication<Application>().applicationContext
+        val workRequest = androidx.work.OneTimeWorkRequestBuilder<lumia.tracker.worker.AssignmentMonitorWorker>().build()
+        androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
+            "manual_assignment_monitor",
+            androidx.work.ExistingWorkPolicy.REPLACE,
+            workRequest
+        )
     }
 
     private val _aodTrueBlackOled = MutableStateFlow(prefs.getBoolean("aod_true_black_oled", true))
@@ -1629,6 +1646,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             logAction("Added course: $name")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+            lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
         }
     }
 
@@ -1638,6 +1656,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             logAction("Deleted course: ${course.name}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+            lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
         }
     }
 
@@ -1647,6 +1666,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             logAction("Updated course: ${course.name}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+            lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
         }
     }
 
@@ -1958,6 +1978,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             )
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+            lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
         }
     }
 
@@ -1982,6 +2003,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             )
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+            lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
         }
     }
 
@@ -1991,6 +2013,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             logAction("Updated task: ${task.title}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+            lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
         }
     }
 
@@ -2008,6 +2031,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             logAction("Deleted task: ${task.title}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+            lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
         }
     }
 
@@ -2040,6 +2064,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             )
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+            lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
         }
     }
 
@@ -2064,6 +2089,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             )
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+            lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
         }
     }
 
@@ -2072,6 +2098,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             repository.deleteAssignment(assignment)
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+            lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
         }
     }
 
@@ -2081,6 +2108,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             logAction("Updated assignment: ${assignment.title}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
+            lumia.tracker.util.ReminderScheduler.rescheduleAllAlarms(getApplication())
         }
     }
 

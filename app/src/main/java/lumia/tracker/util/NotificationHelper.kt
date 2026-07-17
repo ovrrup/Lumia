@@ -12,6 +12,40 @@ object NotificationHelper {
     fun getSmallIcon(): Int = R.drawable.ic_launcher_monochrome
 
     /**
+     * Pre-creates all necessary notification channels for the system on app launch
+     * to ensure they are available in system notification settings immediately.
+     */
+    fun createNotificationChannels(context: Context) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            
+            val syncChannel = android.app.NotificationChannel(
+                "scholar_sync_channel", 
+                "ScholarSync Reminders", 
+                android.app.NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Reminders for assignments, tasks, and classes"
+                enableLights(true)
+                lightColor = android.graphics.Color.BLUE
+                enableVibration(true)
+            }
+            
+            val monitorChannel = android.app.NotificationChannel(
+                "scholar_monitor_channel", 
+                "ScholarSync Monitor", 
+                android.app.NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Daily digest of upcoming deadlines"
+                enableLights(true)
+                lightColor = android.graphics.Color.MAGENTA
+            }
+            
+            notificationManager.createNotificationChannel(syncChannel)
+            notificationManager.createNotificationChannel(monitorChannel)
+        }
+    }
+
+    /**
      * Linked with Theme Color: Returns the current primary theme color
      * to tint the notification icon and elements, matching the app's aesthetic.
      */

@@ -422,11 +422,11 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
         }
         
-        // Floating utility capsule on the top right
+        // Floating utility capsule on the top area (full-width for consistency with UniversalCapsuleHeader)
         androidx.compose.foundation.layout.Box(
             modifier = Modifier
-                .align(androidx.compose.ui.Alignment.TopEnd)
-                .padding(top = 16.dp, end = 16.dp)
+                .fillMaxWidth()
+                .padding(top = 12.dp, start = 16.dp, end = 16.dp)
                 .windowInsetsPadding(WindowInsets.statusBars)
         ) {
             val moreRounds = lumia.tracker.ui.theme.LocalMoreRounds.current
@@ -447,6 +447,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .height(44.dp)
                     .glassHeaderCapsule(useGlass = useGlassHeader, shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp))
                     .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
@@ -461,15 +462,8 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     modifier = Modifier.padding(end = 4.dp)
                 )
 
-                // Elegant vertical separator
-                Box(
-                    modifier = Modifier
-                        .height(18.dp)
-                        .width(1.dp)
-                        .background(
-                            color = (if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.15f)
-                        )
-                )
+                // Spacer to push actions to the right
+                Spacer(modifier = Modifier.weight(1f))
 
                 lumia.tracker.ui.components.BouncyIconButton(
                     onClick = { navController.navigate("search") },
@@ -483,7 +477,27 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     )
                 }
 
+                // Elegant vertical separator
+                Box(
+                    modifier = Modifier
+                        .height(18.dp)
+                        .width(1.dp)
+                        .background(
+                            color = (if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.15f)
+                        )
+                )
+
                 lumia.tracker.ui.components.StreakWidget(viewModel, navController)
+
+                // Elegant vertical separator
+                Box(
+                    modifier = Modifier
+                        .height(18.dp)
+                        .width(1.dp)
+                        .background(
+                            color = (if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.15f)
+                        )
+                )
                 
                 androidx.compose.foundation.layout.Box(
                     modifier = Modifier
