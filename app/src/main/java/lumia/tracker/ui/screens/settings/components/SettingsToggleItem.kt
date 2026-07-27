@@ -92,6 +92,22 @@ import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 
+private fun getIosIconColor(icon: androidx.compose.ui.graphics.vector.ImageVector): androidx.compose.ui.graphics.Color {
+    return when (icon.name) {
+        "Rounded.Palette" -> androidx.compose.ui.graphics.Color(0xFFAF52DE) // Purple
+        "Rounded.Person" -> androidx.compose.ui.graphics.Color(0xFF007AFF) // Blue
+        "Rounded.SwapHoriz" -> androidx.compose.ui.graphics.Color(0xFF34C759) // Green
+        "Rounded.Settings" -> androidx.compose.ui.graphics.Color(0xFF8E8E93) // Gray
+        "Rounded.LocalOffer" -> androidx.compose.ui.graphics.Color(0xFFFF9500) // Orange
+        "Rounded.Check" -> androidx.compose.ui.graphics.Color(0xFF5AC8FA) // Teal
+        "Rounded.Lock" -> androidx.compose.ui.graphics.Color(0xFFFF3B30) // Red
+        "Rounded.Notifications" -> androidx.compose.ui.graphics.Color(0xFFFF9500) // Orange
+        "Rounded.Storage" -> androidx.compose.ui.graphics.Color(0xFF5AC8FA) // Teal
+        "Rounded.Info" -> androidx.compose.ui.graphics.Color(0xFF007AFF) // Blue
+        else -> androidx.compose.ui.graphics.Color(0xFF007AFF) // Blue default
+    }
+}
+
 @Composable
 fun SettingsToggleItem(
     title: String, 
@@ -107,7 +123,7 @@ fun SettingsToggleItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 4.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -116,20 +132,23 @@ fun SettingsToggleItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (icon != null) {
+                val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
+                val iosColor = remember(icon) { getIosIconColor(icon) }
+                
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(7.dp))
                         .background(
-                            if (checked && enabled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            if (isGlass) iosColor.copy(alpha = 0.4f)
+                            else iosColor
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = if (checked && enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (isGlass) iosColor else Color.White,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -137,8 +156,8 @@ fun SettingsToggleItem(
             }
             Text(
                 text = title, 
-                style = MaterialTheme.typography.bodyMedium, 
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodyLarge, 
+                fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurface
             )
             if (subtitle.isNotBlank()) {
@@ -156,11 +175,23 @@ fun SettingsToggleItem(
                 }
             }
         }
+        
+        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
         Switch(
             checked = checked,
             enabled = enabled,
             onCheckedChange = onCheckedChange,
-            modifier = Modifier.scale(0.85f)
+            modifier = Modifier.scale(0.85f),
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0xFF34C759),
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = if (isDark) Color(0xFF3A3A3C) else Color(0xFFE5E5EA),
+                checkedBorderColor = Color.Transparent,
+                uncheckedBorderColor = Color.Transparent,
+                disabledCheckedTrackColor = Color(0xFF34C759).copy(alpha = 0.5f),
+                disabledUncheckedTrackColor = (if (isDark) Color(0xFF3A3A3C) else Color(0xFFE5E5EA)).copy(alpha = 0.5f)
+            )
         )
     }
 

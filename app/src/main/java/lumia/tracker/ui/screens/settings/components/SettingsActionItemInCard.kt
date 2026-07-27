@@ -92,6 +92,22 @@ import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 
+private fun getIosIconColor(icon: androidx.compose.ui.graphics.vector.ImageVector): androidx.compose.ui.graphics.Color {
+    return when (icon.name) {
+        "Rounded.Palette" -> androidx.compose.ui.graphics.Color(0xFFAF52DE) // Purple
+        "Rounded.Person" -> androidx.compose.ui.graphics.Color(0xFF007AFF) // Blue
+        "Rounded.SwapHoriz" -> androidx.compose.ui.graphics.Color(0xFF34C759) // Green
+        "Rounded.Settings" -> androidx.compose.ui.graphics.Color(0xFF8E8E93) // Gray
+        "Rounded.LocalOffer" -> androidx.compose.ui.graphics.Color(0xFFFF9500) // Orange
+        "Rounded.Check" -> androidx.compose.ui.graphics.Color(0xFF5AC8FA) // Teal
+        "Rounded.Lock" -> androidx.compose.ui.graphics.Color(0xFFFF3B30) // Red
+        "Rounded.Notifications" -> androidx.compose.ui.graphics.Color(0xFFFF9500) // Orange
+        "Rounded.Storage" -> androidx.compose.ui.graphics.Color(0xFF5AC8FA) // Teal
+        "Rounded.Info" -> androidx.compose.ui.graphics.Color(0xFF007AFF) // Blue
+        else -> androidx.compose.ui.graphics.Color(0xFF007AFF) // Blue default
+    }
+}
+
 @Composable
 fun SettingsActionItemInCard(
     title: String,
@@ -107,23 +123,27 @@ fun SettingsActionItemInCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(vertical = 8.dp, horizontal = 4.dp),
+            .padding(vertical = 10.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
+        val iosColor = remember(icon) { getIosIconColor(icon) }
+        
         Box(
             modifier = Modifier
-                .size(32.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .size(28.dp)
+                .clip(RoundedCornerShape(7.dp))
                 .background(
-                    if (isDestructive) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                    else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    if (isGlass) iosColor.copy(alpha = 0.4f)
+                    else if (isDestructive) MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
+                    else iosColor
                 ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (isDestructive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.primary,
+                tint = if (isGlass) iosColor else if (isDestructive) MaterialTheme.colorScheme.error else Color.White,
                 modifier = Modifier.size(16.dp)
             )
         }
@@ -132,8 +152,8 @@ fun SettingsActionItemInCard(
         Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = title, 
-                style = MaterialTheme.typography.bodyMedium, 
-                fontWeight = FontWeight.SemiBold, 
+                style = MaterialTheme.typography.bodyLarge, 
+                fontWeight = FontWeight.Normal, 
                 color = contentColor
             )
             
@@ -156,7 +176,7 @@ fun SettingsActionItemInCard(
         Icon(
             imageVector = Icons.Rounded.ChevronRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
             modifier = Modifier.size(20.dp)
         )
     }

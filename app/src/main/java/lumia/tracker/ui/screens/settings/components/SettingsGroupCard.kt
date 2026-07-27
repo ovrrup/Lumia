@@ -165,33 +165,29 @@ fun SettingsGroupCard(
             )
         }
         
+        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
         if (isGlass) {
             lumia.tracker.ui.components.GlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(vertical = 4.dp, horizontal = 12.dp)
                 ) {
                     content()
                 }
             }
         } else {
-            androidx.compose.material3.OutlinedCard(
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
-                colors = CardDefaults.outlinedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isDark) Color(0xFF1C1C1E) else Color(0xFFFFFFFF)
                 ),
-                border = androidx.compose.foundation.BorderStroke(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                )
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(vertical = 4.dp, horizontal = 12.dp)
                 ) {
                     content()
                 }

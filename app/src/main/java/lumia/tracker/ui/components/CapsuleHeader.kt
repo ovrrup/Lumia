@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -96,73 +97,105 @@ fun UniversalCapsuleHeader(
     val isMrGlass = moreRounds && moreRoundsMode == "Glass"
     val useGlassHeader = isGlass || isMrGlass
 
-    Row(
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
+    val tint = LocalGlassTint.current
+    val dynamic = LocalGlassDynamic.current
+
+    val backgroundColor = if (useGlassHeader) {
+        Color.Transparent
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(top = 12.dp, start = 16.dp, end = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Left Side: Back button capsule (increased width!)
-        if (onBackClick != null) {
-            Row(
-                modifier = Modifier
-                    .height(44.dp)
-                    .widthIn(min = 54.dp) // Increased width!
-                    .glassHeaderCapsule(useGlass = useGlassHeader, shape = RoundedCornerShape(22.dp))
-                    .bouncyClick { onBackClick() }
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = "Back",
-                    tint = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        } else {
-            Spacer(modifier = Modifier.width(54.dp))
-        }
-
-        // Center Side: Title capsule (floating in the middle)
-        Row(
-            modifier = Modifier
-                .height(44.dp)
-                .weight(1f, fill = false)
-                .padding(horizontal = 8.dp)
-                .glassHeaderCapsule(useGlass = useGlassHeader, shape = RoundedCornerShape(22.dp))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Black,
-                color = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                modifier = Modifier.padding(vertical = 2.dp)
+            .background(backgroundColor)
+            .then(
+                if (useGlassHeader) {
+                    val tintColor = if (dynamic) {
+                        if (isDark) tint.mix(Color.Black, 0.15f) else tint.mix(Color.White, 0.25f)
+                    } else {
+                        if (isDark) Color.Black else Color.White
+                    }
+                    Modifier.liquidGlass(
+                        shape = RoundedCornerShape(0.dp),
+                        tintColor = tintColor,
+                        tintAlpha = if (isDark) 0.4f else 0.5f,
+                        opacityOverride = 1.0f,
+                        backdropStyleOverride = "Satin"
+                    )
+                } else Modifier
             )
-        }
-
-        // Right Side: Action buttons capsule (increased width!)
-        if (actions != null) {
-            Row(
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.statusBars)
+        ) {
+            Box(
                 modifier = Modifier
-                    .height(44.dp)
-                    .widthIn(min = 54.dp) // Increased width!
-                    .glassHeaderCapsule(useGlass = useGlassHeader, shape = RoundedCornerShape(22.dp))
-                    .padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center
             ) {
-                actions()
+                // Left Side: iOS style Back button
+                if (onBackClick != null) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .bouncyClick { onBackClick() }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.KeyboardArrowLeft,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Text(
+                            text = "Back",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                }
+
+                // Center: iOS Title (Clean, semi-bold, size 17-18sp)
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+
+                // Right Side: Action buttons
+                if (actions != null) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        actions()
+                    }
+                }
             }
-        } else {
-            Spacer(modifier = Modifier.width(54.dp))
+
+            // iOS bottom boundary line
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(0.5.dp)
+                    .background(
+                        if (isDark) Color(0xFF2C2C2E) else Color(0xFFE5E5EA)
+                    )
+            )
         }
     }
 }

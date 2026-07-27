@@ -179,65 +179,75 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     val navItemColors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.primary,
                         selectedTextColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
-                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = navBarIndicatorAlpha)
+                        unselectedIconColor = if (androidx.compose.foundation.isSystemInDarkTheme()) androidx.compose.ui.graphics.Color(0xFF8E8E93) else androidx.compose.ui.graphics.Color(0xFF999999),
+                        unselectedTextColor = if (androidx.compose.foundation.isSystemInDarkTheme()) androidx.compose.ui.graphics.Color(0xFF8E8E93) else androidx.compose.ui.graphics.Color(0xFF999999),
+                        indicatorColor = androidx.compose.ui.graphics.Color.Transparent
                     )
                     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                    NavigationBar(
-                        modifier = Modifier
-                            .height(navBarHeight.dp + bottomInset)
-                            .then(if (useGlass) Modifier.navGlassBar(androidx.compose.foundation.shape.RoundedCornerShape(topStart = navBarCornerRadius.dp, topEnd = navBarCornerRadius.dp)) else Modifier),
-                        containerColor = if (useGlass) MaterialTheme.colorScheme.surface.copy(alpha = 0.92f) else MaterialTheme.colorScheme.surface,
-                    ) {
-                        val labelModeAlways = navBarLabelMode == "Always"
-                        val hideLabels = navBarLabelMode == "Hidden"
-                        
-                        NavigationBarItem(
-                            icon = { Icon(tabHomeIcon, contentDescription = tabHomeLabel) },
-                            label = if (hideLabels) null else { { Text(tabHomeLabel) } },
-                            selected = selectedTab == 0,
-                            onClick = { viewModel.setSelectedDashboardTab(0) },
-                            colors = navItemColors,
-                            alwaysShowLabel = labelModeAlways
+                    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // iOS top divider for tab bar
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(0.5.dp)
+                                .background(if (isDark) androidx.compose.ui.graphics.Color(0xFF2C2C2E) else androidx.compose.ui.graphics.Color(0xFFE5E5EA))
                         )
-                        NavigationBarItem(
-                            icon = { Icon(tabCoursesIcon, contentDescription = tabCoursesLabel) },
-                            label = if (hideLabels) null else { { Text(tabCoursesLabel) } },
-                            selected = selectedTab == 1,
-                            onClick = { viewModel.setSelectedDashboardTab(1) },
-                            colors = navItemColors,
-                            alwaysShowLabel = labelModeAlways
-                        )
-                        if (featureSubjectEnabled && !fuseSubjectsCourses) {
+                        NavigationBar(
+                            modifier = Modifier
+                                .height(navBarHeight.dp + bottomInset)
+                                .then(if (useGlass) Modifier.navGlassBar(androidx.compose.foundation.shape.RoundedCornerShape(0.dp)) else Modifier),
+                            containerColor = if (useGlass) androidx.compose.ui.graphics.Color.Transparent else (if (isDark) androidx.compose.ui.graphics.Color(0xFF1C1C1E) else androidx.compose.ui.graphics.Color(0xFFF9F9F9)),
+                        ) {
+                            val labelModeAlways = navBarLabelMode == "Always"
+                            val hideLabels = navBarLabelMode == "Hidden"
+                            
                             NavigationBarItem(
-                                icon = { Icon(tabSubjectsIcon, contentDescription = tabSubjectsLabel) },
-                                label = if (hideLabels) null else { { Text(tabSubjectsLabel) } },
-                                selected = selectedTab == 2,
-                                onClick = { viewModel.setSelectedDashboardTab(2) },
+                                icon = { Icon(tabHomeIcon, contentDescription = tabHomeLabel) },
+                                label = if (hideLabels) null else { { Text(tabHomeLabel) } },
+                                selected = selectedTab == 0,
+                                onClick = { viewModel.setSelectedDashboardTab(0) },
                                 colors = navItemColors,
-                                alwaysShowLabel = labelModeAlways
+                                alwaysShowLabel = true
                             )
-                        }
-                        if (featureSelfStudyEnabled) {
                             NavigationBarItem(
-                                icon = { Icon(tabSelfStudyIcon, contentDescription = tabSelfStudyLabel) },
-                                label = if (hideLabels) null else { { Text(tabSelfStudyLabel) } },
-                                selected = selectedTab == 3,
-                                onClick = { viewModel.setSelectedDashboardTab(3) },
+                                icon = { Icon(tabCoursesIcon, contentDescription = tabCoursesLabel) },
+                                label = if (hideLabels) null else { { Text(tabCoursesLabel) } },
+                                selected = selectedTab == 1,
+                                onClick = { viewModel.setSelectedDashboardTab(1) },
                                 colors = navItemColors,
-                                alwaysShowLabel = labelModeAlways
+                                alwaysShowLabel = true
                             )
-                        }
-                        if (featureAnalyticsEnabled) {
-                            NavigationBarItem(
-                                icon = { Icon(tabAnalyticsIcon, contentDescription = tabAnalyticsLabel) },
-                                label = if (hideLabels) null else { { Text(tabAnalyticsLabel) } },
-                                selected = selectedTab == 4,
-                                onClick = { viewModel.setSelectedDashboardTab(4) },
-                                colors = navItemColors,
-                                alwaysShowLabel = labelModeAlways
-                            )
+                            if (featureSubjectEnabled && !fuseSubjectsCourses) {
+                                NavigationBarItem(
+                                    icon = { Icon(tabSubjectsIcon, contentDescription = tabSubjectsLabel) },
+                                    label = if (hideLabels) null else { { Text(tabSubjectsLabel) } },
+                                    selected = selectedTab == 2,
+                                    onClick = { viewModel.setSelectedDashboardTab(2) },
+                                    colors = navItemColors,
+                                    alwaysShowLabel = true
+                                )
+                            }
+                            if (featureSelfStudyEnabled) {
+                                NavigationBarItem(
+                                    icon = { Icon(tabSelfStudyIcon, contentDescription = tabSelfStudyLabel) },
+                                    label = if (hideLabels) null else { { Text(tabSelfStudyLabel) } },
+                                    selected = selectedTab == 3,
+                                    onClick = { viewModel.setSelectedDashboardTab(3) },
+                                    colors = navItemColors,
+                                    alwaysShowLabel = true
+                                )
+                            }
+                            if (featureAnalyticsEnabled) {
+                                NavigationBarItem(
+                                    icon = { Icon(tabAnalyticsIcon, contentDescription = tabAnalyticsLabel) },
+                                    label = if (hideLabels) null else { { Text(tabAnalyticsLabel) } },
+                                    selected = selectedTab == 4,
+                                    onClick = { viewModel.setSelectedDashboardTab(4) },
+                                    colors = navItemColors,
+                                    alwaysShowLabel = true
+                                )
+                            }
                         }
                     }
                 }
