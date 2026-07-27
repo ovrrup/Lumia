@@ -70,7 +70,7 @@ fun PdfViewerScreen(navController: NavController, filePath: String?, fileName: S
     }
 
     Scaffold(
-        topBar = {
+        bottomBar = {
             lumia.tracker.ui.components.UniversalCapsuleHeader(
                 title = fileName ?: "PDF Viewer",
                 onBackClick = { navController.popBackStack() }

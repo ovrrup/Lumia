@@ -144,7 +144,7 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
     var showMergeDialog by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = {
+        bottomBar = {
             lumia.tracker.ui.components.UniversalCapsuleHeader(
                 title = "Tags Network & Manager",
                 onBackClick = { navController.navigateUp() }

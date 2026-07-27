@@ -115,7 +115,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        topBar = {
+        bottomBar = {
             lumia.tracker.ui.components.UniversalCapsuleHeader(
                 title = "System Configuration",
                 onBackClick = { navController.popBackStack() }

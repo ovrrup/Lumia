@@ -98,13 +98,12 @@ fun UniversalCapsuleHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(top = 12.dp, end = 16.dp, start = 16.dp),
-        contentAlignment = Alignment.TopStart
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(bottom = 16.dp, end = 16.dp, start = 16.dp),
+        contentAlignment = Alignment.BottomCenter
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
                 .height(44.dp)
                 .glassHeaderCapsule(useGlass = useGlassHeader, shape = RoundedCornerShape(32.dp))
                 .padding(
@@ -148,8 +147,6 @@ fun UniversalCapsuleHeader(
             )
 
             if (actions != null) {
-                Spacer(modifier = Modifier.weight(1f))
-                
                 // Vertical separator
                 Box(
                     modifier = Modifier

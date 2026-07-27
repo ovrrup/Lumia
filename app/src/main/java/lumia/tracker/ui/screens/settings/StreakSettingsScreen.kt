@@ -51,7 +51,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
     val isGlass = LocalGlassMode.current
 
     Scaffold(
-        topBar = {
+        bottomBar = {
             lumia.tracker.ui.components.UniversalCapsuleHeader(
                 title = "Streak Settings",
                 onBackClick = { navController.popBackStack() }

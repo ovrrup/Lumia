@@ -125,7 +125,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        topBar = {
+        bottomBar = {
             lumia.tracker.ui.components.UniversalCapsuleHeader(
                 title = "Appearance & Theme",
                 onBackClick = { navController.popBackStack() }

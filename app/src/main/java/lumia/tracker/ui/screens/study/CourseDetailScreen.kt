@@ -399,7 +399,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             Column(modifier = Modifier.padding(bottom = padding.calculateBottomPadding()).fillMaxSize()) {
                 LazyColumn(
                     state = listState,
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 88.dp, bottom = 120.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 120.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize().reorderable(reorderableState)
                 ) {

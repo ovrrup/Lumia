@@ -138,7 +138,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        topBar = {
+        bottomBar = {
             lumia.tracker.ui.components.UniversalCapsuleHeader(
                 title = "Data Management",
                 onBackClick = { navController.popBackStack() }

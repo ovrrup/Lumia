@@ -113,7 +113,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState()),
             ) {
-                Spacer(modifier = Modifier.height(88.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
             // Personalization Card
             SettingsGroupCard(title = "Personalization", icon = Icons.Rounded.Palette) {
@@ -219,7 +219,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 

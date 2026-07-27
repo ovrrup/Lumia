@@ -44,7 +44,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
 
     Scaffold(
         containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
-        topBar = {
+        bottomBar = {
             lumia.tracker.ui.components.UniversalCapsuleHeader(
                 title = "Profile & Menu",
                 onBackClick = { navController.navigateUp() },

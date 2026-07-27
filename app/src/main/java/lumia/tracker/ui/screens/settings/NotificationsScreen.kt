@@ -107,7 +107,7 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
 
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        topBar = {
+        bottomBar = {
             lumia.tracker.ui.components.UniversalCapsuleHeader(
                 title = "Notifications",
                 onBackClick = { navController.popBackStack() }

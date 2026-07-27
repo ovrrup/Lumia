@@ -149,7 +149,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     Scaffold(
         containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        topBar = {
+        bottomBar = {
             lumia.tracker.ui.components.UniversalCapsuleHeader(
                 title = "Experimental Features",
                 onBackClick = { navController.popBackStack() }
