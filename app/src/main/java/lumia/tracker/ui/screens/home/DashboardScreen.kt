@@ -246,14 +246,14 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             val extendedPadding = if (betaFloatingNav) {
                 PaddingValues(
                     start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-                    top = 64.dp,
+                    top = 76.dp,
                     end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
                     bottom = padding.calculateBottomPadding() + navBarHeight.dp + navBarPaddingBottom.dp + 16.dp
                 )
             } else {
                 PaddingValues(
                     start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-                    top = 64.dp,
+                    top = 76.dp,
                     end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
                     bottom = padding.calculateBottomPadding()
                 )
@@ -422,12 +422,15 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
         }
         
-        // Floating utility capsule on the bottom center for better visibility and reach
-        androidx.compose.foundation.layout.Box(
+        // Floating utility capsules on the top for better visibility and reach, divided left and right
+        androidx.compose.foundation.layout.Row(
             modifier = Modifier
-                .align(androidx.compose.ui.Alignment.BottomCenter)
-                .padding(bottom = if (betaFloatingNav) (navBarHeight + navBarPaddingBottom + 16).dp else (navBarHeight + 16).dp)
-                .windowInsetsPadding(WindowInsets.navigationBars)
+                .align(androidx.compose.ui.Alignment.TopCenter)
+                .fillMaxWidth()
+                .padding(top = 12.dp, start = 16.dp, end = 16.dp)
+                .windowInsetsPadding(WindowInsets.statusBars),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             val moreRounds = lumia.tracker.ui.theme.LocalMoreRounds.current
             val moreRoundsMode = lumia.tracker.ui.theme.LocalMoreRoundsMode.current
@@ -445,32 +448,32 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 else -> stringResource(id = R.string.app_name)
             }
             
+            // Left capsule: Title with increased padding and pill shape
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier
                     .height(44.dp)
-                    .glassHeaderCapsule(useGlass = useGlassHeader, shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp))
-                    .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    .glassHeaderCapsule(useGlass = useGlassHeader, shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp))
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
                 Text(
                     text = titleText,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Black,
-                    color = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(end = 4.dp)
+                    color = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )
+            }
 
-                // Elegant vertical separator
-                Box(
-                    modifier = Modifier
-                        .height(18.dp)
-                        .width(1.dp)
-                        .background(
-                            color = (if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.15f)
-                        )
-                )
-
+            // Right capsule: Actions (Search, Streak, Profile) with increased width/padding and pill shape
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier
+                    .height(44.dp)
+                    .widthIn(min = 120.dp)
+                    .glassHeaderCapsule(useGlass = useGlassHeader, shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp))
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 lumia.tracker.ui.components.BouncyIconButton(
                     onClick = { navController.navigate("search") },
                     modifier = Modifier.size(36.dp).testTag("open_search_button")
@@ -478,7 +481,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     Icon(
                         imageVector = Icons.Rounded.Search,
                         contentDescription = "Open Global Search",
-                        tint = MaterialTheme.colorScheme.onSurface,
+                        tint = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -513,7 +516,9 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         Text(
                             text = fallback,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
+                            color = if (useGlassHeader) MaterialTheme.colorScheme.primary else {
+                                if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
+                            },
                             fontWeight = FontWeight.Bold
                         )
                     }

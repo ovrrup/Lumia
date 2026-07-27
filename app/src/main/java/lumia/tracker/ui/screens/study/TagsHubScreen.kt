@@ -143,22 +143,16 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
 
     var showMergeDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        bottomBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = "Tags Network & Manager",
-                onBackClick = { navController.navigateUp() }
-            )
-        },
-        containerColor = Color.Transparent
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .statusBarsPadding()
-                .navigationBarsPadding()
-        ) {
+    val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 80.dp, bottom = 24.dp)
+            ) {
             // Search Input
             OutlinedTextField(
                 value = searchQuery,
@@ -696,6 +690,11 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
             }
         }
     }
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = "Tags Network & Manager",
+        onBackClick = { navController.navigateUp() }
+    )
+}
 
     // Interactive Action Dialogs
 

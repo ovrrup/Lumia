@@ -288,23 +288,18 @@ fun PomodoroScreen(
             }
         }
     } else {
-        Scaffold(
-            containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
-            bottomBar = {
-                lumia.tracker.ui.components.UniversalCapsuleHeader(
-                    title = "Pomodoro Timer",
-                    onBackClick = { navController.popBackStack() }
-                )
-            }
-        ) { padding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
+            ) { padding ->
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp),
+                    contentPadding = PaddingValues(top = 80.dp, bottom = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                 item {
                     lumia.tracker.ui.components.NotificationPermissionPanel()
                     lumia.tracker.ui.components.ExactAlarmPermissionPanel()
@@ -823,6 +818,12 @@ fun PomodoroScreen(
             }
         }
     }
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = "Pomodoro Timer",
+        onBackClick = { navController.popBackStack() }
+    )
+}
+}
 
     if (serviceState.isAlarmActive) {
         val endedMode = serviceState.endedModeStr.ifBlank { "WORK" }
@@ -884,7 +885,6 @@ fun PomodoroScreen(
             }
         )
     }
-}
 }
 
 @Composable

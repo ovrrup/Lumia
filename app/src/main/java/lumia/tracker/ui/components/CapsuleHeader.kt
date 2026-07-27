@@ -21,6 +21,7 @@ import lumia.tracker.ui.theme.LocalGlassMode
 import lumia.tracker.ui.theme.LocalMoreRounds
 import lumia.tracker.ui.theme.LocalMoreRoundsMode
 import lumia.tracker.ui.theme.LocalGlassTint
+import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.ui.theme.LocalGlassDynamic
 import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.mix
@@ -95,69 +96,73 @@ fun UniversalCapsuleHeader(
     val isMrGlass = moreRounds && moreRoundsMode == "Glass"
     val useGlassHeader = isGlass || isMrGlass
 
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(bottom = 16.dp, end = 16.dp, start = 16.dp),
-        contentAlignment = Alignment.BottomCenter
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(top = 12.dp, start = 16.dp, end = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
+        // Left Side: Back button capsule (increased width!)
+        if (onBackClick != null) {
+            Row(
+                modifier = Modifier
+                    .height(44.dp)
+                    .widthIn(min = 54.dp) // Increased width!
+                    .glassHeaderCapsule(useGlass = useGlassHeader, shape = RoundedCornerShape(22.dp))
+                    .bouncyClick { onBackClick() }
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = "Back",
+                    tint = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.width(54.dp))
+        }
+
+        // Center Side: Title capsule (floating in the middle)
         Row(
             modifier = Modifier
                 .height(44.dp)
-                .glassHeaderCapsule(useGlass = useGlassHeader, shape = RoundedCornerShape(32.dp))
-                .padding(
-                    start = if (onBackClick != null) 4.dp else 12.dp,
-                    end = if (actions != null) 4.dp else 12.dp,
-                    top = 4.dp,
-                    bottom = 4.dp
-                ),
+                .weight(1f, fill = false)
+                .padding(horizontal = 8.dp)
+                .glassHeaderCapsule(useGlass = useGlassHeader, shape = RoundedCornerShape(22.dp))
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.Center
         ) {
-            if (onBackClick != null) {
-                BouncyIconButton(
-                    onClick = onBackClick,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = "Back",
-                        tint = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                
-                // Vertical separator
-                Box(
-                    modifier = Modifier
-                        .height(18.dp)
-                        .width(1.dp)
-                        .background(
-                            color = (if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.15f)
-                        )
-                )
-            }
-
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Black,
                 color = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = 4.dp)
+                maxLines = 1,
+                modifier = Modifier.padding(vertical = 2.dp)
             )
+        }
 
-            if (actions != null) {
-                // Vertical separator
-                Box(
-                    modifier = Modifier
-                        .height(18.dp)
-                        .width(1.dp)
-                        .background(
-                            color = (if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface).copy(alpha = 0.15f)
-                        )
-                )
+        // Right Side: Action buttons capsule (increased width!)
+        if (actions != null) {
+            Row(
+                modifier = Modifier
+                    .height(44.dp)
+                    .widthIn(min = 54.dp) // Increased width!
+                    .glassHeaderCapsule(useGlass = useGlassHeader, shape = RoundedCornerShape(22.dp))
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
                 actions()
             }
+        } else {
+            Spacer(modifier = Modifier.width(54.dp))
         }
     }
 }

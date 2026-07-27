@@ -123,21 +123,16 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
         viewModel.refreshNavBarGlassOpacity(themeColor, effectiveDark)
     }
 
-    Scaffold(
-        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        bottomBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = "Appearance & Theme",
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 24.dp),
+            ) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // 1. Core Mode Card
@@ -866,6 +861,11 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = "Appearance & Theme",
+        onBackClick = { navController.popBackStack() }
+    )
+}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

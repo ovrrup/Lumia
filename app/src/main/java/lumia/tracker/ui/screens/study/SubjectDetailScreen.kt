@@ -117,10 +117,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             containerColor = if (lumia.tracker.ui.theme.LocalGlassMode.current) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background
         ) { padding ->
             LazyColumn(
-                modifier = Modifier
-                    .padding(bottom = padding.calculateBottomPadding())
-                    .fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 100.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
             // Stats Banner Card

@@ -72,8 +72,8 @@ fun QuickNotesScreen(navController: NavController) {
             }
         ) { padding ->
             LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 100.dp),
-                modifier = Modifier.padding(bottom = padding.calculateBottomPadding()).fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 32.dp),
+                modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
             if (notesList.isEmpty()) {

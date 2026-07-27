@@ -105,21 +105,16 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
-    Scaffold(
-        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        bottomBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = "Advanced Theme",
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-        ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 24.dp)
+            ) {
             SettingsCategoryHeading(title = "Auto-Generate Custom Palette", icon = Icons.Rounded.Palette)
             
             Text(
@@ -216,4 +211,9 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = "Advanced Theme",
+        onBackClick = { navController.popBackStack() }
+    )
+}
 }

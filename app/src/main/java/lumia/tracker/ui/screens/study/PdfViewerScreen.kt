@@ -69,21 +69,18 @@ fun PdfViewerScreen(navController: NavController, filePath: String?, fileName: S
         }
     }
 
-    Scaffold(
-        bottomBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = fileName ?: "PDF Viewer",
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-            contentAlignment = Alignment.Center
-        ) {
+    val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 80.dp, bottom = 24.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
             if (errorMessage != null) {
                 Text(errorMessage ?: "Unknown Error", color = MaterialTheme.colorScheme.error)
             } else if (currentBitmap != null) {
@@ -149,4 +146,9 @@ fun PdfViewerScreen(navController: NavController, filePath: String?, fileName: S
             }
         }
     }
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = fileName ?: "PDF Viewer",
+        onBackClick = { navController.popBackStack() }
+    )
+}
 }

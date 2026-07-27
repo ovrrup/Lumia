@@ -147,21 +147,16 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
 
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
-    Scaffold(
-        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        bottomBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = "Experimental Features",
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 24.dp),
+            ) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // 1. Experimental Workflow
@@ -311,6 +306,11 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = "Experimental Features",
+        onBackClick = { navController.popBackStack() }
+    )
+}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

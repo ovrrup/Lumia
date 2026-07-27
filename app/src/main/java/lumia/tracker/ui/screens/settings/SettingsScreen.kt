@@ -109,11 +109,10 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
         ) { padding ->
             Column(
                 modifier = Modifier
-                    .padding(bottom = padding.calculateBottomPadding())
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 24.dp),
             ) {
-                Spacer(modifier = Modifier.height(24.dp))
 
             // Personalization Card
             SettingsGroupCard(title = "Personalization", icon = Icons.Rounded.Palette) {

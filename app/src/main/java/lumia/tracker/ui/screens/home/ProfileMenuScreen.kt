@@ -42,30 +42,14 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
     var showEditDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
-        bottomBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = "Profile & Menu",
-                onBackClick = { navController.navigateUp() },
-                actions = {
-                    lumia.tracker.ui.components.BouncyIconButton(
-                        onClick = { showEditDialog = true },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Edit,
-                            contentDescription = "Edit Profile",
-                            tint = if (isGlass || (LocalMoreRounds.current && LocalMoreRoundsMode.current == "Glass")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 0.dp) // Removed padding so group cards stretch nicely, will pad inside
-        ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 24.dp)
+            ) {
             item {
                 Spacer(Modifier.height(16.dp))
                 // Profile Summary Card
@@ -285,6 +269,23 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
             }
         }
     }
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = "Profile & Menu",
+        onBackClick = { navController.navigateUp() },
+        actions = {
+            lumia.tracker.ui.components.BouncyIconButton(
+                onClick = { showEditDialog = true },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Edit,
+                    contentDescription = "Edit Profile",
+                    tint = if (isGlass || (LocalMoreRounds.current && LocalMoreRoundsMode.current == "Glass")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    )
+}
 
     if (showEditDialog) {
         var editName by remember { mutableStateOf(activeProfile.name) }

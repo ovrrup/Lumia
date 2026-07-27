@@ -136,21 +136,16 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
-    Scaffold(
-        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        bottomBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = "Data Management",
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 24.dp),
+            ) {
             val coursesCount by viewModel.courses.collectAsStateWithLifecycle()
             val assignmentsCount by viewModel.assignments.collectAsStateWithLifecycle()
             val subjectsCount by viewModel.subjects.collectAsStateWithLifecycle()
@@ -488,6 +483,11 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             }
         }
     }
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = "Data Management",
+        onBackClick = { navController.popBackStack() }
+    )
+}
 
     if (showExportDialog) {
         androidx.compose.material3.AlertDialog(

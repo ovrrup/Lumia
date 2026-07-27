@@ -50,21 +50,16 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
     val isGlass = LocalGlassMode.current
 
-    Scaffold(
-        bottomBar = {
-            lumia.tracker.ui.components.UniversalCapsuleHeader(
-                title = "Streak Settings",
-                onBackClick = { navController.popBackStack() }
-            )
-        },
-        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background
+        ) { paddingValues ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             item {
                 SettingsGroupCard(title = "Live Fire Chamber Preview", icon = Icons.Rounded.LocalFireDepartment) {
                     Box(
@@ -296,4 +291,9 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             }
         }
     }
+    lumia.tracker.ui.components.UniversalCapsuleHeader(
+        title = "Streak Settings",
+        onBackClick = { navController.popBackStack() }
+    )
+}
 }
