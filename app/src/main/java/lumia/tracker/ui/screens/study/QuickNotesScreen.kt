@@ -76,8 +76,9 @@ fun QuickNotesScreen(navController: NavController) {
                 }
             }
         ) { padding ->
+            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 32.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = statusBarHeight + 64.dp, bottom = 32.dp),
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {

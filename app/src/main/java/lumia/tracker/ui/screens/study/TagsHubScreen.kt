@@ -148,10 +148,11 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
         Scaffold(
             containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background
         ) { padding ->
+            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 80.dp, bottom = 24.dp)
+                    .padding(top = statusBarHeight + 64.dp, bottom = 24.dp)
             ) {
             // Search Input
             OutlinedTextField(

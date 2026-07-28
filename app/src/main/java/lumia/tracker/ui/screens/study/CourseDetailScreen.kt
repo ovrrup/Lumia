@@ -397,10 +397,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
         Scaffold(
             containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background
         ) { padding ->
+            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Column(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(
                     state = listState,
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 32.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = statusBarHeight + 64.dp, bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize().reorderable(reorderableState)
                 ) {

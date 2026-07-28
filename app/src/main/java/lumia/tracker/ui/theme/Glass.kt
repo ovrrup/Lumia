@@ -38,8 +38,8 @@ fun Modifier.liquidGlass(
     val backdropStyle = if (isPureBlack) "Solid" else (backdropStyleOverride ?: LocalGlassBackdropStyle.current)
     val opacitySetting = if (isPureBlack) 1.0f else (opacityOverride ?: LocalGlassOpacityValue.current)
     
-    val baseAlpha1 = if (isDarkTheme) (0.24f + (tintAlpha * 0.15f)) else (0.45f + (tintAlpha * 0.15f))
-    val baseAlpha2 = if (isDarkTheme) (0.12f + (tintAlpha * 0.08f)) else (0.25f + (tintAlpha * 0.10f))
+    val baseAlpha1 = if (isDarkTheme) (0.20f + (tintAlpha * 0.12f)) else (0.38f + (tintAlpha * 0.12f))
+    val baseAlpha2 = if (isDarkTheme) (0.08f + (tintAlpha * 0.06f)) else (0.18f + (tintAlpha * 0.08f))
 
     val finalAlpha1 = when (backdropStyle) {
         "Opaque", "Solid" -> 1.0f
@@ -52,30 +52,31 @@ fun Modifier.liquidGlass(
         else -> baseAlpha2 * opacitySetting
     }
 
+    // Mix much more vibrant primary hue into the background to amplify underlying bleeding colors
     val backColor1 = if (backdropStyle == "Opaque" || backdropStyle == "Solid") {
         if (isDarkTheme) {
-            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.90f).mix(tintColor, 0.92f)
+            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.82f).mix(tintColor, 0.85f)
         } else {
-            surfaceColor.mix(tintColor, 0.95f)
+            surfaceColor.mix(tintColor, 0.88f)
         }
     } else {
         if (isDarkTheme) {
-            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.92f).mix(tintColor, 0.88f)
+            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.78f).mix(tintColor, 0.80f)
         } else {
-            surfaceColor.mix(tintColor, 0.93f)
+            surfaceColor.mix(tintColor, 0.82f)
         }
     }
     val backColor2 = if (backdropStyle == "Opaque" || backdropStyle == "Solid") {
         if (isDarkTheme) {
-            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.95f).mix(tintColor, 0.96f)
+            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.88f).mix(tintColor, 0.90f)
         } else {
-            surfaceColor.mix(tintColor, 0.97f)
+            surfaceColor.mix(tintColor, 0.92f)
         }
     } else {
         if (isDarkTheme) {
-            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.96f).mix(tintColor, 0.93f)
+            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.85f).mix(tintColor, 0.86f)
         } else {
-            surfaceColor.mix(tintColor, 0.97f)
+            surfaceColor.mix(tintColor, 0.88f)
         }
     }
 
@@ -86,23 +87,45 @@ fun Modifier.liquidGlass(
             backColor2.copy(alpha = finalAlpha2)
         )
     )
+
+    // Secondary diagonal satin glossy shimmer brush to reflect and amplify light
+    val glossBrush = Brush.linearGradient(
+        colors = if (isDarkTheme) {
+            listOf(
+                Color.White.copy(alpha = 0.08f),
+                Color.Transparent,
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.04f)
+            )
+        } else {
+            listOf(
+                Color.White.copy(alpha = 0.16f),
+                Color.Transparent,
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+            )
+        },
+        start = Offset(0f, 0f),
+        end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+    )
     
     // Ultra-fine border highlight mimicking physical glass physics
-    // Utilizing harmonized theme-conforming colors to completely avoid jarring stark white borders
+    // Dual-tone high-specular glisten reflecting bright ambient colors
     val outlineVariant = MaterialTheme.colorScheme.outlineVariant
     val borderBrush = Brush.linearGradient(
         colors = if (isDarkTheme) {
             listOf(
-                Color.White.copy(alpha = 0.22f), // premium white reflection glisten highlight
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
-                outlineVariant.copy(alpha = 0.08f),
-                Color.Transparent
+                Color.White.copy(alpha = 0.58f), // Brilliant edge glare
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+                Color.White.copy(alpha = 0.18f),
+                Color.Transparent,
+                Color.White.copy(alpha = 0.08f)
             )
         } else {
             listOf(
-                Color.White.copy(alpha = 0.45f), // pure white reflection highlight
-                outlineVariant.copy(alpha = 0.18f),
-                Color.Transparent
+                Color.White.copy(alpha = 0.88f), // Brilliant edge glare on light mode
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.48f),
+                Color.White.copy(alpha = 0.28f),
+                Color.Transparent,
+                Color.White.copy(alpha = 0.12f)
             )
         },
         start = Offset(0f, 0f),
@@ -112,7 +135,8 @@ fun Modifier.liquidGlass(
     this
         .clip(shape)
         .background(brush = backBrush, shape = shape)
-        .border(width = 0.8.dp, brush = borderBrush, shape = shape)
+        .background(brush = glossBrush, shape = shape)
+        .border(width = 1.0.dp, brush = borderBrush, shape = shape)
 }
 
 fun Modifier.glassCard(shape: Shape = RoundedCornerShape(24.dp)): Modifier = composed {

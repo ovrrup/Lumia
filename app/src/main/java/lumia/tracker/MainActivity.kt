@@ -327,11 +327,20 @@ class MainActivity : ComponentActivity() {
                         if (betaDynamicBackground || betaGlassUi) {
                             // Animated or static soft ambient background
                             val infiniteTransition = rememberInfiniteTransition()
-                            val offset by if (betaDynamicBackground) {
+                            val offset1 by if (betaDynamicBackground) {
                                 infiniteTransition.animateFloat(
                                     initialValue = 0f, targetValue = 1f,
-                                    animationSpec = infiniteRepeatable(tween(12000), RepeatMode.Reverse),
-                                    label = "bg_anim"
+                                    animationSpec = infiniteRepeatable(tween(14000), RepeatMode.Reverse),
+                                    label = "bg_anim1"
+                                )
+                            } else {
+                                remember { androidx.compose.runtime.mutableStateOf(0.5f) }
+                            }
+                            val offset2 by if (betaDynamicBackground) {
+                                infiniteTransition.animateFloat(
+                                    initialValue = 0f, targetValue = 1f,
+                                    animationSpec = infiniteRepeatable(tween(19000), RepeatMode.Reverse),
+                                    label = "bg_anim2"
                                 )
                             } else {
                                 remember { androidx.compose.runtime.mutableStateOf(0.5f) }
@@ -348,21 +357,21 @@ class MainActivity : ComponentActivity() {
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
                                         colors = listOf(colors[0].copy(alpha = alphaScale.coerceIn(0f, 1f) * 1.0f), colors[0].copy(alpha = alphaScale.coerceIn(0f, 1f) * 0.25f), androidx.compose.ui.graphics.Color.Transparent),
-                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * (0.18f + offset * 0.12f)),
+                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * (0.18f + offset1 * 0.12f)),
                                         radius = size.width * 1.6f
                                     )
                                 )
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
                                         colors = listOf(colors[2].copy(alpha = alphaScale.coerceIn(0f, 1f) * 0.85f), colors[2].copy(alpha = alphaScale.coerceIn(0f, 1f) * 0.15f), androidx.compose.ui.graphics.Color.Transparent),
-                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.82f, size.height * (0.65f - offset * 0.08f)),
+                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.82f, size.height * (0.65f - offset2 * 0.08f)),
                                         radius = size.width * 1.5f
                                     )
                                 )
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
                                         colors = listOf(colors[1].copy(alpha = alphaScale.coerceIn(0f, 1f) * 0.65f), androidx.compose.ui.graphics.Color.Transparent),
-                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.90f, size.height * 0.30f),
+                                        center = androidx.compose.ui.geometry.Offset(size.width * (0.90f - offset1 * 0.10f), size.height * (0.30f + offset2 * 0.06f)),
                                         radius = size.width * 1.3f
                                     )
                                 )
@@ -380,7 +389,7 @@ class MainActivity : ComponentActivity() {
                                 ) else Modifier
                             ),
                         enterTransition = {
-                            if (appAnimationMode == "iOS") {
+                            if (appAnimationMode == "iOS" || appAnimationMode == "Dynamic") {
                                 androidx.compose.animation.slideInHorizontally(
                                     initialOffsetX = { fullWidth -> fullWidth },
                                     animationSpec = androidx.compose.animation.core.spring(
@@ -391,8 +400,6 @@ class MainActivity : ComponentActivity() {
                             } else {
                                 val spec = if (appAnimationMode == "Bouncy") {
                                     androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
-                                } else if (appAnimationMode == "Dynamic") {
-                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
                                 } else {
                                     androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
                                 }
@@ -401,7 +408,7 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         exitTransition = {
-                            if (appAnimationMode == "iOS") {
+                            if (appAnimationMode == "iOS" || appAnimationMode == "Dynamic") {
                                 androidx.compose.animation.slideOutHorizontally(
                                     targetOffsetX = { fullWidth -> -fullWidth / 3 },
                                     animationSpec = androidx.compose.animation.core.spring(
@@ -412,8 +419,6 @@ class MainActivity : ComponentActivity() {
                             } else {
                                 val spec = if (appAnimationMode == "Bouncy") {
                                     androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
-                                } else if (appAnimationMode == "Dynamic") {
-                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
                                 } else {
                                     androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
                                 }
@@ -422,7 +427,7 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         popEnterTransition = {
-                            if (appAnimationMode == "iOS") {
+                            if (appAnimationMode == "iOS" || appAnimationMode == "Dynamic") {
                                 androidx.compose.animation.slideInHorizontally(
                                     initialOffsetX = { fullWidth -> -fullWidth / 3 },
                                     animationSpec = androidx.compose.animation.core.spring(
@@ -433,8 +438,6 @@ class MainActivity : ComponentActivity() {
                             } else {
                                 val spec = if (appAnimationMode == "Bouncy") {
                                     androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
-                                } else if (appAnimationMode == "Dynamic") {
-                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
                                 } else {
                                     androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
                                 }
@@ -443,7 +446,7 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         popExitTransition = {
-                            if (appAnimationMode == "iOS") {
+                            if (appAnimationMode == "iOS" || appAnimationMode == "Dynamic") {
                                 androidx.compose.animation.slideOutHorizontally(
                                     targetOffsetX = { fullWidth -> fullWidth },
                                     animationSpec = androidx.compose.animation.core.spring(
@@ -454,8 +457,6 @@ class MainActivity : ComponentActivity() {
                             } else {
                                 val spec = if (appAnimationMode == "Bouncy") {
                                     androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
-                                } else if (appAnimationMode == "Dynamic") {
-                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
                                 } else {
                                     androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
                                 }

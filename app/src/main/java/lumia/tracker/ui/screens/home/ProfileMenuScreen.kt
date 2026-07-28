@@ -45,9 +45,10 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
         Scaffold(
             containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
         ) { padding ->
+            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 24.dp)
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = statusBarHeight + 64.dp, bottom = 24.dp)
             ) {
             item {
                 Spacer(Modifier.height(16.dp))

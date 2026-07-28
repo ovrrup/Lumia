@@ -130,11 +130,12 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
         Scaffold(
             containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
         ) { padding ->
+            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(start = 16.dp, end = 16.dp, top = 80.dp, bottom = 24.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = statusBarHeight + 64.dp, bottom = 24.dp),
             ) {
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -209,7 +210,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     subtitle = "Changes the responsiveness and bounce traits across panels and gestures.",
                     options = listOf(
                         Triple("Normal", "Normal", null),
-                        Triple("Dynamic", "Dynamic", null),
+                        Triple("Dynamic", "Dynamic Slide", null),
                         Triple("Bouncy", "Bouncy", Icons.Rounded.Star),
                         Triple("iOS", "iOS Slide", null)
                     ),

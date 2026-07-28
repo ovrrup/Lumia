@@ -7,6 +7,8 @@ import lumia.tracker.ui.theme.navGlassBar
 import lumia.tracker.ui.theme.glassPill
 import lumia.tracker.ui.theme.LocalDarkTheme
 import lumia.tracker.ui.theme.LocalPureBlackMode
+import lumia.tracker.ui.theme.LocalMoreRounds
+import lumia.tracker.ui.theme.LocalMoreRoundsMode
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -259,17 +261,18 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }
             }
         ) { padding ->
+            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             val extendedPadding = if (betaFloatingNav) {
                 PaddingValues(
                     start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-                    top = 76.dp,
+                    top = statusBarHeight + 64.dp,
                     end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
                     bottom = padding.calculateBottomPadding() + navBarHeight.dp + navBarPaddingBottom.dp + 16.dp
                 )
             } else {
                 PaddingValues(
                     start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-                    top = 76.dp,
+                    top = statusBarHeight + 64.dp,
                     end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
                     bottom = padding.calculateBottomPadding()
                 )
@@ -395,7 +398,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .then(if (useGlass) Modifier.glassPill(androidx.compose.foundation.shape.RoundedCornerShape(navBarCornerRadius.dp)) else Modifier),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(navBarCornerRadius.dp),
-                color = if (useGlass) MaterialTheme.colorScheme.surface.copy(alpha = 0.92f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
+                color = if (useGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
                 contentColor = if (useGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
                 shadowElevation = if (useGlass) 0.dp else 8.dp,
                 tonalElevation = if (useGlass) 0.dp else 4.dp
@@ -467,14 +470,9 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
         }
         
-        // iOS Top Navigation Bar — solid, full-bleed with bottom border
+        // floating Capsule Header design for the main screens
         val isDark = LocalDarkTheme.current
         val pureBlackMode by viewModel.pureBlackMode.collectAsStateWithLifecycle()
-        val topBarBg = if (isDark) {
-            if (pureBlackMode) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color(0xFF1C1C1E)
-        } else {
-            androidx.compose.ui.graphics.Color(0xFFF9F9F9)
-        }
         
         val titleText = when (selectedTab) {
             0 -> tabHomeLabel
@@ -486,35 +484,41 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             else -> stringResource(id = R.string.app_name)
         }
 
-        Column(
+        val moreRounds = LocalMoreRounds.current
+        val moreRoundsMode = LocalMoreRoundsMode.current
+        val isMrGlass = moreRounds && moreRoundsMode == "Glass"
+        val useGlassHeader = isGlass || isMrGlass
+        val actualUseGlassHeader = if (pureBlackMode) false else useGlassHeader
+
+        Box(
             modifier = Modifier
                 .align(androidx.compose.ui.Alignment.TopCenter)
                 .fillMaxWidth()
-                .background(topBarBg)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .height(56.dp)
-                    .padding(horizontal = 16.dp),
+                    .glassHeaderCapsule(useGlass = actualUseGlassHeader)
+                    .height(48.dp)
+                    .padding(horizontal = 12.dp),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Left Title — Beautiful bold iOS-style typography
+                // Left Title — Beautiful bold capsule-style typography
                 Text(
                     text = titleText,
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize = 24.sp,
+                    style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold
                     ),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = if (actualUseGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )
 
                 // Right Actions
                 Row(
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     IconButton(
                         onClick = { navController.navigate("search") },
@@ -523,8 +527,8 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         Icon(
                             imageVector = Icons.Rounded.Search,
                             contentDescription = "Open Global Search",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
+                            tint = if (actualUseGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
@@ -565,14 +569,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     }
                 }
             }
-            
-            // Thin iOS border line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(0.5.dp)
-                    .background(if (isDark) androidx.compose.ui.graphics.Color(0xFF2C2C2E) else androidx.compose.ui.graphics.Color(0xFFE5E5EA))
-            )
         }
     }
     if (showAddCourseDialog) {

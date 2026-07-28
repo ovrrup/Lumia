@@ -292,11 +292,12 @@ fun PomodoroScreen(
             Scaffold(
                 containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
             ) { padding ->
+                val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 24.dp),
-                    contentPadding = PaddingValues(top = 80.dp, bottom = 24.dp),
+                    contentPadding = PaddingValues(top = statusBarHeight + 64.dp, bottom = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {

@@ -17,6 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.isActive
+import lumia.tracker.ui.theme.LocalGlassMode
+import lumia.tracker.ui.theme.liquidGlass
 
 @Composable
 fun WelcomeMeshBanner() {
@@ -44,11 +46,19 @@ fun WelcomeMeshBanner() {
     val c2 = MaterialTheme.colorScheme.secondaryContainer
     val c3 = MaterialTheme.colorScheme.tertiaryContainer
 
+    val isGlass = LocalGlassMode.current
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(140.dp)
-            .clip(RoundedCornerShape(32.dp))
+            .then(
+                if (isGlass) {
+                    Modifier.liquidGlass(shape = RoundedCornerShape(32.dp), tintAlpha = 0.12f)
+                } else {
+                    Modifier.clip(RoundedCornerShape(32.dp))
+                }
+            )
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val canvasWidth = size.width
