@@ -2660,6 +2660,10 @@ private val _streakPercentage = MutableStateFlow(0f)
             return
         }
 
+        if (mode == "Light") {
+            _pureBlackMode.value = false
+            prefs.edit().putBoolean("pure_black_mode", false).apply()
+        }
         _themeMode.value = mode
         prefs.edit().putString("theme_mode", mode).apply()
     }

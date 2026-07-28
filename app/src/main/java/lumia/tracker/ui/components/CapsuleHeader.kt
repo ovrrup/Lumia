@@ -171,7 +171,9 @@ fun UniversalCapsuleHeader(
                     fontWeight = FontWeight.SemiBold,
                     color = if (useGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 72.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
 
                 // Right Side: Action buttons

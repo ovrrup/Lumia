@@ -100,20 +100,16 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
-    val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
     val betaDynamicBackground by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
     val dynamicBgLightBrightness by viewModel.dynamicBgLightBrightness.collectAsStateWithLifecycle()
     val dynamicBgDarkBrightness by viewModel.dynamicBgDarkBrightness.collectAsStateWithLifecycle()
     val betaBetterTexts by viewModel.betaBetterTexts.collectAsStateWithLifecycle()
     val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
-    val glassBackdropStyle by viewModel.glassBackdropStyle.collectAsStateWithLifecycle()
-    val glassOpacityValue by viewModel.glassOpacityValue.collectAsStateWithLifecycle()
-    val navBarGlassOpacityValue by viewModel.navBarGlassOpacityValue.collectAsStateWithLifecycle()
     val pureBlackMode by viewModel.pureBlackMode.collectAsStateWithLifecycle()
     val betaMinimalistMode by viewModel.betaMinimalistMode.collectAsStateWithLifecycle()
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val dynamicAppIcon by viewModel.dynamicAppIcon.collectAsStateWithLifecycle()
-    val betaFrostGlass by viewModel.betaFrostGlass.collectAsStateWithLifecycle()
+    val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
 
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
 
@@ -240,19 +236,26 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     val moreRoundsMode by viewModel.moreRoundsMode.collectAsStateWithLifecycle()
                     Column(modifier = Modifier.padding(top = 12.dp)) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(bottom = 12.dp))
+                        val roundOptions = if (betaGlassUi) {
+                            listOf(
+                                Triple("Pastel", "Soft Pastel", Icons.Rounded.Palette),
+                                Triple("Glass", "Liquid Glass", Icons.Rounded.BlurOn)
+                            )
+                        } else {
+                            listOf(
+                                Triple("Pastel", "Soft Pastel", Icons.Rounded.Palette)
+                            )
+                        }
                         SettingsSegmentedPicker(
                             title = "Enhanced Rounds Style",
                             subtitle = "Select the visual approach for rounded components and buttons",
-                            options = listOf(
-                                Triple("Pastel", "Soft Pastel", Icons.Rounded.Palette),
-                                Triple("Glass", "Liquid Glass", Icons.Rounded.BlurOn)
-                            ),
-                            selected = moreRoundsMode,
+                            options = roundOptions,
+                            selected = if (betaGlassUi) moreRoundsMode else "Pastel",
                             onSelected = { viewModel.updateMoreRoundsMode(it) }
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = if (moreRoundsMode == "Pastel") 
+                            text = if (!betaGlassUi || moreRoundsMode == "Pastel") 
                                 "Buttons will use high-contrast pastel colors with hidden outlines and deep elastic animations."
                                 else "Buttons will gain glass-like translucency and adapt dynamically to the active background.",
                             style = MaterialTheme.typography.labelSmall,
@@ -264,135 +267,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 }
             }
 
-            // 2. Glass UI Engine Card (Animated entry)
-            AnimatedVisibility(visible = !betaMinimalistMode) {
-                SettingsGroupCard(title = "Aesthetic Glass Engine", icon = Icons.Rounded.Palette) {
-                    SettingsToggleItem(
-                        title = "Frosted Glass UI",
-                        subtitle = "Enable translucent glass textures across screen panels",
-                        checked = betaGlassUi,
-                        icon = Icons.Rounded.Palette,
-                        onCheckedChange = {
-                            if (true) {
-                                viewModel.updateBetaGlassUi(it)
-                            } else {
-                                val msg = "Frosted Glass is a Appearance setting."
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    )
-                    
-                    AnimatedVisibility(visible = betaGlassUi) {
-                        val betaGlassDynamic by viewModel.betaGlassDynamic.collectAsStateWithLifecycle()
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.padding(start = 12.dp, top = 8.dp)
-                        ) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                            
-                            SettingsToggleItem(
-                                title = "Dynamic Color Tinting",
-                                subtitle = "Blend glass texture directly with active theme shades",
-                                checked = betaGlassDynamic,
-                                onCheckedChange = { viewModel.updateBetaGlassDynamic(it) }
-                            )
 
-                            SettingsToggleItem(
-                                title = "Soft Frost Glaze",
-                                subtitle = "Apply high-end satin texture blur to the primary panel layers",
-                                checked = betaFrostGlass,
-                                onCheckedChange = { viewModel.updateBetaFrostGlass(it) }
-                            )
-
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                            // Sub-segmented backdrop style
-                            SettingsSegmentedPicker(
-                                title = "Backdrop Density Style",
-                                subtitle = "Choose panel translucency characteristics",
-                                options = listOf(
-                                    Triple("Transparent", "Clear", null),
-                                    Triple("Translucent", "Satin", null),
-                                    Triple("Opaque", "Solid", null)
-                                ),
-                                selected = glassBackdropStyle,
-                                onSelected = { viewModel.updateGlassBackdropStyle(it) }
-                            )
-
-                            // Slider for Translucent
-                            AnimatedVisibility(visible = glassBackdropStyle == "Translucent") {
-                                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "Frosted Layer Opacity",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                        Text(
-                                            text = "${(glassOpacityValue * 100).toInt()}%",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Black,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                    Text(
-                                        text = "Calibrate the light passage density through frosted satin panes",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(bottom = 6.dp)
-                                    )
-                                    Slider(
-                                        value = glassOpacityValue,
-                                        onValueChange = { viewModel.updateGlassOpacityValue(it) },
-                                        valueRange = 0.1f..1.0f,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-                            }
-                            
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                            
-                            // Nav Bar Glass Opacity
-                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "Nav Bar Glass Opacity",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "${(navBarGlassOpacityValue * 100).toInt()}%",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                Text(
-                                    text = "Control bottom bar glass opacity for current theme and light/dark mode",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(bottom = 6.dp)
-                                )
-                                val isSystemSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
-                                val effectiveDark = themeMode == "Dark" || (themeMode == "System" && isSystemSystemDark)
-                                Slider(
-                                    value = navBarGlassOpacityValue,
-                                    onValueChange = { viewModel.updateNavBarGlassOpacityValue(it, themeColor, effectiveDark) },
-                                    valueRange = 0.1f..1.0f,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        }
-                    }
-                }
-            }
 
             // Advanced Navigation Panel Configuration Card
             SettingsGroupCard(title = "Advanced Bottom Navigation", icon = Icons.Rounded.Settings) {
@@ -402,12 +277,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 val navBarPaddingBottom by viewModel.navBarPaddingBottom.collectAsStateWithLifecycle()
                 val navBarCornerRadius by viewModel.navBarCornerRadius.collectAsStateWithLifecycle()
                 val navBarLabelMode by viewModel.navBarLabelMode.collectAsStateWithLifecycle()
-                val navBarGlassForceEnabled by viewModel.navBarGlassForceEnabled.collectAsStateWithLifecycle()
                 val navBarIndicatorAlpha by viewModel.navBarIndicatorAlpha.collectAsStateWithLifecycle()
                 val betaNavBarSizeControls by viewModel.betaNavBarSizeControls.collectAsStateWithLifecycle()
-                val navBarGlassLinkedToMain by viewModel.navBarGlassLinkedToMain.collectAsStateWithLifecycle()
-                val navBarGlassBackdropStyle by viewModel.navBarGlassBackdropStyle.collectAsStateWithLifecycle()
-                val navBarGlassDynamic by viewModel.navBarGlassDynamic.collectAsStateWithLifecycle()
 
                 // Layout Style choosing picker
                 SettingsSegmentedPicker(
@@ -436,67 +307,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     onSelected = { viewModel.updateNavBarLabelMode(it) }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
 
-                // Toggle for forced glass navbar style
-                SettingsToggleItem(
-                    title = "Independent Glass Backdrop",
-                    subtitle = "Force glass satin backdrop overlay specifically on bottom bar even if global Frosted UI is off",
-                    checked = navBarGlassForceEnabled,
-                    icon = Icons.Rounded.Palette,
-                    onCheckedChange = {
-                        if (true) {
-                            viewModel.updateNavBarGlassForceEnabled(it)
-                        } else {
-                            val msg = "Independent Glass is a Appearance setting."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
-                        }
-                    }
-                )
-
-                val isGlassTheme = lumia.tracker.ui.theme.LocalGlassMode.current
-                val isNavBarGlassActive = isGlassTheme || navBarGlassForceEnabled
-
-                if (isNavBarGlassActive) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-
-                    // Sync with Dynamic Glass UI Toggle
-                    SettingsToggleItem(
-                        title = "Sync with Global Glass Style",
-                        subtitle = "Link the bottom navigation bar color, style, and glass type directly to the system-wide Glass UI theme setting.",
-                        checked = navBarGlassLinkedToMain,
-                        icon = Icons.Rounded.Link,
-                        onCheckedChange = { viewModel.updateNavBarGlassLinkedToMain(it) }
-                    )
-
-                    if (!navBarGlassLinkedToMain) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-
-                        // Navbar Glass Type segmented chooser
-                        SettingsSegmentedPicker(
-                            title = "Navbar Backdrop Style",
-                            subtitle = "Adjust the glass texture from solid translucent background to completely clear dynamic panel",
-                            options = listOf(
-                                Triple("Solid", "Solid Color", null),
-                                Triple("Translucent", "Frosted Glass", null),
-                                Triple("Clear", "Totally Clear", null)
-                            ),
-                            selected = navBarGlassBackdropStyle,
-                            onSelected = { viewModel.updateNavBarGlassBackdropStyle(it) }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-
-                        // Navbar Dynamic Color Tinting Toggle
-                        SettingsToggleItem(
-                            title = "Ambient Accent Tinting",
-                            subtitle = "Infuse primary theme color highlight directly into the navigation glass backplane rendering.",
-                            checked = navBarGlassDynamic,
-                            icon = Icons.Rounded.InvertColors,
-                            onCheckedChange = { viewModel.updateNavBarGlassDynamic(it) }
-                        )
-                    }
-                }
 
                 if (betaNavBarSizeControls) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))

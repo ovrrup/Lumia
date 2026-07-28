@@ -42,10 +42,39 @@ android {
   signingConfigs {
     create("release") {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      val keystoreFile = file(keystorePath)
+      
+      val storePass = System.getenv("KEYSTORE_PASSWORD") ?: System.getenv("STORE_PASSWORD")
+      val keyPass = System.getenv("KEY_PASSWORD")
+      val keyAl = System.getenv("ALIAS") ?: System.getenv("KEY_ALIAS")
+      
+      val hasKeystore = keystoreFile.exists()
+      val hasSecrets = !storePass.isNullOrBlank() && !keyPass.isNullOrBlank() && !keyAl.isNullOrBlank()
+
+      if (hasKeystore && hasSecrets) {
+        storeFile = keystoreFile
+        storePassword = storePass
+        keyAlias = keyAl
+        keyPassword = keyPass
+      } else {
+        val hasReleaseTask = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) } ||
+            gradle.startParameter.taskRequests.any { request ->
+              request.args.any { arg -> arg.contains("Release", ignoreCase = true) }
+            }
+        if (hasReleaseTask) {
+          throw GradleException(
+            "Release build was requested, but required signing secrets are missing or incomplete.\n" +
+            "Please ensure KEYSTORE_PASSWORD, KEY_PASSWORD, and ALIAS are correctly set in the repository secrets, " +
+            "and that the decoded keystore file exists."
+          )
+        } else {
+          // Fallback to debug keystore for non-release configurations (like compile_applet) so dev environment remains functional
+          storeFile = file("${rootDir}/debug.keystore")
+          storePassword = "android"
+          keyAlias = "androiddebugkey"
+          keyPassword = "android"
+        }
+      }
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")

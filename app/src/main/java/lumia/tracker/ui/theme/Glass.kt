@@ -37,8 +37,8 @@ fun Modifier.liquidGlass(
     val backdropStyle = backdropStyleOverride ?: LocalGlassBackdropStyle.current
     val opacitySetting = opacityOverride ?: LocalGlassOpacityValue.current
     
-    val baseAlpha1 = if (isDarkTheme) (0.32f + (tintAlpha * 0.16f)) else (0.76f + (tintAlpha * 0.15f))
-    val baseAlpha2 = if (isDarkTheme) (0.16f + (tintAlpha * 0.10f)) else (0.52f + (tintAlpha * 0.10f))
+    val baseAlpha1 = if (isDarkTheme) (0.24f + (tintAlpha * 0.15f)) else (0.45f + (tintAlpha * 0.15f))
+    val baseAlpha2 = if (isDarkTheme) (0.12f + (tintAlpha * 0.08f)) else (0.25f + (tintAlpha * 0.10f))
 
     val finalAlpha1 = when (backdropStyle) {
         "Opaque", "Solid" -> 1.0f
@@ -92,14 +92,16 @@ fun Modifier.liquidGlass(
     val borderBrush = Brush.linearGradient(
         colors = if (isDarkTheme) {
             listOf(
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-                outlineVariant.copy(alpha = 0.12f),
+                Color.White.copy(alpha = 0.22f), // premium white reflection glisten highlight
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                outlineVariant.copy(alpha = 0.08f),
                 Color.Transparent
             )
         } else {
             listOf(
-                outlineVariant.copy(alpha = 0.22f),
-                outlineVariant.copy(alpha = 0.05f)
+                Color.White.copy(alpha = 0.45f), // pure white reflection highlight
+                outlineVariant.copy(alpha = 0.18f),
+                Color.Transparent
             )
         },
         start = Offset(0f, 0f),

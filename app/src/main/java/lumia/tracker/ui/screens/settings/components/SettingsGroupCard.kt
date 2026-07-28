@@ -113,7 +113,7 @@ fun SettingsGroupCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 8.dp, bottom = 8.dp)
+                    .padding(start = 16.dp, bottom = 8.dp)
             ) {
                 if (icon != null) {
                     Icon(

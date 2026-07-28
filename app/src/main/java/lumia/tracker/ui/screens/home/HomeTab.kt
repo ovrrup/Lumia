@@ -372,7 +372,7 @@ fun HomeTab(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                                        .clickable { selectedDateOffset = 0 },
+                                        .bouncyClick { selectedDateOffset = 0 },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -437,7 +437,7 @@ fun HomeTab(
                                                 Modifier
                                             }
                                         )
-                                        .clickable { selectedDateOffset = offset }
+                                        .bouncyClick { selectedDateOffset = offset }
                                         .padding(vertical = 12.dp)
                                 ) {
                                     Text(
