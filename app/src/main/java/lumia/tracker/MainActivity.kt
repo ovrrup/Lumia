@@ -136,7 +136,8 @@ class MainActivity : ComponentActivity() {
                 viewModel.refreshNavBarGlassOpacity(themeColor, effectiveDark)
             }
 
-            androidx.compose.runtime.LaunchedEffect(displayLayoutMode) {
+            val systemBarVisible by viewModel.systemBarVisible.collectAsStateWithLifecycle()
+            androidx.compose.runtime.LaunchedEffect(displayLayoutMode, systemBarVisible) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     val window = (this@MainActivity).window
                     window.attributes = window.attributes.apply {
@@ -146,6 +147,18 @@ class MainActivity : ComponentActivity() {
                             android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
                         }
                     }
+                }
+                val window = (this@MainActivity).window
+                val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                if (displayLayoutMode == "Immersive") {
+                    if (systemBarVisible) {
+                        controller.show(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+                    } else {
+                        controller.hide(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+                        controller.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    }
+                } else {
+                    controller.show(androidx.core.view.WindowInsetsCompat.Type.statusBars())
                 }
             }
 

@@ -169,7 +169,9 @@ fun HomeTab(
         modifier = Modifier.fillMaxSize()
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(remember { lumia.tracker.util.SystemBarScrollConnection(viewModel) }),
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,

@@ -66,7 +66,9 @@ fun SubjectsTab(
         }
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(remember { lumia.tracker.util.SystemBarScrollConnection(viewModel) }),
             contentPadding = PaddingValues(
                 start = 16.dp, end = 16.dp, 
                 top = bottomPadding.calculateTopPadding() + 16.dp, bottom = bottomPadding.calculateBottomPadding() + 16.dp
