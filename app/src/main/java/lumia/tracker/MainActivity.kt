@@ -50,6 +50,7 @@ import lumia.tracker.ui.screens.DashboardScreen
 import lumia.tracker.ui.screens.SettingsScreen
 import lumia.tracker.ui.screens.search.SearchScreen
 import lumia.tracker.ui.theme.ScholarTheme
+import lumia.tracker.ui.theme.LocalDarkTheme
 import lumia.tracker.viewmodel.ScholarViewModel
 import lumia.tracker.worker.AssignmentMonitorWorker
 import java.util.concurrent.TimeUnit
@@ -336,7 +337,7 @@ class MainActivity : ComponentActivity() {
                                 remember { androidx.compose.runtime.mutableStateOf(0.5f) }
                             }
                             val colorScheme = MaterialTheme.colorScheme
-                            val isDark = androidx.compose.foundation.isSystemInDarkTheme() || colorScheme.background.red < 0.5f
+                            val isDark = LocalDarkTheme.current
                             androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                                 val colors = listOf(
                                     colorScheme.primaryContainer,
@@ -379,48 +380,88 @@ class MainActivity : ComponentActivity() {
                                 ) else Modifier
                             ),
                         enterTransition = {
-                            val spec = if (appAnimationMode == "Bouncy") {
-                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
-                            } else if (appAnimationMode == "Dynamic") {
-                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                            if (appAnimationMode == "iOS") {
+                                androidx.compose.animation.slideInHorizontally(
+                                    initialOffsetX = { fullWidth -> fullWidth },
+                                    animationSpec = androidx.compose.animation.core.spring(
+                                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
+                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                                    )
+                                ) + androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300))
                             } else {
-                                androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+                                val spec = if (appAnimationMode == "Bouncy") {
+                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
+                                } else if (appAnimationMode == "Dynamic") {
+                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                                } else {
+                                    androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+                                }
+                                androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                                androidx.compose.animation.scaleIn(initialScale = if (appAnimationMode == "Bouncy") 0.8f else 0.95f, animationSpec = spec)
                             }
-                            androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
-                            androidx.compose.animation.scaleIn(initialScale = if (appAnimationMode == "Bouncy") 0.8f else 0.95f, animationSpec = spec)
                         },
                         exitTransition = {
-                            val spec = if (appAnimationMode == "Bouncy") {
-                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
-                            } else if (appAnimationMode == "Dynamic") {
-                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                            if (appAnimationMode == "iOS") {
+                                androidx.compose.animation.slideOutHorizontally(
+                                    targetOffsetX = { fullWidth -> -fullWidth / 3 },
+                                    animationSpec = androidx.compose.animation.core.spring(
+                                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
+                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                                    )
+                                ) + androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300))
                             } else {
-                                androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                                val spec = if (appAnimationMode == "Bouncy") {
+                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
+                                } else if (appAnimationMode == "Dynamic") {
+                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                                } else {
+                                    androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                                }
+                                androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                                androidx.compose.animation.scaleOut(targetScale = if (appAnimationMode == "Bouncy") 1.2f else 1.05f, animationSpec = spec)
                             }
-                            androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
-                            androidx.compose.animation.scaleOut(targetScale = if (appAnimationMode == "Bouncy") 1.2f else 1.05f, animationSpec = spec)
                         },
                         popEnterTransition = {
-                            val spec = if (appAnimationMode == "Bouncy") {
-                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
-                            } else if (appAnimationMode == "Dynamic") {
-                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                            if (appAnimationMode == "iOS") {
+                                androidx.compose.animation.slideInHorizontally(
+                                    initialOffsetX = { fullWidth -> -fullWidth / 3 },
+                                    animationSpec = androidx.compose.animation.core.spring(
+                                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
+                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                                    )
+                                ) + androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300))
                             } else {
-                                androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+                                val spec = if (appAnimationMode == "Bouncy") {
+                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
+                                } else if (appAnimationMode == "Dynamic") {
+                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                                } else {
+                                    androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.LinearOutSlowInEasing)
+                                }
+                                androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                                androidx.compose.animation.scaleIn(initialScale = if (appAnimationMode == "Bouncy") 1.2f else 1.05f, animationSpec = spec)
                             }
-                            androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
-                            androidx.compose.animation.scaleIn(initialScale = if (appAnimationMode == "Bouncy") 1.2f else 1.05f, animationSpec = spec)
                         },
                         popExitTransition = {
-                            val spec = if (appAnimationMode == "Bouncy") {
-                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
-                            } else if (appAnimationMode == "Dynamic") {
-                                androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                            if (appAnimationMode == "iOS") {
+                                androidx.compose.animation.slideOutHorizontally(
+                                    targetOffsetX = { fullWidth -> fullWidth },
+                                    animationSpec = androidx.compose.animation.core.spring(
+                                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
+                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                                    )
+                                ) + androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300))
                             } else {
-                                androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                                val spec = if (appAnimationMode == "Bouncy") {
+                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
+                                } else if (appAnimationMode == "Dynamic") {
+                                    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
+                                } else {
+                                    androidx.compose.animation.core.tween<Float>(300, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                                }
+                                androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                                androidx.compose.animation.scaleOut(targetScale = if (appAnimationMode == "Bouncy") 0.8f else 0.95f, animationSpec = spec)
                             }
-                            androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
-                            androidx.compose.animation.scaleOut(targetScale = if (appAnimationMode == "Bouncy") 0.8f else 0.95f, animationSpec = spec)
                         }
                     ) {
                         composable("onboarding") {
@@ -514,18 +555,7 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel
                             )
                         }
-                        composable("settings/beta") {
-                            lumia.tracker.ui.screens.BetaFeaturesScreen(
-                                navController = navController,
-                                viewModel = viewModel
-                            )
-                        }
-                        composable("settings/safety") {
-                            lumia.tracker.ui.screens.SafetyFeaturesScreen(
-                                navController = navController,
-                                viewModel = viewModel
-                            )
-                        }
+
                         composable("settings/data") {
                             lumia.tracker.ui.screens.DataManagementScreen(
                                 navController = navController,

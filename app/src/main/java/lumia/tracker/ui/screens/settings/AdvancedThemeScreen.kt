@@ -6,6 +6,7 @@ import android.content.Intent
 import android.provider.Settings
 import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.glassBar
+import lumia.tracker.ui.theme.LocalDarkTheme
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.ui.text.style.TextAlign
@@ -103,7 +104,7 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
 
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = LocalDarkTheme.current
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(

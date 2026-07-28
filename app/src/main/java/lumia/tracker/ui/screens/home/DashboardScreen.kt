@@ -5,6 +5,8 @@ import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.glassBar
 import lumia.tracker.ui.theme.navGlassBar
 import lumia.tracker.ui.theme.glassPill
+import lumia.tracker.ui.theme.LocalDarkTheme
+import lumia.tracker.ui.theme.LocalPureBlackMode
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -73,6 +75,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material.icons.rounded.LocalOffer
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -177,15 +182,15 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             bottomBar = {
                 if (!betaFloatingNav) {
                     val useGlass = isGlass || navBarGlassForceEnabled
+                    val isDark = LocalDarkTheme.current
                     val navItemColors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.primary,
                         selectedTextColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = if (androidx.compose.foundation.isSystemInDarkTheme()) androidx.compose.ui.graphics.Color(0xFF8E8E93) else androidx.compose.ui.graphics.Color(0xFF999999),
-                        unselectedTextColor = if (androidx.compose.foundation.isSystemInDarkTheme()) androidx.compose.ui.graphics.Color(0xFF8E8E93) else androidx.compose.ui.graphics.Color(0xFF999999),
+                        unselectedIconColor = if (isDark) androidx.compose.ui.graphics.Color(0xFF8E8E93) else androidx.compose.ui.graphics.Color(0xFF999999),
+                        unselectedTextColor = if (isDark) androidx.compose.ui.graphics.Color(0xFF8E8E93) else androidx.compose.ui.graphics.Color(0xFF999999),
                         indicatorColor = androidx.compose.ui.graphics.Color.Transparent
                     )
                     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
                     Column(modifier = Modifier.fillMaxWidth()) {
                         // iOS top divider for tab bar
                         Box(
@@ -269,11 +274,40 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     bottom = padding.calculateBottomPadding()
                 )
             }
+            var dragAmount by remember { mutableStateOf(0f) }
+            val enabledTabs = remember(featureSubjectEnabled, fuseSubjectsCourses, featureSelfStudyEnabled, featureAnalyticsEnabled) {
+                val list = mutableListOf(0, 1)
+                if (featureSubjectEnabled && !fuseSubjectsCourses) list.add(2)
+                if (featureSelfStudyEnabled) list.add(3)
+                if (featureAnalyticsEnabled) list.add(4)
+                list
+            }
+
             androidx.compose.foundation.layout.Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = padding.calculateTopPadding())
                     .clipToBounds()
+                    .pointerInput(enabledTabs, selectedTab) {
+                        detectHorizontalDragGestures(
+                            onDragStart = { dragAmount = 0f },
+                            onDragEnd = {
+                                val threshold = 180f
+                                val currentIndex = enabledTabs.indexOf(selectedTab)
+                                if (currentIndex != -1) {
+                                    if (dragAmount < -threshold && currentIndex < enabledTabs.size - 1) {
+                                        viewModel.setSelectedDashboardTab(enabledTabs[currentIndex + 1])
+                                    } else if (dragAmount > threshold && currentIndex > 0) {
+                                        viewModel.setSelectedDashboardTab(enabledTabs[currentIndex - 1])
+                                    }
+                                }
+                            },
+                            onHorizontalDrag = { change: PointerInputChange, dragAmountPx: Float ->
+                                change.consume()
+                                dragAmount += dragAmountPx
+                            }
+                        )
+                    }
             ) {
                 val appAnimationMode = lumia.tracker.ui.theme.LocalAppAnimationMode.current
                 androidx.compose.animation.AnimatedContent(
@@ -434,7 +468,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
         }
         
         // iOS Top Navigation Bar — solid, full-bleed with bottom border
-        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+        val isDark = LocalDarkTheme.current
         val pureBlackMode by viewModel.pureBlackMode.collectAsStateWithLifecycle()
         val topBarBg = if (isDark) {
             if (pureBlackMode) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color(0xFF1C1C1E)

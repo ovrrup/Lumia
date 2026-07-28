@@ -36,7 +36,6 @@ import lumia.tracker.ui.theme.LocalMoreRoundsMode
 @Composable
 fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel) {
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
-    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     
     var showEditDialog by remember { mutableStateOf(false) }
@@ -211,31 +210,12 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                         subtitle = "Configure percentage limits, fire color, and liquid animations",
                         onClick = { navController.navigate("settings/streaks") }
                     )
-
-                    
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                    
-                    SettingsActionItemInCard(
-                        title = "Experimental Features",
-                        subtitle = "Quick tools and layouts",
-                        icon = Icons.Rounded.Check,
-                        onClick = { navController.navigate("settings/beta") }
-                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Safety & Notifications
-                SettingsGroupCard(title = "Alerts & Security", icon = Icons.Rounded.Lock) {
-                    SettingsActionItemInCard(
-                        title = "Safety System Guard",
-                        subtitle = "Automatic alerts and smart recommendations",
-                        icon = Icons.Rounded.Lock,
-                        onClick = { navController.navigate("settings/safety") }
-                    )
-                    
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
+                // Alerts & Notifications
+                SettingsGroupCard(title = "Alerts & Notifications", icon = Icons.Rounded.Notifications) {
                     SettingsActionItemInCard(
                         title = "Notifications Management",
                         subtitle = "Tones, schedules, and active alerts",

@@ -33,6 +33,10 @@ import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -205,13 +209,19 @@ fun SelfStudyTab(
                     items(localTasks, key = { it.id }) { task ->
                         ReorderableItem(reorderableState, key = task.id) { isDragging ->
                             val elevation = if (isDragging) 8.dp else 0.dp
-                            TaskItemCard(
-                                task = task, 
-                                viewModel = viewModel, 
-                                onEdit = { taskToEdit = task },
-                                modifier = Modifier.detectReorderAfterLongPress(reorderableState),
-                                navController = navController
-                            )
+                            SwipeToActionsContainer(
+                                onDelete = { viewModel.deleteTask(task) },
+                                onToggleComplete = { viewModel.toggleTaskCompleted(task) },
+                                isCompleted = task.isCompleted,
+                                modifier = Modifier.detectReorderAfterLongPress(reorderableState)
+                            ) {
+                                TaskItemCard(
+                                    task = task, 
+                                    viewModel = viewModel, 
+                                    onEdit = { taskToEdit = task },
+                                    navController = navController
+                                )
+                            }
                         }
                     }
                 } else if (groupBy == "Tags") {
@@ -221,7 +231,13 @@ fun SelfStudyTab(
                             Text(tag, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(top = 8.dp))
                         }
                         items(tTasks, key = { it.id }) { task ->
-                            TaskItemCard(task = task, viewModel = viewModel, onEdit = { taskToEdit = task }, navController = navController)
+                            SwipeToActionsContainer(
+                                onDelete = { viewModel.deleteTask(task) },
+                                onToggleComplete = { viewModel.toggleTaskCompleted(task) },
+                                isCompleted = task.isCompleted
+                            ) {
+                                TaskItemCard(task = task, viewModel = viewModel, onEdit = { taskToEdit = task }, navController = navController)
+                            }
                         }
                     }
                 } else if (groupBy == "Priority") {
@@ -233,7 +249,13 @@ fun SelfStudyTab(
                                 Text(pLabel, style = MaterialTheme.typography.labelLarge, color = if (pLabel.startsWith("High")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(top = 8.dp))
                             }
                             items(tTasks, key = { it.id }) { task ->
-                                TaskItemCard(task = task, viewModel = viewModel, onEdit = { taskToEdit = task }, navController = navController)
+                                SwipeToActionsContainer(
+                                    onDelete = { viewModel.deleteTask(task) },
+                                    onToggleComplete = { viewModel.toggleTaskCompleted(task) },
+                                    isCompleted = task.isCompleted
+                                ) {
+                                    TaskItemCard(task = task, viewModel = viewModel, onEdit = { taskToEdit = task }, navController = navController)
+                                }
                             }
                         }
                     }
@@ -450,5 +472,91 @@ fun SelfStudyTab(
                 }) { Text("Cancel") }
             }
         )
+    }
+}
+
+@Composable
+fun SwipeToActionsContainer(
+    modifier: Modifier = Modifier,
+    onDelete: () -> Unit,
+    onToggleComplete: () -> Unit,
+    isCompleted: Boolean,
+    content: @Composable () -> Unit
+) {
+    var offsetX by remember { mutableStateOf(0f) }
+    val animatedOffsetX by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = offsetX,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
+        ),
+        label = "swipe_offset"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerInput(isCompleted) {
+                detectHorizontalDragGestures(
+                    onDragStart = {},
+                    onDragEnd = {
+                        if (offsetX < -150f) { // Swipe left enough to delete
+                            offsetX = -1200f // Slide off screen
+                            onDelete()
+                        } else if (offsetX > 150f) { // Swipe right enough to complete/toggle
+                            offsetX = 0f
+                            onToggleComplete()
+                        } else {
+                            offsetX = 0f // Bounce back
+                        }
+                    },
+                    onDragCancel = {
+                        offsetX = 0f
+                    },
+                    onHorizontalDrag = { change, dragAmount ->
+                        change.consume()
+                        offsetX += dragAmount
+                    }
+                )
+            }
+    ) {
+        // Background indications
+        if (offsetX < 0) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(MaterialTheme.colorScheme.error, RoundedCornerShape(16.dp))
+                    .padding(end = 16.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.onError
+                )
+            }
+        } else if (offsetX > 0) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(androidx.compose.ui.graphics.Color(0xFF34C759), RoundedCornerShape(16.dp))
+                    .padding(start = 16.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Icon(
+                    imageVector = if (isCompleted) Icons.Rounded.Close else Icons.Rounded.Check,
+                    contentDescription = if (isCompleted) "Mark Incomplete" else "Mark Complete",
+                    tint = androidx.compose.ui.graphics.Color.White
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(animatedOffsetX.roundToInt(), 0) }
+                .fillMaxWidth()
+        ) {
+            content()
+        }
     }
 }

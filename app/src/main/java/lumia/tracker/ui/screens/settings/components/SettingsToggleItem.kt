@@ -6,6 +6,7 @@ import android.content.Intent
 import android.provider.Settings
 import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.glassBar
+import lumia.tracker.ui.theme.LocalDarkTheme
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.ui.text.style.TextAlign
@@ -176,7 +177,7 @@ fun SettingsToggleItem(
             }
         }
         
-        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+        val isDark = LocalDarkTheme.current
         Switch(
             checked = checked,
             enabled = enabled,

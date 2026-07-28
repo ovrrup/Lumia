@@ -6,6 +6,7 @@ import android.content.Intent
 import android.provider.Settings
 import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.glassBar
+import lumia.tracker.ui.theme.LocalDarkTheme
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.ui.text.style.TextAlign
@@ -97,8 +98,7 @@ import lumia.tracker.ui.components.BouncyTextButton
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
-    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = LocalDarkTheme.current
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
@@ -165,30 +165,12 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     icon = Icons.Rounded.LocalOffer,
                     onClick = { navController.navigate("tags_hub") }
                 )
-                
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                
-                SettingsActionItemInCard(
-                    title = "Experimental Features",
-                    subtitle = "Quick tools and layouts",
-                    icon = Icons.Rounded.Check,
-                    onClick = { navController.navigate("settings/beta") }
-                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Safety & Notifications
-            SettingsGroupCard(title = "Alerts & Security", icon = Icons.Rounded.Lock) {
-                SettingsActionItemInCard(
-                    title = "Safety System Guard",
-                    subtitle = "Automatic alerts and smart recommendations",
-                    icon = Icons.Rounded.Lock,
-                    onClick = { navController.navigate("settings/safety") }
-                )
-                
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
+            // Notifications Card
+            SettingsGroupCard(title = "Alerts & Notifications", icon = Icons.Rounded.Notifications) {
                 SettingsActionItemInCard(
                     title = "Notifications Management",
                     subtitle = "Tones, schedules, and active alerts",

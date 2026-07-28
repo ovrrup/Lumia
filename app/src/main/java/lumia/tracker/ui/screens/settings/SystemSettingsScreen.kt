@@ -113,6 +113,10 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
 
+    val safetyPinEnabled by viewModel.safetyPinEnabled.collectAsStateWithLifecycle()
+    val safetyPinConflictWarning by viewModel.safetyPinConflictWarning.collectAsStateWithLifecycle()
+    val safetyPinRecommendations by viewModel.safetyPinRecommendations.collectAsStateWithLifecycle()
+
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
@@ -306,6 +310,48 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                         valueRange = 1f..10f,
                         steps = 8
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            SettingsCategoryHeading(title = "Safety & Conflict Engine", icon = Icons.Rounded.Lock)
+
+            SettingsGroupCard(
+                title = "System Guard & Auto-Resolve",
+                icon = Icons.Rounded.Lock,
+                infoText = "When enabled, the Safety Pin Guard prevents you from activating conflicting styles or settings. If any conflict arises, the system auto-resolves it or alerts you."
+            ) {
+                SettingsToggleItem(
+                    title = "Safety System Guard",
+                    subtitle = "Block or auto-resolve conflicting UI and behavior settings dynamically.",
+                    checked = safetyPinEnabled,
+                    icon = Icons.Rounded.Lock,
+                    onCheckedChange = { viewModel.updateSafetyPinEnabled(it) }
+                )
+
+                AnimatedVisibility(visible = safetyPinEnabled) {
+                    Column {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                        SettingsToggleItem(
+                            title = "Conflict Warnings",
+                            subtitle = "Receive prompt alerts explaining why specific themes or styles conflict.",
+                            checked = safetyPinConflictWarning,
+                            icon = Icons.Rounded.Warning,
+                            onCheckedChange = { viewModel.updateSafetyPinConflictWarning(it) }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                        SettingsToggleItem(
+                            title = "Dynamic Recommendations",
+                            subtitle = "Allow system to suggest optimal performance and visual arrangements.",
+                            checked = safetyPinRecommendations,
+                            icon = Icons.Rounded.Info,
+                            onCheckedChange = { viewModel.updateSafetyPinRecommendations(it) }
+                        )
+                    }
                 }
             }
 

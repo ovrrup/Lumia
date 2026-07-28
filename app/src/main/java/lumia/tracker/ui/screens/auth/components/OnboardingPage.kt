@@ -1,5 +1,6 @@
 package lumia.tracker.ui.screens
 
+import lumia.tracker.ui.theme.LocalDarkTheme
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -127,7 +128,7 @@ fun OnboardingPage(icon: ImageVector, title: String, description: String, isActi
 
 @Composable
 fun GlassmorphicRepresentation() {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = LocalDarkTheme.current
     val primaryColor = MaterialTheme.colorScheme.primary
     val secondaryColor = MaterialTheme.colorScheme.secondary
     val tertiaryColor = MaterialTheme.colorScheme.tertiary

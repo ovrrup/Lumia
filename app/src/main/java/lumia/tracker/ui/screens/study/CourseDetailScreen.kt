@@ -2,6 +2,7 @@ package lumia.tracker.ui.screens
 
 import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.glassBar
+import lumia.tracker.ui.theme.LocalDarkTheme
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -390,7 +391,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = LocalDarkTheme.current
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(

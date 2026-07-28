@@ -4,6 +4,7 @@ import androidx.navigation.NavController
 
 import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.glassBar
+import lumia.tracker.ui.theme.LocalDarkTheme
 import android.text.format.DateFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -108,12 +109,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
-    val systemInDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val isDark = when (themeMode) {
-        "Dark" -> true
-        "Light" -> false
-        else -> systemInDark
-    }
+    val isDark = LocalDarkTheme.current
 
     Scaffold(
         containerColor = Color.Transparent,

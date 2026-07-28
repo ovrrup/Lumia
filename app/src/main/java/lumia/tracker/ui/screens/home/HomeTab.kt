@@ -4,6 +4,7 @@ import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.glassBar
 import lumia.tracker.ui.theme.navGlassBar
 import lumia.tracker.ui.theme.glassPill
+import lumia.tracker.ui.theme.LocalDarkTheme
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -141,7 +142,6 @@ fun HomeTab(
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
-    val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -161,7 +161,7 @@ fun HomeTab(
     }
 
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = LocalDarkTheme.current
 
     var selectedDateOffset by remember { androidx.compose.runtime.mutableIntStateOf(0) }
 
@@ -265,7 +265,7 @@ fun HomeTab(
             }
 
 
-            if (featureQuickNotesEnabled && betaNotes) {
+            if (featureQuickNotesEnabled) {
                 item(key = "student_tools_title") {
                     Text(
                         "Student Tools",
@@ -275,7 +275,7 @@ fun HomeTab(
                     )
                 }
 
-                if (featureQuickNotesEnabled && betaNotes) {
+                if (featureQuickNotesEnabled) {
                     item(key = "notes_tool") {
                         GlassCard(
                             onClick = { navController.navigate("notes") },

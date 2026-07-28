@@ -154,6 +154,8 @@ fun Color.mix(other: Color, weight: Float): Color {
 }
 
 val LocalGlassTint = androidx.compose.runtime.compositionLocalOf { Color.White }
+val LocalDarkTheme = androidx.compose.runtime.compositionLocalOf { false }
+val LocalPureBlackMode = androidx.compose.runtime.compositionLocalOf { false }
 val LocalGlassMode = androidx.compose.runtime.compositionLocalOf { false }
 val LocalGlassDynamic = androidx.compose.runtime.compositionLocalOf { true }
 val LocalFrostGlass = androidx.compose.runtime.compositionLocalOf { true }
@@ -275,7 +277,7 @@ fun ScholarTheme(
     if (isDark && pureBlackMode) {
         colorScheme = colorScheme.copy(
             background = Color.Black,
-            surface = Color(0xCC000000),
+            surface = Color.Black,
             surfaceVariant = Color(0xFF1E1E1E)
         )
     }
@@ -286,7 +288,7 @@ fun ScholarTheme(
     // to preserve unique branding and prevent monocolor dilution, while creating soft cohesiveness.
     colorScheme = colorScheme.copy(
         background = if (isDark && pureBlackMode) Color.Black else colorScheme.background.mix(colorScheme.primary, 0.98f),
-        surface = if (isDark && pureBlackMode) Color(0xCC000000) else colorScheme.surface.mix(colorScheme.primary, 0.97f),
+        surface = if (isDark && pureBlackMode) Color.Black else colorScheme.surface.mix(colorScheme.primary, 0.97f),
         surfaceVariant = colorScheme.surfaceVariant.mix(colorScheme.secondary, 0.95f),
         primaryContainer = colorScheme.primaryContainer.mix(colorScheme.primary, 0.93f),
         secondaryContainer = colorScheme.secondaryContainer.mix(colorScheme.secondary, 0.93f),
@@ -381,6 +383,8 @@ fun ScholarTheme(
     }
 
     androidx.compose.runtime.CompositionLocalProvider(
+        LocalDarkTheme provides isDark,
+        LocalPureBlackMode provides (isDark && pureBlackMode),
         LocalGlassTint provides colorScheme.primary,
         LocalGlassMode provides glassMode,
         LocalGlassDynamic provides glassDynamic,

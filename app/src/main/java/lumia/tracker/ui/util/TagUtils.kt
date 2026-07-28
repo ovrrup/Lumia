@@ -2,10 +2,11 @@ package lumia.tracker.ui.util
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import lumia.tracker.ui.theme.LocalDarkTheme
 
 @Composable
 fun getTagColors(tagName: String): Pair<Color, Color> {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = LocalDarkTheme.current
     val index = Math.abs(tagName.hashCode()) % 10
     return if (isDark) {
         val darkPairs = listOf(

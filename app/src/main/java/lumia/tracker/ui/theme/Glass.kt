@@ -30,12 +30,13 @@ fun Modifier.liquidGlass(
     opacityOverride: Float? = null,
     backdropStyleOverride: String? = null
 ): Modifier = composed {
-    val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
+    val isDarkTheme = LocalDarkTheme.current
+    val isPureBlack = LocalPureBlackMode.current
     val surfaceColor = MaterialTheme.colorScheme.surface
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     
-    val backdropStyle = backdropStyleOverride ?: LocalGlassBackdropStyle.current
-    val opacitySetting = opacityOverride ?: LocalGlassOpacityValue.current
+    val backdropStyle = if (isPureBlack) "Solid" else (backdropStyleOverride ?: LocalGlassBackdropStyle.current)
+    val opacitySetting = if (isPureBlack) 1.0f else (opacityOverride ?: LocalGlassOpacityValue.current)
     
     val baseAlpha1 = if (isDarkTheme) (0.24f + (tintAlpha * 0.15f)) else (0.45f + (tintAlpha * 0.15f))
     val baseAlpha2 = if (isDarkTheme) (0.12f + (tintAlpha * 0.08f)) else (0.25f + (tintAlpha * 0.10f))
@@ -115,7 +116,7 @@ fun Modifier.liquidGlass(
 }
 
 fun Modifier.glassCard(shape: Shape = RoundedCornerShape(24.dp)): Modifier = composed {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
+    val isDark = LocalDarkTheme.current
     val dynamic = LocalGlassDynamic.current
     val tint = LocalGlassTint.current
     
@@ -134,7 +135,7 @@ fun Modifier.glassCard(shape: Shape = RoundedCornerShape(24.dp)): Modifier = com
 }
 
 fun Modifier.glassHero(shape: Shape = RoundedCornerShape(24.dp)): Modifier = composed {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
+    val isDark = LocalDarkTheme.current
     val dynamic = LocalGlassDynamic.current
     val tint = LocalGlassTint.current
     
@@ -153,7 +154,7 @@ fun Modifier.glassHero(shape: Shape = RoundedCornerShape(24.dp)): Modifier = com
 }
 
 fun Modifier.glassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = composed {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
+    val isDark = LocalDarkTheme.current
     val dynamic = LocalGlassDynamic.current
     val tint = LocalGlassTint.current
     val tintColor = if (dynamic) {
@@ -170,7 +171,7 @@ fun Modifier.glassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = compo
 }
 
 fun Modifier.navGlassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = composed {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
+    val isDark = LocalDarkTheme.current
     
     val isLinked = LocalNavBarGlassLinkedToMain.current
     val dynamic = if (isLinked) LocalGlassDynamic.current else LocalNavBarGlassDynamic.current
@@ -194,7 +195,7 @@ fun Modifier.navGlassBar(shape: Shape = RoundedCornerShape(0.dp)): Modifier = co
 }
 
 fun Modifier.glassPill(shape: Shape = RoundedCornerShape(50.dp)): Modifier = composed {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme() || MaterialTheme.colorScheme.background.red < 0.5f
+    val isDark = LocalDarkTheme.current
     
     val isLinked = LocalNavBarGlassLinkedToMain.current
     val dynamic = if (isLinked) LocalGlassDynamic.current else LocalNavBarGlassDynamic.current

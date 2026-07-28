@@ -20,6 +20,11 @@ import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.BouncyIconButton
 import org.json.JSONArray
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,25 +91,33 @@ fun QuickNotesScreen(navController: NavController) {
                     )
                 }
             }
-            itemsIndexed(notesList) { index, note ->
-                lumia.tracker.ui.components.GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
+            itemsIndexed(notesList, key = { _, note -> note }) { index, note ->
+                SwipeToDeleteContainer(
+                    onDelete = {
+                        notesList.removeAt(index)
+                        saveNotes()
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    lumia.tracker.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text(
-                            text = note,
-                            modifier = Modifier.weight(1f).padding(end = 8.dp),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        IconButton(onClick = { 
-                            notesList.removeAt(index)
-                            saveNotes()
-                        }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Rounded.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = note,
+                                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            IconButton(onClick = { 
+                                notesList.removeAt(index)
+                                saveNotes()
+                            }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Rounded.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
+                            }
                         }
                     }
                 }
@@ -144,5 +157,73 @@ fun QuickNotesScreen(navController: NavController) {
                 TextButton(onClick = { showAddDialog = false; newNoteText = "" }) { Text("Cancel") }
             }
         )
+    }
+}
+
+@Composable
+fun SwipeToDeleteContainer(
+    modifier: Modifier = Modifier,
+    onDelete: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    var offsetX by remember { mutableStateOf(0f) }
+    val animatedOffsetX by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = offsetX,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
+        ),
+        label = "swipe_offset"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragStart = {},
+                    onDragEnd = {
+                        if (offsetX < -150f) { // Swipe left enough to delete
+                            offsetX = -1200f // Slide off screen
+                            onDelete()
+                        } else {
+                            offsetX = 0f // Bounce back
+                        }
+                    },
+                    onDragCancel = {
+                        offsetX = 0f
+                    },
+                    onHorizontalDrag = { change, dragAmount ->
+                        change.consume()
+                        // Only allow swiping left (negative offsetX)
+                        offsetX = (offsetX + dragAmount).coerceAtMost(0f)
+                    }
+                )
+            }
+    ) {
+        // Red background behind
+        if (offsetX < 0) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(MaterialTheme.colorScheme.error, RoundedCornerShape(16.dp))
+                    .padding(end = 16.dp),
+                contentAlignment = androidx.compose.ui.Alignment.CenterEnd
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.onError
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(animatedOffsetX.roundToInt(), 0) }
+                .fillMaxWidth()
+        ) {
+            content()
+        }
     }
 }
