@@ -38,9 +38,10 @@ fun PdfViewerScreen(navController: NavController, filePath: String?, fileName: S
             errorMessage = "No file path provided"
             return@LaunchedEffect
         }
-        val file = File(filePath)
+        val decodedPath = android.net.Uri.decode(filePath)
+        val file = File(decodedPath)
         if (!file.exists()) {
-            errorMessage = "File does not exist: ${file.name}"
+            errorMessage = "File does not exist: ${file.name} at path $decodedPath"
             return@LaunchedEffect
         }
         try {

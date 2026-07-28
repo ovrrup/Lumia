@@ -200,9 +200,10 @@ data class ScholarBackup(
     val attachments: List<Attachment>? = emptyList(),
     val testRecords: List<TestRecord>? = emptyList(),
     val tagCustomizations: List<TagCustomization>? = emptyList(),
-    val profile: UserProfile? = null
-    , val isFullAppBackup: Boolean? = false
-    , val fullAppBackupJson: String? = null
+    val profile: UserProfile? = null,
+    val isFullAppBackup: Boolean? = false,
+    val fullAppBackupJson: String? = null,
+    val attachmentFiles: Map<String, String>? = emptyMap()
 ) : Serializable
 
 @JsonClass(generateAdapter = true)

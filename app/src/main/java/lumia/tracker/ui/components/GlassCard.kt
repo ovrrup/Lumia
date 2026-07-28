@@ -26,6 +26,8 @@ fun GlassCard(
     content: @Composable BoxScope.() -> Unit
 ) {
     val isGlass = LocalGlassMode.current
+    val isPureBlack = lumia.tracker.ui.theme.LocalPureBlackMode.current
+    val elevation = if (isPureBlack) 0.dp else (if (containerColor == null) 2.dp else 0.dp)
     if (isGlass) {
         Box(
             modifier = modifier
@@ -43,7 +45,7 @@ fun GlassCard(
                 modifier = modifier.bouncyClick(onClick = onClick),
                 shape = shape,
                 color = containerColor ?: MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = if (containerColor == null) 2.dp else 0.dp
+                tonalElevation = elevation
             ) {
                 Box(content = content)
             }
@@ -52,7 +54,7 @@ fun GlassCard(
                 modifier = modifier,
                 shape = shape,
                 color = containerColor ?: MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = if (containerColor == null) 2.dp else 0.dp
+                tonalElevation = elevation
             ) {
                 Box(content = content)
             }

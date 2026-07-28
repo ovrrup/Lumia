@@ -185,11 +185,12 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 if (!betaFloatingNav) {
                     val useGlass = isGlass || navBarGlassForceEnabled
                     val isDark = LocalDarkTheme.current
+                    val isPureBlack = LocalPureBlackMode.current
                     val navItemColors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.primary,
                         selectedTextColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = if (isDark) androidx.compose.ui.graphics.Color(0xFF8E8E93) else androidx.compose.ui.graphics.Color(0xFF999999),
-                        unselectedTextColor = if (isDark) androidx.compose.ui.graphics.Color(0xFF8E8E93) else androidx.compose.ui.graphics.Color(0xFF999999),
+                        unselectedIconColor = if (isPureBlack) androidx.compose.ui.graphics.Color(0xFF555555) else (if (isDark) androidx.compose.ui.graphics.Color(0xFF8E8E93) else androidx.compose.ui.graphics.Color(0xFF999999)),
+                        unselectedTextColor = if (isPureBlack) androidx.compose.ui.graphics.Color(0xFF555555) else (if (isDark) androidx.compose.ui.graphics.Color(0xFF8E8E93) else androidx.compose.ui.graphics.Color(0xFF999999)),
                         indicatorColor = androidx.compose.ui.graphics.Color.Transparent
                     )
                     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -199,13 +200,13 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(0.5.dp)
-                                .background(if (isDark) androidx.compose.ui.graphics.Color(0xFF2C2C2E) else androidx.compose.ui.graphics.Color(0xFFE5E5EA))
+                                .background(if (isPureBlack) androidx.compose.ui.graphics.Color(0xFF111111) else (if (isDark) androidx.compose.ui.graphics.Color(0xFF2C2C2E) else androidx.compose.ui.graphics.Color(0xFFE5E5EA)))
                         )
                         NavigationBar(
                             modifier = Modifier
                                 .height(navBarHeight.dp + bottomInset)
                                 .then(if (useGlass) Modifier.navGlassBar(androidx.compose.foundation.shape.RoundedCornerShape(0.dp)) else Modifier),
-                            containerColor = if (useGlass) androidx.compose.ui.graphics.Color.Transparent else (if (isDark) androidx.compose.ui.graphics.Color(0xFF1C1C1E) else androidx.compose.ui.graphics.Color(0xFFF9F9F9)),
+                            containerColor = if (useGlass) androidx.compose.ui.graphics.Color.Transparent else (if (isPureBlack) androidx.compose.ui.graphics.Color.Black else (if (isDark) androidx.compose.ui.graphics.Color(0xFF1C1C1E) else androidx.compose.ui.graphics.Color(0xFFF9F9F9))),
                         ) {
                             val labelModeAlways = navBarLabelMode == "Always"
                             val hideLabels = navBarLabelMode == "Hidden"
@@ -387,6 +388,8 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
 
         if (betaFloatingNav) {
             val useGlass = isGlass || navBarGlassForceEnabled
+            val isPureBlack = LocalPureBlackMode.current
+            val actualUseGlass = if (isPureBlack) false else useGlass
             androidx.compose.material3.Surface(
                 modifier = Modifier
                     .align(androidx.compose.ui.Alignment.BottomCenter)
@@ -396,12 +399,19 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         bottom = navBarPaddingBottom.dp
                     )
                     .windowInsetsPadding(WindowInsets.navigationBars)
-                    .then(if (useGlass) Modifier.glassPill(androidx.compose.foundation.shape.RoundedCornerShape(navBarCornerRadius.dp)) else Modifier),
+                    .then(if (actualUseGlass) Modifier.glassPill(androidx.compose.foundation.shape.RoundedCornerShape(navBarCornerRadius.dp)) else Modifier)
+                    .then(
+                        if (isPureBlack) Modifier.border(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                            androidx.compose.foundation.shape.RoundedCornerShape(navBarCornerRadius.dp)
+                        ) else Modifier
+                    ),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(navBarCornerRadius.dp),
-                color = if (useGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
-                contentColor = if (useGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
-                shadowElevation = if (useGlass) 0.dp else 8.dp,
-                tonalElevation = if (useGlass) 0.dp else 4.dp
+                color = if (actualUseGlass) androidx.compose.ui.graphics.Color.Transparent else (if (isPureBlack) androidx.compose.ui.graphics.Color.Black else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f)),
+                contentColor = if (actualUseGlass) MaterialTheme.colorScheme.primary else (if (isPureBlack) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimaryContainer),
+                shadowElevation = if (actualUseGlass || isPureBlack) 0.dp else 8.dp,
+                tonalElevation = if (actualUseGlass || isPureBlack) 0.dp else 4.dp
             ) {
                 val navItemColors = NavigationBarItemDefaults.colors(
                     selectedIconColor = if (useGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,

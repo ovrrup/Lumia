@@ -2364,7 +2364,24 @@ private val _streakPercentage = MutableStateFlow(0f)
         refreshThemeBrightness()
     }
 
-        fun exportData(uri: Uri, exportAll: Boolean = false) {
+    private fun buildAttachmentFilesMap(attachments: List<lumia.tracker.model.Attachment>?): Map<String, String> {
+        val fileMap = mutableMapOf<String, String>()
+        attachments?.forEach { attach ->
+            try {
+                val file = java.io.File(attach.filePath)
+                if (file.exists()) {
+                    val bytes = file.readBytes()
+                    val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                    fileMap[file.name] = base64
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return fileMap
+    }
+
+    fun exportData(uri: Uri, exportAll: Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val moshi = com.squareup.moshi.Moshi.Builder().add(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()
@@ -2396,6 +2413,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                         val profDao = db.scholarDao()
                         val pref = profileManager.getProfilePrefs(prof.id)
                         val sets = gatherSettings(pref)
+                        val profAttachments = profDao.exportAllAttachments()
                         val pBackup = lumia.tracker.model.ScholarBackup(
                             courses = profDao.exportAllCourses(),
                             subjects = profDao.exportAllSubjects(),
@@ -2408,9 +2426,10 @@ private val _streakPercentage = MutableStateFlow(0f)
                             notes = profDao.exportAllNotes(),
                             chapters = profDao.exportAllChapters(),
                             tasks = profDao.exportAllTasks(),
-                            attachments = profDao.exportAllAttachments(),
+                            attachments = profAttachments,
                             testRecords = profDao.exportAllTestRecords(),
-                            profile = prof
+                            profile = prof,
+                            attachmentFiles = buildAttachmentFilesMap(profAttachments)
                         )
                         profileBackupsJson[prof.id] = backupAdapter.toJson(pBackup)
                     }
@@ -2444,6 +2463,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                     } else null
                     val currentProfWithPic = if (base64 != null) currentProf.copy(avatarBase64 = base64) else currentProf
 
+                    val attachmentsList = repository.dao.exportAllAttachments()
                     val singleBackup = lumia.tracker.model.ScholarBackup(
                         courses = repository.dao.exportAllCourses(),
                         subjects = repository.dao.exportAllSubjects(),
@@ -2456,9 +2476,10 @@ private val _streakPercentage = MutableStateFlow(0f)
                         notes = repository.dao.exportAllNotes(),
                         chapters = repository.dao.exportAllChapters(),
                         tasks = repository.dao.exportAllTasks(),
-                        attachments = repository.dao.exportAllAttachments(),
+                        attachments = attachmentsList,
                         testRecords = repository.dao.exportAllTestRecords(),
-                        profile = currentProfWithPic
+                        profile = currentProfWithPic,
+                        attachmentFiles = buildAttachmentFilesMap(attachmentsList)
                     )
                     getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
                         repository.exportDataToStream(os, singleBackup)
@@ -2470,6 +2491,35 @@ private val _streakPercentage = MutableStateFlow(0f)
                 _importExportStatus.value = "Export failed: ${e.message}"
             }
         }
+    }
+
+    private fun restoreBackupWithAttachments(backup: lumia.tracker.model.ScholarBackup): lumia.tracker.model.ScholarBackup {
+        val filesMap = backup.attachmentFiles
+        val context = getApplication<Application>().applicationContext
+        val attachmentsDir = java.io.File(context.filesDir, "attachments").apply { mkdirs() }
+        
+        if (filesMap != null && filesMap.isNotEmpty()) {
+            filesMap.forEach { (fileName, base64) ->
+                try {
+                    val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
+                    val destFile = java.io.File(attachmentsDir, fileName)
+                    java.io.FileOutputStream(destFile).use { fos ->
+                        fos.write(bytes)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+        
+        // Correct the file paths in the Database entities to point to the current device's path
+        val updatedAttachments = backup.attachments?.map { attach ->
+            val fileName = java.io.File(attach.filePath).name
+            val newFile = java.io.File(attachmentsDir, fileName)
+            attach.copy(filePath = newFile.absolutePath)
+        }
+        
+        return backup.copy(attachments = updatedAttachments)
     }
 
     private fun restoreProfileAvatar(prof: lumia.tracker.model.UserProfile): lumia.tracker.model.UserProfile {
@@ -2540,10 +2590,11 @@ private val _streakPercentage = MutableStateFlow(0f)
                         val pBackup = backupAdapter.fromJson(pJson) ?: continue
                         val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), profId)
                         val pDao = db.scholarDao()
-                        repository.restoreBackupToDao(pBackup, pDao)
+                        val correctedBackup = restoreBackupWithAttachments(pBackup)
+                        repository.restoreBackupToDao(correctedBackup, pDao)
                         
                         // Restore settings with exact, type-safe matching
-                        pBackup.settings?.let { sets ->
+                        correctedBackup.settings?.let { sets ->
                             val pref = profileManager.getProfilePrefs(profId)
                             restoreProfileSettings(pref, sets)
                         }
@@ -2560,9 +2611,10 @@ private val _streakPercentage = MutableStateFlow(0f)
                     
                 } else {
                     // Single profile restore
-                    repository.restoreBackupToDao(backup, repository.dao)
-                    loadSettings(backup.settings)
-                    backup.profile?.let { importedProf ->
+                    val correctedBackup = restoreBackupWithAttachments(backup)
+                    repository.restoreBackupToDao(correctedBackup, repository.dao)
+                    loadSettings(correctedBackup.settings)
+                    correctedBackup.profile?.let { importedProf ->
                         val restoredProf = restoreProfileAvatar(importedProf)
                         val currentProf = profileManager.getActiveProfile()
                         val updatedProf = currentProf.copy(

@@ -18,10 +18,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.isActive
 import lumia.tracker.ui.theme.LocalGlassMode
+import lumia.tracker.ui.theme.LocalPureBlackMode
 import lumia.tracker.ui.theme.liquidGlass
+import androidx.compose.foundation.border
 
 @Composable
 fun WelcomeMeshBanner() {
+    val isPureBlack = LocalPureBlackMode.current
     val transition = rememberInfiniteTransition(label = "MeshAnimation")
     
     val xOffset by transition.animateFloat(
@@ -56,7 +59,13 @@ fun WelcomeMeshBanner() {
                 if (isGlass) {
                     Modifier.liquidGlass(shape = RoundedCornerShape(32.dp), tintAlpha = 0.12f)
                 } else {
-                    Modifier.clip(RoundedCornerShape(32.dp))
+                    Modifier
+                        .clip(RoundedCornerShape(32.dp))
+                        .then(
+                            if (isPureBlack) {
+                                Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), RoundedCornerShape(32.dp))
+                            } else Modifier
+                        )
                 }
             )
     ) {
@@ -64,29 +73,33 @@ fun WelcomeMeshBanner() {
             val canvasWidth = size.width
             val canvasHeight = size.height
 
-            drawRect(
-                brush = Brush.radialGradient(
-                    colors = listOf(c1, c2.copy(alpha = 0.5f), Color.Transparent),
-                    center = Offset(xOffset % canvasWidth, yOffset % canvasHeight),
-                    radius = canvasWidth * 0.8f
+            if (isPureBlack) {
+                drawRect(color = Color.Black)
+            } else {
+                drawRect(
+                    brush = Brush.radialGradient(
+                        colors = listOf(c1, c2.copy(alpha = 0.5f), Color.Transparent),
+                        center = Offset(xOffset % canvasWidth, yOffset % canvasHeight),
+                        radius = canvasWidth * 0.8f
+                    )
                 )
-            )
 
-            drawRect(
-                brush = Brush.radialGradient(
-                    colors = listOf(c3, c1.copy(alpha = 0.5f), Color.Transparent),
-                    center = Offset(canvasWidth - (xOffset % canvasWidth), canvasHeight - (yOffset % canvasHeight)),
-                    radius = canvasWidth * 0.8f
+                drawRect(
+                    brush = Brush.radialGradient(
+                        colors = listOf(c3, c1.copy(alpha = 0.5f), Color.Transparent),
+                        center = Offset(canvasWidth - (xOffset % canvasWidth), canvasHeight - (yOffset % canvasHeight)),
+                        radius = canvasWidth * 0.8f
+                    )
                 )
-            )
-            
-            drawRect(
-                brush = Brush.linearGradient(
-                    colors = listOf(c2.copy(alpha = 0.2f), Color.Transparent, c3.copy(alpha = 0.2f)),
-                    start = Offset(0f, 0f),
-                    end = Offset(canvasWidth, canvasHeight)
+                
+                drawRect(
+                    brush = Brush.linearGradient(
+                        colors = listOf(c2.copy(alpha = 0.2f), Color.Transparent, c3.copy(alpha = 0.2f)),
+                        start = Offset(0f, 0f),
+                        end = Offset(canvasWidth, canvasHeight)
+                    )
                 )
-            )
+            }
         }
 
         Column(

@@ -278,7 +278,7 @@ fun ScholarTheme(
         colorScheme = colorScheme.copy(
             background = Color.Black,
             surface = Color.Black,
-            surfaceVariant = Color(0xFF1E1E1E)
+            surfaceVariant = Color(0xFF0D0D0D)
         )
     }
 
@@ -290,15 +290,15 @@ fun ScholarTheme(
     colorScheme = colorScheme.copy(
         background = if (isDark && pureBlackMode) Color.Black else colorScheme.background.mix(colorScheme.primary, bgBlendFactor),
         surface = if (isDark && pureBlackMode) Color.Black else colorScheme.surface.mix(colorScheme.primary, surfBlendFactor),
-        surfaceVariant = colorScheme.surfaceVariant.mix(colorScheme.secondary, 0.92f),
+        surfaceVariant = if (isDark && pureBlackMode) Color(0xFF0A0A0A) else colorScheme.surfaceVariant.mix(colorScheme.secondary, 0.92f),
         primaryContainer = colorScheme.primaryContainer.mix(colorScheme.primary, 0.90f),
         secondaryContainer = colorScheme.secondaryContainer.mix(colorScheme.secondary, 0.90f),
         tertiaryContainer = colorScheme.tertiaryContainer.mix(colorScheme.tertiary, 0.90f),
-        surfaceContainer = if (isDark && pureBlackMode) Color(0xFF141414) else colorScheme.surface.mix(colorScheme.primary, if (isDark) 0.88f else 0.92f),
-        surfaceContainerLow = if (isDark && pureBlackMode) Color(0xFF0C0C0C) else colorScheme.surface.mix(colorScheme.primary, if (isDark) 0.91f else 0.94f),
-        surfaceContainerHigh = if (isDark && pureBlackMode) Color(0xFF222222) else colorScheme.surface.mix(colorScheme.primary, if (isDark) 0.83f else 0.88f),
+        surfaceContainer = if (isDark && pureBlackMode) Color(0xFF050505) else colorScheme.surface.mix(colorScheme.primary, if (isDark) 0.88f else 0.92f),
+        surfaceContainerLow = if (isDark && pureBlackMode) Color.Black else colorScheme.surface.mix(colorScheme.primary, if (isDark) 0.91f else 0.94f),
+        surfaceContainerHigh = if (isDark && pureBlackMode) Color(0xFF0F0F0F) else colorScheme.surface.mix(colorScheme.primary, if (isDark) 0.83f else 0.88f),
         surfaceContainerLowest = if (isDark && pureBlackMode) Color.Black else colorScheme.surface.mix(colorScheme.primary, 0.98f),
-        surfaceContainerHighest = if (isDark && pureBlackMode) Color(0xFF2C2C2C) else colorScheme.surface.mix(colorScheme.primary, if (isDark) 0.78f else 0.83f)
+        surfaceContainerHighest = if (isDark && pureBlackMode) Color(0xFF161616) else colorScheme.surface.mix(colorScheme.primary, if (isDark) 0.78f else 0.83f)
     )
 
     if (betterTexts) {

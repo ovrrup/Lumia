@@ -180,7 +180,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     "zip", "rar", "tar", "gz", "7z" -> "Archive"
                     else -> "${extension.uppercase()} File"
                 }
-                val localFile = File(context.filesDir, "attachment_${System.currentTimeMillis()}.$extension")
+                val attachmentsDir = File(context.filesDir, "attachments").apply { mkdirs() }
+                val localFile = File(attachmentsDir, "attachment_${System.currentTimeMillis()}.$extension")
                 val inputStream = contentResolver.openInputStream(uri)
                 if (inputStream != null) {
                     try {
@@ -280,7 +281,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             
             pdfDoc.finishPage(page)
             
-            val localFile = File(context.filesDir, "study_guide_${System.currentTimeMillis()}.pdf")
+            val attachmentsDir = File(context.filesDir, "attachments").apply { mkdirs() }
+            val localFile = File(attachmentsDir, "study_guide_${System.currentTimeMillis()}.pdf")
             pdfDoc.writeTo(localFile.outputStream())
             pdfDoc.close()
             
