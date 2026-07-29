@@ -1,7 +1,6 @@
 package lumia.tracker.ui.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
@@ -14,7 +13,6 @@ import lumia.tracker.ui.theme.bouncyScale
 import lumia.tracker.ui.theme.LocalMoreRounds
 import lumia.tracker.ui.theme.LocalMoreRoundsMode
 import lumia.tracker.ui.theme.liquidGlass
-import lumia.tracker.ui.theme.mix
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import lumia.tracker.utils.SoundManager

@@ -14,7 +14,6 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.Label
 import androidx.compose.material.icons.rounded.TrendingDown
 import androidx.compose.material.icons.rounded.TrendingFlat
 import androidx.compose.material.icons.rounded.TrendingUp
@@ -35,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import lumia.tracker.model.TestRecord
 import lumia.tracker.model.Topic
 import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 fun TestCornerCard(

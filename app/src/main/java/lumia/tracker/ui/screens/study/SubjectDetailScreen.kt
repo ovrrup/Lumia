@@ -1,7 +1,6 @@
 package lumia.tracker.ui.screens.study
 
 import android.app.DatePickerDialog
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,7 +36,6 @@ import lumia.tracker.model.Chapter
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.TagMultiSelect
 import lumia.tracker.ui.components.BouncyTextButton
-import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.GlassCard
 import lumia.tracker.viewmodel.ScholarViewModel
 import lumia.tracker.ui.util.getTagColors

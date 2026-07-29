@@ -1,14 +1,11 @@
 package lumia.tracker.ui.screens.settings
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.ColorLens
 import androidx.compose.material.icons.rounded.List
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.Palette
@@ -30,9 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import kotlin.math.roundToInt
-import lumia.tracker.ui.theme.LocalAppAnimationMode
 import lumia.tracker.ui.theme.LocalGlassMode
-import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.viewmodel.ScholarViewModel
 
 

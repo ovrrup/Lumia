@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -13,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
@@ -61,17 +59,6 @@ fun Modifier.glassHeaderCapsule(
                 tintAlpha = if (isDark) 0.35f else 0.45f,
                 opacityOverride = 1.0f,
                 backdropStyleOverride = "Satin" // Force Satin so it is never completely transparent
-            )
-            .border(
-                width = 1.5.dp, // Thicker to reflect hard light
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.65f), // High-reflection hard light top edge
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
-                        Color.White.copy(alpha = 0.10f) // Softer bottom edge
-                    )
-                ),
-                shape = shape
             )
     } else {
         this

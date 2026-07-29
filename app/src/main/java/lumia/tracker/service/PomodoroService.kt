@@ -12,7 +12,6 @@ import androidx.core.app.NotificationCompat
 import lumia.tracker.MainActivity
 import lumia.tracker.R
 import kotlinx.coroutines.*
-import android.widget.RemoteViews
 import lumia.tracker.util.ScholarPomodoroWidgetProvider
 
 enum class PomodoroMode { WORK, SHORT_BREAK, LONG_BREAK }

@@ -1,7 +1,6 @@
 package com.lumia.ml
 
 import com.lumia.data.StudySession
-import kotlin.math.max
 
 class FocusPredictor {
     // Outputs predicted focus score as a float constant structure

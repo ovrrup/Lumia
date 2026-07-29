@@ -18,7 +18,6 @@ import androidx.core.view.WindowCompat
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.shape.CircleShape
 
 fun createLightScheme(
     primary: Color, primaryContainer: Color,

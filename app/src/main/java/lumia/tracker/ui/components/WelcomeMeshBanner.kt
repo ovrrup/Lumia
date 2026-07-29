@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.isActive
 import lumia.tracker.ui.theme.LocalGlassMode
 import lumia.tracker.ui.theme.LocalPureBlackMode
 import lumia.tracker.ui.theme.liquidGlass

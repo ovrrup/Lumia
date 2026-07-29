@@ -1,11 +1,8 @@
 package lumia.tracker.ui.screens
 
-import lumia.tracker.ui.theme.liquidGlass
-import lumia.tracker.ui.theme.glassBar
+import lumia.tracker.model.Attachment
 import lumia.tracker.ui.theme.LocalDarkTheme
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,7 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ChevronLeft
@@ -29,15 +25,12 @@ import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Sell
 import androidx.compose.material.icons.rounded.ViewModule
-import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -48,16 +41,11 @@ import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyOutlinedButton
-import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.TestCornerCard
 
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Book
@@ -81,9 +69,7 @@ import org.burnoutcrew.reorderable.reorderable
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.ReorderableItem
 
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.ui.graphics.StrokeCap
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -196,12 +182,14 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                 }
                 viewModel.addAttachment(
-                    name = displayName,
-                    filePath = localFile.absolutePath,
-                    fileType = fileType,
-                    sizeBytes = if (sizeBytes > 0) sizeBytes else localFile.length(),
-                    courseId = courseId,
-                    subjectId = null
+                    Attachment(
+                        name = displayName,
+                        filePath = localFile.absolutePath,
+                        fileType = fileType,
+                        sizeBytes = if (sizeBytes > 0) sizeBytes else localFile.length(),
+                        courseId = courseId,
+                        subjectId = null
+                    )
                 )
                 Toast.makeText(context, "✅ Attachment successfully linked!", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
@@ -287,12 +275,14 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             pdfDoc.close()
             
             viewModel.addAttachment(
-                name = if (titleStr.endsWith(".pdf", ignoreCase = true)) titleStr else "$titleStr.pdf",
-                filePath = localFile.absolutePath,
-                fileType = "PDF Document",
-                sizeBytes = localFile.length(),
-                courseId = courseId,
-                subjectId = null
+                Attachment(
+                    name = if (titleStr.endsWith(".pdf", ignoreCase = true)) titleStr else "$titleStr.pdf",
+                    filePath = localFile.absolutePath,
+                    fileType = "PDF Document",
+                    sizeBytes = localFile.length(),
+                    courseId = courseId,
+                    subjectId = null
+                )
             )
             Toast.makeText(context, "✅ Study guide PDF generated!", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {

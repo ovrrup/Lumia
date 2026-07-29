@@ -626,32 +626,154 @@ private val _streakPercentage = MutableStateFlow(0f)
     private val _pureBlackMode = MutableStateFlow(prefs.getBoolean("pure_black_mode", false))
     val pureBlackMode = _pureBlackMode.asStateFlow()
 
-    private val _betaFloatingNav = MutableStateFlow(prefs.getBoolean("beta_floating_nav", false))
-    val betaFloatingNav = _betaFloatingNav.asStateFlow()
+    val navBarSettingsPrefs = lumia.tracker.viewmodel.settings.NavBarSettingsPrefs(prefs)
+    val featureFlagsPrefs = lumia.tracker.viewmodel.settings.FeatureFlagsPrefs(prefs)
+    val tabConfigPrefs = lumia.tracker.viewmodel.settings.TabConfigPrefs(prefs)
+    val notificationSettingsPrefs = lumia.tracker.viewmodel.settings.NotificationSettingsPrefs(prefs)
+    val pomodoroDurationSettingsPrefs = lumia.tracker.viewmodel.settings.PomodoroDurationSettingsPrefs(prefs)
+    val aodSettingsPrefs = lumia.tracker.viewmodel.settings.AodSettingsPrefs(prefs)
+    val systemBehaviorSettingsPrefs = lumia.tracker.viewmodel.settings.SystemBehaviorSettingsPrefs(prefs)
+    val glassMiscSettingsPrefs = lumia.tracker.viewmodel.settings.GlassMiscSettingsPrefs(prefs)
 
-    private val _navBarHeight = MutableStateFlow(prefs.getFloat("nav_bar_height", 80f))
-    val navBarHeight = _navBarHeight.asStateFlow()
+    val betaFloatingNav = navBarSettingsPrefs.betaFloatingNav
+    val navBarHeight = navBarSettingsPrefs.navBarHeight
+    val navBarPaddingHorizontal = navBarSettingsPrefs.navBarPaddingHorizontal
+    val navBarPaddingBottom = navBarSettingsPrefs.navBarPaddingBottom
+    val navBarCornerRadius = navBarSettingsPrefs.navBarCornerRadius
+    val navBarLabelMode = navBarSettingsPrefs.navBarLabelMode
+    val navBarGlassForceEnabled = navBarSettingsPrefs.navBarGlassForceEnabled
+    val navBarIndicatorAlpha = navBarSettingsPrefs.navBarIndicatorAlpha
+    val betaNavBarSizeControls = navBarSettingsPrefs.betaNavBarSizeControls
+    val navBarGlassLinkedToMain = navBarSettingsPrefs.navBarGlassLinkedToMain
+    val navBarGlassBackdropStyle = navBarSettingsPrefs.navBarGlassBackdropStyle
+    val navBarGlassDynamic = navBarSettingsPrefs.navBarGlassDynamic
+    val navBarGlassOpacityValue = navBarSettingsPrefs.navBarGlassOpacityValue
 
-    private val _navBarPaddingHorizontal = MutableStateFlow(prefs.getFloat("nav_bar_padding_horizontal", 24f))
-    val navBarPaddingHorizontal = _navBarPaddingHorizontal.asStateFlow()
+    val featureSubjectEnabled = featureFlagsPrefs.featureSubjectEnabled
+    val featureSelfStudyEnabled = featureFlagsPrefs.featureSelfStudyEnabled
+    val featureAnalyticsEnabled = featureFlagsPrefs.featureAnalyticsEnabled
+    val featureCalendarEnabled = featureFlagsPrefs.featureCalendarEnabled
+    val featureQuickNotesEnabled = featureFlagsPrefs.featureQuickNotesEnabled
+    val betaNotes = featureFlagsPrefs.betaNotes
+    val nextGenUiEnabled = featureFlagsPrefs.nextGenUiEnabled
 
-    private val _navBarPaddingBottom = MutableStateFlow(prefs.getFloat("nav_bar_padding_bottom", 24f))
-    val navBarPaddingBottom = _navBarPaddingBottom.asStateFlow()
+    fun updateFeatureSubjectEnabled(enabled: Boolean) = featureFlagsPrefs.updateFeatureSubjectEnabled(enabled)
+    fun updateFeatureSelfStudyEnabled(enabled: Boolean) = featureFlagsPrefs.updateFeatureSelfStudyEnabled(enabled)
+    fun updateFeatureAnalyticsEnabled(enabled: Boolean) = featureFlagsPrefs.updateFeatureAnalyticsEnabled(enabled)
+    fun updateFeatureCalendarEnabled(enabled: Boolean) = featureFlagsPrefs.updateFeatureCalendarEnabled(enabled)
+    fun updateFeatureQuickNotesEnabled(enabled: Boolean) = featureFlagsPrefs.updateFeatureQuickNotesEnabled(enabled)
+    fun updateBetaNotes(enabled: Boolean) = featureFlagsPrefs.updateBetaNotes(enabled)
+    fun updateNextGenUiEnabled(enabled: Boolean) = featureFlagsPrefs.updateNextGenUiEnabled(enabled)
 
-    private val _navBarCornerRadius = MutableStateFlow(prefs.getFloat("nav_bar_corner_radius", 32f))
-    val navBarCornerRadius = _navBarCornerRadius.asStateFlow()
+    val tabHomeLabel = tabConfigPrefs.tabHomeLabel
+    val tabHomeIcon = tabConfigPrefs.tabHomeIcon
+    val tabCoursesLabel = tabConfigPrefs.tabCoursesLabel
+    val tabCoursesIcon = tabConfigPrefs.tabCoursesIcon
+    val tabSubjectsLabel = tabConfigPrefs.tabSubjectsLabel
+    val tabSubjectsIcon = tabConfigPrefs.tabSubjectsIcon
+    val tabSelfStudyLabel = tabConfigPrefs.tabSelfStudyLabel
+    val tabSelfStudyIcon = tabConfigPrefs.tabSelfStudyIcon
+    val tabAnalyticsLabel = tabConfigPrefs.tabAnalyticsLabel
+    val tabAnalyticsIcon = tabConfigPrefs.tabAnalyticsIcon
+    val tabCalendarLabel = tabConfigPrefs.tabCalendarLabel
+    val tabCalendarIcon = tabConfigPrefs.tabCalendarIcon
 
-    private val _navBarLabelMode = MutableStateFlow(prefs.getString("nav_bar_label_mode", "Always") ?: "Always")
-    val navBarLabelMode = _navBarLabelMode.asStateFlow()
+    fun updateTabHomeLabel(value: String) = tabConfigPrefs.updateTabHomeLabel(value)
+    fun updateTabHomeIcon(value: String) = tabConfigPrefs.updateTabHomeIcon(value)
+    fun updateTabCoursesLabel(value: String) = tabConfigPrefs.updateTabCoursesLabel(value)
+    fun updateTabCoursesIcon(value: String) = tabConfigPrefs.updateTabCoursesIcon(value)
+    fun updateTabSubjectsLabel(value: String) = tabConfigPrefs.updateTabSubjectsLabel(value)
+    fun updateTabSubjectsIcon(value: String) = tabConfigPrefs.updateTabSubjectsIcon(value)
+    fun updateTabSelfStudyLabel(value: String) = tabConfigPrefs.updateTabSelfStudyLabel(value)
+    fun updateTabSelfStudyIcon(value: String) = tabConfigPrefs.updateTabSelfStudyIcon(value)
+    fun updateTabAnalyticsLabel(value: String) = tabConfigPrefs.updateTabAnalyticsLabel(value)
+    fun updateTabAnalyticsIcon(value: String) = tabConfigPrefs.updateTabAnalyticsIcon(value)
+    fun updateTabCalendarLabel(value: String) = tabConfigPrefs.updateTabCalendarLabel(value)
+    fun updateTabCalendarIcon(value: String) = tabConfigPrefs.updateTabCalendarIcon(value)
 
-    private val _navBarGlassForceEnabled = MutableStateFlow(prefs.getBoolean("nav_bar_glass_force_enabled", false))
-    val navBarGlassForceEnabled = _navBarGlassForceEnabled.asStateFlow()
+    val pomodoroWorkDuration = pomodoroDurationSettingsPrefs.pomodoroWorkDuration
+    val pomodoroShortBreakDuration = pomodoroDurationSettingsPrefs.pomodoroShortBreakDuration
+    val pomodoroLongBreakDuration = pomodoroDurationSettingsPrefs.pomodoroLongBreakDuration
+    val pomodoroPeriodSessions = pomodoroDurationSettingsPrefs.pomodoroPeriodSessions
+    val pomodoroEnablePeriodTarget = pomodoroDurationSettingsPrefs.pomodoroEnablePeriodTarget
 
-    private val _navBarIndicatorAlpha = MutableStateFlow(prefs.getFloat("nav_bar_indicator_alpha", 0.15f))
-    val navBarIndicatorAlpha = _navBarIndicatorAlpha.asStateFlow()
+    fun updatePomodoroWorkDuration(duration: Int) = pomodoroDurationSettingsPrefs.updatePomodoroWorkDuration(duration)
+    fun updatePomodoroShortBreakDuration(duration: Int) = pomodoroDurationSettingsPrefs.updatePomodoroShortBreakDuration(duration)
+    fun updatePomodoroLongBreakDuration(duration: Int) = pomodoroDurationSettingsPrefs.updatePomodoroLongBreakDuration(duration)
+    fun updatePomodoroPeriodSessions(sessions: Int) = pomodoroDurationSettingsPrefs.updatePomodoroPeriodSessions(sessions)
+    fun updatePomodoroEnablePeriodTarget(enabled: Boolean) = pomodoroDurationSettingsPrefs.updatePomodoroEnablePeriodTarget(enabled)
 
-    private val _betaNotes = MutableStateFlow(prefs.getBoolean("beta_notes", false))
-    val betaNotes = _betaNotes.asStateFlow()
+    val notifFormalTone = notificationSettingsPrefs.notifFormalTone
+    val notifEnableDeadlines = notificationSettingsPrefs.notifEnableDeadlines
+    val notifEnableClasses = notificationSettingsPrefs.notifEnableClasses
+    val notifEnableDailyDigest = notificationSettingsPrefs.notifEnableDailyDigest
+    val soundEffectsEnabled = notificationSettingsPrefs.soundEffectsEnabled
+
+    fun updateNotifFormalTone(enabled: Boolean) = notificationSettingsPrefs.updateNotifFormalTone(enabled)
+    fun updateNotifEnableDeadlines(enabled: Boolean) = notificationSettingsPrefs.updateNotifEnableDeadlines(enabled)
+    fun updateNotifEnableClasses(enabled: Boolean) = notificationSettingsPrefs.updateNotifEnableClasses(enabled)
+    fun updateNotifEnableDailyDigest(enabled: Boolean) = notificationSettingsPrefs.updateNotifEnableDailyDigest(enabled)
+    fun updateSoundEffectsEnabled(enabled: Boolean) = notificationSettingsPrefs.updateSoundEffectsEnabled(enabled)
+
+    val aodTrueBlackOled = aodSettingsPrefs.aodTrueBlackOled
+    val aodAutoDeactivateTrueBlack = aodSettingsPrefs.aodAutoDeactivateTrueBlack
+    val aodBurnInShiftSpeed = aodSettingsPrefs.aodBurnInShiftSpeed
+    val aodLockScreenSupport = aodSettingsPrefs.aodLockScreenSupport
+    val aodTrueAodEnabled = aodSettingsPrefs.aodTrueAodEnabled
+    val aodTrueAodMode = aodSettingsPrefs.aodTrueAodMode
+    val aodSensitivity = aodSettingsPrefs.aodSensitivity
+    val aodMotionSensitivity = aodSettingsPrefs.aodMotionSensitivity
+    val aodDimnessLevel = aodSettingsPrefs.aodDimnessLevel
+    val aodLockTimeout = aodSettingsPrefs.aodLockTimeout
+
+    fun updateAodLockScreenSupport(enabled: Boolean) = aodSettingsPrefs.updateAodLockScreenSupport(enabled)
+    fun updateAodTrueAodEnabled(enabled: Boolean) = aodSettingsPrefs.updateAodTrueAodEnabled(enabled)
+    fun updateAodTrueAodMode(mode: String) = aodSettingsPrefs.updateAodTrueAodMode(mode)
+    fun updateAodSensitivity(sensitivity: String) = aodSettingsPrefs.updateAodSensitivity(sensitivity)
+    fun updateAodMotionSensitivity(sensitivity: Float) = aodSettingsPrefs.updateAodMotionSensitivity(sensitivity)
+    fun updateAodDimnessLevel(level: Float) = aodSettingsPrefs.updateAodDimnessLevel(level)
+    fun updateAodLockTimeout(seconds: Int) = aodSettingsPrefs.updateAodLockTimeout(seconds)
+    fun updateAodAutoDeactivateTrueBlack(enabled: Boolean) = aodSettingsPrefs.updateAodAutoDeactivateTrueBlack(enabled)
+    fun updateAodBurnInShiftSpeed(speed: Int) = aodSettingsPrefs.updateAodBurnInShiftSpeed(speed)
+
+    val systemAutoLinkByName = systemBehaviorSettingsPrefs.systemAutoLinkByName
+    val systemEnableSynergy = systemBehaviorSettingsPrefs.systemEnableSynergy
+    val systemAutoCreateSubject = systemBehaviorSettingsPrefs.systemAutoCreateSubject
+    val systemFuseSubjectsCourses = systemBehaviorSettingsPrefs.systemFuseSubjectsCourses
+    val systemAdvancedTasks = systemBehaviorSettingsPrefs.systemAdvancedTasks
+    val systemPomodoroAutoLog = systemBehaviorSettingsPrefs.systemPomodoroAutoLog
+
+    fun updateSystemAutoLinkByName(enabled: Boolean) = systemBehaviorSettingsPrefs.updateSystemAutoLinkByName(enabled)
+    fun updateSystemEnableSynergy(enabled: Boolean) = systemBehaviorSettingsPrefs.updateSystemEnableSynergy(enabled)
+    fun updateSystemAutoCreateSubject(enabled: Boolean) = systemBehaviorSettingsPrefs.updateSystemAutoCreateSubject(enabled)
+    fun updateSystemFuseSubjectsCourses(enabled: Boolean) = systemBehaviorSettingsPrefs.updateSystemFuseSubjectsCourses(enabled)
+    fun updateSystemAdvancedTasks(enabled: Boolean) = systemBehaviorSettingsPrefs.updateSystemAdvancedTasks(enabled)
+    fun updateSystemPomodoroAutoLog(enabled: Boolean) = systemBehaviorSettingsPrefs.updateSystemPomodoroAutoLog(enabled)
+
+    val glassBackdropStyle = glassMiscSettingsPrefs.glassBackdropStyle
+    val glassOpacityValue = glassMiscSettingsPrefs.glassOpacityValue
+    val betaGlassDynamic = glassMiscSettingsPrefs.betaGlassDynamic
+    val betaFrostGlass = glassMiscSettingsPrefs.betaFrostGlass
+
+    fun updateGlassBackdropStyle(style: String) = glassMiscSettingsPrefs.updateGlassBackdropStyle(style)
+    fun updateGlassOpacityValue(value: Float) = glassMiscSettingsPrefs.updateGlassOpacityValue(value)
+    fun updateBetaGlassDynamic(enabled: Boolean) = glassMiscSettingsPrefs.updateBetaGlassDynamic(enabled)
+    fun updateBetaFrostGlass(enabled: Boolean) = glassMiscSettingsPrefs.updateBetaFrostGlass(enabled)
+
+    fun updateBetaFloatingNav(enabled: Boolean) = navBarSettingsPrefs.updateBetaFloatingNav(enabled)
+    fun updateNavBarHeight(height: Float) = navBarSettingsPrefs.updateNavBarHeight(height)
+    fun updateNavBarPaddingHorizontal(padding: Float) = navBarSettingsPrefs.updateNavBarPaddingHorizontal(padding)
+    fun updateNavBarPaddingBottom(padding: Float) = navBarSettingsPrefs.updateNavBarPaddingBottom(padding)
+    fun updateNavBarCornerRadius(radius: Float) = navBarSettingsPrefs.updateNavBarCornerRadius(radius)
+    fun updateNavBarLabelMode(mode: String) = navBarSettingsPrefs.updateNavBarLabelMode(mode)
+    fun updateNavBarGlassForceEnabled(enabled: Boolean) = navBarSettingsPrefs.updateNavBarGlassForceEnabled(enabled)
+    fun updateNavBarIndicatorAlpha(alpha: Float) = navBarSettingsPrefs.updateNavBarIndicatorAlpha(alpha)
+    fun updateBetaNavBarSizeControls(enabled: Boolean) = navBarSettingsPrefs.updateBetaNavBarSizeControls(enabled)
+    fun updateNavBarGlassLinkedToMain(enabled: Boolean) = navBarSettingsPrefs.updateNavBarGlassLinkedToMain(enabled)
+    fun updateNavBarGlassBackdropStyle(style: String) = navBarSettingsPrefs.updateNavBarGlassBackdropStyle(style)
+    fun updateNavBarGlassDynamic(enabled: Boolean) = navBarSettingsPrefs.updateNavBarGlassDynamic(enabled)
+    fun updateNavBarGlassOpacityValue(value: Float, alias: String, isDark: Boolean) = navBarSettingsPrefs.updateNavBarGlassOpacityValue(value, alias, isDark)
+    fun refreshNavBarGlassOpacity(alias: String, isDark: Boolean) = navBarSettingsPrefs.refreshNavBarGlassOpacity(alias, isDark)
 
     private val _appAnimationMode = MutableStateFlow(prefs.getString("app_animation_mode", "Normal") ?: "Normal")
     val appAnimationMode = _appAnimationMode.asStateFlow()
@@ -714,14 +836,6 @@ private val _streakPercentage = MutableStateFlow(0f)
     private val _displayLayoutMode = MutableStateFlow(prefs.getString("display_layout_mode", "Normal") ?: "Normal")
     val displayLayoutMode = _displayLayoutMode.asStateFlow()
 
-    private val _nextGenUiEnabled = MutableStateFlow(prefs.getBoolean("next_gen_ui_enabled", false))
-    val nextGenUiEnabled = _nextGenUiEnabled.asStateFlow()
-
-    fun updateNextGenUiEnabled(enabled: Boolean) {
-        _nextGenUiEnabled.value = enabled
-        prefs.edit().putBoolean("next_gen_ui_enabled", enabled).apply()
-    }
-
     private val _systemBarVisible = MutableStateFlow(true)
     val systemBarVisible = _systemBarVisible.asStateFlow()
 
@@ -732,360 +846,20 @@ private val _streakPercentage = MutableStateFlow(0f)
     private val _betaGlassUi = MutableStateFlow(prefs.getBoolean("beta_glass_ui", false))
     val betaGlassUi = _betaGlassUi.asStateFlow()
 
-    private val _betaGlassDynamic = MutableStateFlow(prefs.getBoolean("beta_glass_dynamic", true))
-    val betaGlassDynamic = _betaGlassDynamic.asStateFlow()
-
-    private val _betaFrostGlass = MutableStateFlow(prefs.getBoolean("beta_frost_glass", true))
-    val betaFrostGlass = _betaFrostGlass.asStateFlow()
-
-    private val _glassBackdropStyle = MutableStateFlow(prefs.getString("glass_backdrop_style", "Translucent") ?: "Translucent")
-    val glassBackdropStyle = _glassBackdropStyle.asStateFlow()
-
-    private val _glassOpacityValue = MutableStateFlow(prefs.getFloat("glass_opacity_value", 0.6f))
-    val glassOpacityValue = _glassOpacityValue.asStateFlow()
-
-    private val _navBarGlassOpacityValue = MutableStateFlow(0.6f)
-    val navBarGlassOpacityValue = _navBarGlassOpacityValue.asStateFlow()
-
-    private val _betaNavBarSizeControls = MutableStateFlow(prefs.getBoolean("beta_nav_bar_size_controls", false))
-    val betaNavBarSizeControls = _betaNavBarSizeControls.asStateFlow()
-
-    private val _navBarGlassLinkedToMain = MutableStateFlow(prefs.getBoolean("nav_bar_glass_linked_to_main", true))
-    val navBarGlassLinkedToMain = _navBarGlassLinkedToMain.asStateFlow()
-
-    private val _navBarGlassBackdropStyle = MutableStateFlow(prefs.getString("nav_bar_glass_backdrop_style", "Translucent") ?: "Translucent")
-    val navBarGlassBackdropStyle = _navBarGlassBackdropStyle.asStateFlow()
-
-    private val _navBarGlassDynamic = MutableStateFlow(prefs.getBoolean("nav_bar_glass_dynamic", true))
-    val navBarGlassDynamic = _navBarGlassDynamic.asStateFlow()
-
     private val _betaEnhancedHeader = MutableStateFlow(prefs.getBoolean("beta_enhanced_header", false))
     val betaEnhancedHeader = _betaEnhancedHeader.asStateFlow()
 
     private val _betaMinimalistMode = MutableStateFlow(prefs.getBoolean("beta_minimalist_mode", false))
     val betaMinimalistMode = _betaMinimalistMode.asStateFlow()
 
-    private val _soundEffectsEnabled = MutableStateFlow(prefs.getBoolean("sound_effects_enabled", true))
-    val soundEffectsEnabled = _soundEffectsEnabled.asStateFlow()
-
-    fun updateSoundEffectsEnabled(enabled: Boolean) {
-        _soundEffectsEnabled.value = enabled
-        prefs.edit().putBoolean("sound_effects_enabled", enabled).apply()
-    }
-
     private val _betaDynamicBackground = MutableStateFlow(prefs.getBoolean("beta_dynamic_background", false))
     val betaDynamicBackground = _betaDynamicBackground.asStateFlow()
-
-    private val _systemAutoLinkByName = MutableStateFlow(prefs.getBoolean("system_auto_link_by_name", true))
-    val systemAutoLinkByName = _systemAutoLinkByName.asStateFlow()
-
-    private val _systemEnableSynergy = MutableStateFlow(prefs.getBoolean("system_enable_synergy", true))
-    val systemEnableSynergy = _systemEnableSynergy.asStateFlow()
-
-    private val _systemAutoCreateSubject = MutableStateFlow(prefs.getBoolean("system_auto_create_subject", false))
-    val systemAutoCreateSubject = _systemAutoCreateSubject.asStateFlow()
-
-    private val _systemFuseSubjectsCourses = MutableStateFlow(prefs.getBoolean("system_fuse_subjects_courses", true))
-    val systemFuseSubjectsCourses = _systemFuseSubjectsCourses.asStateFlow()
-
-    private val _systemAdvancedTasks = MutableStateFlow(prefs.getBoolean("system_advanced_tasks", true))
-    val systemAdvancedTasks = _systemAdvancedTasks.asStateFlow()
-    
-    private val _systemPomodoroAutoLog = MutableStateFlow(prefs.getBoolean("system_pomodoro_auto_log", true))
-    val systemPomodoroAutoLog = _systemPomodoroAutoLog.asStateFlow()
 
 
     fun submitRecommendationFeedback(recommendationId: String, rating: Int) {
         // rating: 1 for positive, -1 for negative
         // In a complete implementation, this would adjust the FocusPredictor model weights
         logAction("User rated recommendation $recommendationId with $rating")
-    }
-
-    private val _featureSubjectEnabled = MutableStateFlow(prefs.getBoolean("feature_subject_enabled", true))
-    val featureSubjectEnabled = _featureSubjectEnabled.asStateFlow()
-
-    private val _featureSelfStudyEnabled = MutableStateFlow(prefs.getBoolean("feature_self_study_enabled", true))
-    val featureSelfStudyEnabled = _featureSelfStudyEnabled.asStateFlow()
-
-    private val _featureAnalyticsEnabled = MutableStateFlow(prefs.getBoolean("feature_analytics_enabled", true))
-    val featureAnalyticsEnabled = _featureAnalyticsEnabled.asStateFlow()
-
-    private val _featureCalendarEnabled = MutableStateFlow(prefs.getBoolean("feature_calendar_enabled", true))
-    val featureCalendarEnabled = _featureCalendarEnabled.asStateFlow()
-
-    private val _featureQuickNotesEnabled = MutableStateFlow(prefs.getBoolean("feature_quick_notes_enabled", true))
-    val featureQuickNotesEnabled = _featureQuickNotesEnabled.asStateFlow()
-
-    fun updateFeatureSubjectEnabled(enabled: Boolean) {
-        _featureSubjectEnabled.value = enabled
-        prefs.edit().putBoolean("feature_subject_enabled", enabled).apply()
-    }
-
-    fun updateFeatureSelfStudyEnabled(enabled: Boolean) {
-        _featureSelfStudyEnabled.value = enabled
-        prefs.edit().putBoolean("feature_self_study_enabled", enabled).apply()
-    }
-
-    fun updateFeatureAnalyticsEnabled(enabled: Boolean) {
-        _featureAnalyticsEnabled.value = enabled
-        prefs.edit().putBoolean("feature_analytics_enabled", enabled).apply()
-    }
-
-    fun updateFeatureCalendarEnabled(enabled: Boolean) {
-        _featureCalendarEnabled.value = enabled
-        prefs.edit().putBoolean("feature_calendar_enabled", enabled).apply()
-    }
-
-    fun updateFeatureQuickNotesEnabled(enabled: Boolean) {
-        _featureQuickNotesEnabled.value = enabled
-        prefs.edit().putBoolean("feature_quick_notes_enabled", enabled).apply()
-    }
-
-    private val _tabHomeLabel = MutableStateFlow(prefs.getString("tab_home_label", "Home") ?: "Home")
-    val tabHomeLabel = _tabHomeLabel.asStateFlow()
-
-    private val _tabHomeIcon = MutableStateFlow(prefs.getString("tab_home_icon", "Home") ?: "Home")
-    val tabHomeIcon = _tabHomeIcon.asStateFlow()
-
-    private val _tabCoursesLabel = MutableStateFlow(prefs.getString("tab_courses_label", "Courses") ?: "Courses")
-    val tabCoursesLabel = _tabCoursesLabel.asStateFlow()
-
-    private val _tabCoursesIcon = MutableStateFlow(prefs.getString("tab_courses_icon", "MenuBook") ?: "MenuBook")
-    val tabCoursesIcon = _tabCoursesIcon.asStateFlow()
-
-    private val _tabSubjectsLabel = MutableStateFlow(prefs.getString("tab_subjects_label", "Subjects") ?: "Subjects")
-    val tabSubjectsLabel = _tabSubjectsLabel.asStateFlow()
-
-    private val _tabSubjectsIcon = MutableStateFlow(prefs.getString("tab_subjects_icon", "FolderOpen") ?: "FolderOpen")
-    val tabSubjectsIcon = _tabSubjectsIcon.asStateFlow()
-
-    private val _tabSelfStudyLabel = MutableStateFlow(prefs.getString("tab_self_study_label", "Self Study") ?: "Self Study")
-    val tabSelfStudyLabel = _tabSelfStudyLabel.asStateFlow()
-
-    private val _tabSelfStudyIcon = MutableStateFlow(prefs.getString("tab_self_study_icon", "AutoStories") ?: "AutoStories")
-    val tabSelfStudyIcon = _tabSelfStudyIcon.asStateFlow()
-
-    private val _tabAnalyticsLabel = MutableStateFlow(prefs.getString("tab_analytics_label", "Analytics") ?: "Analytics")
-    val tabAnalyticsLabel = _tabAnalyticsLabel.asStateFlow()
-
-    private val _tabAnalyticsIcon = MutableStateFlow(prefs.getString("tab_analytics_icon", "Analytics") ?: "Analytics")
-    val tabAnalyticsIcon = _tabAnalyticsIcon.asStateFlow()
-
-    private val _tabCalendarLabel = MutableStateFlow(prefs.getString("tab_calendar_label", "Calendar") ?: "Calendar")
-    val tabCalendarLabel = _tabCalendarLabel.asStateFlow()
-
-    private val _tabCalendarIcon = MutableStateFlow(prefs.getString("tab_calendar_icon", "CalendarMonth") ?: "CalendarMonth")
-    val tabCalendarIcon = _tabCalendarIcon.asStateFlow()
-
-    fun updateTabHomeLabel(value: String) {
-        _tabHomeLabel.value = value
-        prefs.edit().putString("tab_home_label", value).apply()
-    }
-    fun updateTabHomeIcon(value: String) {
-        _tabHomeIcon.value = value
-        prefs.edit().putString("tab_home_icon", value).apply()
-    }
-    fun updateTabCoursesLabel(value: String) {
-        _tabCoursesLabel.value = value
-        prefs.edit().putString("tab_courses_label", value).apply()
-    }
-    fun updateTabCoursesIcon(value: String) {
-        _tabCoursesIcon.value = value
-        prefs.edit().putString("tab_courses_icon", value).apply()
-    }
-    fun updateTabSubjectsLabel(value: String) {
-        _tabSubjectsLabel.value = value
-        prefs.edit().putString("tab_subjects_label", value).apply()
-    }
-    fun updateTabSubjectsIcon(value: String) {
-        _tabSubjectsIcon.value = value
-        prefs.edit().putString("tab_subjects_icon", value).apply()
-    }
-    fun updateTabSelfStudyLabel(value: String) {
-        _tabSelfStudyLabel.value = value
-        prefs.edit().putString("tab_self_study_label", value).apply()
-    }
-    fun updateTabSelfStudyIcon(value: String) {
-        _tabSelfStudyIcon.value = value
-        prefs.edit().putString("tab_self_study_icon", value).apply()
-    }
-    fun updateTabAnalyticsLabel(value: String) {
-        _tabAnalyticsLabel.value = value
-        prefs.edit().putString("tab_analytics_label", value).apply()
-    }
-    fun updateTabAnalyticsIcon(value: String) {
-        _tabAnalyticsIcon.value = value
-        prefs.edit().putString("tab_analytics_icon", value).apply()
-    }
-    fun updateTabCalendarLabel(value: String) {
-        _tabCalendarLabel.value = value
-        prefs.edit().putString("tab_calendar_label", value).apply()
-    }
-    fun updateTabCalendarIcon(value: String) {
-        _tabCalendarIcon.value = value
-        prefs.edit().putString("tab_calendar_icon", value).apply()
-    }
-
-    val allAttachments = repository.allAttachments.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
-
-    fun getAttachmentsForCourse(courseId: Int) = repository.getAttachmentsForCourse(courseId)
-    fun getAttachmentsForSubject(subjectId: Int) = repository.getAttachmentsForSubject(subjectId)
-
-    fun addAttachment(name: String, filePath: String, fileType: String, sizeBytes: Long, courseId: Int?, subjectId: Int?) {
-        viewModelScope.launch {
-            repository.insertAttachment(
-                lumia.tracker.model.Attachment(
-                    name = name,
-                    filePath = filePath,
-                    fileType = fileType,
-                    sizeBytes = sizeBytes,
-                    courseId = courseId,
-                    subjectId = subjectId
-                )
-            )
-            logAction("Added attachment: $name")
-        }
-    }
-
-    fun deleteAttachment(attachment: lumia.tracker.model.Attachment) {
-        viewModelScope.launch {
-            repository.deleteAttachment(attachment)
-            try {
-                val file = java.io.File(attachment.filePath)
-                if (file.exists()) {
-                    file.delete()
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            logAction("Deleted attachment: ${attachment.name}")
-        }
-    }
-
-    private val _pomodoroWorkDuration = MutableStateFlow(prefs.getInt("pomodoro_work_duration", 25))
-    val pomodoroWorkDuration = _pomodoroWorkDuration.asStateFlow()
-
-    private val _pomodoroShortBreakDuration = MutableStateFlow(prefs.getInt("pomodoro_short_break_duration", 5))
-    val pomodoroShortBreakDuration = _pomodoroShortBreakDuration.asStateFlow()
-
-    private val _pomodoroLongBreakDuration = MutableStateFlow(prefs.getInt("pomodoro_long_break_duration", 15))
-    val pomodoroLongBreakDuration = _pomodoroLongBreakDuration.asStateFlow()
-
-    private val _pomodoroPeriodSessions = MutableStateFlow(prefs.getInt("pomodoro_period_sessions", 4))
-    val pomodoroPeriodSessions = _pomodoroPeriodSessions.asStateFlow()
-    
-    private val _pomodoroEnablePeriodTarget = MutableStateFlow(prefs.getBoolean("pomodoro_enable_period_target", false))
-    val pomodoroEnablePeriodTarget = _pomodoroEnablePeriodTarget.asStateFlow()
-
-    fun updatePomodoroPeriodSessions(sessions: Int) {
-        _pomodoroPeriodSessions.value = sessions
-        prefs.edit().putInt("pomodoro_period_sessions", sessions).apply()
-    }
-
-    fun updatePomodoroEnablePeriodTarget(enabled: Boolean) {
-        _pomodoroEnablePeriodTarget.value = enabled
-        prefs.edit().putBoolean("pomodoro_enable_period_target", enabled).apply()
-    }
-
-    private val _notifFormalTone = MutableStateFlow(prefs.getBoolean("notif_formal_tone", true))
-    val notifFormalTone = _notifFormalTone.asStateFlow()
-
-    private val _notifEnableDeadlines = MutableStateFlow(prefs.getBoolean("notif_enable_deadlines", true))
-    val notifEnableDeadlines = _notifEnableDeadlines.asStateFlow()
-
-    private val _notifEnableClasses = MutableStateFlow(prefs.getBoolean("notif_enable_classes", true))
-    val notifEnableClasses = _notifEnableClasses.asStateFlow()
-
-    private val _notifEnableDailyDigest = MutableStateFlow(prefs.getBoolean("notif_enable_daily_digest", true))
-    val notifEnableDailyDigest = _notifEnableDailyDigest.asStateFlow()
-
-    fun updateNotifFormalTone(enabled: Boolean) {
-        _notifFormalTone.value = enabled
-        prefs.edit().putBoolean("notif_formal_tone", enabled).apply()
-    }
-
-    fun updateNotifEnableDeadlines(enabled: Boolean) {
-        _notifEnableDeadlines.value = enabled
-        prefs.edit().putBoolean("notif_enable_deadlines", enabled).apply()
-    }
-
-    fun updateNotifEnableClasses(enabled: Boolean) {
-        _notifEnableClasses.value = enabled
-        prefs.edit().putBoolean("notif_enable_classes", enabled).apply()
-    }
-
-    fun updateNotifEnableDailyDigest(enabled: Boolean) {
-        _notifEnableDailyDigest.value = enabled
-        prefs.edit().putBoolean("notif_enable_daily_digest", enabled).apply()
-    }
-
-    private val _aodTrueBlackOled = MutableStateFlow(prefs.getBoolean("aod_true_black_oled", true))
-    val aodTrueBlackOled = _aodTrueBlackOled.asStateFlow()
-
-    private val _aodAutoDeactivateTrueBlack = MutableStateFlow(prefs.getBoolean("aod_auto_deactivate_true_black", true))
-    val aodAutoDeactivateTrueBlack = _aodAutoDeactivateTrueBlack.asStateFlow()
-
-    private val _aodBurnInShiftSpeed = MutableStateFlow(prefs.getInt("aod_burn_in_shift_speed", 10)) // in seconds
-    val aodBurnInShiftSpeed = _aodBurnInShiftSpeed.asStateFlow()
-    
-    private val _aodLockScreenSupport = MutableStateFlow(prefs.getBoolean("aod_lock_screen_support", false))
-    val aodLockScreenSupport = _aodLockScreenSupport.asStateFlow()
-
-    private val _aodTrueAodEnabled = MutableStateFlow(prefs.getBoolean("aod_true_aod_enabled", false))
-    val aodTrueAodEnabled = _aodTrueAodEnabled.asStateFlow()
-
-    private val _aodTrueAodMode = MutableStateFlow(prefs.getString("aod_true_aod_mode", "overlay") ?: "overlay")
-    val aodTrueAodMode = _aodTrueAodMode.asStateFlow()
-
-    private val _aodSensitivity = MutableStateFlow(prefs.getString("aod_sensitivity", "highest") ?: "highest")
-    val aodSensitivity = _aodSensitivity.asStateFlow()
-
-    private val _aodMotionSensitivity = MutableStateFlow(prefs.getFloat("aod_motion_sensitivity", 1.2f))
-    val aodMotionSensitivity = _aodMotionSensitivity.asStateFlow()
-
-    private val _aodDimnessLevel = MutableStateFlow(prefs.getFloat("aod_dimness_level", 0.95f))
-    val aodDimnessLevel = _aodDimnessLevel.asStateFlow()
-
-    private val _aodLockTimeout = MutableStateFlow(prefs.getInt("aod_lock_timeout", 30))
-    val aodLockTimeout = _aodLockTimeout.asStateFlow()
-
-    fun updateAodLockScreenSupport(enabled: Boolean) {
-        _aodLockScreenSupport.value = enabled
-        prefs.edit().putBoolean("aod_lock_screen_support", enabled).apply()
-    }
-
-    fun updateAodTrueAodEnabled(enabled: Boolean) {
-        _aodTrueAodEnabled.value = enabled
-        prefs.edit().putBoolean("aod_true_aod_enabled", enabled).apply()
-    }
-
-    fun updateAodTrueAodMode(mode: String) {
-        _aodTrueAodMode.value = mode
-        prefs.edit().putString("aod_true_aod_mode", mode).apply()
-    }
-
-    fun updateAodSensitivity(sensitivity: String) {
-        _aodSensitivity.value = sensitivity
-        prefs.edit().putString("aod_sensitivity", sensitivity).apply()
-    }
-
-    fun updateAodMotionSensitivity(sensitivity: Float) {
-        _aodMotionSensitivity.value = sensitivity
-        prefs.edit().putFloat("aod_motion_sensitivity", sensitivity).apply()
-    }
-
-    fun updateAodDimnessLevel(level: Float) {
-        _aodDimnessLevel.value = level
-        prefs.edit().putFloat("aod_dimness_level", level).apply()
-    }
-
-    fun updateAodLockTimeout(seconds: Int) {
-        _aodLockTimeout.value = seconds
-        prefs.edit().putInt("aod_lock_timeout", seconds).apply()
     }
 
     fun updateAodTrueBlackOled(enabled: Boolean) {
@@ -1096,70 +870,13 @@ private val _streakPercentage = MutableStateFlow(0f)
                 isConflict = true,
                 onConfirm = {
                     _safetyPinDialogData.value = null
-                    _aodTrueBlackOled.value = true
-                    prefs.edit().putBoolean("aod_true_black_oled", true).apply()
+                    aodSettingsPrefs.updateAodTrueBlackOledDirect(true)
                 },
                 onIgnore = { _safetyPinDialogData.value = null }
             )
             return
         }
-        _aodTrueBlackOled.value = enabled
-        prefs.edit().putBoolean("aod_true_black_oled", enabled).apply()
-    }
-
-    fun updateAodAutoDeactivateTrueBlack(enabled: Boolean) {
-        _aodAutoDeactivateTrueBlack.value = enabled
-        prefs.edit().putBoolean("aod_auto_deactivate_true_black", enabled).apply()
-    }
-
-    fun updateAodBurnInShiftSpeed(speed: Int) {
-        _aodBurnInShiftSpeed.value = speed
-        prefs.edit().putInt("aod_burn_in_shift_speed", speed).apply()
-    }
-
-    fun updateSystemAutoLinkByName(enabled: Boolean) {
-        _systemAutoLinkByName.value = enabled
-        prefs.edit().putBoolean("system_auto_link_by_name", enabled).apply()
-    }
-
-    fun updateSystemEnableSynergy(enabled: Boolean) {
-        _systemEnableSynergy.value = enabled
-        prefs.edit().putBoolean("system_enable_synergy", enabled).apply()
-    }
-
-    fun updateSystemAutoCreateSubject(enabled: Boolean) {
-        _systemAutoCreateSubject.value = enabled
-        prefs.edit().putBoolean("system_auto_create_subject", enabled).apply()
-    }
-
-    fun updateSystemFuseSubjectsCourses(enabled: Boolean) {
-        _systemFuseSubjectsCourses.value = enabled
-        prefs.edit().putBoolean("system_fuse_subjects_courses", enabled).apply()
-    }
-
-    fun updateSystemAdvancedTasks(enabled: Boolean) {
-        _systemAdvancedTasks.value = enabled
-        prefs.edit().putBoolean("system_advanced_tasks", enabled).apply()
-    }
-
-    fun updateSystemPomodoroAutoLog(enabled: Boolean) {
-        _systemPomodoroAutoLog.value = enabled
-        prefs.edit().putBoolean("system_pomodoro_auto_log", enabled).apply()
-    }
-
-    fun updatePomodoroWorkDuration(duration: Int) {
-        _pomodoroWorkDuration.value = duration
-        prefs.edit().putInt("pomodoro_work_duration", duration).apply()
-    }
-
-    fun updatePomodoroShortBreakDuration(duration: Int) {
-        _pomodoroShortBreakDuration.value = duration
-        prefs.edit().putInt("pomodoro_short_break_duration", duration).apply()
-    }
-
-    fun updatePomodoroLongBreakDuration(duration: Int) {
-        _pomodoroLongBreakDuration.value = duration
-        prefs.edit().putInt("pomodoro_long_break_duration", duration).apply()
+        aodSettingsPrefs.updateAodTrueBlackOledDirect(enabled)
     }
 
     private val _dynamicBgLightBrightness = MutableStateFlow(
@@ -1423,6 +1140,32 @@ private val _streakPercentage = MutableStateFlow(0f)
         }
     }
 
+    private val attachmentsFlowCache = HashMap<Int, StateFlow<List<lumia.tracker.model.Attachment>>>()
+
+    fun getAttachmentsForCourse(courseId: Int): StateFlow<List<lumia.tracker.model.Attachment>> {
+        return attachmentsFlowCache.getOrPut(courseId) {
+            repository.getAttachmentsForCourse(courseId).stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+        }
+    }
+
+    fun addAttachment(attachment: lumia.tracker.model.Attachment) {
+        viewModelScope.launch {
+            repository.insertAttachment(attachment)
+            logAction("Added attachment '${attachment.name}'")
+        }
+    }
+
+    fun deleteAttachment(attachment: lumia.tracker.model.Attachment) {
+        viewModelScope.launch {
+            repository.deleteAttachment(attachment)
+            logAction("Deleted attachment '${attachment.name}'")
+        }
+    }
+
     private val attendanceFlowCache = HashMap<Int, StateFlow<List<lumia.tracker.model.AttendanceRecord>>>()
 
     fun getAttendanceForCourse(courseId: Int): StateFlow<List<lumia.tracker.model.AttendanceRecord>> {
@@ -1621,7 +1364,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     ) {
         viewModelScope.launch {
             var finalSubjectId = subjectId
-            if (finalSubjectId == null && _systemAutoCreateSubject.value) {
+            if (finalSubjectId == null && systemAutoCreateSubject.value) {
                 val subId = repository.insertSubject(Subject(name = name))
                 finalSubjectId = subId.toInt()
             }
@@ -2266,11 +2009,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                         editor.putBoolean(key, boolVal)
                         when (key) {
                             "pure_black_mode" -> _pureBlackMode.value = boolVal
-                            "beta_floating_nav" -> _betaFloatingNav.value = boolVal
-                            "beta_notes" -> _betaNotes.value = boolVal
                             "beta_glass_ui" -> _betaGlassUi.value = boolVal
-                            "beta_glass_dynamic" -> _betaGlassDynamic.value = boolVal
-                            "beta_frost_glass" -> _betaFrostGlass.value = boolVal
                             "beta_enhanced_header" -> _betaEnhancedHeader.value = boolVal
                             "beta_minimalist_mode" -> _betaMinimalistMode.value = boolVal
                             "beta_dynamic_background" -> _betaDynamicBackground.value = boolVal
@@ -2281,18 +2020,6 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "safety_pin_conflict_warning" -> _safetyPinConflictWarning.value = boolVal
                             "safety_pin_recommendations" -> _safetyPinRecommendations.value = boolVal
                             "show_action_history" -> _showActionHistory.value = boolVal
-                            "system_auto_link_by_name" -> _systemAutoLinkByName.value = boolVal
-                            "system_enable_synergy" -> _systemEnableSynergy.value = boolVal
-                            "system_auto_create_subject" -> _systemAutoCreateSubject.value = boolVal
-                            "system_fuse_subjects_courses" -> _systemFuseSubjectsCourses.value = boolVal
-                            "system_advanced_tasks" -> _systemAdvancedTasks.value = boolVal
-                            "system_pomodoro_auto_log" -> _systemPomodoroAutoLog.value = boolVal
-                            "nav_bar_glass_force_enabled" -> _navBarGlassForceEnabled.value = boolVal
-                            "beta_nav_bar_size_controls" -> _betaNavBarSizeControls.value = boolVal
-                            "nav_bar_glass_linked_to_main" -> _navBarGlassLinkedToMain.value = boolVal
-                            "nav_bar_glass_dynamic" -> _navBarGlassDynamic.value = boolVal
-                            "sound_effects_enabled" -> _soundEffectsEnabled.value = boolVal
-                            "aod_true_aod_enabled" -> _aodTrueAodEnabled.value = boolVal
                             "streak_is_complete_today" -> _streakIsCompleteToday.value = boolVal
                         }
                     }
@@ -2300,15 +2027,6 @@ private val _streakPercentage = MutableStateFlow(0f)
                         val floatVal = value.toFloatOrNull() ?: 0f
                         editor.putFloat(key, floatVal)
                         when (key) {
-                            "nav_bar_height" -> _navBarHeight.value = floatVal
-                            "nav_bar_padding_horizontal" -> _navBarPaddingHorizontal.value = floatVal
-                            "nav_bar_padding_bottom" -> _navBarPaddingBottom.value = floatVal
-                            "nav_bar_corner_radius" -> _navBarCornerRadius.value = floatVal
-                            "nav_bar_indicator_alpha" -> _navBarIndicatorAlpha.value = floatVal
-                            "glass_opacity_value" -> _glassOpacityValue.value = floatVal
-                            "nav_bar_glass_opacity_value" -> _navBarGlassOpacityValue.value = floatVal
-                            "aod_motion_sensitivity" -> _aodMotionSensitivity.value = floatVal
-                            "aod_dimness_level" -> _aodDimnessLevel.value = floatVal
                             "streak_partial_threshold" -> _streakPartialThreshold.value = floatVal
                             "streak_brightness" -> _streakBrightness.value = floatVal
                             "dynamic_bg_light_brightness" -> _dynamicBgLightBrightness.value = floatVal
@@ -2319,12 +2037,6 @@ private val _streakPercentage = MutableStateFlow(0f)
                         val intVal = value.toIntOrNull() ?: 0
                         editor.putInt(key, intVal)
                         when (key) {
-                            "pomodoro_work_duration" -> _pomodoroWorkDuration.value = intVal
-                            "pomodoro_short_break_duration" -> _pomodoroShortBreakDuration.value = intVal
-                            "pomodoro_long_break_duration" -> _pomodoroLongBreakDuration.value = intVal
-                            "pomodoro_period_sessions" -> _pomodoroPeriodSessions.value = intVal
-                            "aod_burn_in_shift_speed" -> _aodBurnInShiftSpeed.value = intVal
-                            "aod_lock_timeout" -> _aodLockTimeout.value = intVal
                             "streak_total_normal" -> _streakTotalNormal.value = intVal
                             "streak_total_complete" -> _streakTotalComplete.value = intVal
                             "streak_current" -> _streakCurrent.value = intVal
@@ -2348,29 +2060,20 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "custom_background" -> _customBackground.value = value
                             "custom_surface" -> _customSurface.value = value
                             "custom_text" -> _customText.value = value
-                            "nav_bar_label_mode" -> _navBarLabelMode.value = value
-                            "glass_backdrop_style" -> _glassBackdropStyle.value = value
-                            "nav_bar_glass_backdrop_style" -> _navBarGlassBackdropStyle.value = value
-                            "aod_true_aod_mode" -> _aodTrueAodMode.value = value
-                            "aod_sensitivity" -> _aodSensitivity.value = value
                             "streak_progress_color" -> _streakProgressColor.value = value
                             "streak_anim_override" -> _streakAnimationOverride.value = value
                             "streak_notif_tone" -> _streakNotificationTone.value = value
-                            "tab_home_label" -> _tabHomeLabel.value = value
-                            "tab_home_icon" -> _tabHomeIcon.value = value
-                            "tab_courses_label" -> _tabCoursesLabel.value = value
-                            "tab_courses_icon" -> _tabCoursesIcon.value = value
-                            "tab_subjects_label" -> _tabSubjectsLabel.value = value
-                            "tab_subjects_icon" -> _tabSubjectsIcon.value = value
-                            "tab_self_study_label" -> _tabSelfStudyLabel.value = value
-                            "tab_self_study_icon" -> _tabSelfStudyIcon.value = value
-                            "tab_analytics_label" -> _tabAnalyticsLabel.value = value
-                            "tab_analytics_icon" -> _tabAnalyticsIcon.value = value
-                            "tab_calendar_label" -> _tabCalendarLabel.value = value
-                            "tab_calendar_icon" -> _tabCalendarIcon.value = value
                         }
                     }
                 }
+                navBarSettingsPrefs.reloadFromPrefs(key, value)
+                featureFlagsPrefs.reloadFromPrefs(key, value)
+                tabConfigPrefs.reloadFromPrefs(key, value)
+                notificationSettingsPrefs.reloadFromPrefs(key, value)
+                pomodoroDurationSettingsPrefs.reloadFromPrefs(key, value)
+                aodSettingsPrefs.reloadFromPrefs(key, value)
+                systemBehaviorSettingsPrefs.reloadFromPrefs(key, value)
+                glassMiscSettingsPrefs.reloadFromPrefs(key, value)
             } catch (e: Exception) {
                 editor.putString(key, value)
             }
@@ -2690,6 +2393,51 @@ private val _streakPercentage = MutableStateFlow(0f)
         prefs.edit().putBoolean("safety_pin_recommendations", enabled).apply()
     }
 
+    fun applyAllRecommendations() {
+        _safetyPinRecommendations.value = true
+        prefs.edit().putBoolean("safety_pin_recommendations", true).apply()
+
+        if (_themeMode.value == "Light") {
+            _pureBlackMode.value = false
+            prefs.edit().putBoolean("pure_black_mode", false).apply()
+        }
+
+        _betaGlassUi.value = true
+        prefs.edit().putBoolean("beta_glass_ui", true).apply()
+
+        _betaDynamicBackground.value = true
+        prefs.edit().putBoolean("beta_dynamic_background", true).apply()
+
+        updateBetaFloatingNav(true)
+
+        _betaBetterTexts.value = true
+        prefs.edit().putBoolean("beta_better_texts", true).apply()
+
+        _betaBetterTextsPalette.value = true
+        prefs.edit().putBoolean("beta_better_texts_palette", true).apply()
+
+        _betaEnhancedHeader.value = true
+        prefs.edit().putBoolean("beta_enhanced_header", true).apply()
+
+        updateBetaFrostGlass(true)
+
+        updateBetaGlassDynamic(true)
+
+        _moreRounds.value = true
+        prefs.edit().putBoolean("more_rounds", true).apply()
+
+        _moreRoundsMode.value = "Glass"
+        prefs.edit().putString("more_rounds_mode", "Glass").apply()
+
+        if (_appAnimationMode.value == "Normal") {
+            _appAnimationMode.value = "Dynamic"
+            prefs.edit().putString("app_animation_mode", "Dynamic").apply()
+        }
+
+        _betaMinimalistMode.value = false
+        prefs.edit().putBoolean("beta_minimalist_mode", false).apply()
+    }
+
     fun updateThemeMode(mode: String) {
         if (safetyPinEnabled.value && safetyPinConflictWarning.value && mode == "Light" && _pureBlackMode.value) {
             _safetyPinDialogData.value = SafetyPinDialogData(
@@ -2805,71 +2553,6 @@ private val _streakPercentage = MutableStateFlow(0f)
         }
     }
 
-    fun updateBetaFloatingNav(enabled: Boolean) {
-        _betaFloatingNav.value = enabled
-        prefs.edit().putBoolean("beta_floating_nav", enabled).apply()
-    }
-
-    fun updateNavBarHeight(height: Float) {
-        _navBarHeight.value = height
-        prefs.edit().putFloat("nav_bar_height", height).apply()
-    }
-
-    fun updateNavBarPaddingHorizontal(padding: Float) {
-        _navBarPaddingHorizontal.value = padding
-        prefs.edit().putFloat("nav_bar_padding_horizontal", padding).apply()
-    }
-
-    fun updateNavBarPaddingBottom(padding: Float) {
-        _navBarPaddingBottom.value = padding
-        prefs.edit().putFloat("nav_bar_padding_bottom", padding).apply()
-    }
-
-    fun updateNavBarCornerRadius(radius: Float) {
-        _navBarCornerRadius.value = radius
-        prefs.edit().putFloat("nav_bar_corner_radius", radius).apply()
-    }
-
-    fun updateNavBarLabelMode(mode: String) {
-        _navBarLabelMode.value = mode
-        prefs.edit().putString("nav_bar_label_mode", mode).apply()
-    }
-
-    fun updateNavBarGlassForceEnabled(enabled: Boolean) {
-        _navBarGlassForceEnabled.value = enabled
-        prefs.edit().putBoolean("nav_bar_glass_force_enabled", enabled).apply()
-    }
-
-    fun updateNavBarIndicatorAlpha(alpha: Float) {
-        _navBarIndicatorAlpha.value = alpha
-        prefs.edit().putFloat("nav_bar_indicator_alpha", alpha).apply()
-    }
-
-    fun updateBetaNavBarSizeControls(enabled: Boolean) {
-        _betaNavBarSizeControls.value = enabled
-        prefs.edit().putBoolean("beta_nav_bar_size_controls", enabled).apply()
-    }
-
-    fun updateNavBarGlassLinkedToMain(enabled: Boolean) {
-        _navBarGlassLinkedToMain.value = enabled
-        prefs.edit().putBoolean("nav_bar_glass_linked_to_main", enabled).apply()
-    }
-
-    fun updateNavBarGlassBackdropStyle(style: String) {
-        _navBarGlassBackdropStyle.value = style
-        prefs.edit().putString("nav_bar_glass_backdrop_style", style).apply()
-    }
-
-    fun updateNavBarGlassDynamic(enabled: Boolean) {
-        _navBarGlassDynamic.value = enabled
-        prefs.edit().putBoolean("nav_bar_glass_dynamic", enabled).apply()
-    }
-
-    fun updateBetaNotes(enabled: Boolean) {
-        _betaNotes.value = enabled
-        prefs.edit().putBoolean("beta_notes", enabled).apply()
-    }
-
     fun updateDisplayLayoutMode(mode: String) {
         if (mode != "Immersive" && _appAnimationMode.value == "Bouncy" && safetyPinEnabled.value && safetyPinConflictWarning.value) {
             _safetyPinDialogData.value = SafetyPinDialogData(
@@ -2894,7 +2577,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun updateBetaMinimalistMode(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaGlassUi.value || _betaDynamicBackground.value || _betaEnhancedHeader.value || _betaFloatingNav.value || _betaBetterTexts.value || _displayLayoutMode.value != "Immersive" || _appAnimationMode.value != "Minimal" || _moreRounds.value)) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaGlassUi.value || _betaDynamicBackground.value || _betaEnhancedHeader.value || betaFloatingNav.value || _betaBetterTexts.value || _displayLayoutMode.value != "Immersive" || _appAnimationMode.value != "Minimal" || _moreRounds.value)) {
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Feature Conflict Detected",
                 description = "Activating 'Minimalist Mode' will force-disable 'Glass UI', 'Dynamic Lighting', 'Enhanced Header', 'Floating Action Bar', 'Better Texts', bouncy animations, and rounded UI components, locking them to drastically reduce visual clutter. Additionally, 'Immersive Mode' will be turned ON. Proceed?",
@@ -2906,7 +2589,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                     if (_betaGlassUi.value) updateBetaGlassUi(false)
                     if (_betaDynamicBackground.value) updateBetaDynamicBackground(false)
                     if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
-                    if (_betaFloatingNav.value) updateBetaFloatingNav(false)
+                    if (betaFloatingNav.value) updateBetaFloatingNav(false)
                     if (_betaBetterTexts.value) updateBetaBetterTexts(false)
                     if (_moreRounds.value) updateMoreRounds(false)
                     if (_appAnimationMode.value != "Minimal") updateAppAnimationMode("Minimal")
@@ -2924,7 +2607,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             if (_betaGlassUi.value) updateBetaGlassUi(false)
             if (_betaDynamicBackground.value) updateBetaDynamicBackground(false)
             if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
-            if (_betaFloatingNav.value) updateBetaFloatingNav(false)
+            if (betaFloatingNav.value) updateBetaFloatingNav(false)
             if (_betaBetterTexts.value) updateBetaBetterTexts(false)
             if (_displayLayoutMode.value != "Immersive") updateDisplayLayoutMode("Immersive")
         }
@@ -2947,7 +2630,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             return
         }
 
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && (!_betaDynamicBackground.value || !_betaFloatingNav.value || !_betaBetterTexts.value || !_betaEnhancedHeader.value)) {
+        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && (!_betaDynamicBackground.value || !betaFloatingNav.value || !_betaBetterTexts.value || !_betaEnhancedHeader.value)) {
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Optimization Recommendation",
                 description = "For an enhanced visual experience, it is highly recommended to activate 'Dynamic Lighting Background', 'Floating Action Bar', 'Better Texts', and 'Enhanced Header' alongside 'Glass UI'. Would you like to apply these complementary settings?",
@@ -2971,37 +2654,6 @@ private val _streakPercentage = MutableStateFlow(0f)
         }
         _betaGlassUi.value = enabled
         prefs.edit().putBoolean("beta_glass_ui", enabled).apply()
-    }
-
-    fun updateBetaGlassDynamic(enabled: Boolean) {
-        _betaGlassDynamic.value = enabled
-        prefs.edit().putBoolean("beta_glass_dynamic", enabled).apply()
-    }
-
-    fun updateBetaFrostGlass(enabled: Boolean) {
-        _betaFrostGlass.value = enabled
-        prefs.edit().putBoolean("beta_frost_glass", enabled).apply()
-    }
-
-    fun updateGlassBackdropStyle(style: String) {
-        _glassBackdropStyle.value = style
-        prefs.edit().putString("glass_backdrop_style", style).apply()
-    }
-
-    fun updateGlassOpacityValue(value: Float) {
-        _glassOpacityValue.value = value
-        prefs.edit().putFloat("glass_opacity_value", value).apply()
-    }
-
-    fun updateNavBarGlassOpacityValue(value: Float, alias: String, isDark: Boolean) {
-        val key = "nav_glass_opacity_${alias}_${if (isDark) "dark" else "light"}"
-        _navBarGlassOpacityValue.value = value
-        prefs.edit().putFloat(key, value).apply()
-    }
-
-    fun refreshNavBarGlassOpacity(alias: String, isDark: Boolean) {
-        val key = "nav_glass_opacity_${alias}_${if (isDark) "dark" else "light"}"
-        _navBarGlassOpacityValue.value = prefs.getFloat(key, 0.6f)
     }
 
     fun updateBetaEnhancedHeader(enabled: Boolean) {
@@ -3227,19 +2879,19 @@ fun clearAllData() {
             _customSurface.value = "#FFFFFF"
             _customText.value = "#1A1C1A"
             _pureBlackMode.value = false
-            _betaFloatingNav.value = false
-            _betaNotes.value = false
+            updateBetaFloatingNav(false)
+            updateBetaNotes(false)
             _displayLayoutMode.value = "Normal"
             _betaGlassUi.value = false
-            _betaGlassDynamic.value = true
-            _betaFrostGlass.value = true
+            updateBetaGlassDynamic(true)
+            updateBetaFrostGlass(true)
             
-            _aodTrueAodEnabled.value = false
-            _aodTrueAodMode.value = "Clock"
-            _aodDimnessLevel.value = 0.95f
-            _aodSensitivity.value = "highest"
-            _aodLockTimeout.value = 30
-            _aodMotionSensitivity.value = 3.0f
+            updateAodTrueAodEnabled(false)
+            updateAodTrueAodMode("Clock")
+            updateAodDimnessLevel(0.95f)
+            updateAodSensitivity("highest")
+            updateAodLockTimeout(30)
+            updateAodMotionSensitivity(3.0f)
             
 
             _importExportStatus.value = "All data and settings erased successfully" 
