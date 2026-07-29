@@ -73,6 +73,27 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
         }
     }
 
+    var selectedAutoBackupToExport by remember { mutableStateOf<lumia.tracker.util.AutoBackupItem?>(null) }
+    val saveAutoBackupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri: Uri? ->
+        val item = selectedAutoBackupToExport
+        if (uri != null && item != null) {
+            try {
+                val sourceFile = java.io.File(item.filePath)
+                context.contentResolver.openOutputStream(uri)?.use { os ->
+                    sourceFile.inputStream().use { isStream ->
+                        isStream.copyTo(os)
+                    }
+                }
+                Toast.makeText(context, "Auto-backup exported successfully!", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+        selectedAutoBackupToExport = null
+    }
+
     LaunchedEffect(status) {
         status?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
@@ -160,6 +181,239 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         }
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Emergency Auto-Crash Safeguard & Backups Section
+            var refreshTrigger by remember { mutableStateOf(0) }
+            val autoBackups = remember(refreshTrigger, status) {
+                lumia.tracker.util.AutoCrashBackupManager.getAutoBackups(context)
+            }
+            var selectedRestoreItem by remember { mutableStateOf<lumia.tracker.util.AutoBackupItem?>(null) }
+
+            lumia.tracker.ui.components.GlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.CheckCircle,
+                                contentDescription = "Crash Safety Guard",
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Crash Safeguard & Auto Backups",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                "Automatic backups on crashes (LogDog & System)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text(
+                        "Whenever a crash occurs (with or without LogDog), a complete .scholar backup package and SQLite database snapshot are generated automatically to protect your data.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                val savedPath = lumia.tracker.util.AutoCrashBackupManager.performEmergencyBackup(
+                                    context,
+                                    "Manual Safety Test Backup"
+                                )
+                                if (savedPath != null) {
+                                    Toast.makeText(context, "Safety auto backup created!", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "Safety auto backup created!", Toast.LENGTH_SHORT).show()
+                                }
+                                refreshTrigger++
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Trigger Test Auto Backup")
+                            }
+                        }
+                    }
+
+                    if (autoBackups.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Saved Auto-Crash Snapshots (${autoBackups.size})",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            autoBackups.take(10).forEach { item ->
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                                Text(
+                                                    java.text.SimpleDateFormat("MMM dd, yyyy · HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(item.timestamp)),
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    item.reason,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.error,
+                                                    maxLines = 2,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                                )
+                                            }
+                                            Text(
+                                                item.fileSizeFormatted,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.secondary
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.End,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            TextButton(
+                                                onClick = {
+                                                    selectedAutoBackupToExport = item
+                                                    saveAutoBackupLauncher.launch(item.fileName)
+                                                },
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                            ) {
+                                                Icon(Icons.Rounded.Upload, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Export", fontSize = 12.sp)
+                                            }
+
+                                            Spacer(modifier = Modifier.width(4.dp))
+
+                                            Button(
+                                                onClick = { selectedRestoreItem = item },
+                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                                shape = RoundedCornerShape(12.dp)
+                                            ) {
+                                                Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Restore", fontSize = 12.sp)
+                                            }
+
+                                            Spacer(modifier = Modifier.width(4.dp))
+
+                                            IconButton(
+                                                onClick = {
+                                                    lumia.tracker.util.AutoCrashBackupManager.deleteAutoBackup(context, item)
+                                                    refreshTrigger++
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Rounded.Delete,
+                                                    contentDescription = "Delete",
+                                                    tint = MaterialTheme.colorScheme.error,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (selectedRestoreItem != null) {
+                val restoreItem = selectedRestoreItem!!
+                AlertDialog(
+                    onDismissRequest = { selectedRestoreItem = null },
+                    title = { Text("Restore Auto Crash Backup?") },
+                    text = {
+                        Text(
+                            "This will overwrite your current application data with the backup snapshot created on " +
+                                    java.text.SimpleDateFormat("MMM dd, yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date(restoreItem.timestamp)) + ".\n\nReason: ${restoreItem.reason}",
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                lumia.tracker.util.AutoCrashBackupManager.restoreAutoBackup(context, restoreItem, viewModel)
+                                selectedRestoreItem = null
+                                Toast.makeText(context, "Restoring auto backup snapshot...", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Text("Restore Snapshot", fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { selectedRestoreItem = null }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

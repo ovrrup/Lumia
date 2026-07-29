@@ -25,9 +25,6 @@ class FeatureFlagsPrefs(private val prefs: SharedPreferences) {
     private val _betaNotes = MutableStateFlow(prefs.getBoolean("beta_notes", false))
     val betaNotes: StateFlow<Boolean> = _betaNotes.asStateFlow()
 
-    private val _nextGenUiEnabled = MutableStateFlow(prefs.getBoolean("next_gen_ui_enabled", false))
-    val nextGenUiEnabled: StateFlow<Boolean> = _nextGenUiEnabled.asStateFlow()
-
     fun updateFeatureSubjectEnabled(enabled: Boolean) {
         _featureSubjectEnabled.value = enabled
         prefs.edit().putBoolean("feature_subject_enabled", enabled).apply()
@@ -58,11 +55,6 @@ class FeatureFlagsPrefs(private val prefs: SharedPreferences) {
         prefs.edit().putBoolean("beta_notes", enabled).apply()
     }
 
-    fun updateNextGenUiEnabled(enabled: Boolean) {
-        _nextGenUiEnabled.value = enabled
-        prefs.edit().putBoolean("next_gen_ui_enabled", enabled).apply()
-    }
-
     fun reloadFromPrefs(key: String, value: String) {
         when (key) {
             "feature_subject_enabled" -> _featureSubjectEnabled.value = value.toBooleanStrictOrNull() ?: true
@@ -71,7 +63,6 @@ class FeatureFlagsPrefs(private val prefs: SharedPreferences) {
             "feature_calendar_enabled" -> _featureCalendarEnabled.value = value.toBooleanStrictOrNull() ?: true
             "feature_quick_notes_enabled" -> _featureQuickNotesEnabled.value = value.toBooleanStrictOrNull() ?: true
             "beta_notes" -> _betaNotes.value = value.toBooleanStrictOrNull() ?: false
-            "next_gen_ui_enabled" -> _nextGenUiEnabled.value = value.toBooleanStrictOrNull() ?: false
         }
     }
 }

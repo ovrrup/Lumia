@@ -77,7 +77,6 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
     val betaNavBarSizeControls by viewModel.betaNavBarSizeControls.collectAsStateWithLifecycle()
     val appAnimationMode by viewModel.appAnimationMode.collectAsStateWithLifecycle()
     val moreRounds by viewModel.moreRounds.collectAsStateWithLifecycle()
-    val nextGenUiEnabled by viewModel.nextGenUiEnabled.collectAsStateWithLifecycle()
 
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
 
@@ -98,22 +97,6 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     .verticalScroll(rememberScrollState())
                     .padding(start = 16.dp, end = 16.dp, top = statusBarHeight + 64.dp, bottom = 24.dp),
             ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Card 0: Harmonized Visual Recommendations
-            SettingsGroupCard(
-                title = "Visual Recommendations & Presets",
-                icon = Icons.Rounded.Star,
-                infoText = "Instantly harmonizes Glass UI, Dynamic Lighting Background, Floating Dock, and Elastic Animations into a cohesive visual experience."
-            ) {
-                SettingsActionItemInCard(
-                    title = "Apply Recommended Visual Preset",
-                    subtitle = "One-tap preset to enable Dynamic Lighting, Glassmorphism, Floating Dock, and Enhanced Texts",
-                    icon = Icons.Rounded.AutoAwesome,
-                    onClick = { viewModel.applyAllRecommendations() }
-                )
-            }
-
             Spacer(modifier = Modifier.height(16.dp))
 
             // Card 1: Dynamic Background Lighting (Individual Feature)
@@ -251,20 +234,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Card 3: Next-Gen Interface Engine
-            SettingsGroupCard(title = "Next-Gen Interface Engine", icon = Icons.Rounded.PhoneIphone) {
-                SettingsToggleItem(
-                    title = "Next-Gen iOS Style Layout",
-                    subtitle = "Toggle the high-fidelity Next-Gen interface with grouped card lists, liquid tab navigation, and compact metrics.",
-                    checked = nextGenUiEnabled,
-                    icon = Icons.Rounded.PhoneIphone,
-                    onCheckedChange = { viewModel.updateNextGenUiEnabled(it) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Card 4: Theme & Visual Branding
+            // Card 3: Theme & Visual Branding
             SettingsGroupCard(title = "Theme & Visual Branding", icon = Icons.Rounded.Palette) {
                 // Active Render Mode (System / Light / Dark)
                 SettingsSegmentedPicker(

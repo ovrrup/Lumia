@@ -495,18 +495,10 @@ class MainActivity : ComponentActivity() {
                             lumia.tracker.ui.screens.OnboardingScreen(navController = navController, viewModel = viewModel)
                         }
                         composable("dashboard") {
-                            val nextGenUiEnabled by viewModel.nextGenUiEnabled.collectAsStateWithLifecycle()
-                            if (nextGenUiEnabled) {
-                                lumia.tracker.ui.nextgen.IosNextGenLayout(
-                                    navController = navController,
-                                    viewModel = viewModel
-                                )
-                            } else {
-                                DashboardScreen(
-                                    navController = navController,
-                                    viewModel = viewModel
-                                )
-                            }
+                            DashboardScreen(
+                                navController = navController,
+                                viewModel = viewModel
+                            )
                         }
                         composable("search") {
                             SearchScreen(

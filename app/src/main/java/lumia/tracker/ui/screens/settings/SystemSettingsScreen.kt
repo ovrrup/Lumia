@@ -292,16 +292,6 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                             icon = Icons.Rounded.Info,
                             onCheckedChange = { viewModel.updateSafetyPinRecommendations(it) }
                         )
-
-                        if (safetyPinRecommendations) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                            SettingsActionItemInCard(
-                                title = "Apply All Recommended Settings",
-                                subtitle = "Automatically activate all recommended Glass UI, lighting, and animation optimizations",
-                                icon = Icons.Rounded.Star,
-                                onClick = { viewModel.applyAllRecommendations() }
-                            )
-                        }
                     }
                 }
             }

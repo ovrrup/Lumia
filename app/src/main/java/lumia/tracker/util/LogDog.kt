@@ -30,6 +30,17 @@ object LogDog {
             """.trimIndent()
             
             Log.e("LogDog", "Crash captured: $crashInfo")
+            
+            // Auto Safety Backup: Save database & data before process dies
+            try {
+                AutoCrashBackupManager.performEmergencyBackup(
+                    context,
+                    "LogDog: ${throwable.javaClass.simpleName} - ${throwable.message ?: "Fatal Exception"}"
+                )
+            } catch (backupErr: Throwable) {
+                Log.e("LogDog", "Auto crash backup failed", backupErr)
+            }
+
             val crashes = try {
                 JSONArray(prefs.getString("crashes", "[]") ?: "[]")
             } catch (e: Exception) {

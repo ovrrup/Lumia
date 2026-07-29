@@ -610,7 +610,6 @@ private val _streakPercentage = MutableStateFlow(0f)
     val featureCalendarEnabled = featureFlagsPrefs.featureCalendarEnabled
     val featureQuickNotesEnabled = featureFlagsPrefs.featureQuickNotesEnabled
     val betaNotes = featureFlagsPrefs.betaNotes
-    val nextGenUiEnabled = featureFlagsPrefs.nextGenUiEnabled
 
     fun updateFeatureSubjectEnabled(enabled: Boolean) = featureFlagsPrefs.updateFeatureSubjectEnabled(enabled)
     fun updateFeatureSelfStudyEnabled(enabled: Boolean) = featureFlagsPrefs.updateFeatureSelfStudyEnabled(enabled)
@@ -618,7 +617,6 @@ private val _streakPercentage = MutableStateFlow(0f)
     fun updateFeatureCalendarEnabled(enabled: Boolean) = featureFlagsPrefs.updateFeatureCalendarEnabled(enabled)
     fun updateFeatureQuickNotesEnabled(enabled: Boolean) = featureFlagsPrefs.updateFeatureQuickNotesEnabled(enabled)
     fun updateBetaNotes(enabled: Boolean) = featureFlagsPrefs.updateBetaNotes(enabled)
-    fun updateNextGenUiEnabled(enabled: Boolean) = featureFlagsPrefs.updateNextGenUiEnabled(enabled)
 
     val tabHomeLabel = tabConfigPrefs.tabHomeLabel
     val tabHomeIcon = tabConfigPrefs.tabHomeIcon
@@ -930,7 +928,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     private val _safetyPinConflictWarning = MutableStateFlow(prefs.getBoolean("safety_pin_conflict_warning", true))
     val safetyPinConflictWarning = _safetyPinConflictWarning.asStateFlow()
 
-    private val _safetyPinRecommendations = MutableStateFlow(prefs.getBoolean("safety_pin_recommendations", true))
+    private val _safetyPinRecommendations = MutableStateFlow(prefs.getBoolean("safety_pin_recommendations", false))
     val safetyPinRecommendations = _safetyPinRecommendations.asStateFlow()
 
     data class SafetyPinDialogData(
@@ -2234,51 +2232,6 @@ private val _streakPercentage = MutableStateFlow(0f)
         prefs.edit().putBoolean("safety_pin_recommendations", enabled).apply()
     }
 
-    fun applyAllRecommendations() {
-        _safetyPinRecommendations.value = true
-        prefs.edit().putBoolean("safety_pin_recommendations", true).apply()
-
-        if (_themeMode.value == "Light") {
-            _pureBlackMode.value = false
-            prefs.edit().putBoolean("pure_black_mode", false).apply()
-        }
-
-        _betaGlassUi.value = true
-        prefs.edit().putBoolean("beta_glass_ui", true).apply()
-
-        _betaDynamicBackground.value = true
-        prefs.edit().putBoolean("beta_dynamic_background", true).apply()
-
-        updateBetaFloatingNav(true)
-
-        _betaBetterTexts.value = true
-        prefs.edit().putBoolean("beta_better_texts", true).apply()
-
-        _betaBetterTextsPalette.value = true
-        prefs.edit().putBoolean("beta_better_texts_palette", true).apply()
-
-        _betaEnhancedHeader.value = true
-        prefs.edit().putBoolean("beta_enhanced_header", true).apply()
-
-        updateBetaFrostGlass(true)
-
-        updateBetaGlassDynamic(true)
-
-        _moreRounds.value = true
-        prefs.edit().putBoolean("more_rounds", true).apply()
-
-        _moreRoundsMode.value = "Glass"
-        prefs.edit().putString("more_rounds_mode", "Glass").apply()
-
-        if (_appAnimationMode.value == "Normal") {
-            _appAnimationMode.value = "Dynamic"
-            prefs.edit().putString("app_animation_mode", "Dynamic").apply()
-        }
-
-        _betaMinimalistMode.value = false
-        prefs.edit().putBoolean("beta_minimalist_mode", false).apply()
-    }
-
     fun updateThemeMode(mode: String) {
         if (safetyPinEnabled.value && safetyPinConflictWarning.value && mode == "Light" && _pureBlackMode.value) {
             _safetyPinDialogData.value = SafetyPinDialogData(
@@ -2292,26 +2245,6 @@ private val _streakPercentage = MutableStateFlow(0f)
                     updatePureBlackMode(false)
                 },
                 onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
-
-        if (mode == "Dark" && safetyPinEnabled.value && safetyPinRecommendations.value && !_pureBlackMode.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For the deepest contrast and battery savings on OLED screens, it is recommended to enable 'Pure Black Mode' with the Dark theme. Would you like to enable it?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _themeMode.value = mode
-                    prefs.edit().putString("theme_mode", mode).apply()
-                    updatePureBlackMode(true)
-                },
-                onIgnore = {
-                    _safetyPinDialogData.value = null
-                    _themeMode.value = mode
-                    prefs.edit().putString("theme_mode", mode).apply()
-                }
             )
             return
         }
@@ -2355,25 +2288,6 @@ private val _streakPercentage = MutableStateFlow(0f)
             return
         }
 
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && _themeMode.value != "Dark") {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For the optimal experience of 'Pure Black Mode', it is highly recommended to switch your system theme to 'Dark'. The current setting limits the effectiveness of the pure black backgrounds.",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _pureBlackMode.value = true
-                    prefs.edit().putBoolean("pure_black_mode", true).apply()
-                    updateThemeMode("Dark")
-                },
-                onIgnore = {
-                    _safetyPinDialogData.value = null
-                    _pureBlackMode.value = true
-                    prefs.edit().putBoolean("pure_black_mode", true).apply()
-                }
-            )
-            return
-        }
         _pureBlackMode.value = enabled
         prefs.edit().putBoolean("pure_black_mode", enabled).apply()
     }
@@ -2471,34 +2385,6 @@ private val _streakPercentage = MutableStateFlow(0f)
             return
         }
 
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && (!_betaDynamicBackground.value || !betaFloatingNav.value || !_betaBetterTexts.value || !_betaEnhancedHeader.value)) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For an enhanced visual experience, it is highly recommended to activate 'Dynamic Lighting Background', 'Floating Action Bar', 'Better Texts', and 'Enhanced Header' alongside 'Glass UI'. Would you like to apply these complementary settings?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaGlassUi.value = true
-                    prefs.edit().putBoolean("beta_glass_ui", true).apply()
-                    updateNavBarGlassLinkedToMain(true)
-                    updateBetaFrostGlass(true)
-                    updateBetaGlassDynamic(true)
-                    updateBetaDynamicBackground(true)
-                    updateBetaFloatingNav(true)
-                    updateBetaBetterTexts(true)
-                    updateBetaEnhancedHeader(true)
-                },
-                onIgnore = { 
-                    _safetyPinDialogData.value = null
-                    _betaGlassUi.value = true
-                    prefs.edit().putBoolean("beta_glass_ui", true).apply()
-                    updateNavBarGlassLinkedToMain(true)
-                    updateBetaFrostGlass(true)
-                    updateBetaGlassDynamic(true)
-                }
-            )
-            return
-        }
         _betaGlassUi.value = enabled
         prefs.edit().putBoolean("beta_glass_ui", enabled).apply()
         if (enabled) {
@@ -2524,26 +2410,6 @@ private val _streakPercentage = MutableStateFlow(0f)
             )
             return
         }
-        
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaGlassUi.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For the best visual fidelity when using 'Enhanced Header', it is highly recommended to activate 'Glass UI'. This combination creates a stunning translucent effect. Would you like to enable it?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaEnhancedHeader.value = true
-                    prefs.edit().putBoolean("beta_enhanced_header", true).apply()
-                    updateBetaGlassUi(true)
-                },
-                onIgnore = { 
-                    _safetyPinDialogData.value = null
-                    _betaEnhancedHeader.value = true
-                    prefs.edit().putBoolean("beta_enhanced_header", true).apply()
-                }
-            )
-            return
-        }
 
         _betaEnhancedHeader.value = enabled
         prefs.edit().putBoolean("beta_enhanced_header", enabled).apply()
@@ -2565,26 +2431,6 @@ private val _streakPercentage = MutableStateFlow(0f)
             )
             return
         }
-        
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaGlassUi.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For the best visual fidelity when using 'Dynamic Lighting Background', it is highly recommended to activate 'Glass UI'. This combination creates a stunning translucent depth effect. Would you like to enable it?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaDynamicBackground.value = true
-                    prefs.edit().putBoolean("beta_dynamic_background", true).apply()
-                    updateBetaGlassUi(true)
-                },
-                onIgnore = { 
-                    _safetyPinDialogData.value = null
-                    _betaDynamicBackground.value = true
-                    prefs.edit().putBoolean("beta_dynamic_background", true).apply()
-                }
-            )
-            return
-        }
 
         _betaDynamicBackground.value = enabled
         prefs.edit().putBoolean("beta_dynamic_background", enabled).apply()
@@ -2603,25 +2449,6 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun updateBetaBetterTexts(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaBetterTextsPalette.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "To fully experience 'Better Texts', it is recommended to also enable 'Use Palette Shades for Text'. This provides a softer, more cohesive look matching your selected theme color. Would you like to enable it?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaBetterTexts.value = true
-                    prefs.edit().putBoolean("beta_better_texts", true).apply()
-                    updateBetaBetterTextsPalette(true)
-                },
-                onIgnore = {
-                    _safetyPinDialogData.value = null
-                    _betaBetterTexts.value = true
-                    prefs.edit().putBoolean("beta_better_texts", true).apply()
-                 }
-            )
-            return
-        }
         _betaBetterTexts.value = enabled
         prefs.edit().putBoolean("beta_better_texts", enabled).apply()
     }
