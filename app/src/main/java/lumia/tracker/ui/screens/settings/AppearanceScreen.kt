@@ -100,7 +100,171 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Card 1: Theme & Visual Branding
+            // Card 0: Harmonized Visual Recommendations
+            SettingsGroupCard(
+                title = "Visual Recommendations & Presets",
+                icon = Icons.Rounded.Star,
+                infoText = "Instantly harmonizes Glass UI, Dynamic Lighting Background, Floating Dock, and Elastic Animations into a cohesive visual experience."
+            ) {
+                SettingsActionItemInCard(
+                    title = "Apply Recommended Visual Preset",
+                    subtitle = "One-tap preset to enable Dynamic Lighting, Glassmorphism, Floating Dock, and Enhanced Texts",
+                    icon = Icons.Rounded.AutoAwesome,
+                    onClick = { viewModel.applyAllRecommendations() }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Card 1: Dynamic Background Lighting (Individual Feature)
+            val dynamicBgEnabled = !betaMinimalistMode && !pureBlackMode
+            val dynamicBgSubtitle = when {
+                betaMinimalistMode -> "Locked by Minimalist Focus Mode"
+                pureBlackMode -> "Disabled: Pure Black Canvas is active"
+                else -> "Soft, vibrant animated ambient glow that shifts behind UI components in both Normal Flat and Glass UI"
+            }
+
+            SettingsGroupCard(title = "Dynamic Background Lighting", icon = Icons.Rounded.InvertColors) {
+                SettingsToggleItem(
+                    title = "Dynamic Lighting Background",
+                    subtitle = dynamicBgSubtitle,
+                    checked = betaDynamicBackground,
+                    enabled = dynamicBgEnabled,
+                    icon = Icons.Rounded.InvertColors,
+                    onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
+                )
+
+                AnimatedVisibility(visible = betaDynamicBackground && !betaMinimalistMode) {
+                    val isDarkTheme = LocalDarkTheme.current
+                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp)) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isDarkTheme) "Dark Mode Lighting Brightness" else "Light Mode Lighting Brightness",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            val currentBrightness = if (isDarkTheme) dynamicBgDarkBrightness else dynamicBgLightBrightness
+                            Text(
+                                text = "${(currentBrightness * 100).toInt()}%",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Text(
+                            text = if (isDarkTheme) {
+                                "Calibrate background glow intensity in dark modes for optimal readability"
+                            } else {
+                                "Calibrate vibrant background energy in light modes for clean visual focus"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                        Slider(
+                            value = if (isDarkTheme) dynamicBgDarkBrightness else dynamicBgLightBrightness,
+                            onValueChange = {
+                                if (isDarkTheme) {
+                                    viewModel.updateDynamicBgDarkBrightness(it)
+                                } else {
+                                    viewModel.updateDynamicBgLightBrightness(it)
+                                }
+                            },
+                            valueRange = 0.05f..1.0f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Card 2: Glassmorphism UI Mode (Packed up as one unified mode)
+            val glassEnabled = !betaMinimalistMode && !pureBlackMode
+            val glassSubtitle = when {
+                betaMinimalistMode -> "Locked by Minimalist Focus Mode"
+                pureBlackMode -> "Disabled: Pure Black Canvas is active"
+                else -> "Enable packaged glassmorphism translucent surfaces across cards, sheets, panels, and bottom dock"
+            }
+
+            SettingsGroupCard(
+                title = "Glassmorphism UI Mode",
+                icon = Icons.Rounded.BlurOn,
+                infoText = "Glassmorphism Mode unifies translucent panels, gaussian-blur frosting, and specular highlights into one seamless style."
+            ) {
+                SettingsToggleItem(
+                    title = "Glassmorphism Mode",
+                    subtitle = glassSubtitle,
+                    checked = betaGlassUi,
+                    enabled = glassEnabled,
+                    icon = Icons.Rounded.BlurOn,
+                    onCheckedChange = { viewModel.updateBetaGlassUi(it) }
+                )
+
+                AnimatedVisibility(visible = betaGlassUi && glassEnabled) {
+                    Column {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+
+                        // Opacity Depth Slider
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Glass Translucency Depth",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "${(glassOpacityValue * 100).toInt()}%",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Text(
+                                text = "Calibrate baseline translucency thickness for cards and navigation bars",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
+                            Slider(
+                                value = glassOpacityValue,
+                                onValueChange = { viewModel.updateGlassOpacityValue(it) },
+                                valueRange = 0.15f..0.85f,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Card 3: Next-Gen Interface Engine
+            SettingsGroupCard(title = "Next-Gen Interface Engine", icon = Icons.Rounded.PhoneIphone) {
+                SettingsToggleItem(
+                    title = "Next-Gen iOS Style Layout",
+                    subtitle = "Toggle the high-fidelity Next-Gen interface with grouped card lists, liquid tab navigation, and compact metrics.",
+                    checked = nextGenUiEnabled,
+                    icon = Icons.Rounded.PhoneIphone,
+                    onCheckedChange = { viewModel.updateNextGenUiEnabled(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Card 4: Theme & Visual Branding
             SettingsGroupCard(title = "Theme & Visual Branding", icon = Icons.Rounded.Palette) {
                 // Active Render Mode (System / Light / Dark)
                 SettingsSegmentedPicker(
@@ -192,92 +356,12 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     enabled = pureBlackEnabled,
                     onCheckedChange = { viewModel.updatePureBlackMode(it) }
                 )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 10.dp))
-
-                // Dynamic Lighting Background
-                val dynamicBgEnabled = !betaMinimalistMode && !pureBlackMode
-                val dynamicBgSubtitle = when {
-                    betaMinimalistMode -> "Locked by Minimalist Focus Mode"
-                    pureBlackMode -> "Disabled: Pure Black Canvas is active"
-                    else -> "Soft, vibrant animated background gradient shifts"
-                }
-
-                SettingsToggleItem(
-                    title = "Dynamic Lighting Background",
-                    subtitle = dynamicBgSubtitle,
-                    checked = betaDynamicBackground,
-                    enabled = dynamicBgEnabled,
-                    icon = Icons.Rounded.InvertColors,
-                    onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
-                )
-
-                AnimatedVisibility(visible = betaDynamicBackground && !betaMinimalistMode) {
-                    val isDarkTheme = LocalDarkTheme.current
-                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp)) {
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (isDarkTheme) "Dark Mode Lighting Brightness" else "Light Mode Lighting Brightness",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            val currentBrightness = if (isDarkTheme) dynamicBgDarkBrightness else dynamicBgLightBrightness
-                            Text(
-                                text = "${(currentBrightness * 100).toInt()}%",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Text(
-                            text = if (isDarkTheme) {
-                                "Calibrate background glow intensity in dark modes for optimal readability"
-                            } else {
-                                "Calibrate vibrant background energy in light modes for clean visual focus"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 6.dp)
-                        )
-                        Slider(
-                            value = if (isDarkTheme) dynamicBgDarkBrightness else dynamicBgLightBrightness,
-                            onValueChange = {
-                                if (isDarkTheme) {
-                                    viewModel.updateDynamicBgDarkBrightness(it)
-                                } else {
-                                    viewModel.updateDynamicBgLightBrightness(it)
-                                }
-                            },
-                            valueRange = 0.05f..1.0f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Card 2: Layout & Navigation Frame
+            // Card 5: Layout & Navigation Frame
             SettingsGroupCard(title = "Layout & Navigation Frame", icon = Icons.Rounded.ViewQuilt) {
-                // Next-Gen iOS Layout Style
-                SettingsToggleItem(
-                    title = "Next-Gen iOS Layout Style",
-                    subtitle = "Toggle the experimental high-fidelity iOS interface built with group cards, fluid tab bars, and thin line accents.",
-                    checked = nextGenUiEnabled,
-                    icon = Icons.Rounded.PhoneIphone,
-                    onCheckedChange = { viewModel.updateNextGenUiEnabled(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 10.dp))
-
                 // Display Drawing Mode (Notch Optimization)
                 val displayLayoutMode by viewModel.displayLayoutMode.collectAsStateWithLifecycle()
                 SettingsSegmentedPicker(
@@ -513,7 +597,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Card 3: Animations & Corner Shapes
+            // Card 6: Animations & Corner Shapes
             SettingsGroupCard(title = "Animations & Corner Shapes", icon = Icons.Rounded.PlayArrow) {
                 // Application Animation Quality picker with 3 merged choices
                 SettingsSegmentedPicker(
@@ -576,110 +660,52 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Card 4: Aero-Glass & Frosted Engine
-            val glassEnabled = !betaMinimalistMode && !pureBlackMode
-            val glassSubtitle = when {
-                betaMinimalistMode -> "Locked by Minimalist Focus Mode"
-                pureBlackMode -> "Disabled: Pure Black Canvas is active"
-                else -> "Apply beautiful aero-glass and translucent frosting across interface elements"
-            }
-
-            SettingsGroupCard(
-                title = "Aero-Glass & Frosted Engine",
-                icon = Icons.Rounded.BlurOn,
-                infoText = "Aero-Glass applies custom gaussian-blur effects, adjustable translucency opacities, and premium frosting to panels and cards. Fully integrated with theme engines."
-            ) {
-                SettingsActionItemInCard(
-                    title = "Apply Recommended Glass Preset",
-                    subtitle = "Activate all complementary recommendations (Dynamic Lighting, Floating Dock, Better Texts, Enhanced Header)",
-                    icon = Icons.Rounded.Star,
-                    onClick = { viewModel.applyAllRecommendations() }
+            // Card 7: Focus & Accessibility Utilities
+            SettingsGroupCard(title = "Focus & Accessibility Utilities", icon = Icons.Rounded.Accessibility) {
+                // Minimalist Focus Mode
+                SettingsToggleItem(
+                    title = "Minimalist Focus Mode",
+                    subtitle = "Force-off and lock complex visuals for intense studying focus",
+                    checked = betaMinimalistMode,
+                    icon = Icons.Rounded.Lock,
+                    onCheckedChange = { viewModel.updateBetaMinimalistMode(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
+                // Better Texts Rendering
                 SettingsToggleItem(
-                    title = "Translucent Glass UI",
-                    subtitle = glassSubtitle,
-                    checked = betaGlassUi,
-                    enabled = glassEnabled,
-                    icon = Icons.Rounded.BlurOn,
-                    onCheckedChange = { viewModel.updateBetaGlassUi(it) }
+                    title = "Better Texts Rendering",
+                    subtitle = "Enhance text readability, high contrasts and aesthetic typography",
+                    checked = betaBetterTexts,
+                    icon = Icons.Rounded.Edit,
+                    enabled = !betaMinimalistMode,
+                    onCheckedChange = { viewModel.updateBetaBetterTexts(it) }
                 )
 
-                AnimatedVisibility(visible = betaGlassUi && glassEnabled) {
-                    Column {
+                AnimatedVisibility(visible = betaBetterTexts && !betaMinimalistMode) {
+                    Column(modifier = Modifier.padding(start = 12.dp, top = 8.dp)) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-
                         SettingsToggleItem(
-                            title = "Dynamic Frosting Adaptation",
-                            subtitle = "Let glass elements dynamically shift their opacity and contrast based on backing layers",
-                            checked = betaGlassDynamic,
-                            icon = Icons.Rounded.SwapHoriz,
-                            onCheckedChange = { viewModel.updateBetaGlassDynamic(it) }
+                            title = "Complex Palette Text Shades",
+                            subtitle = "Render text with warm color palette tones instead of absolute white/black",
+                            checked = betaBetterTextsPalette,
+                            enabled = betaBetterTexts && !betaMinimalistMode,
+                            onCheckedChange = { viewModel.updateBetaBetterTextsPalette(it) }
                         )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-
-                        SettingsToggleItem(
-                            title = "Deep Frosting Blur",
-                            subtitle = "Adds extra depth and intensive Gaussian-style blur to the translucent surfaces",
-                            checked = betaFrostGlass,
-                            icon = Icons.Rounded.CheckCircle,
-                            onCheckedChange = { viewModel.updateBetaFrostGlass(it) }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 8.dp))
-
-                        // Backdrop style choice
-                        SettingsSegmentedPicker(
-                            title = "Backdrop Filter Style",
-                            subtitle = "Configure render style of the glass surfaces",
-                            options = listOf(
-                                Triple("Translucent", "Translucent", Icons.Rounded.BlurOn),
-                                Triple("Opaque", "Opaque", Icons.Rounded.Contrast),
-                                Triple("Transparent", "Clear Glass", null)
-                            ),
-                            selected = glassBackdropStyle,
-                            onSelected = { viewModel.updateGlassBackdropStyle(it) }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-
-                        // Opacity Slider
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Base Glass Opacity",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = "${(glassOpacityValue * 100).toInt()}%",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Black,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Text(
-                                text = "Calibrate baseline opacity thickness for main panels",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(bottom = 6.dp)
-                            )
-                            Slider(
-                                value = glassOpacityValue,
-                                onValueChange = { viewModel.updateGlassOpacityValue(it) },
-                                valueRange = 0.15f..0.85f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
                     }
                 }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
+
+                // UI-based Launcher Icon
+                SettingsToggleItem(
+                    title = "UI-based Launcher Icon",
+                    subtitle = "Match home screen app icon style with active Lumia color scheme",
+                    checked = dynamicAppIcon,
+                    icon = Icons.Rounded.Palette,
+                    onCheckedChange = { viewModel.updateDynamicAppIcon(it) }
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

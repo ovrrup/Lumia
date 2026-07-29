@@ -664,6 +664,37 @@ fun IosSettingsTab(
                     colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = accentColor)
                 )
             }
+
+            Box(modifier = Modifier.fillMaxWidth().height(0.5.dp).background(dividerColor).padding(horizontal = 16.dp))
+
+            // Next-Gen UI Layout toggle row
+            val nextGenUiEnabled by viewModel.nextGenUiEnabled.collectAsStateWithLifecycle()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF34C759)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Rounded.PhoneIphone, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Next-Gen iOS Layout", fontSize = 16.sp, color = primaryText)
+                }
+                Switch(
+                    checked = nextGenUiEnabled,
+                    onCheckedChange = { viewModel.updateNextGenUiEnabled(it) },
+                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = accentColor)
+                )
+            }
         }
     }
 }

@@ -26,22 +26,13 @@ fun WelcomeMeshBanner() {
     val isPureBlack = LocalPureBlackMode.current
     val transition = rememberInfiniteTransition(label = "MeshAnimation")
     
-    val xOffset by transition.animateFloat(
+    val phase by transition.animateFloat(
         initialValue = 0f,
-        targetValue = 1000f,
+        targetValue = (2 * Math.PI).toFloat(),
         animationSpec = infiniteRepeatable(
-            animation = tween(20000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ), label = "xOffset"
-    )
-
-    val yOffset by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 500f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(15000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ), label = "yOffset"
+            animation = tween(24000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ), label = "phase"
     )
 
     val c1 = MaterialTheme.colorScheme.primaryContainer
@@ -75,19 +66,25 @@ fun WelcomeMeshBanner() {
             if (isPureBlack) {
                 drawRect(color = Color.Black)
             } else {
+                val cx1 = canvasWidth * 0.40f + (canvasWidth * 0.25f) * kotlin.math.cos(phase)
+                val cy1 = canvasHeight * 0.50f + (canvasHeight * 0.30f) * kotlin.math.sin(phase * 0.8f)
+
+                val cx2 = canvasWidth * 0.60f - (canvasWidth * 0.25f) * kotlin.math.cos(phase * 0.7f)
+                val cy2 = canvasHeight * 0.50f - (canvasHeight * 0.30f) * kotlin.math.sin(phase)
+
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(c1, c2.copy(alpha = 0.5f), Color.Transparent),
-                        center = Offset(xOffset % canvasWidth, yOffset % canvasHeight),
-                        radius = canvasWidth * 0.8f
+                        center = Offset(cx1, cy1),
+                        radius = canvasWidth * 0.85f
                     )
                 )
 
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(c3, c1.copy(alpha = 0.5f), Color.Transparent),
-                        center = Offset(canvasWidth - (xOffset % canvasWidth), canvasHeight - (yOffset % canvasHeight)),
-                        radius = canvasWidth * 0.8f
+                        center = Offset(cx2, cy2),
+                        radius = canvasWidth * 0.85f
                     )
                 )
                 

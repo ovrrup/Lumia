@@ -423,17 +423,17 @@ fun Modifier.bouncyScale(interactionSource: androidx.compose.foundation.interact
     
     val targetScale = if (isPressed) {
         when (animationMode) {
-            "Bouncy" -> if (moreRounds) 1.22f else 1.15f
-            "Dynamic" -> if (moreRounds) 1.12f else 1.08f
-            else -> 1.02f
+            "Bouncy" -> if (moreRounds) 0.92f else 0.94f
+            "Dynamic" -> if (moreRounds) 0.95f else 0.96f
+            else -> 0.98f
         }
     } else 1f
 
     val scale by animateFloatAsState(
         targetValue = targetScale,
         animationSpec = when (animationMode) {
-            "Bouncy" -> spring(dampingRatio = if (moreRounds) 0.3f else 0.35f, stiffness = if (moreRounds) 250f else 300f)
-            "Dynamic" -> spring(dampingRatio = if (moreRounds) 0.5f else 0.6f, stiffness = 600f)
+            "Bouncy" -> spring(dampingRatio = if (moreRounds) 0.50f else 0.55f, stiffness = if (moreRounds) 350f else 400f)
+            "Dynamic" -> spring(dampingRatio = if (moreRounds) 0.65f else 0.70f, stiffness = 600f)
             else -> spring(dampingRatio = 0.85f, stiffness = 1000f)
         },
         label = "bouncyScale"
@@ -456,17 +456,17 @@ fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Mod
     
     val targetScale = if (isPressed) {
         when (animationMode) {
-            "Bouncy" -> if (moreRounds) 1.22f else 1.15f
-            "Dynamic" -> if (moreRounds) 1.12f else 1.08f
-            else -> 1.02f
+            "Bouncy" -> if (moreRounds) 0.92f else 0.94f
+            "Dynamic" -> if (moreRounds) 0.95f else 0.96f
+            else -> 0.98f
         }
     } else 1f
 
     val scale by animateFloatAsState(
         targetValue = targetScale,
         animationSpec = when (animationMode) {
-            "Bouncy" -> spring(dampingRatio = 0.35f, stiffness = 300f)
-            "Dynamic" -> spring(dampingRatio = 0.6f, stiffness = 600f)
+            "Bouncy" -> spring(dampingRatio = if (moreRounds) 0.50f else 0.55f, stiffness = if (moreRounds) 350f else 400f)
+            "Dynamic" -> spring(dampingRatio = if (moreRounds) 0.65f else 0.70f, stiffness = 600f)
             else -> spring(dampingRatio = 0.85f, stiffness = 1000f)
         },
         label = "bouncyClickScale"

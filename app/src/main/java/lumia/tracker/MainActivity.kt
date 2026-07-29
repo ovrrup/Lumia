@@ -354,27 +354,14 @@ class MainActivity : ComponentActivity() {
 
                     // Full-screen ambient gradient — sits behind ALL composables
                     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
-                        if (betaDynamicBackground || betaGlassUi) {
-                            // Animated or static soft ambient background
-                            val infiniteTransition = rememberInfiniteTransition()
-                            val offset1 by if (betaDynamicBackground) {
-                                infiniteTransition.animateFloat(
-                                    initialValue = 0f, targetValue = 1f,
-                                    animationSpec = infiniteRepeatable(tween(14000), RepeatMode.Reverse),
-                                    label = "bg_anim1"
-                                )
-                            } else {
-                                remember { androidx.compose.runtime.mutableStateOf(0.5f) }
-                            }
-                            val offset2 by if (betaDynamicBackground) {
-                                infiniteTransition.animateFloat(
-                                    initialValue = 0f, targetValue = 1f,
-                                    animationSpec = infiniteRepeatable(tween(19000), RepeatMode.Reverse),
-                                    label = "bg_anim2"
-                                )
-                            } else {
-                                remember { androidx.compose.runtime.mutableStateOf(0.5f) }
-                            }
+                        if (betaDynamicBackground) {
+                            // Animated soft ambient background lighting
+                            val infiniteTransition = rememberInfiniteTransition(label = "bg_transition")
+                            val bgPhase by infiniteTransition.animateFloat(
+                                initialValue = 0f, targetValue = (2 * Math.PI).toFloat(),
+                                animationSpec = infiniteRepeatable(tween(28000, easing = androidx.compose.animation.core.LinearEasing), RepeatMode.Restart),
+                                label = "bg_phase"
+                            )
                             val colorScheme = MaterialTheme.colorScheme
                             val isDark = LocalDarkTheme.current
                             androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
@@ -384,24 +371,33 @@ class MainActivity : ComponentActivity() {
                                     colorScheme.tertiaryContainer
                                 )
                                 val alphaScale = if (isDark) dynamicBgDarkBrightness else dynamicBgLightBrightness
+                                val cx1 = size.width * (0.28f + 0.14f * kotlin.math.cos(bgPhase.toDouble()).toFloat())
+                                val cy1 = size.height * (0.20f + 0.10f * kotlin.math.sin(bgPhase.toDouble()).toFloat())
+                                
+                                val cx2 = size.width * (0.78f - 0.12f * kotlin.math.cos(bgPhase.toDouble() * 0.8).toFloat())
+                                val cy2 = size.height * (0.62f - 0.10f * kotlin.math.sin(bgPhase.toDouble() * 0.8).toFloat())
+                                
+                                val cx3 = size.width * (0.85f - 0.14f * kotlin.math.sin(bgPhase.toDouble() * 0.6).toFloat())
+                                val cy3 = size.height * (0.32f + 0.08f * kotlin.math.cos(bgPhase.toDouble() * 0.6).toFloat())
+
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
                                         colors = listOf(colors[0].copy(alpha = alphaScale.coerceIn(0f, 1f) * 1.0f), colors[0].copy(alpha = alphaScale.coerceIn(0f, 1f) * 0.25f), androidx.compose.ui.graphics.Color.Transparent),
-                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.25f, size.height * (0.18f + offset1 * 0.12f)),
+                                        center = androidx.compose.ui.geometry.Offset(cx1, cy1),
                                         radius = size.width * 1.6f
                                     )
                                 )
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
                                         colors = listOf(colors[2].copy(alpha = alphaScale.coerceIn(0f, 1f) * 0.85f), colors[2].copy(alpha = alphaScale.coerceIn(0f, 1f) * 0.15f), androidx.compose.ui.graphics.Color.Transparent),
-                                        center = androidx.compose.ui.geometry.Offset(size.width * 0.82f, size.height * (0.65f - offset2 * 0.08f)),
+                                        center = androidx.compose.ui.geometry.Offset(cx2, cy2),
                                         radius = size.width * 1.5f
                                     )
                                 )
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
                                         colors = listOf(colors[1].copy(alpha = alphaScale.coerceIn(0f, 1f) * 0.65f), androidx.compose.ui.graphics.Color.Transparent),
-                                        center = androidx.compose.ui.geometry.Offset(size.width * (0.90f - offset1 * 0.10f), size.height * (0.30f + offset2 * 0.06f)),
+                                        center = androidx.compose.ui.geometry.Offset(cx3, cy3),
                                         radius = size.width * 1.3f
                                     )
                                 )

@@ -30,54 +30,38 @@ fun Modifier.liquidGlass(
     val isDarkTheme = LocalDarkTheme.current
     val isPureBlack = LocalPureBlackMode.current
     val surfaceColor = MaterialTheme.colorScheme.surface
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val primaryColor = MaterialTheme.colorScheme.primary
     
     val backdropStyle = if (isPureBlack) "Solid" else (backdropStyleOverride ?: LocalGlassBackdropStyle.current)
     val opacitySetting = if (isPureBlack) 1.0f else (opacityOverride ?: LocalGlassOpacityValue.current)
     
-    val baseAlpha1 = if (isDarkTheme) (0.20f + (tintAlpha * 0.12f)) else (0.38f + (tintAlpha * 0.12f))
-    val baseAlpha2 = if (isDarkTheme) (0.08f + (tintAlpha * 0.06f)) else (0.18f + (tintAlpha * 0.08f))
+    val baseAlpha1 = if (isDarkTheme) (0.24f + (tintAlpha * 0.10f)) else (0.42f + (tintAlpha * 0.10f))
+    val baseAlpha2 = if (isDarkTheme) (0.10f + (tintAlpha * 0.05f)) else (0.22f + (tintAlpha * 0.06f))
 
     val finalAlpha1 = when (backdropStyle) {
         "Opaque", "Solid" -> 1.0f
         "Transparent", "Clear" -> 0.00f
-        else -> baseAlpha1 * opacitySetting
+        else -> (baseAlpha1 * opacitySetting).coerceIn(0f, 1f)
     }
     val finalAlpha2 = when (backdropStyle) {
         "Opaque", "Solid" -> 1.0f
         "Transparent", "Clear" -> 0.00f
-        else -> baseAlpha2 * opacitySetting
+        else -> (baseAlpha2 * opacitySetting).coerceIn(0f, 1f)
     }
 
-    // Mix much more vibrant primary hue into the background to amplify underlying bleeding colors
+    // Precise physical tint mixing for a natural translucent crystal surface
     val backColor1 = if (backdropStyle == "Opaque" || backdropStyle == "Solid") {
-        if (isDarkTheme) {
-            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.82f).mix(tintColor, 0.85f)
-        } else {
-            surfaceColor.mix(tintColor, 0.88f)
-        }
+        if (isDarkTheme) surfaceColor.mix(primaryColor, 0.85f).mix(tintColor, 0.88f) else surfaceColor.mix(tintColor, 0.90f)
     } else {
-        if (isDarkTheme) {
-            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.78f).mix(tintColor, 0.80f)
-        } else {
-            surfaceColor.mix(tintColor, 0.82f)
-        }
+        if (isDarkTheme) surfaceColor.mix(primaryColor, 0.80f).mix(tintColor, 0.82f) else surfaceColor.mix(tintColor, 0.84f)
     }
     val backColor2 = if (backdropStyle == "Opaque" || backdropStyle == "Solid") {
-        if (isDarkTheme) {
-            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.88f).mix(tintColor, 0.90f)
-        } else {
-            surfaceColor.mix(tintColor, 0.92f)
-        }
+        if (isDarkTheme) surfaceColor.mix(primaryColor, 0.90f).mix(tintColor, 0.92f) else surfaceColor.mix(tintColor, 0.94f)
     } else {
-        if (isDarkTheme) {
-            surfaceColor.mix(MaterialTheme.colorScheme.primary, 0.85f).mix(tintColor, 0.86f)
-        } else {
-            surfaceColor.mix(tintColor, 0.88f)
-        }
+        if (isDarkTheme) surfaceColor.mix(primaryColor, 0.86f).mix(tintColor, 0.88f) else surfaceColor.mix(tintColor, 0.90f)
     }
 
-    // Smooth vertically blended glass filling.
+    // Clean vertical translucency fill
     val backBrush = Brush.verticalGradient(
         colors = listOf(
             backColor1.copy(alpha = finalAlpha1),
@@ -85,54 +69,53 @@ fun Modifier.liquidGlass(
         )
     )
 
-    // Secondary diagonal satin glossy shimmer brush to reflect and amplify light
+    // Directional specular glare simulating top-left light source on physical bevels
     val glossBrush = Brush.linearGradient(
         colors = if (isDarkTheme) {
             listOf(
-                Color.White.copy(alpha = 0.08f),
+                Color.White.copy(alpha = 0.10f),
+                Color.White.copy(alpha = 0.02f),
                 Color.Transparent,
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.04f)
+                primaryColor.copy(alpha = 0.03f)
             )
         } else {
             listOf(
-                Color.White.copy(alpha = 0.16f),
+                Color.White.copy(alpha = 0.28f),
+                Color.White.copy(alpha = 0.08f),
                 Color.Transparent,
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+                primaryColor.copy(alpha = 0.04f)
             )
         },
         start = Offset(0f, 0f),
         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
     )
     
-    // Ultra-fine border highlight mimicking physical glass physics
-    // Dual-tone high-specular glisten reflecting bright ambient colors
-    val outlineVariant = MaterialTheme.colorScheme.outlineVariant
+    // Crisp, ultra-thin high-precision glass rim outline
     val borderBrush = Brush.linearGradient(
         colors = if (isDarkTheme) {
             listOf(
-                Color.White.copy(alpha = 0.14f), // Extremely soft, elegant edge glare
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                Color.White.copy(alpha = 0.05f),
+                Color.White.copy(alpha = 0.18f),
+                primaryColor.copy(alpha = 0.12f),
+                Color.White.copy(alpha = 0.06f),
                 Color.Transparent,
-                Color.White.copy(alpha = 0.03f)
+                Color.White.copy(alpha = 0.04f)
             )
         } else {
             listOf(
-                Color.White.copy(alpha = 0.22f), // Beautiful, soft edge glare on light mode
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                Color.White.copy(alpha = 0.08f),
+                Color.White.copy(alpha = 0.35f),
+                primaryColor.copy(alpha = 0.15f),
+                Color.White.copy(alpha = 0.10f),
                 Color.Transparent,
-                Color.White.copy(alpha = 0.04f)
+                Color.White.copy(alpha = 0.06f)
             )
         },
         start = Offset(0f, 0f),
         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
     )
 
-    // Optional physical frost depth emulation layer
     val frostGlass = LocalFrostGlass.current
-    val frostModifier = if (frostGlass) {
-        val frostColor = if (isDarkTheme) Color(0xFF1E1E1E).copy(alpha = 0.15f) else Color.White.copy(alpha = 0.35f)
+    val frostModifier = if (frostGlass && backdropStyle != "Solid" && backdropStyle != "Opaque") {
+        val frostColor = if (isDarkTheme) Color(0xFF18181B).copy(alpha = 0.12f) else Color.White.copy(alpha = 0.25f)
         Modifier.background(color = frostColor, shape = shape)
     } else {
         Modifier
