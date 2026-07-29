@@ -73,8 +73,10 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_20_21 = object : androidx.room.migration.Migration(20, 21) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
-                db.execSQL("CREATE TABLE IF NOT EXISTS `kost_behavior_events` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `category` TEXT NOT NULL, `action` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `durationMillis` INTEGER, `rating` REAL, `performanceMetric` REAL, `tagString` TEXT NOT NULL, `description` TEXT NOT NULL, `metadataJson` TEXT NOT NULL)")
-                db.execSQL("CREATE TABLE IF NOT EXISTS `kost_pattern_reports` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `generatedAt` INTEGER NOT NULL, `summary` TEXT NOT NULL, `insightsJson` TEXT NOT NULL, `modelAccuracyMetric` REAL NOT NULL, `actionPlanSuggestions` TEXT NOT NULL)")
+                // Ensure tag_customizations table exists
+                db.execSQL("CREATE TABLE IF NOT EXISTS `tag_customizations` (`tagName` TEXT NOT NULL, `colorHex` TEXT NOT NULL, `description` TEXT NOT NULL, `isFavorite` INTEGER NOT NULL, `lastUsedMillis` INTEGER NOT NULL, PRIMARY KEY(`tagName`))")
+                // Ensure test_records table exists
+                db.execSQL("CREATE TABLE IF NOT EXISTS `test_records` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `dateMillis` INTEGER NOT NULL, `marksObtained` REAL NOT NULL, `totalMarks` REAL NOT NULL, `notes` TEXT NOT NULL, `subjectId` INTEGER, `courseId` INTEGER, `tags` TEXT NOT NULL DEFAULT '', `topicId` INTEGER)")
             }
         }
 
@@ -85,17 +87,31 @@ abstract class AppDatabase : RoomDatabase() {
             return instances[profileId] ?: synchronized(this) {
                 instances[profileId] ?: run {
                     val dbName = if (profileId == "DEFAULT") "scholar_sync_database" else "scholar_sync_$profileId"
-                    val instance = Room.databaseBuilder(
-                        context.applicationContext,
-                        AppDatabase::class.java,
-                        dbName
-                    )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_12_13, MIGRATION_14_15, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
-                    .fallbackToDestructiveMigration()
-                    .fallbackToDestructiveMigrationOnDowngrade()
-                    .build()
-                    instances[profileId] = instance
-                    instance
+                    try {
+                        val instance = Room.databaseBuilder(
+                            context.applicationContext,
+                            AppDatabase::class.java,
+                            dbName
+                        )
+                        .addMigrations(MIGRATION_5_6, MIGRATION_12_13, MIGRATION_14_15, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
+                        .fallbackToDestructiveMigration()
+                        .fallbackToDestructiveMigrationOnDowngrade()
+                        .build()
+                        instances[profileId] = instance
+                        instance
+                    } catch (e: Exception) {
+                        android.util.Log.e("AppDatabase", "Error initializing Room database on update, falling back: ${e.message}")
+                        val fallbackInstance = Room.databaseBuilder(
+                            context.applicationContext,
+                            AppDatabase::class.java,
+                            dbName
+                        )
+                        .fallbackToDestructiveMigration()
+                        .fallbackToDestructiveMigrationOnDowngrade()
+                        .build()
+                        instances[profileId] = fallbackInstance
+                        fallbackInstance
+                    }
                 }
             }
         }

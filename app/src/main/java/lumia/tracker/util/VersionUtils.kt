@@ -14,10 +14,16 @@ object VersionUtils {
         val currentParts = currentClean.split(".")
         val remoteParts = remoteClean.split(".")
         
+        fun parsePart(part: String?): Int {
+            if (part.isNullOrEmpty()) return 0
+            val digitsOnly = part.takeWhile { it.isDigit() }
+            return digitsOnly.toIntOrNull() ?: 0
+        }
+
         val length = maxOf(currentParts.size, remoteParts.size)
         for (i in 0 until length) {
-            val currentPart = currentParts.getOrNull(i)?.toIntOrNull() ?: 0
-            val remotePart = remoteParts.getOrNull(i)?.toIntOrNull() ?: 0
+            val currentPart = parsePart(currentParts.getOrNull(i))
+            val remotePart = parsePart(remoteParts.getOrNull(i))
             
             if (remotePart > currentPart) return true
             if (remotePart < currentPart) return false
