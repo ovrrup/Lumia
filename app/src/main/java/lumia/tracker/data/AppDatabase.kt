@@ -97,10 +97,18 @@ abstract class AppDatabase : RoomDatabase() {
                         .fallbackToDestructiveMigration()
                         .fallbackToDestructiveMigrationOnDowngrade()
                         .build()
+
+                        // Force Room migration & schema validation synchronously to catch any update error
+                        instance.openHelper.writableDatabase
+
                         instances[profileId] = instance
                         instance
-                    } catch (e: Exception) {
-                        android.util.Log.e("AppDatabase", "Error initializing Room database on update, falling back: ${e.message}")
+                    } catch (e: Throwable) {
+                        android.util.Log.e("AppDatabase", "Error migrating/opening Room database on update, resetting safely: ${e.message}", e)
+                        try {
+                            context.deleteDatabase(dbName)
+                        } catch (_: Exception) {}
+                        
                         val fallbackInstance = Room.databaseBuilder(
                             context.applicationContext,
                             AppDatabase::class.java,
@@ -109,6 +117,13 @@ abstract class AppDatabase : RoomDatabase() {
                         .fallbackToDestructiveMigration()
                         .fallbackToDestructiveMigrationOnDowngrade()
                         .build()
+
+                        try {
+                            fallbackInstance.openHelper.writableDatabase
+                        } catch (e2: Throwable) {
+                            android.util.Log.e("AppDatabase", "Fallback database open failed: ${e2.message}", e2)
+                        }
+
                         instances[profileId] = fallbackInstance
                         fallbackInstance
                     }

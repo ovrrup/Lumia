@@ -279,13 +279,14 @@ private val _streakPercentage = MutableStateFlow(0f)
 
     private fun calculateTodayStreakProgress() {
         viewModelScope.launch(Dispatchers.IO) {
-            val todayStart = java.util.Calendar.getInstance().apply {
-                set(java.util.Calendar.HOUR_OF_DAY, 0)
-                set(java.util.Calendar.MINUTE, 0)
-                set(java.util.Calendar.SECOND, 0)
-                set(java.util.Calendar.MILLISECOND, 0)
-            }.timeInMillis
-            val todayEnd = todayStart + 86400000L
+            try {
+                val todayStart = java.util.Calendar.getInstance().apply {
+                    set(java.util.Calendar.HOUR_OF_DAY, 0)
+                    set(java.util.Calendar.MINUTE, 0)
+                    set(java.util.Calendar.SECOND, 0)
+                    set(java.util.Calendar.MILLISECOND, 0)
+                }.timeInMillis
+                val todayEnd = todayStart + 86400000L
 
             val dao = repository.dao
             val tasks = dao.exportAllTasks()
@@ -490,15 +491,18 @@ private val _streakPercentage = MutableStateFlow(0f)
                     }
                     
                     val currentLastDate = prefs.getLong("streak_last_date", 0L)
-                    val yesterday = todayStart - 86400000L
-                    if (currentLastDate < yesterday) {
+                    val Applicable = todayStart - 86400000L
+                    if (currentLastDate < Applicable) {
                         _streakCurrent.value = 0
                         prefs.edit().putInt("streak_current", 0).apply()
                     }
                 }
             }
+        } catch (e: Throwable) {
+            android.util.Log.e("ScholarViewModel", "Error calculating streak progress: ${e.message}", e)
         }
     }
+}
 
     private val _themeMode = MutableStateFlow(prefs.getString("theme_mode", "System") ?: "System")
     val themeMode = _themeMode.asStateFlow()
