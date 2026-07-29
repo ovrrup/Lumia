@@ -714,6 +714,14 @@ private val _streakPercentage = MutableStateFlow(0f)
     private val _displayLayoutMode = MutableStateFlow(prefs.getString("display_layout_mode", "Normal") ?: "Normal")
     val displayLayoutMode = _displayLayoutMode.asStateFlow()
 
+    private val _nextGenUiEnabled = MutableStateFlow(prefs.getBoolean("next_gen_ui_enabled", false))
+    val nextGenUiEnabled = _nextGenUiEnabled.asStateFlow()
+
+    fun updateNextGenUiEnabled(enabled: Boolean) {
+        _nextGenUiEnabled.value = enabled
+        prefs.edit().putBoolean("next_gen_ui_enabled", enabled).apply()
+    }
+
     private val _systemBarVisible = MutableStateFlow(true)
     val systemBarVisible = _systemBarVisible.asStateFlow()
 

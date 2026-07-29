@@ -118,6 +118,18 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
     val navBarGlassBackdropStyle by viewModel.navBarGlassBackdropStyle.collectAsStateWithLifecycle()
     val navBarGlassDynamic by viewModel.navBarGlassDynamic.collectAsStateWithLifecycle()
 
+    val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
+    val navBarHeight by viewModel.navBarHeight.collectAsStateWithLifecycle()
+    val navBarPaddingHorizontal by viewModel.navBarPaddingHorizontal.collectAsStateWithLifecycle()
+    val navBarPaddingBottom by viewModel.navBarPaddingBottom.collectAsStateWithLifecycle()
+    val navBarCornerRadius by viewModel.navBarCornerRadius.collectAsStateWithLifecycle()
+    val navBarLabelMode by viewModel.navBarLabelMode.collectAsStateWithLifecycle()
+    val navBarIndicatorAlpha by viewModel.navBarIndicatorAlpha.collectAsStateWithLifecycle()
+    val betaNavBarSizeControls by viewModel.betaNavBarSizeControls.collectAsStateWithLifecycle()
+    val appAnimationMode by viewModel.appAnimationMode.collectAsStateWithLifecycle()
+    val moreRounds by viewModel.moreRounds.collectAsStateWithLifecycle()
+    val nextGenUiEnabled by viewModel.nextGenUiEnabled.collectAsStateWithLifecycle()
+
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
 
     val isSystemSystemDarkForOpacity = LocalDarkTheme.current
@@ -139,23 +151,82 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 1. Core Mode Card
-            SettingsGroupCard(title = "Core Theme Style", icon = Icons.Rounded.DarkMode) {
-                // Segmented Theme selector
+            // Card 1: Theme & Visual Branding
+            SettingsGroupCard(title = "Theme & Visual Branding", icon = Icons.Rounded.Palette) {
+                // Active Render Mode (System / Light / Dark)
                 SettingsSegmentedPicker(
                     title = "Active Render Mode",
                     subtitle = "Select how the system environment is rendered",
                     options = listOf(
                         Triple("System", "System", Icons.Rounded.Settings),
-                        Triple("Light", "Light", Icons.Rounded.Palette),
+                        Triple("Light", "Light", Icons.Rounded.LightMode),
                         Triple("Dark", "Dark", Icons.Rounded.DarkMode)
                     ),
                     selected = themeMode,
                     onSelected = { viewModel.updateThemeMode(it) }
                 )
                 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-                
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 10.dp))
+
+                // Active App Theme (Ocean, Emerald, Gold, etc.)
+                Text(
+                    text = "Active App Theme",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Select your personalized active Lumia color scheme",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    val palettes = mutableListOf(
+                        "Ocean" to androidx.compose.ui.graphics.Color(0xFF3197D6),
+                        "Emerald" to androidx.compose.ui.graphics.Color(0xFF4BC27D),
+                        "Gold" to androidx.compose.ui.graphics.Color(0xFFFFC646),
+                        "Rose" to androidx.compose.ui.graphics.Color(0xFFE52F28),
+                        "Sage" to androidx.compose.ui.graphics.Color(0xFFACBDAA),
+                        "Twilight" to androidx.compose.ui.graphics.Color(0xFF958CE8),
+                        "Custom" to androidx.compose.ui.graphics.Color(0xFF999999)
+                    )
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                        palettes.add(0, "Dynamic" to androidx.compose.ui.graphics.Color(0xFF909090))
+                    }
+                    items(palettes) { (name, color) ->
+                        ThemeColorPickerItem(
+                            name = name,
+                            color = color,
+                            isSelected = themeColor == name,
+                            onClick = {
+                                viewModel.updateThemeColor(name)
+                            }
+                        )
+                    }
+                }
+
+                if (themeColor == "Custom") {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                    SettingsActionItemInCard(
+                        title = "Fine-Tune Advanced Colors",
+                        subtitle = "Deep customize specific hex shades for the custom palette",
+                        icon = Icons.Rounded.Edit,
+                        onClick = { navController.navigate("settings/advanced_theme") }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 10.dp))
+
+                // Pure Black Canvas
                 val pureBlackEnabled = themeMode != "Light" && !betaGlassUi && !betaDynamicBackground
                 val pureBlackSubtitle = when {
                     themeMode == "Light" -> "Only available in dark render style"
@@ -172,12 +243,93 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     enabled = pureBlackEnabled,
                     onCheckedChange = { viewModel.updatePureBlackMode(it) }
                 )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 10.dp))
+
+                // Dynamic Lighting Background
+                val dynamicBgEnabled = !betaMinimalistMode && !pureBlackMode
+                val dynamicBgSubtitle = when {
+                    betaMinimalistMode -> "Locked by Minimalist Focus Mode"
+                    pureBlackMode -> "Disabled: Pure Black Canvas is active"
+                    else -> "Soft, vibrant animated background gradient shifts"
+                }
+
+                SettingsToggleItem(
+                    title = "Dynamic Lighting Background",
+                    subtitle = dynamicBgSubtitle,
+                    checked = betaDynamicBackground,
+                    enabled = dynamicBgEnabled,
+                    icon = Icons.Rounded.InvertColors,
+                    onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
+                )
+
+                AnimatedVisibility(visible = betaDynamicBackground && !betaMinimalistMode) {
+                    val isDarkTheme = LocalDarkTheme.current
+                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp)) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isDarkTheme) "Dark Mode Lighting Brightness" else "Light Mode Lighting Brightness",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            val currentBrightness = if (isDarkTheme) dynamicBgDarkBrightness else dynamicBgLightBrightness
+                            Text(
+                                text = "${(currentBrightness * 100).toInt()}%",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Text(
+                            text = if (isDarkTheme) {
+                                "Calibrate background glow intensity in dark modes for optimal readability"
+                            } else {
+                                "Calibrate vibrant background energy in light modes for clean visual focus"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                        Slider(
+                            value = if (isDarkTheme) dynamicBgDarkBrightness else dynamicBgLightBrightness,
+                            onValueChange = {
+                                if (isDarkTheme) {
+                                    viewModel.updateDynamicBgDarkBrightness(it)
+                                } else {
+                                    viewModel.updateDynamicBgLightBrightness(it)
+                                }
+                            },
+                            valueRange = 0.05f..1.0f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Screen Layout
-            SettingsGroupCard(title = "Screen Layout", icon = Icons.Rounded.CropFree) {
+            // Card 2: Layout & Navigation Frame
+            SettingsGroupCard(title = "Layout & Navigation Frame", icon = Icons.Rounded.ViewQuilt) {
+                // Next-Gen iOS Layout Style
+                SettingsToggleItem(
+                    title = "Next-Gen iOS Layout Style",
+                    subtitle = "Toggle the experimental high-fidelity iOS interface built with group cards, fluid tab bars, and thin line accents.",
+                    checked = nextGenUiEnabled,
+                    icon = Icons.Rounded.PhoneIphone,
+                    onCheckedChange = { viewModel.updateNextGenUiEnabled(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 10.dp))
+
+                // Display Drawing Mode (Notch Optimization)
                 val displayLayoutMode by viewModel.displayLayoutMode.collectAsStateWithLifecycle()
                 SettingsSegmentedPicker(
                     title = "Display Drawing Mode",
@@ -185,112 +337,15 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     options = listOf(
                         Triple("Normal", "Normal", null),
                         Triple("Notch Optimization", "Safe Area", null),
-                        Triple("Immersive", "Immersive", Icons.Rounded.Star)
+                        Triple("Immersive", "Immersive", Icons.Rounded.CropFree)
                     ),
                     selected = displayLayoutMode,
-                    onSelected = { 
-                        if (true) {
-                            viewModel.updateDisplayLayoutMode(it) 
-                        } else {
-                            val msg = "Requires Advanced Screen Layouts."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SettingsGroupCard(title = "Animatics & Shape Configurations", icon = Icons.Rounded.PlayArrow) {
-                val appAnimationMode by viewModel.appAnimationMode.collectAsStateWithLifecycle()
-                val moreRounds by viewModel.moreRounds.collectAsStateWithLifecycle()
-
-                SettingsSegmentedPicker(
-                    title = "Application Animation Quality",
-                    subtitle = "Changes the responsiveness and bounce traits across panels and gestures.",
-                    options = listOf(
-                        Triple("Normal", "Normal", null),
-                        Triple("Dynamic", "Dynamic Slide", null),
-                        Triple("Bouncy", "Bouncy", Icons.Rounded.Star),
-                        Triple("iOS", "iOS Slide", null)
-                    ),
-                    selected = appAnimationMode,
-                    onSelected = { 
-                        if (true) {
-                            viewModel.updateAppAnimationMode(it)
-                        } else {
-                            val msg = "Requires Advanced Animations."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    }
+                    onSelected = { viewModel.updateDisplayLayoutMode(it) }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 10.dp))
 
-                SettingsToggleItem(
-                    title = "More Rounds Mode",
-                    subtitle = "Replace all sharp-edged geometries with bouncy, spherical rounded layouts",
-                    checked = moreRounds,
-                    icon = Icons.Rounded.CheckCircle,
-                    onCheckedChange = {
-                        if (true) {
-                            viewModel.updateMoreRounds(it)
-                        } else {
-                            val msg = "More Rounds is a Appearance setting."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
-                        }
-                    }
-                )
-
-                AnimatedVisibility(visible = moreRounds) {
-                    val moreRoundsMode by viewModel.moreRoundsMode.collectAsStateWithLifecycle()
-                    Column(modifier = Modifier.padding(top = 12.dp)) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(bottom = 12.dp))
-                        val roundOptions = if (betaGlassUi) {
-                            listOf(
-                                Triple("Pastel", "Soft Pastel", Icons.Rounded.Palette),
-                                Triple("Glass", "Liquid Glass", Icons.Rounded.BlurOn)
-                            )
-                        } else {
-                            listOf(
-                                Triple("Pastel", "Soft Pastel", Icons.Rounded.Palette)
-                            )
-                        }
-                        SettingsSegmentedPicker(
-                            title = "Enhanced Rounds Style",
-                            subtitle = "Select the visual approach for rounded components and buttons",
-                            options = roundOptions,
-                            selected = if (betaGlassUi) moreRoundsMode else "Pastel",
-                            onSelected = { viewModel.updateMoreRoundsMode(it) }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = if (!betaGlassUi || moreRoundsMode == "Pastel") 
-                                "Buttons will use high-contrast pastel colors with hidden outlines and deep elastic animations."
-                                else "Buttons will gain glass-like translucency and adapt dynamically to the active background.",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-
-
-
-            // Advanced Navigation Panel Configuration Card
-            SettingsGroupCard(title = "Advanced Bottom Navigation", icon = Icons.Rounded.Settings) {
-                val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
-                val navBarHeight by viewModel.navBarHeight.collectAsStateWithLifecycle()
-                val navBarPaddingHorizontal by viewModel.navBarPaddingHorizontal.collectAsStateWithLifecycle()
-                val navBarPaddingBottom by viewModel.navBarPaddingBottom.collectAsStateWithLifecycle()
-                val navBarCornerRadius by viewModel.navBarCornerRadius.collectAsStateWithLifecycle()
-                val navBarLabelMode by viewModel.navBarLabelMode.collectAsStateWithLifecycle()
-                val navBarIndicatorAlpha by viewModel.navBarIndicatorAlpha.collectAsStateWithLifecycle()
-                val betaNavBarSizeControls by viewModel.betaNavBarSizeControls.collectAsStateWithLifecycle()
-
-                // Layout Style choosing picker
+                // Bottom Navigation Format
                 SettingsSegmentedPicker(
                     title = "Bottom Navigation Format",
                     subtitle = "Switch layout form between standard flat and suspended floating deck",
@@ -302,9 +357,9 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     onSelected = { viewModel.updateBetaFloatingNav(it == "Floating") }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 10.dp))
 
-                // Label visibility mode
+                // Desktop Label Icons visibility mode
                 SettingsSegmentedPicker(
                     title = "Desktop Label Icons",
                     subtitle = "Set when menu item labels should be visible on the bar",
@@ -317,11 +372,11 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     onSelected = { viewModel.updateNavBarLabelMode(it) }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 10.dp))
 
                 SettingsToggleItem(
                     title = "Fine-Tune Sizing & Radii",
-                    subtitle = "Show sliders to adjust panel dimensions, indicator opacity, and corner curvatures",
+                    subtitle = "Show sliders to adjust bottom panel dimensions, indicator opacity, and corner curvatures",
                     checked = betaNavBarSizeControls,
                     icon = Icons.Rounded.Straighten,
                     onCheckedChange = { viewModel.updateBetaNavBarSizeControls(it) }
@@ -509,150 +564,62 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. Theme & Colors Card
-            SettingsGroupCard(title = "Branding & Color Scheme", icon = Icons.Rounded.Palette) {
-                Text(
-                    text = "Active App Theme",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+            // Card 3: Animations & Corner Shapes
+            SettingsGroupCard(title = "Animations & Corner Shapes", icon = Icons.Rounded.PlayArrow) {
+                // Application Animation Quality picker with 3 merged choices
+                SettingsSegmentedPicker(
+                    title = "Application Animation Quality",
+                    subtitle = "Changes the responsiveness and bounce traits across panels and gestures.",
+                    options = listOf(
+                        Triple("Normal", "Normal", null),
+                        Triple("Dynamic", "Dynamic iOS Slide", Icons.Rounded.Star),
+                        Triple("Bouncy", "Bouncy Spring", null)
+                    ),
+                    selected = if (appAnimationMode == "iOS") "Dynamic" else appAnimationMode,
+                    onSelected = { viewModel.updateAppAnimationMode(it) }
                 )
-                Text(
-                    text = "Select your personalized active Lumia color scheme",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
 
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    contentPadding = PaddingValues(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    val palettes = mutableListOf(
-                        "Ocean" to androidx.compose.ui.graphics.Color(0xFF3197D6),
-                        "Emerald" to androidx.compose.ui.graphics.Color(0xFF4BC27D),
-                        "Gold" to androidx.compose.ui.graphics.Color(0xFFFFC646),
-                        "Rose" to androidx.compose.ui.graphics.Color(0xFFE52F28),
-                        "Sage" to androidx.compose.ui.graphics.Color(0xFFACBDAA),
-                        "Twilight" to androidx.compose.ui.graphics.Color(0xFF958CE8),
-                        "Custom" to androidx.compose.ui.graphics.Color(0xFF999999)
-                    )
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                        palettes.add(0, "Dynamic" to androidx.compose.ui.graphics.Color(0xFF909090))
-                    }
-                    items(palettes) { (name, color) ->
-                        ThemeColorPickerItem(
-                            name = name,
-                            color = color,
-                            isSelected = themeColor == name,
-                            onClick = {
-                                viewModel.updateThemeColor(name)
-                            }
-                        )
-                    }
-                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 10.dp))
 
-                if (themeColor == "Custom") {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                    SettingsActionItemInCard(
-                        title = "Fine-Tune Advanced Colors",
-                        subtitle = "Deep customize specific hex shades for the custom palette",
-                        icon = Icons.Rounded.Edit,
-                        onClick = { navController.navigate("settings/advanced_theme") }
-                    )
-                }
-            }
-
-            // 4. Interface Tweaks Card
-            SettingsGroupCard(title = "Interface Modifiers", icon = Icons.Rounded.Settings) {
+                // More Rounds Mode
                 SettingsToggleItem(
-                    title = "Minimalist Focus Mode",
-                    subtitle = "Force-off and lock complex visuals for intense studying focus",
-                    checked = betaMinimalistMode,
-                    icon = Icons.Rounded.Star,
-                    
-                    onCheckedChange = { viewModel.updateBetaMinimalistMode(it) }
+                    title = "More Rounds Mode",
+                    subtitle = "Replace sharp-edged geometries with bouncy, spherical rounded layouts",
+                    checked = moreRounds,
+                    icon = Icons.Rounded.CheckCircle,
+                    onCheckedChange = { viewModel.updateMoreRounds(it) }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-
-                SettingsToggleItem(
-                    title = "UI-based Launcher Icon",
-                    subtitle = "Match home screen app icon style with the active Lumia color scheme",
-                    checked = dynamicAppIcon,
-                    icon = Icons.Rounded.Palette,
-                    
-                    onCheckedChange = { viewModel.updateDynamicAppIcon(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-
-                val dynamicBgEnabled = !betaMinimalistMode && !pureBlackMode
-                val dynamicBgSubtitle = when {
-                    betaMinimalistMode -> "Locked by Minimalist Focus Mode"
-                    pureBlackMode -> "Disabled: Pure Black Canvas is active"
-                    else -> "Soft, vibrant animated background gradient shifts"
-                }
-
-                SettingsToggleItem(
-                    title = "Dynamic Lighting Background",
-                    subtitle = dynamicBgSubtitle,
-                    checked = betaDynamicBackground,
-                    enabled = dynamicBgEnabled,
-                    icon = Icons.Rounded.Check,
-                    onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
-                )
-
-                AnimatedVisibility(visible = betaDynamicBackground && !betaMinimalistMode) {
-                    val isDarkTheme = LocalDarkTheme.current
-                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp)) {
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (isDarkTheme) "Dark Mode Lighting Brightness" else "Light Mode Lighting Brightness",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
+                AnimatedVisibility(visible = moreRounds) {
+                    val moreRoundsMode by viewModel.moreRoundsMode.collectAsStateWithLifecycle()
+                    Column(modifier = Modifier.padding(top = 12.dp)) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(bottom = 12.dp))
+                        val roundOptions = if (betaGlassUi) {
+                            listOf(
+                                Triple("Pastel", "Soft Pastel", Icons.Rounded.Palette),
+                                Triple("Glass", "Liquid Glass", Icons.Rounded.BlurOn)
                             )
-                            val currentBrightness = if (isDarkTheme) dynamicBgDarkBrightness else dynamicBgLightBrightness
-                            Text(
-                                text = "${(currentBrightness * 100).toInt()}%",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.primary
+                        } else {
+                            listOf(
+                                Triple("Pastel", "Soft Pastel", Icons.Rounded.Palette)
                             )
                         }
-                        Text(
-                            text = if (isDarkTheme) {
-                                "Calibrate background glow intensity in dark modes for optimal readability"
-                            } else {
-                                "Calibrate vibrant background energy in light modes for clean visual focus"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 6.dp)
+                        SettingsSegmentedPicker(
+                            title = "Enhanced Rounds Style",
+                            subtitle = "Select the visual approach for rounded components and buttons",
+                            options = roundOptions,
+                            selected = if (betaGlassUi) moreRoundsMode else "Pastel",
+                            onSelected = { viewModel.updateMoreRoundsMode(it) }
                         )
-                        Slider(
-                            value = if (isDarkTheme) dynamicBgDarkBrightness else dynamicBgLightBrightness,
-                            onValueChange = {
-                                if (isDarkTheme) {
-                                    viewModel.updateDynamicBgDarkBrightness(it)
-                                } else {
-                                    viewModel.updateDynamicBgLightBrightness(it)
-                                }
-                            },
-                            valueRange = 0.05f..1.0f,
-                            modifier = Modifier.fillMaxWidth()
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (!betaGlassUi || moreRoundsMode == "Pastel") 
+                                "Buttons will use high-contrast pastel colors with hidden outlines and deep elastic animations."
+                                else "Buttons will gain glass-like translucency and adapt dynamically to the active background.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
@@ -660,7 +627,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 4b. Aero-Glass Customization Card
+            // Card 4: Aero-Glass & Frosted Engine
             val glassEnabled = !betaMinimalistMode && !pureBlackMode
             val glassSubtitle = when {
                 betaMinimalistMode -> "Locked by Minimalist Focus Mode"
@@ -669,7 +636,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             }
 
             SettingsGroupCard(
-                title = "Aero-Glass Engine",
+                title = "Aero-Glass & Frosted Engine",
                 icon = Icons.Rounded.BlurOn,
                 infoText = "Aero-Glass applies custom gaussian-blur effects, adjustable translucency opacities, and premium frosting to panels and cards. Fully integrated with theme engines."
             ) {
@@ -759,8 +726,20 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 5. Legibility & Typography Card
-            SettingsGroupCard(title = "Legibility & Typography", icon = Icons.Rounded.Edit) {
+            // Card 5: Focus & Accessibility Utilities
+            SettingsGroupCard(title = "Focus & Accessibility Utilities", icon = Icons.Rounded.Accessibility) {
+                // Minimalist Focus Mode
+                SettingsToggleItem(
+                    title = "Minimalist Focus Mode",
+                    subtitle = "Force-off and lock complex visuals for intense studying focus",
+                    checked = betaMinimalistMode,
+                    icon = Icons.Rounded.Lock,
+                    onCheckedChange = { viewModel.updateBetaMinimalistMode(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
+
+                // Better Texts Rendering
                 SettingsToggleItem(
                     title = "Better Texts Rendering",
                     subtitle = "Enhance text readability, high contrasts and aesthetic typography",
@@ -782,6 +761,17 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         )
                     }
                 }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
+
+                // UI-based Launcher Icon
+                SettingsToggleItem(
+                    title = "UI-based Launcher Icon",
+                    subtitle = "Match home screen app icon style with active Lumia color scheme",
+                    checked = dynamicAppIcon,
+                    icon = Icons.Rounded.Palette,
+                    onCheckedChange = { viewModel.updateDynamicAppIcon(it) }
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))

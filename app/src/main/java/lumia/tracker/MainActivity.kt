@@ -36,6 +36,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -197,9 +199,29 @@ class MainActivity : ComponentActivity() {
                 customSurface = customSurface,
                 customText = customText
             ) {
+                val dragAccumulator = remember { androidx.compose.runtime.mutableStateOf(0f) }
                 Surface(
                     modifier = Modifier.fillMaxSize().then(
                         if (displayLayoutMode == "Notch Optimization") Modifier.displayCutoutPadding() else Modifier
+                    ).then(
+                        if (displayLayoutMode == "Immersive") {
+                            Modifier.pointerInput(Unit) {
+                                detectVerticalDragGestures(
+                                    onDragEnd = { dragAccumulator.value = 0f },
+                                    onDragCancel = { dragAccumulator.value = 0f },
+                                    onVerticalDrag = { change: androidx.compose.ui.input.pointer.PointerInputChange, dragAmount: Float ->
+                                        dragAccumulator.value += dragAmount
+                                        if (dragAccumulator.value > 50f) {
+                                            viewModel.setSystemBarVisible(true)
+                                            dragAccumulator.value = 0f
+                                        } else if (dragAccumulator.value < -50f) {
+                                            viewModel.setSystemBarVisible(false)
+                                            dragAccumulator.value = 0f
+                                        }
+                                    }
+                                )
+                            }
+                        } else Modifier
                     ), 
                     color = MaterialTheme.colorScheme.background
                 ) {
@@ -482,10 +504,18 @@ class MainActivity : ComponentActivity() {
                             lumia.tracker.ui.screens.OnboardingScreen(navController = navController, viewModel = viewModel)
                         }
                         composable("dashboard") {
-                            DashboardScreen(
-                                navController = navController,
-                                viewModel = viewModel
-                            )
+                            val nextGenUiEnabled by viewModel.nextGenUiEnabled.collectAsStateWithLifecycle()
+                            if (nextGenUiEnabled) {
+                                lumia.tracker.ui.nextgen.IosNextGenLayout(
+                                    navController = navController,
+                                    viewModel = viewModel
+                                )
+                            } else {
+                                DashboardScreen(
+                                    navController = navController,
+                                    viewModel = viewModel
+                                )
+                            }
                         }
                         composable("search") {
                             SearchScreen(

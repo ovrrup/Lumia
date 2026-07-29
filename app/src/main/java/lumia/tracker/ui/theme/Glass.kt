@@ -113,30 +113,40 @@ fun Modifier.liquidGlass(
     val borderBrush = Brush.linearGradient(
         colors = if (isDarkTheme) {
             listOf(
-                Color.White.copy(alpha = 0.58f), // Brilliant edge glare
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
-                Color.White.copy(alpha = 0.18f),
+                Color.White.copy(alpha = 0.14f), // Extremely soft, elegant edge glare
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                Color.White.copy(alpha = 0.05f),
                 Color.Transparent,
-                Color.White.copy(alpha = 0.08f)
+                Color.White.copy(alpha = 0.03f)
             )
         } else {
             listOf(
-                Color.White.copy(alpha = 0.88f), // Brilliant edge glare on light mode
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.48f),
-                Color.White.copy(alpha = 0.28f),
+                Color.White.copy(alpha = 0.22f), // Beautiful, soft edge glare on light mode
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                Color.White.copy(alpha = 0.08f),
                 Color.Transparent,
-                Color.White.copy(alpha = 0.12f)
+                Color.White.copy(alpha = 0.04f)
             )
         },
         start = Offset(0f, 0f),
         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
     )
 
+    // Optional physical frost depth emulation layer
+    val frostGlass = LocalFrostGlass.current
+    val frostModifier = if (frostGlass) {
+        val frostColor = if (isDarkTheme) Color(0xFF1E1E1E).copy(alpha = 0.15f) else Color.White.copy(alpha = 0.35f)
+        Modifier.background(color = frostColor, shape = shape)
+    } else {
+        Modifier
+    }
+
     this
         .clip(shape)
         .background(brush = backBrush, shape = shape)
+        .then(frostModifier)
         .background(brush = glossBrush, shape = shape)
-        .border(width = 1.0.dp, brush = borderBrush, shape = shape)
+        .border(width = 0.75.dp, brush = borderBrush, shape = shape)
 }
 
 fun Modifier.glassCard(shape: Shape = RoundedCornerShape(24.dp)): Modifier = composed {

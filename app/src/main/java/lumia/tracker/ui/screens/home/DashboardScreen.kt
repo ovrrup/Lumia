@@ -183,7 +183,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             containerColor = androidx.compose.ui.graphics.Color.Transparent,
             bottomBar = {
                 if (!betaFloatingNav) {
-                    val useGlass = isGlass || navBarGlassForceEnabled
+                    val useGlass = isGlass
                     val isDark = LocalDarkTheme.current
                     val isPureBlack = LocalPureBlackMode.current
                     val navItemColors = NavigationBarItemDefaults.colors(
@@ -319,14 +319,14 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     transitionSpec = {
                         val spec = if (appAnimationMode == "Bouncy") {
                             spring<androidx.compose.ui.unit.IntOffset>(dampingRatio = 0.45f, stiffness = 200f)
-                        } else if (appAnimationMode == "Dynamic") {
+                        } else if (appAnimationMode == "Dynamic" || appAnimationMode == "iOS") {
                             spring<androidx.compose.ui.unit.IntOffset>(dampingRatio = 0.75f, stiffness = 500f)
                         } else {
                             tween<androidx.compose.ui.unit.IntOffset>(300, easing = LinearOutSlowInEasing)
                         }
                         val scaleSpec = if (appAnimationMode == "Bouncy") {
                             spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
-                        } else if (appAnimationMode == "Dynamic") {
+                        } else if (appAnimationMode == "Dynamic" || appAnimationMode == "iOS") {
                             spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
                         } else {
                             tween<Float>(300, easing = LinearOutSlowInEasing)
@@ -387,7 +387,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
         }
 
         if (betaFloatingNav) {
-            val useGlass = isGlass || navBarGlassForceEnabled
+            val useGlass = isGlass
             val isPureBlack = LocalPureBlackMode.current
             val actualUseGlass = if (isPureBlack) false else useGlass
             androidx.compose.material3.Surface(
@@ -497,7 +497,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
         val moreRounds = LocalMoreRounds.current
         val moreRoundsMode = LocalMoreRoundsMode.current
         val isMrGlass = moreRounds && moreRoundsMode == "Glass"
-        val useGlassHeader = isGlass || isMrGlass
+        val useGlassHeader = isGlass
         val actualUseGlassHeader = if (pureBlackMode) false else useGlassHeader
 
         Box(
