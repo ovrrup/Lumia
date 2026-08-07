@@ -410,10 +410,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
         }
         
-        // floating Capsule Header design for the main screens
-        val isDark = LocalDarkTheme.current
-        val pureBlackMode by viewModel.pureBlackMode.collectAsStateWithLifecycle()
-        
+        // Interactive Push and Pull Header for the main screens
         val titleText = when (selectedTab) {
             0 -> tabHomeLabel
             1 -> tabCoursesLabel
@@ -424,91 +421,16 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             else -> stringResource(id = R.string.app_name)
         }
 
-        val moreRounds = LocalMoreRounds.current
-        val moreRoundsMode = LocalMoreRoundsMode.current
-        val isMrGlass = moreRounds && moreRoundsMode == "Glass"
-        val useGlassHeader = isGlass
-        val actualUseGlassHeader = if (pureBlackMode) false else useGlassHeader
-
         Box(
             modifier = Modifier
                 .align(androidx.compose.ui.Alignment.TopCenter)
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .glassHeaderCapsule(useGlass = actualUseGlassHeader)
-                    .height(48.dp)
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Left Title — Beautiful bold capsule-style typography
-                Text(
-                    text = titleText,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = if (actualUseGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
-
-                // Right Actions
-                Row(
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    IconButton(
-                        onClick = { navController.navigate("search") },
-                        modifier = Modifier.size(36.dp).testTag("open_search_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Search,
-                            contentDescription = "Open Global Search",
-                            tint = if (actualUseGlassHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    lumia.tracker.ui.components.StreakWidget(viewModel, navController)
-                    
-                    val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                            .clip(CircleShape)
-                            .bouncyClick(
-                                onClick = { navController.navigate("profile_menu") }
-                            ),
-                        contentAlignment = androidx.compose.ui.Alignment.Center
-                    ) {
-                        val isLocalImage = activeProfile.avatarEmoji.startsWith("/") || activeProfile.avatarEmoji.startsWith("file://") || activeProfile.avatarEmoji.startsWith("content://")
-                        if (isLocalImage) {
-                            coil.compose.AsyncImage(
-                                model = activeProfile.avatarEmoji,
-                                contentDescription = "Profile Picture",
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            val fallback = if (activeProfile.avatarEmoji.isNotBlank() && activeProfile.avatarEmoji.length <= 2 && activeProfile.avatarEmoji != "A" && activeProfile.avatarEmoji != "U") {
-                                activeProfile.avatarEmoji.uppercase()
-                            } else {
-                                activeProfile.name.take(2).uppercase()
-                            }
-                            Text(
-                                text = fallback,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
+            lumia.tracker.ui.components.InteractivePushPullHeader(
+                title = titleText,
+                viewModel = viewModel,
+                navController = navController
+            )
         }
     }
     if (showAddCourseDialog) {

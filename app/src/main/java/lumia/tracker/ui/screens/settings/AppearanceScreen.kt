@@ -678,56 +678,6 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Card 5: Focus & Accessibility Utilities
-            SettingsGroupCard(title = "Focus & Accessibility Utilities", icon = Icons.Rounded.Accessibility) {
-                // Minimalist Focus Mode
-                SettingsToggleItem(
-                    title = "Minimalist Focus Mode",
-                    subtitle = "Force-off and lock complex visuals for intense studying focus",
-                    checked = betaMinimalistMode,
-                    icon = Icons.Rounded.Lock,
-                    onCheckedChange = { viewModel.updateBetaMinimalistMode(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-
-                // Better Texts Rendering
-                SettingsToggleItem(
-                    title = "Better Texts Rendering",
-                    subtitle = "Enhance text readability, high contrasts and aesthetic typography",
-                    checked = betaBetterTexts,
-                    icon = Icons.Rounded.Edit,
-                    enabled = !betaMinimalistMode,
-                    onCheckedChange = { viewModel.updateBetaBetterTexts(it) }
-                )
-
-                AnimatedVisibility(visible = betaBetterTexts && !betaMinimalistMode) {
-                    Column(modifier = Modifier.padding(start = 12.dp, top = 8.dp)) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-                        SettingsToggleItem(
-                            title = "Complex Palette Text Shades",
-                            subtitle = "Render text with warm color palette tones instead of absolute white/black",
-                            checked = betaBetterTextsPalette,
-                            enabled = betaBetterTexts && !betaMinimalistMode,
-                            onCheckedChange = { viewModel.updateBetaBetterTextsPalette(it) }
-                        )
-                    }
-                }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-
-                // UI-based Launcher Icon
-                SettingsToggleItem(
-                    title = "UI-based Launcher Icon",
-                    subtitle = "Match home screen app icon style with active Lumia color scheme",
-                    checked = dynamicAppIcon,
-                    icon = Icons.Rounded.Palette,
-                    onCheckedChange = { viewModel.updateDynamicAppIcon(it) }
-                )
-            }
-
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
