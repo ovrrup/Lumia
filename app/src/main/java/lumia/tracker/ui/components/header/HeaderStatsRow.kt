@@ -24,8 +24,8 @@ import lumia.tracker.viewmodel.ScholarViewModel
 fun HeaderDashboardStatsBadges(viewModel: ScholarViewModel? = null) {
     val streakCount = viewModel?.streakCurrent?.collectAsStateWithLifecycle()?.value ?: 0
     val streakComplete = viewModel?.streakIsCompleteToday?.collectAsStateWithLifecycle()?.value ?: false
-    val coursesList = viewModel?.courses?.collectAsStateWithLifecycle()?.value ?: emptyList()
-    val tasksList = viewModel?.tasks?.collectAsStateWithLifecycle()?.value ?: emptyList()
+    val coursesList = viewModel?.courses?.collectAsStateWithLifecycle(initialValue = emptyList())?.value ?: emptyList()
+    val tasksList = viewModel?.tasks?.collectAsStateWithLifecycle(initialValue = emptyList())?.value ?: emptyList()
     val pendingTasksCount = remember(tasksList) { tasksList.count { !it.isCompleted } }
 
     Row(

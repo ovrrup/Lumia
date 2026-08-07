@@ -1,307 +1,42 @@
 package lumia.tracker.ui.screens
 
-import android.provider.Settings
-import androidx.compose.ui.graphics.Color
-import androidx.compose.material.icons.rounded.Warning
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Star
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.School
-import androidx.compose.material.icons.rounded.MergeType
-import androidx.compose.material.icons.rounded.DateRange
-import androidx.compose.material.icons.rounded.List
-import androidx.compose.material.icons.rounded.ViewQuilt
-import androidx.compose.material.icons.rounded.FolderOpen
-import androidx.compose.material.icons.rounded.AutoStories
-import androidx.compose.material.icons.rounded.Analytics
-import androidx.compose.material.icons.rounded.Link
-import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import lumia.tracker.viewmodel.ScholarViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
-    val autoLinkByName by viewModel.systemAutoLinkByName.collectAsStateWithLifecycle()
-    val enableSynergy by viewModel.systemEnableSynergy.collectAsStateWithLifecycle()
-    val autoCreateSubject by viewModel.systemAutoCreateSubject.collectAsStateWithLifecycle()
-    val fuseSubjectsCourses by viewModel.systemFuseSubjectsCourses.collectAsStateWithLifecycle()
-    val advancedTasks by viewModel.systemAdvancedTasks.collectAsStateWithLifecycle()
-
-    val featureSubjectEnabled by viewModel.featureSubjectEnabled.collectAsStateWithLifecycle()
-    val featureSelfStudyEnabled by viewModel.featureSelfStudyEnabled.collectAsStateWithLifecycle()
-    val featureAnalyticsEnabled by viewModel.featureAnalyticsEnabled.collectAsStateWithLifecycle()
-    val featureCalendarEnabled by viewModel.featureCalendarEnabled.collectAsStateWithLifecycle()
-    val featureQuickNotesEnabled by viewModel.featureQuickNotesEnabled.collectAsStateWithLifecycle()
-
-    val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
-    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
-
-    val safetyPinEnabled by viewModel.safetyPinEnabled.collectAsStateWithLifecycle()
-    val safetyPinConflictWarning by viewModel.safetyPinConflictWarning.collectAsStateWithLifecycle()
-    val safetyPinRecommendations by viewModel.safetyPinRecommendations.collectAsStateWithLifecycle()
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-        ) { padding ->
-            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = 16.dp, end = 16.dp, top = statusBarHeight + 64.dp, bottom = 24.dp),
-            ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SettingsCategoryHeading(title = "Core Features Manager", icon = Icons.Rounded.ViewQuilt)
-
-            SettingsGroupCard(title = "App Feature Modules", icon = Icons.Rounded.ViewQuilt) {
-                SettingsToggleItem(
-                    title = "Subjects Tab",
-                    subtitle = "Allows tracking specific focus subjects. Hides the Subjects tab when disabled.",
-                    checked = featureSubjectEnabled,
-                    icon = Icons.Rounded.FolderOpen,
-                    onCheckedChange = { viewModel.updateFeatureSubjectEnabled(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                SettingsToggleItem(
-                    title = "Self Study & Tasks Tab",
-                    subtitle = "Enable tasks and customizable study logs tab in the navigation bar.",
-                    checked = featureSelfStudyEnabled,
-                    icon = Icons.Rounded.AutoStories,
-                    onCheckedChange = { viewModel.updateFeatureSelfStudyEnabled(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                SettingsToggleItem(
-                    title = "Calendar & Schedule Tab",
-                    subtitle = "Display scheduled lectures and courses on a weekly Calendar view.",
-                    checked = featureCalendarEnabled,
-                    icon = Icons.Rounded.DateRange,
-                    onCheckedChange = { viewModel.updateFeatureCalendarEnabled(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                SettingsToggleItem(
-                    title = "Quick Notes Utility",
-                    subtitle = "Enable access to the Quick Notes workspace from home screen.",
-                    checked = featureQuickNotesEnabled,
-                    icon = Icons.Rounded.Edit,
-                    onCheckedChange = { viewModel.updateFeatureQuickNotesEnabled(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                SettingsToggleItem(
-                    title = "Analytics Dashboard Tab",
-                    subtitle = "Access dynamic graphical focus stats, activity insights, and streak logs.",
-                    checked = featureAnalyticsEnabled,
-                    icon = Icons.Rounded.Analytics,
-                    onCheckedChange = { viewModel.updateFeatureAnalyticsEnabled(it) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            SettingsCategoryHeading(title = "Interconnections", icon = Icons.Rounded.Settings)
-
-            SettingsGroupCard(title = "Course & Subject Integration", icon = Icons.Rounded.Settings) {
-                SettingsToggleItem(
-                    title = "Auto-Link by Name",
-                    subtitle = "Automatically couple Courses and study Subjects together if they share the same name (case-insensitive) when no explicit association is set.",
-                    checked = autoLinkByName,
-                    icon = Icons.Rounded.Settings,
-                    onCheckedChange = { viewModel.updateSystemAutoLinkByName(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                SettingsToggleItem(
-                    title = "Course Synergy Score",
-                    subtitle = "Measure alignments between lectures and study topics using a Dynamic Synergy Gauge in details screens.",
-                    checked = enableSynergy,
-                    icon = Icons.Rounded.Star,
-                    onCheckedChange = { viewModel.updateSystemEnableSynergy(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                SettingsToggleItem(
-                    title = "Auto-Create Associated Subject",
-                    subtitle = "Automatically create a matching Study Subject whenever you enroll in/add a new academic Course.",
-                    checked = autoCreateSubject,
-                    icon = Icons.Rounded.School,
-                    onCheckedChange = { viewModel.updateSystemAutoCreateSubject(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                SettingsToggleItem(
-                    title = "Fuse Subjects & Courses",
-                    subtitle = "Embed subjects within courses to simplify navigation. Turn off to display 'Subjects' as a separate bottom tab.",
-                    checked = fuseSubjectsCourses,
-                    icon = Icons.Rounded.MergeType,
-                    onCheckedChange = { viewModel.updateSystemFuseSubjectsCourses(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                SettingsToggleItem(
-                    title = "Advanced Tasks & Linkages",
-                    subtitle = "Enable complex task tracking, including multi-linking with courses and assignments, plus advanced sorting and cross-referencing.",
-                    checked = advancedTasks,
-                    icon = Icons.Rounded.List,
-                    onCheckedChange = { viewModel.updateSystemAdvancedTasks(it) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            SettingsCategoryHeading(title = "Pomodoro Integration", icon = Icons.Rounded.Timer)
-
-            SettingsGroupCard(title = "Timer & Environment Behaviors", icon = Icons.Rounded.Timer) {
-                SettingsToggleItem(
-                    title = "Auto-Log Focus Sessions",
-                    subtitle = "Automatically register and log Pomodoro 'Work' sessions into the database productivity history log upon completion.",
-                    checked = viewModel.systemPomodoroAutoLog.collectAsStateWithLifecycle().value,
-                    icon = Icons.Rounded.History,
-                    onCheckedChange = { viewModel.updateSystemPomodoroAutoLog(it) }
-                )
-                
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                
-                Column(modifier = Modifier.padding(16.dp)) {
-                    val workDur by viewModel.pomodoroWorkDuration.collectAsStateWithLifecycle()
-                    Text("Work Duration: $workDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    androidx.compose.material3.Slider(
-                        value = workDur.toFloat(),
-                        onValueChange = { viewModel.updatePomodoroWorkDuration(it.toInt()) },
-                        valueRange = 5f..120f,
-                        steps = 114
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    val shortDur by viewModel.pomodoroShortBreakDuration.collectAsStateWithLifecycle()
-                    Text("Short Break: $shortDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    androidx.compose.material3.Slider(
-                        value = shortDur.toFloat(),
-                        onValueChange = { viewModel.updatePomodoroShortBreakDuration(it.toInt()) },
-                        valueRange = 1f..30f,
-                        steps = 28
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    val longDur by viewModel.pomodoroLongBreakDuration.collectAsStateWithLifecycle()
-                    Text("Long Break: $longDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    androidx.compose.material3.Slider(
-                        value = longDur.toFloat(),
-                        onValueChange = { viewModel.updatePomodoroLongBreakDuration(it.toInt()) },
-                        valueRange = 5f..60f,
-                        steps = 54
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SettingsGroupCard(
-                title = "Period Structure", 
-                icon = Icons.Rounded.List,
-                infoText = "Allows restricting Pomodoro loops to a fixed target. Session configurations control the number of study/work intervals before a long break is triggered."
-            ) {
-                SettingsToggleItem(
-                    title = "Enable Target Periods",
-                    subtitle = "Allows restricting pomodoro loops to a fixed target instead of infinite repetetion.",
-                    checked = viewModel.pomodoroEnablePeriodTarget.collectAsStateWithLifecycle().value,
-                    icon = Icons.Rounded.Star,
-                    onCheckedChange = { viewModel.updatePomodoroEnablePeriodTarget(it) }
-                )
-                
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                
-                Column(modifier = Modifier.padding(16.dp)) {
-                    val periodSessions by viewModel.pomodoroPeriodSessions.collectAsStateWithLifecycle()
-                    Text("Sessions per Period: $periodSessions", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    androidx.compose.material3.Slider(
-                        value = periodSessions.toFloat(),
-                        onValueChange = { viewModel.updatePomodoroPeriodSessions(it.toInt()) },
-                        valueRange = 1f..10f,
-                        steps = 8
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            SettingsCategoryHeading(title = "Safety & Conflict Engine", icon = Icons.Rounded.Lock)
-
-            SettingsGroupCard(
-                title = "System Guard & Auto-Resolve",
-                icon = Icons.Rounded.Lock,
-                infoText = "When enabled, the Safety Pin Guard prevents you from activating conflicting styles or settings. If any conflict arises, the system auto-resolves it or alerts you."
-            ) {
-                SettingsToggleItem(
-                    title = "Safety System Guard",
-                    subtitle = "Block or auto-resolve conflicting UI and behavior settings dynamically.",
-                    checked = safetyPinEnabled,
-                    icon = Icons.Rounded.Lock,
-                    onCheckedChange = { viewModel.updateSafetyPinEnabled(it) }
-                )
-
-                AnimatedVisibility(visible = safetyPinEnabled) {
-                    Column {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                        SettingsToggleItem(
-                            title = "Conflict Warnings",
-                            subtitle = "Receive prompt alerts explaining why specific themes or styles conflict.",
-                            checked = safetyPinConflictWarning,
-                            icon = Icons.Rounded.Warning,
-                            onCheckedChange = { viewModel.updateSafetyPinConflictWarning(it) }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                        SettingsToggleItem(
-                            title = "Dynamic Recommendations",
-                            subtitle = "Allow system to suggest optimal performance and visual arrangements.",
-                            checked = safetyPinRecommendations,
-                            icon = Icons.Rounded.Info,
-                            onCheckedChange = { viewModel.updateSafetyPinRecommendations(it) }
-                        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("System & Performance Settings") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "System Preferences",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
-    lumia.tracker.ui.components.UniversalCapsuleHeader(
-        title = "System Configuration",
-        onBackClick = { navController.popBackStack() }
-    )
-}
 }

@@ -34,4 +34,3 @@ fun UniversalCapsuleHeader(
         actions = actions
     )
 }
-

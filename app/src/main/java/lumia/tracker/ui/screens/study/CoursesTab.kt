@@ -21,6 +21,7 @@ import androidx.navigation.NavController
 import lumia.tracker.model.Course
 import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.GlassCard
+import lumia.tracker.ui.screens.study.dialogs.*
 import lumia.tracker.viewmodel.ScholarViewModel
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
@@ -30,12 +31,12 @@ import androidx.compose.foundation.shape.CircleShape
 fun CoursesTab(
     navController: NavController,
     viewModel: ScholarViewModel,
-    bottomPadding: PaddingValues,
-    onEditCourse: (Course) -> Unit,
-    onAddCourseClick: () -> Unit
+    bottomPadding: PaddingValues = PaddingValues(0.dp),
+    onEditCourse: (Course) -> Unit = {},
+    onAddCourseClick: () -> Unit = {}
 ) {
     var courseToEdit by remember { mutableStateOf<lumia.tracker.model.Course?>(null) }
-    val courses by viewModel.courses.collectAsStateWithLifecycle()
+    val courses by viewModel.courses.collectAsStateWithLifecycle(initialValue = emptyList())
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
 
@@ -101,7 +102,7 @@ fun CoursesTab(
         } else {
             itemsIndexed(courses, key = { _, course -> course.id }) { index, course ->
                 Box(modifier = Modifier.animateItemEntry(index)) {
-                    lumia.tracker.ui.screens.study.CourseItemCard(
+                    lumia.tracker.ui.screens.study.components.CourseItemCard(
                         course = course,
                         onClick = { navController.navigate("courseDetail/${course.id}") },
                         onEdit = { courseToEdit = course },
@@ -114,7 +115,7 @@ fun CoursesTab(
     }
     }
     courseToEdit?.let { course ->
-        lumia.tracker.ui.screens.study.EditCourseDialog(
+        EditCourseDialog(
             course = course,
             viewModel = viewModel,
             onDismiss = { courseToEdit = null }

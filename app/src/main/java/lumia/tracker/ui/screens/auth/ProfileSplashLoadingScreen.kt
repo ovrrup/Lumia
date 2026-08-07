@@ -28,47 +28,28 @@ fun ProfileSplashLoadingScreen(
     onEnter: () -> Unit,
     onSwitchAccount: () -> Unit
 ) {
-    // Elegant scale animation for the entire content on entry
     val scaleAnim = remember { Animatable(0.9f) }
-    
-    // Pulse animation around the avatar
     val infiniteTransition = rememberInfiniteTransition(label = "avatar_pulse")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1.0f,
         targetValue = 1.12f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
+        animationSpec = infiniteRepeatable(animation = tween(1200, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse),
         label = "pulse_scale"
     )
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.6f,
         targetValue = 0.1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
+        animationSpec = infiniteRepeatable(animation = tween(1200, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse),
         label = "pulse_alpha"
     )
 
-    // Progress bar animation to show timeline passing elegantly
-    var progress by remember { mutableStateOf(0f) }
+    var progress by remember { mutableFloatStateOf(0f) }
     
     LaunchedEffect(Unit) {
-        scaleAnim.animateTo(
-            targetValue = 1.0f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            )
-        )
-        
-        // Progress tick animation matching the auto-advance timing
-        val totalDuration = 2000f
+        scaleAnim.animateTo(1.0f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+        val totalDuration = 1500f
         val interval = 50f
         val steps = (totalDuration / interval).toInt()
-        
         for (i in 1..steps) {
             delay(interval.toLong())
             progress = i.toFloat() / steps.toFloat()
@@ -79,51 +60,26 @@ fun ProfileSplashLoadingScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            ),
+            .background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), MaterialTheme.colorScheme.background))),
         contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-                .scale(scaleAnim.value),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.fillMaxWidth().padding(24.dp).scale(scaleAnim.value),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Pulsing decorative backdrop ring
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.size(160.dp)
-            ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(140.dp)) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .scale(pulseScale)
-                        .clip(CircleShape)
+                    modifier = Modifier.fillMaxSize().scale(pulseScale).clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = pulseAlpha))
                 )
-                
-                // Actual profile avatar card
                 Surface(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .border(4.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    modifier = Modifier.size(110.dp).border(3.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primaryContainer,
                     shadowElevation = 8.dp
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        val isLocalImage = activeProfile.avatarEmoji.startsWith("/") || 
-                                           activeProfile.avatarEmoji.startsWith("file://") || 
-                                           activeProfile.avatarEmoji.startsWith("content://")
+                        val isLocalImage = activeProfile.avatarEmoji.startsWith("/") || activeProfile.avatarEmoji.startsWith("file://")
                         if (isLocalImage) {
                             coil.compose.AsyncImage(
                                 model = activeProfile.avatarEmoji,
@@ -132,109 +88,42 @@ fun ProfileSplashLoadingScreen(
                                 modifier = Modifier.fillMaxSize()
                             )
                         } else {
-                            val fallback = if (activeProfile.avatarEmoji.isNotBlank() && 
-                                               activeProfile.avatarEmoji.length <= 2 && 
-                                               activeProfile.avatarEmoji != "A" && 
-                                               activeProfile.avatarEmoji != "U") {
+                            val fallback = if (activeProfile.avatarEmoji.isNotBlank() && activeProfile.avatarEmoji.length <= 2 && activeProfile.avatarEmoji != "A" && activeProfile.avatarEmoji != "U") {
                                 activeProfile.avatarEmoji.uppercase()
                             } else {
                                 activeProfile.name.take(2).uppercase()
                             }
-                            Text(
-                                text = fallback,
-                                style = MaterialTheme.typography.displayMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            Text(text = fallback, style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(32.dp))
-
-            // Greeting layout
-            Text(
-                text = "Welcome Back",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-            )
-            
-            Text(
-                text = activeProfile.name,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(vertical = 4.dp, horizontal = 16.dp)
-            )
-
+            Spacer(Modifier.height(24.dp))
+            Text(text = "Welcome Back", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+            Text(text = activeProfile.name, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
             if (activeProfile.alias.isNotBlank()) {
-                Text(
-                    text = "@${activeProfile.alias}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(text = "@${activeProfile.alias}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            Spacer(Modifier.height(40.dp))
-
-            // Progress tracking bar representing dynamic auto-loading
-            Column(
-                modifier = Modifier.widthIn(max = 240.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp)),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                )
-                
-                Spacer(Modifier.height(12.dp))
-                
-                Text(
-                    text = "Logging in...",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    fontWeight = FontWeight.Medium
-                )
+            Spacer(Modifier.height(32.dp))
+            Column(modifier = Modifier.widthIn(max = 220.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)))
+                Spacer(Modifier.height(8.dp))
+                Text(text = "Logging in...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            Spacer(Modifier.height(64.dp))
-
-            // Bouncy button offering a fast and responsive toggle to user settings
+            Spacer(Modifier.height(48.dp))
             BouncyButton(
                 onClick = onSwitchAccount,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer),
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .widthIn(min = 200.dp)
-                    .heightIn(min = 52.dp)
+                modifier = Modifier.widthIn(min = 180.dp).heightIn(min = 48.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.SwapHoriz,
-                        contentDescription = "Switch Account",
-                        modifier = Modifier.size(20.dp)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    Icon(imageVector = Icons.Rounded.SwapHoriz, contentDescription = "Switch Account", modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = "Change Profile",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.ExtraBold
-                    )
+                    Text(text = "Change Profile", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                 }
             }
         }

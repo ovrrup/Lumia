@@ -166,4 +166,3 @@ class ScholarRepository(val dao: ScholarDao) {
     }
 
 }
-

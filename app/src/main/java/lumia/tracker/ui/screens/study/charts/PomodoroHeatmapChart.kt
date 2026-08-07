@@ -1,36 +1,21 @@
 package lumia.tracker.ui.screens
 
-
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.ui.draw.alpha
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import lumia.tracker.ui.components.BouncyIconButton
+import lumia.tracker.ui.components.GlassCard
 import java.util.Calendar
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.runtime.remember
 
 @Composable
 fun PomodoroHeatmapChart(
@@ -39,20 +24,15 @@ fun PomodoroHeatmapChart(
     backgroundColor: Color,
     primaryColor: Color
 ) {
-    var calendarForMonth by androidx.compose.runtime.remember { 
-        androidx.compose.runtime.mutableStateOf(
-            Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 1) }
-        ) 
+    var calendarForMonth by remember {
+        mutableStateOf(Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 1) })
     }
     
     val currentYear = calendarForMonth.get(Calendar.YEAR)
     val currentMonth = calendarForMonth.get(Calendar.MONTH)
-    
     val monthName = DateFormat.format("MMMM yyyy", calendarForMonth.time).toString()
 
-    // Aggregate sessions for the selected month
     val daysInMonth = calendarForMonth.getActualMaximum(Calendar.DAY_OF_MONTH)
-    
     val dailyDurations = IntArray(daysInMonth + 1) { 0 }
     
     sessions.forEach { session ->
@@ -63,9 +43,9 @@ fun PomodoroHeatmapChart(
         }
     }
     
-    val maxDuration = dailyDurations.maxOrNull()?.takeIf { it > 0 } ?: 60 // fallback to 60 as max base
+    val maxDuration = dailyDurations.maxOrNull()?.takeIf { it > 0 } ?: 60
 
-    lumia.tracker.ui.components.GlassCard(
+    GlassCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge
     ) {
@@ -75,12 +55,7 @@ fun PomodoroHeatmapChart(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Study Calendar",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text("Study Calendar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     BouncyIconButton(
@@ -91,16 +66,8 @@ fun PomodoroHeatmapChart(
                             calendarForMonth = prevCal
                         },
                         modifier = Modifier.size(32.dp)
-                    ) {
-                        Text("<", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    }
-                    Text(
-                        text = monthName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
+                    ) { Text("<", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
+                    Text(text = monthName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 8.dp))
                     BouncyIconButton(
                         onClick = { 
                             val nextCal = calendarForMonth.clone() as Calendar
@@ -109,32 +76,22 @@ fun PomodoroHeatmapChart(
                             calendarForMonth = nextCal
                         },
                         modifier = Modifier.size(32.dp)
-                    ) {
-                        Text(">", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    }
+                    ) { Text(">", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
             
             val calFirstDay = calendarForMonth.clone() as Calendar
             calFirstDay.set(Calendar.DAY_OF_MONTH, 1)
-            val firstDayOfWeek = calFirstDay.get(Calendar.DAY_OF_WEEK) - 1 // 0 (Sunday) to 6 (Saturday)
+            val firstDayOfWeek = calFirstDay.get(Calendar.DAY_OF_WEEK) - 1
             
-            // Labels for Days
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 listOf("S", "M", "T", "W", "T", "F", "S").forEach { label ->
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.6f),
-                        modifier = Modifier.weight(1f),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
+                    Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.6f), modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Grid
             val totalCells = daysInMonth + firstDayOfWeek
             val rows = (totalCells + 6) / 7
             
@@ -146,9 +103,7 @@ fun PomodoroHeatmapChart(
                         
                         if (day in 1..daysInMonth) {
                             val duration = dailyDurations[day]
-                            val intensity = if (duration == 0) 0.1f else {
-                                0.3f + 0.7f * (duration.toFloat() / maxDuration.toFloat()).coerceAtMost(1f)
-                            }
+                            val intensity = if (duration == 0) 0.1f else (0.3f + 0.7f * (duration.toFloat() / maxDuration.toFloat()).coerceAtMost(1f))
                             
                             Box(
                                 modifier = Modifier
@@ -165,8 +120,7 @@ fun PomodoroHeatmapChart(
                                 Text(
                                     text = day.toString(),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = if (duration == 0) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                            else MaterialTheme.colorScheme.onPrimary,
+                                    color = if (duration == 0) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onPrimary,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -178,11 +132,7 @@ fun PomodoroHeatmapChart(
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 Text("Less", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.width(4.dp))
                 Box(modifier = Modifier.size(10.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f), RoundedCornerShape(2.dp)))

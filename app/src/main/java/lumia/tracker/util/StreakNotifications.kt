@@ -86,4 +86,51 @@ object StreakNotifications {
         "If you quit, you're just like everyone else.",
         "Maintain the streak. At all costs."
     )
+
+    fun sendInstantNotification(
+        context: android.content.Context,
+        channelId: String,
+        notificationId: Int,
+        title: String,
+        text: String,
+        smallIconRes: Int,
+        color: Int,
+        openScreen: String = ""
+    ) {
+        try {
+            val notificationManager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                val channel = android.app.NotificationChannel(channelId, "Streak Notifications", android.app.NotificationManager.IMPORTANCE_HIGH)
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            val intent = android.content.Intent(context, lumia.tracker.MainActivity::class.java).apply {
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+                if (openScreen.isNotEmpty()) {
+                    putExtra("OPEN_SCREEN", openScreen)
+                }
+            }
+
+            val pendingIntent = android.app.PendingIntent.getActivity(
+                context,
+                notificationId,
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val builder = androidx.core.app.NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(smallIconRes)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setColor(color)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+
+            notificationManager.notify(notificationId, builder.build())
+        } catch (e: Exception) {
+            android.util.Log.e("StreakNotifications", "Failed to send instant notification", e)
+        }
+    }
 }
+

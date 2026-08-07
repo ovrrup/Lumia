@@ -13,4 +13,3 @@ data class UserProfile(
     var createdAt: Long? = null,
     val avatarBase64: String? = null
 )
-

@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import lumia.tracker.ui.components.StreakWidget
+import lumia.tracker.ui.components.TranslucentMeshGradientBox
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 
@@ -67,7 +68,7 @@ fun InteractivePushPullHeader(
     var dragAccumulated by remember { mutableFloatStateOf(0f) }
     val activeProfile = viewModel?.activeProfile?.collectAsState()?.value ?: viewModel?.activeProfile?.value
 
-    Surface(
+    TranslucentMeshGradientBox(
         modifier = Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.statusBars)
@@ -90,11 +91,7 @@ fun InteractivePushPullHeader(
                     }
                 )
             },
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 8.dp,
-        tonalElevation = 4.dp
+        shape = CircleShape
     ) {
         Row(
             modifier = Modifier

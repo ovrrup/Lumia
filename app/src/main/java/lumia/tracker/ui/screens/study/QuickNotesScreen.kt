@@ -15,25 +15,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import lumia.tracker.ui.components.BouncyFloatingActionButton
+import lumia.tracker.ui.components.GlassCard
+import lumia.tracker.ui.components.SwipeToDeleteContainer
+import lumia.tracker.ui.components.UniversalCapsuleHeader
+import lumia.tracker.ui.theme.LocalGlassMode
 import org.json.JSONArray
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.IntOffset
-import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickNotesScreen(navController: NavController) {
     val context = LocalContext.current
     val sharedPrefs = remember { context.getSharedPreferences("quick_notes_prefs", Context.MODE_PRIVATE) }
-    
     val notesList = remember { mutableStateListOf<String>() }
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        withContext(Dispatchers.IO) {
             val savedNotes = sharedPrefs.getString("notes_json", "[]") ?: "[]"
             try {
                 val jsonArray = JSONArray(savedNotes)
@@ -41,7 +41,7 @@ fun QuickNotesScreen(navController: NavController) {
                 for (i in 0 until jsonArray.length()) {
                     loadedNotes.add(jsonArray.getString(i))
                 }
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     notesList.clear()
                     notesList.addAll(loadedNotes)
                 }
@@ -52,7 +52,7 @@ fun QuickNotesScreen(navController: NavController) {
     fun saveNotes() {
         val listSnapshot = notesList.toList()
         coroutineScope.launch {
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            withContext(Dispatchers.IO) {
                 val jsonArray = JSONArray()
                 listSnapshot.forEach { jsonArray.put(it) }
                 sharedPrefs.edit().putString("notes_json", jsonArray.toString()).apply()
@@ -62,8 +62,8 @@ fun QuickNotesScreen(navController: NavController) {
 
     var showAddDialog by remember { mutableStateOf(false) }
     var newNoteText by remember { mutableStateOf("") }
+    val isGlass = LocalGlassMode.current
 
-    val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
@@ -79,50 +79,50 @@ fun QuickNotesScreen(navController: NavController) {
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-            if (notesList.isEmpty()) {
-                item {
-                    Text(
-                        "No notes yet. Tap + to add one.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                if (notesList.isEmpty()) {
+                    item {
+                        Text(
+                            "No notes yet. Tap + to add one.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
-            }
-            itemsIndexed(notesList, key = { _, note -> note }) { index, note ->
-                SwipeToDeleteContainer(
-                    onDelete = {
-                        notesList.removeAt(index)
-                        saveNotes()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    lumia.tracker.ui.components.GlassCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
+                itemsIndexed(notesList, key = { _, note -> note }) { index, note ->
+                    SwipeToDeleteContainer(
+                        onDelete = {
+                            notesList.removeAt(index)
+                            saveNotes()
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        GlassCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
-                            Text(
-                                text = note,
-                                modifier = Modifier.weight(1f).padding(end = 8.dp),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            IconButton(onClick = { 
-                                notesList.removeAt(index)
-                                saveNotes()
-                            }, modifier = Modifier.size(24.dp)) {
-                                Icon(Icons.Rounded.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = note,
+                                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                IconButton(onClick = { 
+                                    notesList.removeAt(index)
+                                    saveNotes()
+                                }, modifier = Modifier.size(24.dp)) {
+                                    Icon(Icons.Rounded.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
-        lumia.tracker.ui.components.UniversalCapsuleHeader(
+        UniversalCapsuleHeader(
             title = "Quick Notes",
             onBackClick = { navController.popBackStack() }
         )
@@ -155,73 +155,5 @@ fun QuickNotesScreen(navController: NavController) {
                 TextButton(onClick = { showAddDialog = false; newNoteText = "" }) { Text("Cancel") }
             }
         )
-    }
-}
-
-@Composable
-fun SwipeToDeleteContainer(
-    modifier: Modifier = Modifier,
-    onDelete: () -> Unit,
-    content: @Composable () -> Unit
-) {
-    var offsetX by remember { mutableStateOf(0f) }
-    val animatedOffsetX by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = offsetX,
-        animationSpec = androidx.compose.animation.core.spring(
-            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
-            stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
-        ),
-        label = "swipe_offset"
-    )
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragStart = {},
-                    onDragEnd = {
-                        if (offsetX < -150f) { // Swipe left enough to delete
-                            offsetX = -1200f // Slide off screen
-                            onDelete()
-                        } else {
-                            offsetX = 0f // Bounce back
-                        }
-                    },
-                    onDragCancel = {
-                        offsetX = 0f
-                    },
-                    onHorizontalDrag = { change, dragAmount ->
-                        change.consume()
-                        // Only allow swiping left (negative offsetX)
-                        offsetX = (offsetX + dragAmount).coerceAtMost(0f)
-                    }
-                )
-            }
-    ) {
-        // Red background behind
-        if (offsetX < 0) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(MaterialTheme.colorScheme.error, RoundedCornerShape(16.dp))
-                    .padding(end = 16.dp),
-                contentAlignment = androidx.compose.ui.Alignment.CenterEnd
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onError
-                )
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .offset { IntOffset(animatedOffsetX.roundToInt(), 0) }
-                .fillMaxWidth()
-        ) {
-            content()
-        }
     }
 }
