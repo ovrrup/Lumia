@@ -174,7 +174,7 @@ class MainActivity : ComponentActivity() {
                 themeMode = themeMode,
                 themeColor = themeColor,
                 pureBlackMode = pureBlackMode,
-                glassMode = betaGlassUi,
+                glassMode = false,
                 glassDynamic = betaGlassDynamic,
                 frostGlass = betaFrostGlass,
                 glassBackdropStyle = glassBackdropStyle,

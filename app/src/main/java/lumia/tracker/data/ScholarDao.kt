@@ -15,6 +15,7 @@ import lumia.tracker.model.Chapter
 import lumia.tracker.model.Task
 import lumia.tracker.model.Attachment
 import lumia.tracker.model.TagCustomization
+import lumia.tracker.model.Flashcard
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -255,6 +256,28 @@ interface ScholarDao {
     @Query("DELETE FROM tag_customizations")
     suspend fun clearTagCustomizations()
 
+    // Flashcards (Spaced Repetition / Leitner System)
+    @Query("SELECT * FROM flashcards ORDER BY nextReviewMillis ASC")
+    fun getAllFlashcards(): Flow<List<Flashcard>>
+
+    @Query("SELECT * FROM flashcards WHERE subjectId = :subjectId ORDER BY nextReviewMillis ASC")
+    fun getFlashcardsForSubject(subjectId: Int): Flow<List<Flashcard>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFlashcard(flashcard: Flashcard): Long
+
+    @Update
+    suspend fun updateFlashcard(flashcard: Flashcard)
+
+    @Delete
+    suspend fun deleteFlashcard(flashcard: Flashcard)
+
+    @Query("SELECT * FROM flashcards")
+    suspend fun exportAllFlashcards(): List<Flashcard>
+
+    @Query("DELETE FROM flashcards")
+    suspend fun clearFlashcards()
+
     @androidx.room.Transaction
     suspend fun restoreBackup(backup: lumia.tracker.model.ScholarBackup) {
         // Clear children first to respect SQLite foreign key constraints
@@ -275,6 +298,7 @@ interface ScholarDao {
         clearAttachments()
         clearTestRecords()
         clearTagCustomizations()
+        clearFlashcards()
 
         // Insert parents first, then children to respect SQLite foreign key constraints
         backup.courses?.forEach { insertCourse(it) }
@@ -292,5 +316,6 @@ interface ScholarDao {
         backup.attachments?.forEach { insertAttachment(it) }
         backup.testRecords?.forEach { insertTestRecord(it) }
         backup.tagCustomizations?.forEach { insertTagCustomization(it) }
+        backup.flashcards?.forEach { insertFlashcard(it) }
     }
 }

@@ -110,13 +110,9 @@ fun HeaderExpandedQuickHub(
                 onClick = { navController?.navigate("search") }
             )
             HeaderActionButton(
-                icon = Icons.Rounded.ColorLens,
-                label = "Glass UI",
-                onClick = {
-                    if (viewModel != null) {
-                        viewModel.updateBetaGlassUi(!isGlass)
-                    }
-                }
+                icon = Icons.Rounded.BarChart,
+                label = "Analytics",
+                onClick = { navController?.navigate("analytics") }
             )
             HeaderActionButton(
                 icon = Icons.Rounded.Person,

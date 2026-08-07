@@ -62,7 +62,26 @@ data class Topic(
     val title: String,
     val isCompleted: Boolean = false,
     val chapterId: Int? = null,
-    val tags: String = ""
+    val tags: String = "",
+    val weightage: Float = 1.0f,
+    val difficultyRating: Int = 3,
+    val linkedFilePath: String = "",
+    val unitName: String = ""
+) : Serializable
+
+@Entity(tableName = "flashcards")
+@JsonClass(generateAdapter = true)
+data class Flashcard(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val subjectId: Int? = null,
+    val topicId: Int? = null,
+    val question: String,
+    val answer: String,
+    val box: Int = 1,
+    val easeFactor: Float = 2.5f,
+    val intervalDays: Int = 1,
+    val nextReviewMillis: Long = System.currentTimeMillis(),
+    val retentionScore: Float = 0f
 ) : Serializable
 
 @Entity(
@@ -199,6 +218,7 @@ data class ScholarBackup(
     val tasks: List<Task>? = emptyList(),
     val attachments: List<Attachment>? = emptyList(),
     val testRecords: List<TestRecord>? = emptyList(),
+    val flashcards: List<Flashcard>? = emptyList(),
     val tagCustomizations: List<TagCustomization>? = emptyList(),
     val profile: UserProfile? = null,
     val isFullAppBackup: Boolean? = false,

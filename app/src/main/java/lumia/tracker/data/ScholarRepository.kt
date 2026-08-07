@@ -104,6 +104,13 @@ class ScholarRepository(val dao: ScholarDao) {
     fun getTestRecordsForCourse(courseId: Int) = dao.getTestRecordsForCourse(courseId)
     fun getTestRecordsForSubject(subjectId: Int) = dao.getTestRecordsForSubject(subjectId)
     val allTestRecords = dao.getAllTestRecordsReactive()
+    val allFlashcards: Flow<List<lumia.tracker.model.Flashcard>> = dao.getAllFlashcards()
+
+    fun getFlashcardsForSubject(subjectId: Int) = dao.getFlashcardsForSubject(subjectId)
+    suspend fun insertFlashcard(flashcard: lumia.tracker.model.Flashcard) = dao.insertFlashcard(flashcard)
+    suspend fun updateFlashcard(flashcard: lumia.tracker.model.Flashcard) = dao.updateFlashcard(flashcard)
+    suspend fun deleteFlashcard(flashcard: lumia.tracker.model.Flashcard) = dao.deleteFlashcard(flashcard)
+
     suspend fun insertTestRecord(record: lumia.tracker.model.TestRecord) = dao.insertTestRecord(record)
     suspend fun updateTestRecord(record: lumia.tracker.model.TestRecord) = dao.updateTestRecord(record)
     suspend fun deleteTestRecord(record: lumia.tracker.model.TestRecord) = dao.deleteTestRecord(record)
@@ -122,6 +129,7 @@ class ScholarRepository(val dao: ScholarDao) {
         dao.clearAttachments()
         dao.clearTestRecords()
         dao.clearTagCustomizations()
+        dao.clearFlashcards()
     }
 
     private val moshi = com.squareup.moshi.Moshi.Builder().addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()

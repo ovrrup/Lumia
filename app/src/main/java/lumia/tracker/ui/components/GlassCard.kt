@@ -24,39 +24,25 @@ fun GlassCard(
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val isGlass = LocalGlassMode.current
     val isPureBlack = lumia.tracker.ui.theme.LocalPureBlackMode.current
     val elevation = if (isPureBlack) 0.dp else (if (containerColor == null) 2.dp else 0.dp)
-    if (isGlass) {
-        Box(
-            modifier = modifier
-                .clip(shape)
-                .then(if (onClick != null) Modifier.bouncyClick(onClick = onClick) else Modifier)
+    if (onClick != null) {
+        Surface(
+            modifier = modifier.bouncyClick(onClick = onClick),
+            shape = shape,
+            color = containerColor ?: MaterialTheme.colorScheme.surfaceContainer,
+            tonalElevation = elevation
         ) {
-            Box(modifier = Modifier.matchParentSize().glassCard(shape))
-            val tint = containerColor?.copy(alpha = 0.3f) ?: Color.Transparent
-            Box(modifier = Modifier.matchParentSize().background(tint))
-            content()
+            Box(content = content)
         }
     } else {
-        if (onClick != null) {
-            Surface(
-                modifier = modifier.bouncyClick(onClick = onClick),
-                shape = shape,
-                color = containerColor ?: MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = elevation
-            ) {
-                Box(content = content)
-            }
-        } else {
-            Surface(
-                modifier = modifier,
-                shape = shape,
-                color = containerColor ?: MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = elevation
-            ) {
-                Box(content = content)
-            }
+        Surface(
+            modifier = modifier,
+            shape = shape,
+            color = containerColor ?: MaterialTheme.colorScheme.surfaceContainer,
+            tonalElevation = elevation
+        ) {
+            Box(content = content)
         }
     }
 }
@@ -68,35 +54,23 @@ fun GlassHeroCard(
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val isGlass = LocalGlassMode.current
-    if (isGlass) {
-        Box(
-            modifier = modifier
-                .clip(shape)
-                .then(if (onClick != null) Modifier.bouncyClick(onClick = onClick) else Modifier)
+    if (onClick != null) {
+        Surface(
+            modifier = modifier.bouncyClick(onClick = onClick),
+            shape = shape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            tonalElevation = 0.dp
         ) {
-            Box(modifier = Modifier.matchParentSize().glassHero(shape))
-            content()
+            Box(content = content)
         }
     } else {
-        if (onClick != null) {
-            Surface(
-                modifier = modifier.bouncyClick(onClick = onClick),
-                shape = shape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                tonalElevation = 0.dp
-            ) {
-                Box(content = content)
-            }
-        } else {
-            Surface(
-                modifier = modifier,
-                shape = shape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                tonalElevation = 0.dp
-            ) {
-                Box(content = content)
-            }
+        Surface(
+            modifier = modifier,
+            shape = shape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            tonalElevation = 0.dp
+        ) {
+            Box(content = content)
         }
     }
 }

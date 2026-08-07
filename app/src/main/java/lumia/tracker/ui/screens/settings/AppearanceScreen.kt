@@ -99,17 +99,17 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Card 1: Dynamic Background Lighting (Individual Feature)
+            // Card 1: Dynamic Visuals (Individual Feature)
             val dynamicBgEnabled = !betaMinimalistMode && !pureBlackMode
             val dynamicBgSubtitle = when {
                 betaMinimalistMode -> "Locked by Minimalist Focus Mode"
                 pureBlackMode -> "Disabled: Pure Black Canvas is active"
-                else -> "Soft, vibrant animated ambient glow that shifts behind UI components in both Normal Flat and Glass UI"
+                else -> "Soft ambient glow that animates behind UI components"
             }
 
-            SettingsGroupCard(title = "Dynamic Background Lighting", icon = Icons.Rounded.InvertColors) {
+            SettingsGroupCard(title = "Dynamic Visuals", icon = Icons.Rounded.InvertColors) {
                 SettingsToggleItem(
-                    title = "Dynamic Lighting Background",
+                    title = "Dynamic Visuals",
                     subtitle = dynamicBgSubtitle,
                     checked = betaDynamicBackground,
                     enabled = dynamicBgEnabled,
@@ -130,7 +130,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (isDarkTheme) "Dark Mode Lighting Brightness" else "Light Mode Lighting Brightness",
+                                text = if (isDarkTheme) "Dark Mode Visuals Brightness" else "Light Mode Visuals Brightness",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -164,70 +164,6 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             valueRange = 0.05f..1.0f,
                             modifier = Modifier.fillMaxWidth()
                         )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Card 2: Glassmorphism UI Mode (Packed up as one unified mode)
-            val glassEnabled = !betaMinimalistMode && !pureBlackMode
-            val glassSubtitle = when {
-                betaMinimalistMode -> "Locked by Minimalist Focus Mode"
-                pureBlackMode -> "Disabled: Pure Black Canvas is active"
-                else -> "Enable packaged glassmorphism translucent surfaces across cards, sheets, panels, and bottom dock"
-            }
-
-            SettingsGroupCard(
-                title = "Glassmorphism UI Mode",
-                icon = Icons.Rounded.BlurOn,
-                infoText = "Glassmorphism Mode unifies translucent panels, gaussian-blur frosting, and specular highlights into one seamless style."
-            ) {
-                SettingsToggleItem(
-                    title = "Glassmorphism Mode",
-                    subtitle = glassSubtitle,
-                    checked = betaGlassUi,
-                    enabled = glassEnabled,
-                    icon = Icons.Rounded.BlurOn,
-                    onCheckedChange = { viewModel.updateBetaGlassUi(it) }
-                )
-
-                AnimatedVisibility(visible = betaGlassUi && glassEnabled) {
-                    Column {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-
-                        // Opacity Depth Slider
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Glass Translucency Depth",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = "${(glassOpacityValue * 100).toInt()}%",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Black,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Text(
-                                text = "Calibrate baseline translucency thickness for cards and navigation bars",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(bottom = 6.dp)
-                            )
-                            Slider(
-                                value = glassOpacityValue,
-                                onValueChange = { viewModel.updateGlassOpacityValue(it) },
-                                valueRange = 0.15f..0.85f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
                     }
                 }
             }
@@ -314,7 +250,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 val pureBlackSubtitle = when {
                     themeMode == "Light" -> "Only available in dark render style"
                     betaGlassUi -> "Disabled: Translucent Glass UI is active"
-                    betaDynamicBackground -> "Disabled: Dynamic Lighting active"
+                    betaDynamicBackground -> "Disabled: Dynamic Visuals active"
                     else -> "Apply solid pitch-black background inside dark render style"
                 }
                 

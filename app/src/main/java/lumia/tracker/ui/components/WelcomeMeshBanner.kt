@@ -45,18 +45,11 @@ fun WelcomeMeshBanner() {
         modifier = Modifier
             .fillMaxWidth()
             .height(140.dp)
+            .clip(RoundedCornerShape(32.dp))
             .then(
-                if (isGlass) {
-                    Modifier.liquidGlass(shape = RoundedCornerShape(32.dp), tintAlpha = 0.12f)
-                } else {
-                    Modifier
-                        .clip(RoundedCornerShape(32.dp))
-                        .then(
-                            if (isPureBlack) {
-                                Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), RoundedCornerShape(32.dp))
-                            } else Modifier
-                        )
-                }
+                if (isPureBlack) {
+                    Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), RoundedCornerShape(32.dp))
+                } else Modifier
             )
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {

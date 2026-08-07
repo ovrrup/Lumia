@@ -796,7 +796,7 @@ private val _streakPercentage = MutableStateFlow(0f)
         _systemBarVisible.value = visible
     }
 
-    private val _betaGlassUi = MutableStateFlow(prefs.getBoolean("beta_glass_ui", false))
+    private val _betaGlassUi = MutableStateFlow(false)
     val betaGlassUi = _betaGlassUi.asStateFlow()
 
     private val _betaEnhancedHeader = MutableStateFlow(prefs.getBoolean("beta_enhanced_header", false))
@@ -1057,6 +1057,57 @@ private val _streakPercentage = MutableStateFlow(0f)
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    val allFlashcards: StateFlow<List<lumia.tracker.model.Flashcard>> = repository.allFlashcards.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun insertFlashcard(flashcard: lumia.tracker.model.Flashcard) = viewModelScope.launch { repository.insertFlashcard(flashcard) }
+    fun updateFlashcard(flashcard: lumia.tracker.model.Flashcard) = viewModelScope.launch { repository.updateFlashcard(flashcard) }
+    fun deleteFlashcard(flashcard: lumia.tracker.model.Flashcard) = viewModelScope.launch { repository.deleteFlashcard(flashcard) }
+
+    // 5+2 Rolling Buffer Scheduler algorithm
+    fun rollOverOverdueTasksToWeekendBuffer() {
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            val currentTasks = tasks.value
+            val overdueTasks = currentTasks.filter { !it.isCompleted && it.dueDateMillis != null && it.dueDateMillis < now }
+            if (overdueTasks.isNotEmpty()) {
+                val cal = Calendar.getInstance()
+                // Move to upcoming Saturday
+                while (cal.get(Calendar.DAY_OF_WEEK) != Calendar.SATURDAY) {
+                    cal.add(Calendar.DAY_OF_YEAR, 1)
+                }
+                cal.set(Calendar.HOUR_OF_DAY, 10)
+                cal.set(Calendar.MINUTE, 0)
+                val weekendMillis = cal.timeInMillis
+
+                overdueTasks.forEach { t ->
+                    repository.updateTask(t.copy(dueDateMillis = weekendMillis))
+                }
+                repository.insertActionLog(lumia.tracker.model.ActionLog(actionText = "Rolling Buffer: Shifted ${overdueTasks.size} overdue tasks to weekend buffer"))
+            }
+        }
+    }
+
+    // Native Device Calendar ICS Exporter
+    fun generateIcsCalendarPayload(): String {
+        val sb = StringBuilder()
+        sb.append("BEGIN:VCALENDAR\n")
+        sb.append("VERSION:2.0\n")
+        sb.append("PRODID:-//ScholarSync Offline Academic Calendar//EN\n")
+        courses.value.forEach { c ->
+            sb.append("BEGIN:VEVENT\n")
+            sb.append("SUMMARY:${c.name}\n")
+            sb.append("DESCRIPTION:${c.description}\n")
+            sb.append("LOCATION:${c.instructor}\n")
+            sb.append("END:VEVENT\n")
+        }
+        sb.append("END:VCALENDAR\n")
+        return sb.toString()
+    }
 
     private val topicFlowCache = HashMap<Int, StateFlow<List<Topic>>>()
     
@@ -2265,7 +2316,7 @@ private val _streakPercentage = MutableStateFlow(0f)
 
         if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (conflictsWithDynamicBg || conflictsWithGlassUi || conflictsWithPalette || conflictsWithEnhancedHeader)) {
             val opposingFeatures = mutableListOf<String>()
-            if (conflictsWithDynamicBg) opposingFeatures.add("'Dynamic Lighting Background'")
+            if (conflictsWithDynamicBg) opposingFeatures.add("'Dynamic Visuals'")
             if (conflictsWithGlassUi) opposingFeatures.add("'Glass UI'")
             if (conflictsWithPalette) opposingFeatures.add("'Use Palette Shades for Text'")
             if (conflictsWithEnhancedHeader) opposingFeatures.add("'Enhanced Header'")
@@ -2335,7 +2386,7 @@ private val _streakPercentage = MutableStateFlow(0f)
         if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaGlassUi.value || _betaDynamicBackground.value || _betaEnhancedHeader.value || betaFloatingNav.value || _betaBetterTexts.value || _displayLayoutMode.value != "Immersive" || _appAnimationMode.value != "Minimal" || _moreRounds.value)) {
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Feature Conflict Detected",
-                description = "Activating 'Minimalist Mode' will force-disable 'Glass UI', 'Dynamic Lighting', 'Enhanced Header', 'Floating Action Bar', 'Better Texts', bouncy animations, and rounded UI components, locking them to drastically reduce visual clutter. Additionally, 'Immersive Mode' will be turned ON. Proceed?",
+                description = "Activating 'Minimalist Mode' will force-disable 'Glass UI', 'Dynamic Visuals', 'Enhanced Header', 'Floating Action Bar', 'Better Texts', bouncy animations, and rounded UI components, locking them to drastically reduce visual clutter. Additionally, 'Immersive Mode' will be turned ON. Proceed?",
                 isConflict = true,
                 onConfirm = {
                     _safetyPinDialogData.value = null
@@ -2419,7 +2470,7 @@ private val _streakPercentage = MutableStateFlow(0f)
         if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Feature Conflict Detected",
-                description = "The activation of 'Dynamic Lighting Background' contradicts the core purpose of 'Pure Black Mode' by introducing lit pixels and gradients. Proceeding will automatically deactivate 'Pure Black Mode' to maintain visual consistency.",
+                description = "The activation of 'Dynamic Visuals' contradicts the core purpose of 'Pure Black Mode' by introducing lit pixels and gradients. Proceeding will automatically deactivate 'Pure Black Mode' to maintain visual consistency.",
                 isConflict = true,
                 onConfirm = {
                     _safetyPinDialogData.value = null

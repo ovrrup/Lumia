@@ -17,7 +17,8 @@ import lumia.tracker.model.Task
 import lumia.tracker.model.Attachment
 import lumia.tracker.model.TestRecord
 import lumia.tracker.model.TagCustomization
-@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class, AttendanceRecord::class, PomodoroSession::class, Note::class, Chapter::class, Task::class, Attachment::class, TestRecord::class, TagCustomization::class], version = 21, exportSchema = false)
+import lumia.tracker.model.Flashcard
+@Database(entities = [Course::class, Subject::class, Topic::class, PracticeAssignment::class, ActionLog::class, AttendanceRecord::class, PomodoroSession::class, Note::class, Chapter::class, Task::class, Attachment::class, TestRecord::class, TagCustomization::class, Flashcard::class], version = 22, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scholarDao(): ScholarDao
 

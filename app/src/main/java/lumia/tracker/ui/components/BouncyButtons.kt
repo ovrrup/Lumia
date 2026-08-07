@@ -29,25 +29,7 @@ fun BouncyButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit
 ) {
-    val moreRounds = LocalMoreRounds.current
-    val mode = LocalMoreRoundsMode.current
-    val isGlass = moreRounds && mode == "Glass"
-    
-    val finalModifier = if (isGlass) {
-        modifier
-            .bouncyScale(interactionSource)
-            .liquidGlass(shape = shape, tintAlpha = 0.25f)
-    } else {
-        modifier.bouncyScale(interactionSource)
-    }
-
-    val finalColors = if (isGlass) {
-        ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.primary
-        )
-    } else colors
-
+    val finalModifier = modifier.bouncyScale(interactionSource)
     val context = LocalContext.current
     
     Button(
@@ -58,8 +40,8 @@ fun BouncyButton(
         modifier = finalModifier,
         enabled = enabled,
         shape = shape,
-        colors = finalColors,
-        elevation = if (isGlass) null else elevation,
+        colors = colors,
+        elevation = elevation,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
         content = content
@@ -75,18 +57,7 @@ fun BouncyIconButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable () -> Unit
 ) {
-    val moreRounds = LocalMoreRounds.current
-    val mode = LocalMoreRoundsMode.current
-    val isGlass = moreRounds && mode == "Glass"
-    
-    val finalModifier = if (isGlass) {
-        modifier
-            .bouncyScale(interactionSource)
-            .liquidGlass(shape = CircleShape, tintAlpha = 0.2f)
-    } else {
-        modifier.bouncyScale(interactionSource)
-    }
-
+    val finalModifier = modifier.bouncyScale(interactionSource)
     val context = LocalContext.current
     
     IconButton(
@@ -114,18 +85,7 @@ fun BouncyTextButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit
 ) {
-    val moreRounds = LocalMoreRounds.current
-    val mode = LocalMoreRoundsMode.current
-    val isGlass = moreRounds && mode == "Glass"
-    
-    val finalModifier = if (isGlass) {
-        modifier
-            .bouncyScale(interactionSource)
-            .liquidGlass(shape = shape, tintAlpha = 0.15f)
-    } else {
-        modifier.bouncyScale(interactionSource)
-    }
-
+    val finalModifier = modifier.bouncyScale(interactionSource)
     val context = LocalContext.current
     
     TextButton(
@@ -159,23 +119,14 @@ fun BouncyOutlinedButton(
     val moreRounds = LocalMoreRounds.current
     val mode = LocalMoreRoundsMode.current
     val isPastel = moreRounds && mode == "Pastel"
-    val isGlass = moreRounds && mode == "Glass"
     
-    val finalModifier = if (isGlass) {
-        modifier
-            .bouncyScale(interactionSource)
-            .liquidGlass(shape = shape, tintAlpha = 0.15f)
-    } else {
-        modifier.bouncyScale(interactionSource)
-    }
+    val finalModifier = modifier.bouncyScale(interactionSource)
 
     val finalColors = if (isPastel) {
         ButtonDefaults.filledTonalButtonColors(
             containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
             contentColor = MaterialTheme.colorScheme.primary
         )
-    } else if (isGlass) {
-        ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent)
     } else colors
 
     val context = LocalContext.current
@@ -208,18 +159,7 @@ fun BouncyFloatingActionButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable () -> Unit
 ) {
-    val moreRounds = LocalMoreRounds.current
-    val mode = LocalMoreRoundsMode.current
-    val isGlass = moreRounds && mode == "Glass"
-    
-    val finalModifier = if (isGlass) {
-        modifier
-            .bouncyScale(interactionSource)
-            .liquidGlass(shape = shape, tintAlpha = 0.3f)
-    } else {
-        modifier.bouncyScale(interactionSource)
-    }
-
+    val finalModifier = modifier.bouncyScale(interactionSource)
     val context = LocalContext.current
     
     FloatingActionButton(
@@ -229,9 +169,9 @@ fun BouncyFloatingActionButton(
         },
         modifier = finalModifier,
         shape = shape,
-        containerColor = if (isGlass) Color.Transparent else containerColor,
+        containerColor = containerColor,
         contentColor = contentColor,
-        elevation = if (isGlass) FloatingActionButtonDefaults.bottomAppBarFabElevation(0.dp) else elevation,
+        elevation = elevation,
         interactionSource = interactionSource,
         content = content
     )

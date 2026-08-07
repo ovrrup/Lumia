@@ -57,7 +57,7 @@ data class SearchResult(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
-    val isGlass = LocalGlassMode.current
+    val isGlass = false
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
 
