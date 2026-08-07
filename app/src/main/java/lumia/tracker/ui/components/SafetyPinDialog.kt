@@ -6,7 +6,7 @@ import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import lumia.tracker.viewmodel.ScholarViewModel
+import lumia.tracker.viewmodel.*
 
 @Composable
 fun SafetyPinDialog(viewModel: ScholarViewModel) {

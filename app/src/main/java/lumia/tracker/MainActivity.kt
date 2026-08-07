@@ -23,7 +23,7 @@ import lumia.tracker.ui.navigation.AppNavigationGraph
 import lumia.tracker.ui.screens.*
 import lumia.tracker.ui.theme.ScholarTheme
 import lumia.tracker.util.LogDog
-import lumia.tracker.viewmodel.ScholarViewModel
+import lumia.tracker.viewmodel.*
 import lumia.tracker.worker.AssignmentMonitorWorker
 import java.util.concurrent.TimeUnit
 

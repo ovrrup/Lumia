@@ -1,13 +1,10 @@
 package lumia.tracker.service
 
-import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.StateFlow
-import lumia.tracker.util.ScholarPomodoroWidgetProvider
 
 class PomodoroService : Service() {
 
@@ -24,7 +21,6 @@ class PomodoroService : Service() {
         var assignmentId: Int? get() = PomodoroStateHolder.assignmentId; set(v) { PomodoroStateHolder.assignmentId = v }
         var taskId: Int? get() = PomodoroStateHolder.taskId; set(v) { PomodoroStateHolder.taskId = v }
         var topicId: Int? get() = PomodoroStateHolder.topicId; set(v) { PomodoroStateHolder.topicId = v }
-
         fun updateState(block: (PomodoroState) -> PomodoroState) = PomodoroStateHolder.updateState(block)
     }
 
@@ -66,50 +62,32 @@ class PomodoroService : Service() {
                 topicId = topicId, isAlarmActive = isAlarmActive, endedModeStr = endedModeStr
             )
         }
-        updatePomodoroWidget()
+        PomodoroServiceBroadcaster.updatePomodoroWidget(applicationContext)
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        saveElapsedWorkSessionIfNeeded()
-        isServiceRunning = false
-        PomodoroNotificationHelper.stopAlarmSound()
-        job?.cancel()
-        syncToState()
+        super.onDestroy(); saveElapsedWorkSessionIfNeeded(); isServiceRunning = false
+        PomodoroNotificationHelper.stopAlarmSound(); job?.cancel(); syncToState()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val action = intent?.action
         isServiceRunning = true
-
-        when (action) {
+        when (intent?.action) {
             "STOP" -> {
-                if (intent?.getBooleanExtra("alreadySaved", false) == true) hasSavedCurrentSession = true
-                saveElapsedWorkSessionIfNeeded()
-                PomodoroNotificationHelper.stopAlarmSound()
-                stopSelf()
-                return START_NOT_STICKY
+                if (intent.getBooleanExtra("alreadySaved", false)) hasSavedCurrentSession = true
+                saveElapsedWorkSessionIfNeeded(); PomodoroNotificationHelper.stopAlarmSound(); stopSelf(); return START_NOT_STICKY
             }
             "STOP_ALARM" -> {
-                PomodoroNotificationHelper.stopAlarmSound()
-                isAlarmActive = false; endedModeStr = ""; syncToState(); updateNotification()
-                return START_NOT_STICKY
+                PomodoroNotificationHelper.stopAlarmSound(); isAlarmActive = false; endedModeStr = ""; syncToState(); updateNotification(); return START_NOT_STICKY
             }
             "PAUSE_RESUME" -> {
-                isPaused = !isPaused
-                if (!isPaused && (job == null || job?.isActive != true)) startTimer()
-                else { updateNotification(); sendTick(); syncToState() }
-                return START_NOT_STICKY
+                isPaused = !isPaused; if (!isPaused && job?.isActive != true) startTimer() else { updateNotification(); sendTick(); syncToState() }; return START_NOT_STICKY
             }
             "SKIP" -> {
-                saveElapsedWorkSessionIfNeeded()
-                PomodoroNotificationHelper.stopAlarmSound()
-                isAlarmActive = false; job?.cancel()
-                finishSession(skipped = true)
-                return START_NOT_STICKY
+                saveElapsedWorkSessionIfNeeded(); PomodoroNotificationHelper.stopAlarmSound(); isAlarmActive = false; job?.cancel(); finishSession(skipped = true); return START_NOT_STICKY
             }
             "UPDATE_CONTEXT" -> {
-                intent?.let {
+                intent.let {
                     if (it.hasExtra("subjectId")) subjectId = it.getIntExtra("subjectId", -1).takeIf { id -> id != -1 }
                     if (it.hasExtra("courseId")) courseId = it.getIntExtra("courseId", -1).takeIf { id -> id != -1 }
                     if (it.hasExtra("assignmentId")) assignmentId = it.getIntExtra("assignmentId", -1).takeIf { id -> id != -1 }
@@ -119,28 +97,27 @@ class PomodoroService : Service() {
                 }
                 return START_NOT_STICKY
             }
-            "START", "RESET" -> {
-                PomodoroNotificationHelper.stopAlarmSound()
-                isAlarmActive = false
-                workDuration = intent?.getIntExtra("workDuration", 25 * 60) ?: (25 * 60)
-                shortBreakDuration = intent?.getIntExtra("shortBreakDuration", 5 * 60) ?: (5 * 60)
-                longBreakDuration = intent?.getIntExtra("longBreakDuration", 15 * 60) ?: (15 * 60)
-                periodSessions = intent?.getIntExtra("periodSessions", 4) ?: 4
-                maxPeriods = intent?.getIntExtra("maxPeriods", -1) ?: -1
-
-                subjectId = intent?.getIntExtra("subjectId", -1)?.takeIf { it != -1 }
-                courseId = intent?.getIntExtra("courseId", -1)?.takeIf { it != -1 }
-                assignmentId = intent?.getIntExtra("assignmentId", -1)?.takeIf { it != -1 }
-                taskId = intent?.getIntExtra("taskId", -1)?.takeIf { it != -1 }
-                topicId = intent?.getIntExtra("topicId", -1)?.takeIf { it != -1 }
-
-                sessionsCompleted = 0; periodsCompleted = 0; currentMode = PomodoroMode.WORK
-                startCurrentMode()
-                startForeground(2002, PomodoroNotificationHelper.buildNotification(this, currentMode, timeLeft, originalTime, isPaused, isAlarmActive, sessionsCompleted, periodSessions))
-            }
+            "START", "RESET" -> handleStartIntent(intent)
         }
         syncToState()
         return START_NOT_STICKY
+    }
+
+    private fun handleStartIntent(intent: Intent?) {
+        PomodoroNotificationHelper.stopAlarmSound(); isAlarmActive = false
+        workDuration = intent?.getIntExtra("workDuration", 25 * 60) ?: (25 * 60)
+        shortBreakDuration = intent?.getIntExtra("shortBreakDuration", 5 * 60) ?: (5 * 60)
+        longBreakDuration = intent?.getIntExtra("longBreakDuration", 15 * 60) ?: (15 * 60)
+        periodSessions = intent?.getIntExtra("periodSessions", 4) ?: 4
+        maxPeriods = intent?.getIntExtra("maxPeriods", -1) ?: -1
+        subjectId = intent?.getIntExtra("subjectId", -1)?.takeIf { it != -1 }
+        courseId = intent?.getIntExtra("courseId", -1)?.takeIf { it != -1 }
+        assignmentId = intent?.getIntExtra("assignmentId", -1)?.takeIf { it != -1 }
+        taskId = intent?.getIntExtra("taskId", -1)?.takeIf { it != -1 }
+        topicId = intent?.getIntExtra("topicId", -1)?.takeIf { it != -1 }
+        sessionsCompleted = 0; periodsCompleted = 0; currentMode = PomodoroMode.WORK
+        startCurrentMode()
+        startForeground(2002, PomodoroNotificationHelper.buildNotification(this, currentMode, timeLeft, originalTime, isPaused, isAlarmActive, sessionsCompleted, periodSessions))
     }
 
     private fun startCurrentMode(startPaused: Boolean = false) {
@@ -152,38 +129,18 @@ class PomodoroService : Service() {
         }
         timeLeft = originalTime; isPaused = startPaused; currentStateStr = currentMode.name; hasSavedCurrentSession = false
         syncToState()
-        if (!startPaused) startTimer()
-        else { job?.cancel(); job = null; updateNotification() }
+        if (!startPaused) startTimer() else { job?.cancel(); job = null; updateNotification() }
     }
 
-    private fun updateNotification() {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(2002, PomodoroNotificationHelper.buildNotification(this, currentMode, timeLeft, originalTime, isPaused, isAlarmActive, sessionsCompleted, periodSessions))
-    }
-
-    private fun sendTick() {
-        val broadcastIntent = Intent("PomodoroTick").apply { setPackage(packageName) }
-        broadcastIntent.putExtra("timeLeft", timeLeft)
-        broadcastIntent.putExtra("originalTime", originalTime)
-        broadcastIntent.putExtra("mode", currentMode.name)
-        broadcastIntent.putExtra("isPaused", isPaused)
-        broadcastIntent.putExtra("sessionsCompleted", sessionsCompleted)
-        sendBroadcast(broadcastIntent)
-        updatePomodoroWidget()
-    }
+    private fun updateNotification() = PomodoroServiceBroadcaster.updateNotification(this, currentMode, timeLeft, originalTime, isPaused, isAlarmActive, sessionsCompleted, periodSessions)
+    private fun sendTick() = PomodoroServiceBroadcaster.sendTick(this, timeLeft, originalTime, currentMode.name, isPaused, sessionsCompleted)
 
     private fun startTimer() {
         job?.cancel()
         job = scope.launch {
             syncToState()
             while (timeLeft > 0) {
-                if (!isPaused) {
-                    delay(1000)
-                    timeLeft--
-                    updateNotification()
-                    sendTick()
-                    syncToState()
-                } else delay(100)
+                if (!isPaused) { delay(1000); timeLeft--; updateNotification(); sendTick(); syncToState() } else delay(100)
             }
             finishSession(skipped = false)
         }
@@ -193,8 +150,7 @@ class PomodoroService : Service() {
         if (currentMode != PomodoroMode.WORK || hasSavedCurrentSession) return
         val elapsedSeconds = originalTime - timeLeft
         if (elapsedSeconds >= 60) {
-            val mins = Math.max(1, elapsedSeconds / 60)
-            hasSavedCurrentSession = true
+            val mins = Math.max(1, elapsedSeconds / 60); hasSavedCurrentSession = true
             scope.launch(Dispatchers.IO) {
                 PomodoroSessionLogger.logAndAwardSession(applicationContext, mins, isFullCompletion = false, isWorkSession = true, subjectId, courseId, assignmentId, taskId, topicId)
             }
@@ -202,67 +158,17 @@ class PomodoroService : Service() {
     }
 
     private fun finishSession(skipped: Boolean) {
-        val completedMode = currentMode
-        endedModeStr = if (!skipped) completedMode.name else ""
-
-        if (!skipped) {
-            isAlarmActive = true
-            PomodoroNotificationHelper.playAlarmSound(this, isWorkEnd = (completedMode == PomodoroMode.WORK))
-        }
-
+        val completedMode = currentMode; endedModeStr = if (!skipped) completedMode.name else ""
+        if (!skipped) { isAlarmActive = true; PomodoroNotificationHelper.playAlarmSound(this, isWorkEnd = (completedMode == PomodoroMode.WORK)) }
         if (completedMode == PomodoroMode.WORK && !skipped && !hasSavedCurrentSession) {
-            hasSavedCurrentSession = true
-            val finishedIntent = Intent("PomodoroLogSession").apply { setPackage(packageName) }
-            finishedIntent.putExtra("isWork", true)
-            finishedIntent.putExtra("originalTime", originalTime)
-            subjectId?.let { finishedIntent.putExtra("subjectId", it) }
-            courseId?.let { finishedIntent.putExtra("courseId", it) }
-            assignmentId?.let { finishedIntent.putExtra("assignmentId", it) }
-            taskId?.let { finishedIntent.putExtra("taskId", it) }
-            topicId?.let { finishedIntent.putExtra("topicId", it) }
-            sendBroadcast(finishedIntent)
-
-            val mins = Math.max(1, originalTime / 60)
-            scope.launch(Dispatchers.IO) {
-                PomodoroSessionLogger.logAndAwardSession(applicationContext, mins, isFullCompletion = true, isWorkSession = true, subjectId, courseId, assignmentId, taskId, topicId)
-            }
+            hasSavedCurrentSession = true; PomodoroSessionHandler.handleWorkSessionCompletion(this, scope, originalTime, subjectId, courseId, assignmentId, taskId, topicId)
         }
-
         if (completedMode == PomodoroMode.WORK) {
-            sessionsCompleted++
-            if (sessionsCompleted >= periodSessions) {
-                currentMode = PomodoroMode.LONG_BREAK
-                sessionsCompleted = 0
-            } else {
-                currentMode = PomodoroMode.SHORT_BREAK
-            }
+            sessionsCompleted++; if (sessionsCompleted >= periodSessions) { currentMode = PomodoroMode.LONG_BREAK; sessionsCompleted = 0 } else { currentMode = PomodoroMode.SHORT_BREAK }
         } else if (completedMode == PomodoroMode.LONG_BREAK) {
-            periodsCompleted++
-            if (maxPeriods > 0 && periodsCompleted >= maxPeriods) {
-                stopSelf()
-                return
-            }
-            currentMode = PomodoroMode.WORK
-        } else {
-            currentMode = PomodoroMode.WORK
-        }
-
+            periodsCompleted++; if (maxPeriods > 0 && periodsCompleted >= maxPeriods) { stopSelf(); return }; currentMode = PomodoroMode.WORK
+        } else { currentMode = PomodoroMode.WORK }
         startCurrentMode(startPaused = !skipped)
-    }
-
-    private fun updatePomodoroWidget() {
-        try {
-            val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(applicationContext)
-            val componentName = android.content.ComponentName(applicationContext, ScholarPomodoroWidgetProvider::class.java)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-            if (appWidgetIds.isNotEmpty()) {
-                val intent = Intent(applicationContext, ScholarPomodoroWidgetProvider::class.java).apply {
-                    action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                    putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
-                }
-                sendBroadcast(intent)
-            }
-        } catch (e: Exception) { e.printStackTrace() }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
