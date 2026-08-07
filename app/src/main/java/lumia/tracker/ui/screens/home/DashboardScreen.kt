@@ -28,6 +28,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     var selectedTabId by remember { mutableIntStateOf(0) }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             InteractivePushPullHeader(
                 title = tabs.find { it.id == selectedTabId }?.label ?: "Lumia",

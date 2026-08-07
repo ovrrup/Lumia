@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import lumia.tracker.ui.components.MeshGradientBackground
 import lumia.tracker.ui.components.TranslucentMeshGradientBox
 
 data class NavTabItem(
@@ -43,9 +44,10 @@ fun FloatingCapsuleNavBar(
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    TranslucentMeshGradientBox(
+    MeshGradientBackground(
         modifier = modifier
             .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(horizontal = 20.dp, vertical = 8.dp)
             .height(50.dp),
         shape = CircleShape

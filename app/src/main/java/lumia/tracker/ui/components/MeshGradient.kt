@@ -21,15 +21,18 @@ import lumia.tracker.ui.theme.LocalPureBlackMode
 import lumia.tracker.ui.theme.liquidGlass
 
 @Composable
-fun TranslucentMeshGradientBox(
+fun MeshGradientBackground(
     modifier: Modifier = Modifier,
     shape: Shape = CircleShape,
+    translucencyAlpha: Float = 0.65f,
+    tintColor: Color? = null,
+    gradientColors: List<Color>? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
     val isPureBlack = LocalPureBlackMode.current
     val isDark = LocalDarkTheme.current
 
-    val transition = rememberInfiniteTransition(label = "MeshPillAnimation")
+    val transition = rememberInfiniteTransition(label = "MeshGradientAnimation")
     val phase by transition.animateFloat(
         initialValue = 0f,
         targetValue = (2 * Math.PI).toFloat(),
@@ -40,21 +43,25 @@ fun TranslucentMeshGradientBox(
         label = "phase"
     )
 
-    val c1 = MaterialTheme.colorScheme.primary.copy(alpha = if (isDark) 0.28f else 0.38f)
-    val c2 = MaterialTheme.colorScheme.secondary.copy(alpha = if (isDark) 0.22f else 0.32f)
-    val c3 = MaterialTheme.colorScheme.tertiary.copy(alpha = if (isDark) 0.25f else 0.35f)
+    val primaryColor = tintColor ?: MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+
+    val c1 = (gradientColors?.getOrNull(0) ?: primaryColor).copy(alpha = if (isDark) 0.28f else 0.38f)
+    val c2 = (gradientColors?.getOrNull(1) ?: secondaryColor).copy(alpha = if (isDark) 0.22f else 0.32f)
+    val c3 = (gradientColors?.getOrNull(2) ?: tertiaryColor).copy(alpha = if (isDark) 0.25f else 0.35f)
     val baseSurface = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = if (isDark) 0.50f else 0.60f)
 
     Box(
         modifier = modifier
             .clip(shape)
-            .liquidGlass(shape = shape, tintAlpha = 0.12f, opacityOverride = 0.65f)
+            .liquidGlass(shape = shape, tintAlpha = 0.12f, opacityOverride = translucencyAlpha)
             .border(
                 width = 1.dp,
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.25f),
+                        primaryColor.copy(alpha = 0.45f),
+                        secondaryColor.copy(alpha = 0.25f),
                         Color.White.copy(alpha = 0.35f)
                     )
                 ),
@@ -93,4 +100,18 @@ fun TranslucentMeshGradientBox(
         }
         content()
     }
+}
+
+@Composable
+fun TranslucentMeshGradientBox(
+    modifier: Modifier = Modifier,
+    shape: Shape = CircleShape,
+    content: @Composable BoxScope.() -> Unit
+) {
+    MeshGradientBackground(
+        modifier = modifier,
+        shape = shape,
+        translucencyAlpha = 0.65f,
+        content = content
+    )
 }
