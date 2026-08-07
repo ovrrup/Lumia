@@ -44,14 +44,20 @@ fun FloatingCapsuleNavBar(
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    MeshGradientBackground(
-        modifier = modifier
+    Box(
+        modifier = Modifier
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(horizontal = 20.dp, vertical = 8.dp)
-            .height(50.dp),
-        shape = CircleShape
+            .windowInsetsPadding(WindowInsets.navigationBars),
+        contentAlignment = Alignment.Center
     ) {
+        MeshGradientBackground(
+            modifier = modifier
+                .fillMaxWidth()
+                .widthIn(max = 500.dp)
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .height(50.dp),
+            shape = CircleShape
+        ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -114,4 +120,5 @@ fun FloatingCapsuleNavBar(
             }
         }
     }
+}
 }

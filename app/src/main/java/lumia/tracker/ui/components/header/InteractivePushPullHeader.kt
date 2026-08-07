@@ -69,12 +69,18 @@ fun InteractivePushPullHeader(
     var dragAccumulated by remember { mutableFloatStateOf(0f) }
     val activeProfile = viewModel?.activeProfile?.collectAsState()?.value ?: viewModel?.activeProfile?.value
 
-    MeshGradientBackground(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(horizontal = 20.dp, vertical = 6.dp)
-            .height(50.dp)
+            .windowInsetsPadding(WindowInsets.statusBars),
+        contentAlignment = Alignment.Center
+    ) {
+        MeshGradientBackground(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 700.dp)
+                .padding(horizontal = 20.dp, vertical = 6.dp)
+                .height(50.dp)
             .pointerInput(Unit) {
                 detectVerticalDragGestures(
                     onDragEnd = { dragAccumulated = 0f },
@@ -179,4 +185,5 @@ fun InteractivePushPullHeader(
             }
         }
     }
+}
 }

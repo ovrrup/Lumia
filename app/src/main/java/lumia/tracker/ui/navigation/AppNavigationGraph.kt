@@ -91,7 +91,6 @@ fun AppNavigationGraph(
             val topId = backStackEntry.arguments?.getString("topicId")?.toIntOrNull()
             PomodoroScreen(navController = navController, viewModel = viewModel, initialSubjectId = sId, initialCourseId = cId, initialAssignmentId = aId, initialTaskId = tId, initialTopicId = topId)
         }
-        composable("notes") { QuickNotesScreen(navController = navController) }
         composable(
             "courseDetail/{id}",
             arguments = listOf(navArgument("id") { type = NavType.IntType })

@@ -88,11 +88,6 @@ fun HeaderExpandedQuickHub(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Embedded Quick Note Creator
-        HeaderQuickNoteInput(viewModel)
-
-        Spacer(modifier = Modifier.height(10.dp))
-
         // Action Shortcuts Row
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -112,7 +107,10 @@ fun HeaderExpandedQuickHub(
             HeaderActionButton(
                 icon = Icons.Rounded.BarChart,
                 label = "Analytics",
-                onClick = { navController?.navigate("analytics") }
+                onClick = {
+                    viewModel?.setSelectedDashboardTab(3)
+                    navController?.navigate("dashboard") { launchSingleTop = true }
+                }
             )
             HeaderActionButton(
                 icon = Icons.Rounded.Person,

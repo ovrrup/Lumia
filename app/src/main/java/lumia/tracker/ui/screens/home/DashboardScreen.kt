@@ -9,6 +9,7 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.ui.components.header.InteractivePushPullHeader
 import lumia.tracker.ui.components.navigation.FloatingCapsuleNavBar
@@ -25,7 +26,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             NavTabItem(3, "Analytics", Icons.Rounded.Analytics)
         )
     }
-    var selectedTabId by remember { mutableIntStateOf(0) }
+    val selectedTabId by viewModel.selectedDashboardTab.collectAsStateWithLifecycle()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -40,7 +41,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             FloatingCapsuleNavBar(
                 tabs = tabs,
                 selectedTabId = selectedTabId,
-                onTabSelected = { selectedTabId = it }
+                onTabSelected = { viewModel.setSelectedDashboardTab(it) }
             )
         }
     ) { padding ->
