@@ -4,8 +4,6 @@ import lumia.tracker.service.AodAccessibilityService
 import lumia.tracker.util.TrueAodManager
 import android.content.Intent
 import android.provider.Settings
-import lumia.tracker.ui.theme.liquidGlass
-import lumia.tracker.ui.theme.glassBar
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.ui.text.style.TextAlign

@@ -103,16 +103,11 @@ class MainActivity : ComponentActivity() {
             val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
             val pureBlackMode by viewModel.pureBlackMode.collectAsStateWithLifecycle()
             val displayLayoutMode by viewModel.displayLayoutMode.collectAsStateWithLifecycle()
-            val betaGlassUi by viewModel.betaGlassUi.collectAsStateWithLifecycle()
-            val betaGlassDynamic by viewModel.betaGlassDynamic.collectAsStateWithLifecycle()
-            val betaFrostGlass by viewModel.betaFrostGlass.collectAsStateWithLifecycle()
             val betaDynamicBackground by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
             val dynamicBgLightBrightness by viewModel.dynamicBgLightBrightness.collectAsStateWithLifecycle()
             val dynamicBgDarkBrightness by viewModel.dynamicBgDarkBrightness.collectAsStateWithLifecycle()
             val betaBetterTexts by viewModel.betaBetterTexts.collectAsStateWithLifecycle()
             val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
-            val glassBackdropStyle by viewModel.glassBackdropStyle.collectAsStateWithLifecycle()
-            val glassOpacityValue by viewModel.glassOpacityValue.collectAsStateWithLifecycle()
             val appAnimationMode by viewModel.appAnimationMode.collectAsStateWithLifecycle()
             val moreRounds by viewModel.moreRounds.collectAsStateWithLifecycle()
             val moreRoundsMode by viewModel.moreRoundsMode.collectAsStateWithLifecycle()
@@ -126,14 +121,6 @@ class MainActivity : ComponentActivity() {
 
             val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
             val effectiveDark = themeMode == "Dark" || (themeMode == "System" && isSystemDark)
-
-            val navBarGlassOpacityValue by viewModel.navBarGlassOpacityValue.collectAsStateWithLifecycle()
-            val navBarGlassLinkedToMain by viewModel.navBarGlassLinkedToMain.collectAsStateWithLifecycle()
-            val navBarGlassBackdropStyle by viewModel.navBarGlassBackdropStyle.collectAsStateWithLifecycle()
-            val navBarGlassDynamic by viewModel.navBarGlassDynamic.collectAsStateWithLifecycle()
-            androidx.compose.runtime.LaunchedEffect(effectiveDark, themeColor) {
-                viewModel.refreshNavBarGlassOpacity(themeColor, effectiveDark)
-            }
 
             androidx.compose.runtime.LaunchedEffect(displayLayoutMode) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -163,15 +150,6 @@ class MainActivity : ComponentActivity() {
                 themeMode = themeMode,
                 themeColor = themeColor,
                 pureBlackMode = pureBlackMode,
-                glassMode = betaGlassUi,
-                glassDynamic = betaGlassDynamic,
-                frostGlass = betaFrostGlass,
-                glassBackdropStyle = glassBackdropStyle,
-                glassOpacityValue = glassOpacityValue,
-                navBarGlassOpacityValue = navBarGlassOpacityValue,
-                navBarGlassLinkedToMain = navBarGlassLinkedToMain,
-                navBarGlassBackdropStyle = navBarGlassBackdropStyle,
-                navBarGlassDynamic = navBarGlassDynamic,
                 betterTexts = betaBetterTexts,
                 betterTextsPalette = betaBetterTextsPalette,
                 appAnimationMode = appAnimationMode,
@@ -323,7 +301,7 @@ class MainActivity : ComponentActivity() {
 
                     // Full-screen ambient gradient — sits behind ALL composables
                     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
-                        if (betaDynamicBackground || betaGlassUi) {
+                        if (betaDynamicBackground) {
                             // Animated or static soft ambient background
                             val infiniteTransition = rememberInfiniteTransition()
                             val offset by if (betaDynamicBackground) {

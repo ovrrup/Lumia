@@ -41,7 +41,6 @@ import lumia.tracker.model.*
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.GlassCard
-import lumia.tracker.ui.theme.LocalGlassMode
 import lumia.tracker.ui.util.getTagColors
 import lumia.tracker.viewmodel.ScholarViewModel
 import java.text.SimpleDateFormat

@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import lumia.tracker.ui.theme.bouncyClick
 
 @Composable
-fun GlassCard(
+fun ScholarCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(24.dp),
     containerColor: Color? = null,
@@ -42,7 +42,7 @@ fun GlassCard(
 }
 
 @Composable
-fun GlassHeroCard(
+fun ScholarHeroCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(32.dp),
     onClick: (() -> Unit)? = null,
@@ -68,3 +68,21 @@ fun GlassHeroCard(
         }
     }
 }
+
+// Deprecated aliases for backwards compatibility during migration
+@Composable
+fun GlassCard(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(24.dp),
+    containerColor: Color? = null,
+    onClick: (() -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit
+) = ScholarCard(modifier, shape, containerColor, onClick, content)
+
+@Composable
+fun GlassHeroCard(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(32.dp),
+    onClick: (() -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit
+) = ScholarHeroCard(modifier, shape, onClick, content)

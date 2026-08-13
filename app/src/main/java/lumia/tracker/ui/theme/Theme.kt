@@ -153,16 +153,6 @@ fun Color.mix(other: Color, weight: Float): Color {
     )
 }
 
-val LocalGlassTint = androidx.compose.runtime.compositionLocalOf { Color.White }
-val LocalGlassMode = androidx.compose.runtime.compositionLocalOf { false }
-val LocalGlassDynamic = androidx.compose.runtime.compositionLocalOf { true }
-val LocalFrostGlass = androidx.compose.runtime.compositionLocalOf { true }
-val LocalGlassBackdropStyle = androidx.compose.runtime.compositionLocalOf { "Translucent" }
-val LocalGlassOpacityValue = androidx.compose.runtime.compositionLocalOf { 0.6f }
-val LocalNavBarGlassOpacityValue = androidx.compose.runtime.compositionLocalOf { 0.6f }
-val LocalNavBarGlassLinkedToMain = androidx.compose.runtime.compositionLocalOf { true }
-val LocalNavBarGlassBackdropStyle = androidx.compose.runtime.compositionLocalOf { "Translucent" }
-val LocalNavBarGlassDynamic = androidx.compose.runtime.compositionLocalOf { true }
 val LocalAppAnimationMode = androidx.compose.runtime.compositionLocalOf { "Normal" }
 val LocalMoreRounds = androidx.compose.runtime.compositionLocalOf { false }
 val LocalMoreRoundsMode = androidx.compose.runtime.compositionLocalOf { "Pastel" }
@@ -177,15 +167,6 @@ fun ScholarTheme(
     customSurface: String = "",
     customText: String = "",
     pureBlackMode: Boolean = false,
-    glassMode: Boolean = false,
-    glassDynamic: Boolean = true,
-    frostGlass: Boolean = true,
-    glassBackdropStyle: String = "Translucent",
-    glassOpacityValue: Float = 0.6f,
-    navBarGlassOpacityValue: Float = 0.6f,
-    navBarGlassLinkedToMain: Boolean = true,
-    navBarGlassBackdropStyle: String = "Translucent",
-    navBarGlassDynamic: Boolean = true,
     betterTexts: Boolean = false,
     betterTextsPalette: Boolean = true,
     appAnimationMode: String = "Normal",
@@ -281,9 +262,6 @@ fun ScholarTheme(
     }
 
     // Apply highly polished and harmonious Material 3 tones:
-    // We use a subtle blend of background with primary (2% on primary color, 98% base) for an elegant, non-muddy backdrop.
-    // Each component container mixes with its own respective core hue (primaryContainer with primary, secondaryContainer with secondary, etc.)
-    // to preserve unique branding and prevent monocolor dilution, while creating soft cohesiveness.
     colorScheme = colorScheme.copy(
         background = if (isDark && pureBlackMode) Color.Black else colorScheme.background.mix(colorScheme.primary, 0.98f),
         surface = if (isDark && pureBlackMode) Color(0xCC000000) else colorScheme.surface.mix(colorScheme.primary, 0.97f),
@@ -307,7 +285,6 @@ fun ScholarTheme(
 
         if (betterTextsPalette) {
             if (isDark) {
-                // Use lighter shades of baseTextSourceColor for text with extremely high contrast (AAA standard compatible)
                 val highContrastOnSurface = baseTextSourceColor.mix(Color.White, 0.15f)
                 colorScheme = colorScheme.copy(
                     onSurface = highContrastOnSurface,
@@ -318,7 +295,6 @@ fun ScholarTheme(
                     onTertiaryContainer = colorScheme.tertiary.mix(Color.White, 0.15f)
                 )
             } else {
-                // Use darker shades of baseTextSourceColor for text with extremely high contrast (AAA standard compatible)
                 val highContrastOnSurface = baseTextSourceColor.mix(Color.Black, 0.15f)
                 colorScheme = colorScheme.copy(
                     onSurface = highContrastOnSurface,
@@ -331,7 +307,6 @@ fun ScholarTheme(
             }
         } else {
             if (isDark) {
-                // Use white colour
                 colorScheme = colorScheme.copy(
                     onSurface = Color.White,
                     onBackground = Color.White,
@@ -341,7 +316,6 @@ fun ScholarTheme(
                     onTertiaryContainer = Color.White
                 )
             } else {
-                // Use black colour
                 colorScheme = colorScheme.copy(
                     onSurface = Color.Black,
                     onBackground = Color.Black,
@@ -354,7 +328,6 @@ fun ScholarTheme(
         }
     }
 
-    // Apply More Rounds "Pastel" logic:
     if (moreRounds && moreRoundsMode == "Pastel") {
         colorScheme = colorScheme.copy(
             primary = colorScheme.primary.mix(if (isDark) Color.White else Color.Black, 0.4f).copy(alpha = 0.9f),
@@ -381,16 +354,6 @@ fun ScholarTheme(
     }
 
     androidx.compose.runtime.CompositionLocalProvider(
-        LocalGlassTint provides colorScheme.primary,
-        LocalGlassMode provides glassMode,
-        LocalGlassDynamic provides glassDynamic,
-        LocalFrostGlass provides frostGlass,
-        LocalGlassBackdropStyle provides glassBackdropStyle,
-        LocalGlassOpacityValue provides glassOpacityValue,
-        LocalNavBarGlassOpacityValue provides navBarGlassOpacityValue,
-        LocalNavBarGlassLinkedToMain provides navBarGlassLinkedToMain,
-        LocalNavBarGlassBackdropStyle provides navBarGlassBackdropStyle,
-        LocalNavBarGlassDynamic provides navBarGlassDynamic,
         LocalAppAnimationMode provides appAnimationMode,
         LocalMoreRounds provides moreRounds,
         LocalMoreRoundsMode provides moreRoundsMode

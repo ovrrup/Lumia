@@ -1,7 +1,5 @@
 package lumia.tracker.ui.screens
 
-import lumia.tracker.ui.theme.liquidGlass
-import lumia.tracker.ui.theme.glassBar
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween

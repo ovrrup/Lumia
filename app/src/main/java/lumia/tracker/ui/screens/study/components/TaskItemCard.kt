@@ -27,7 +27,6 @@ import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.GlassCard
-import lumia.tracker.ui.theme.glassBar
 import lumia.tracker.viewmodel.ScholarViewModel
 import lumia.tracker.ui.util.getTagColors
 import androidx.compose.foundation.layout.ExperimentalLayoutApi

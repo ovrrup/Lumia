@@ -28,7 +28,6 @@ import lumia.tracker.ui.components.BouncyTextButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.Color
-import lumia.tracker.ui.theme.glassBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

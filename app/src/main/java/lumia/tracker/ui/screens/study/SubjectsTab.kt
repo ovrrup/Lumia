@@ -16,7 +16,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import lumia.tracker.ui.theme.glassBar
 import lumia.tracker.ui.theme.bouncyScale
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AccessTime

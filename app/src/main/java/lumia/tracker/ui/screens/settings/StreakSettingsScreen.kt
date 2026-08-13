@@ -31,8 +31,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import kotlin.math.roundToInt
 import lumia.tracker.ui.theme.LocalAppAnimationMode
-import lumia.tracker.ui.theme.LocalGlassMode
-import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.viewmodel.ScholarViewModel
 
 

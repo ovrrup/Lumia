@@ -2,8 +2,6 @@ package lumia.tracker.ui.screens
 
 import androidx.navigation.NavController
 
-import lumia.tracker.ui.theme.liquidGlass
-import lumia.tracker.ui.theme.glassBar
 import android.text.format.DateFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background

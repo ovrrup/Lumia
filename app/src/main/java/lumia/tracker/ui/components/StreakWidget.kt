@@ -22,8 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.ui.theme.LocalAppAnimationMode
-import lumia.tracker.ui.theme.LocalGlassMode
-import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 import kotlin.math.PI

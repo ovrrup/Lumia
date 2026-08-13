@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.dp
 import lumia.tracker.ui.theme.bouncyScale
 import lumia.tracker.ui.theme.LocalMoreRounds
 import lumia.tracker.ui.theme.LocalMoreRoundsMode
-import lumia.tracker.ui.theme.liquidGlass
 import lumia.tracker.ui.theme.mix
 import androidx.compose.ui.graphics.Color
 

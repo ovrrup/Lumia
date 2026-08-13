@@ -1,9 +1,5 @@
 package lumia.tracker.ui.screens
 
-import lumia.tracker.ui.theme.liquidGlass
-import lumia.tracker.ui.theme.glassBar
-import lumia.tracker.ui.theme.navGlassBar
-import lumia.tracker.ui.theme.glassPill
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
