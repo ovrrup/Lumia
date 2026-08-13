@@ -27,14 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.model.Subject
-import lumia.tracker.ui.components.GlassCard
-import lumia.tracker.viewmodel.ScholarViewModel
-
-import lumia.tracker.ui.components.BouncyIconButton
-import lumia.tracker.ui.components.BouncyButton
-import lumia.tracker.ui.components.BouncyTextButton
-import lumia.tracker.ui.components.BouncyFloatingActionButton
-import lumia.tracker.ui.components.GlassCard
+import lumia.tracker.ui.components.ScholarCard
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -48,7 +41,6 @@ fun SubjectsTab(
     var subjectToEdit by remember { mutableStateOf<lumia.tracker.model.Subject?>(null) }
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val courses by viewModel.courses.collectAsStateWithLifecycle()
-    val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
 
     Scaffold(

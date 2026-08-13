@@ -100,8 +100,8 @@ import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyOutlinedButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
-import lumia.tracker.ui.components.GlassCard
-import lumia.tracker.ui.components.GlassHeroCard
+import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.components.ScholarHeroCard
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid

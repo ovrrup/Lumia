@@ -29,7 +29,7 @@ import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
-import lumia.tracker.ui.components.GlassCard
+import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.viewmodel.ScholarViewModel
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.verticalScroll
@@ -50,7 +50,6 @@ fun CoursesTab(
 ) {
     var courseToEdit by remember { mutableStateOf<lumia.tracker.model.Course?>(null) }
     val courses by viewModel.courses.collectAsStateWithLifecycle()
-    val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
 
     Scaffold(
