@@ -1,4 +1,4 @@
-package lumia.tracker.ui.screens
+package lumia.tracker.ui.screens.study
 
 import android.content.Context
 import androidx.compose.foundation.layout.*

@@ -1,4 +1,4 @@
-package lumia.tracker.ui.screens
+package lumia.tracker.ui.screens.study.charts
 
 import androidx.navigation.NavController
 

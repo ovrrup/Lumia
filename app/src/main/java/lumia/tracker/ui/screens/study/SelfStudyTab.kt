@@ -1,4 +1,4 @@
-package lumia.tracker.ui.screens
+package lumia.tracker.ui.screens.study
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,7 +25,8 @@ import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
-import lumia.tracker.ui.components.GlassCard
+import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.screens.study.components.TaskItemCard
 import lumia.tracker.viewmodel.ScholarViewModel
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable

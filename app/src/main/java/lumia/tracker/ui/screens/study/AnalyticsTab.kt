@@ -1,6 +1,9 @@
-package lumia.tracker.ui.screens
+package lumia.tracker.ui.screens.study
 
 import androidx.navigation.NavController
+import lumia.tracker.model.*
+import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.screens.study.charts.*
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.Canvas

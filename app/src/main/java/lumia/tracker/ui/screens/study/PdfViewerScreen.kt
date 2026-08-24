@@ -1,4 +1,4 @@
-package lumia.tracker.ui.screens
+package lumia.tracker.ui.screens.study
 
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer

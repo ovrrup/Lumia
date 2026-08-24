@@ -11,8 +11,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import lumia.tracker.ui.screens.*
-import lumia.tracker.ui.screens.auth.OnboardingScreen
-import lumia.tracker.ui.screens.focus.PomodoroScreen
 import lumia.tracker.ui.screens.home.ProfileMenuScreen
 import lumia.tracker.ui.screens.search.SearchScreen
 import lumia.tracker.ui.screens.settings.*
