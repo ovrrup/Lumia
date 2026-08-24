@@ -17,7 +17,7 @@ import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import lumia.tracker.ui.screens.SettingsGroupCard
+import lumia.tracker.ui.screens.settings.components.*
 import lumia.tracker.ui.theme.bouncyClick
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip

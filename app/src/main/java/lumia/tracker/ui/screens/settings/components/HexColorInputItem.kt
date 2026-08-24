@@ -1,4 +1,4 @@
-package lumia.tracker.ui.screens
+package lumia.tracker.ui.screens.settings.components
 
 import lumia.tracker.service.AodAccessibilityService
 import lumia.tracker.util.TrueAodManager
