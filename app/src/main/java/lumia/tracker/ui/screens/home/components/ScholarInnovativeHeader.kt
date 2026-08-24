@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,16 +27,17 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.StreakWidget
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 /**
  * ScholarInnovativeHeader - Re-innovated modern header bar for Lumia Dashboard.
- * Features time-aware greetings, active profile pill, quick global search, 1-tap focus launch,
- * and streak flame tracker in an integrated surface cluster.
+ * Features time-aware greetings, current academic date indicator, search capsule,
+ * 1-tap focus launcher, live streak indicator, and scholar profile avatar.
  */
 @Composable
 fun ScholarInnovativeHeader(
@@ -60,11 +60,16 @@ fun ScholarInnovativeHeader(
         }
     }
 
+    // Formatted current date indicator (e.g. "Monday, Aug 24")
+    val currentDateStr = remember {
+        SimpleDateFormat("EEEE, MMM d", Locale.getDefault()).format(Calendar.getInstance().time)
+    }
+
     // Dynamic header title and subtitle based on current tab
     val (headerTitle, headerSubtitle) = when (selectedTab) {
         0 -> {
             val name = activeProfile.name.ifBlank { "Scholar" }
-            "$greeting, $name" to "Lumia Companion"
+            "$greeting, $name" to currentDateStr
         }
         1 -> "Courses Hub" to "Academic Curriculum"
         2 -> "Subjects Index" to "Study Topics & Chapters"
@@ -87,7 +92,7 @@ fun ScholarInnovativeHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Left: Header Title + Subtitle Pill
+            // Left: Header Title + Context/Date Subtitle
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -119,12 +124,12 @@ fun ScholarInnovativeHeader(
             // Right: Action cluster (Search, Focus shortcut, Streak, Profile Avatar)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 1. Search Button
+                // 1. Search Pill Button
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
                     modifier = Modifier
                         .size(38.dp)
                         .bouncyClick(onClick = { navController.navigate("search") })
@@ -143,7 +148,7 @@ fun ScholarInnovativeHeader(
                 // 2. 1-Tap Pomodoro Focus Shortcut
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
                     modifier = Modifier
                         .size(38.dp)
                         .bouncyClick(onClick = { navController.navigate("pomodoro") })
@@ -168,7 +173,7 @@ fun ScholarInnovativeHeader(
                         .size(40.dp)
                         .shadow(elevation = 2.dp, shape = CircleShape)
                         .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                        .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
+                        .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), CircleShape)
                         .clip(CircleShape)
                         .bouncyClick(onClick = { navController.navigate("profile_menu") }),
                     contentAlignment = Alignment.Center
@@ -185,8 +190,8 @@ fun ScholarInnovativeHeader(
                         )
                     } else {
                         val fallback = if (activeProfile.avatarEmoji.isNotBlank() &&
-                            activeProfile.avatarEmoji.length <= 2 &&
-                            activeProfile.avatarEmoji != "A" && activeProfile.avatarEmoji != "U"
+                            activeProfile.avatarEmoji.length <= 3 &&
+                            !activeProfile.avatarEmoji.startsWith("/")
                         ) {
                             activeProfile.avatarEmoji.uppercase()
                         } else {

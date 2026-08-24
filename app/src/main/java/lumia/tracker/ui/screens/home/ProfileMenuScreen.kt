@@ -476,7 +476,7 @@ fun ProfileMenuScreen(
     if (showCreateDialog) {
         var newName by remember { mutableStateOf("") }
         var newAlias by remember { mutableStateOf("") }
-        var selectedAvatar by remember { mutableStateOf("🎓") }
+        var selectedAvatar by remember { mutableStateOf("SC") }
 
         AlertDialog(
             onDismissRequest = { showCreateDialog = false },
@@ -490,7 +490,7 @@ fun ProfileMenuScreen(
                         value = newName,
                         onValueChange = { newName = it },
                         label = { Text("Profile Name") },
-                        placeholder = { Text("e.g. Work, Exam Prep, Semester 2") },
+                        placeholder = { Text("e.g. Research, Exam Prep, Semester 2") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -502,22 +502,27 @@ fun ProfileMenuScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Text("Choose Avatar Emoji:", style = MaterialTheme.typography.labelMedium)
+                    Text("Choose Profile Badge Initial:", style = MaterialTheme.typography.labelMedium)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        listOf("🎓", "🔬", "📚", "💻", "🎨", "🚀").forEach { emoji ->
-                            val isSelected = selectedAvatar == emoji
+                        listOf("SC", "AC", "EX", "MD", "CS", "AR").forEach { badge ->
+                            val isSelected = selectedAvatar == badge
                             Surface(
                                 shape = CircleShape,
                                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clickable { selectedAvatar = emoji }
+                                    .clickable { selectedAvatar = badge }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(emoji, fontSize = 18.sp)
+                                    Text(
+                                        badge,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
                         }

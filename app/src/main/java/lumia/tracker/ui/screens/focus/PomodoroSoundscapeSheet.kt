@@ -71,6 +71,13 @@ fun PomodoroSoundscapeSheet(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SoundscapeType.values().forEach { type ->
                     val isSelected = activeSoundscape == type
+                    val icon = when (type) {
+                        SoundscapeType.OFF -> Icons.Rounded.VolumeOff
+                        SoundscapeType.WHITE_NOISE -> Icons.Rounded.Radio
+                        SoundscapeType.RAIN -> Icons.Rounded.WaterDrop
+                        SoundscapeType.DEEP_WAVES -> Icons.Rounded.Waves
+                        SoundscapeType.CAFE_MURMUR -> Icons.Rounded.LocalCafe
+                    }
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -89,7 +96,12 @@ fun PomodoroSoundscapeSheet(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text(text = type.emoji, style = MaterialTheme.typography.titleMedium)
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(24.dp)
+                                )
                                 Column {
                                     Text(
                                         text = type.title,

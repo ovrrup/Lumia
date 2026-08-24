@@ -213,3 +213,9 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
         }
     }
 }
+
+data class BetaFeatureDialogData(
+    val title: String,
+    val description: String,
+    val onConfirm: () -> Unit
+)

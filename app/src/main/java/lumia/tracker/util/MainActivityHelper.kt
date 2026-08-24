@@ -6,35 +6,27 @@ import android.os.Build
 import android.view.WindowManager
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavController
 import lumia.tracker.viewmodel.ScholarViewModel
 
 object MainActivityHelper {
 
+    /**
+     * Configures edge-to-edge system bars and cutout mode cleanly without erratic hiding.
+     */
     fun applyDisplayCutoutAndBars(
         activity: Activity,
-        displayLayoutMode: String,
-        systemBarVisible: Boolean
+        displayLayoutMode: String = "Immersive"
     ) {
         val window = activity.window
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             window.attributes = window.attributes.apply {
-                layoutInDisplayCutoutMode = if (displayLayoutMode == "Immersive") {
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-                } else {
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
-                }
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
             }
         }
         val controller = WindowCompat.getInsetsController(window, window.decorView)
-        if (displayLayoutMode == "Immersive" && !systemBarVisible) {
-            controller.hide(WindowInsetsCompat.Type.statusBars())
-            controller.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        } else {
-            controller.show(WindowInsetsCompat.Type.statusBars())
-        }
+        controller.show(WindowInsetsCompat.Type.systemBars())
     }
 
     fun handleIntentNavigation(

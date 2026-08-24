@@ -80,9 +80,8 @@ class MainActivity : ComponentActivity() {
             val customText by viewModel.customText.collectAsStateWithLifecycle()
             val isOnboardingCompleted by viewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
 
-            val systemBarVisible by viewModel.systemBarVisible.collectAsStateWithLifecycle()
-            LaunchedEffect(displayLayoutMode, systemBarVisible) {
-                MainActivityHelper.applyDisplayCutoutAndBars(this@MainActivity, displayLayoutMode, systemBarVisible)
+            LaunchedEffect(displayLayoutMode) {
+                MainActivityHelper.applyDisplayCutoutAndBars(this@MainActivity, displayLayoutMode)
             }
 
             val startupState = remember { mutableStateOf("splash") }

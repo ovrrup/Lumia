@@ -770,15 +770,15 @@ private fun SyncHelpDialog(onDismiss: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(Modifier.height(6.dp))
-                Text("🔒 End-to-End Encryption:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                Text("End-to-End Encryption:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                 Text("All sync payloads are protected with AES-256-GCM encryption with keys derived from a zero-trust HMAC challenge-response.", style = MaterialTheme.typography.bodySmall)
 
                 Spacer(Modifier.height(6.dp))
-                Text("🧬 Smart Merge:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                Text("Smart Data Merge:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                 Text("Combines datasets without deleting existing records. Tasks and assignments maintain their latest completion state.", style = MaterialTheme.typography.bodySmall)
 
                 Spacer(Modifier.height(6.dp))
-                Text("📡 Local Discovery:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                Text("Local Peer Discovery:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                 Text("Uses local mDNS / NSD over Wi-Fi, Ethernet, or mobile hotspot for instant peer detection.", style = MaterialTheme.typography.bodySmall)
             }
         },

@@ -218,7 +218,12 @@ fun PersonalizationRepresentation() {
                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("🎓", fontSize = 14.sp)
+                            Icon(
+                                imageVector = Icons.Rounded.School,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {

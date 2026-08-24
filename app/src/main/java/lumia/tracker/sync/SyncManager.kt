@@ -95,7 +95,7 @@ class SyncManager(private val context: Context) {
             name = deviceName,
             ipAddress = P2PDiscoveryManager.getLocalIpAddress(),
             port = dataChannelEngine.activePort,
-            avatarEmoji = if (activeProfile.avatarEmoji.length <= 2) activeProfile.avatarEmoji else "📱"
+            avatarEmoji = if (activeProfile.avatarEmoji.length <= 3 && !activeProfile.avatarEmoji.startsWith("/")) activeProfile.avatarEmoji else "DEV"
         )
     }
 

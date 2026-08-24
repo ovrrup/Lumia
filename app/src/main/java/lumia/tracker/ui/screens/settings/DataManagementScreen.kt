@@ -604,7 +604,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             successorId = selectedSuccessorId,
                             createNew = createNew,
                             newName = newName,
-                            newAvatar = "😊"
+                            newAvatar = "SC"
                         )
                         showSuccessorDialog = false
                     },

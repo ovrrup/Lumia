@@ -565,7 +565,7 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
                                             ConnectionCard(
                                                 title = topic.title,
                                                 subtitle = "Subject: ${parentSubject?.name ?: "Unknown"}",
-                                                infoText = if (topic.isCompleted) "Status: Completed 🎉" else "Status: In Progress ✏️",
+                                                infoText = if (topic.isCompleted) "Status: Completed" else "Status: In Progress",
                                                 badgeText = "Topic",
                                                 badgeColor = MaterialTheme.colorScheme.tertiary,
                                                 onClick = { navController.navigate("subjectDetail/${topic.subjectId}") }

@@ -13,7 +13,7 @@ data class SyncDevice(
     val ipAddress: String,
     val port: Int = 52934,
     val lastSeen: Long = System.currentTimeMillis(),
-    val avatarEmoji: String = "📱",
+    val avatarEmoji: String = "DEV",
     val isPaired: Boolean = false
 ) : Serializable
 
@@ -82,7 +82,7 @@ data class SyncPairingToken(
     val port: Int,
     val pin: String,
     val nonce: String,
-    val avatarEmoji: String = "📱"
+    val avatarEmoji: String = "DEV"
 ) : Serializable
 
 /**
@@ -93,7 +93,7 @@ data class SyncMessage(
     val type: String, // HELLO, CHALLENGE, AUTH, AUTH_OK, AUTH_FAIL, SYNC_REQ, SYNC_DATA, SYNC_ACK, ERROR, DISCONNECT
     val deviceId: String = "",
     val deviceName: String = "",
-    val avatarEmoji: String = "📱",
+    val avatarEmoji: String = "DEV",
     val nonce: String = "",
     val authHash: String = "",
     val syncMode: String = "SMART_MERGE",

@@ -10,12 +10,12 @@ import kotlin.math.sin
 /**
  * SoundscapeType - Built-in offline soothing audio soundscapes for deep focus.
  */
-enum class SoundscapeType(val title: String, val emoji: String, val description: String) {
-    OFF("None", "🔇", "Silence"),
-    WHITE_NOISE("White Noise", "📻", "Smooth broadband focus mask"),
-    RAIN("Gentle Rain", "🌧️", "Soothing stochastic rainfall"),
-    DEEP_WAVES("Alpha Waves", "🌊", "10Hz binaural relaxation waves"),
-    CAFE_MURMUR("Coffeehouse", "☕", "Subtle ambient murmur")
+enum class SoundscapeType(val title: String, val description: String) {
+    OFF("None", "Silence"),
+    WHITE_NOISE("White Noise", "Smooth broadband focus mask"),
+    RAIN("Gentle Rain", "Soothing stochastic rainfall"),
+    DEEP_WAVES("Alpha Waves", "10Hz binaural relaxation waves"),
+    CAFE_MURMUR("Coffeehouse", "Subtle ambient murmur")
 }
 
 /**

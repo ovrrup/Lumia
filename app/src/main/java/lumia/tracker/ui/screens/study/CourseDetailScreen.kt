@@ -201,9 +201,9 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     courseId = courseId,
                     subjectId = null
                 )
-                Toast.makeText(context, "✅ Attachment successfully linked!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Attachment successfully linked", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(context, "❌ Link failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Link failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -291,9 +291,9 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 courseId = courseId,
                 subjectId = null
             )
-            Toast.makeText(context, "✅ Study guide PDF generated!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Study guide PDF generated successfully", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(context, "❌ Generation failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Generation failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -158,7 +158,7 @@ class P2PDiscoveryManager(private val context: Context) {
                 val port = resolvedInfo.port
                 var deviceId = resolvedInfo.serviceName
                 var deviceName = resolvedInfo.serviceName
-                var avatar = "📱"
+                var avatar = "DEV"
 
                 try {
                     resolvedInfo.attributes?.let { attrs ->
