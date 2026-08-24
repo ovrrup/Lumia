@@ -109,10 +109,10 @@ fun CoursesTab(
                     Box(modifier = Modifier.animateItemEntry(index)) {
                         CourseItemCard(
                             course = course,
-                            onClick = { navController.navigate("courseDetail/${course.id}") },
+                            onClick = { navController.navigate("courseDetail/${course.id}") { launchSingleTop = true } },
                             onEdit = { courseToEdit = course },
                             viewModel = viewModel,
-                            onSubjectClick = { subjId -> navController.navigate("subjectDetail/$subjId") }
+                            onSubjectClick = { subjId -> navController.navigate("subjectDetail/$subjId") { launchSingleTop = true } }
                         )
                     }
                 }

@@ -71,11 +71,22 @@ fun HomeTab(
         }.timeInMillis
     }
     val todayFocusMinutes = remember(pomodoros, todayStartMillis) {
-        pomodoros.filter { it.timestampMillis >= todayStartMillis }.sumOf { it.durationMinutes }
+        pomodoros.filter { it.dateMillis >= todayStartMillis }.sumOf { it.durationMinutes }
     }
 
     val pendingTasksCount = remember(tasks) { tasks.count { !it.isCompleted } }
     val completedTasksCount = remember(tasks) { tasks.count { it.isCompleted } }
+
+    val upcomingAssigns = remember(assignments) {
+        assignments
+            .filter { !it.isCompleted }
+            .sortedBy { if (it.dueDateMillis > 0) it.dueDateMillis else Long.MAX_VALUE }
+            .take(3)
+    }
+
+    val activeTasks = remember(tasks) {
+        tasks.filter { !it.isCompleted }.take(4)
+    }
 
     Scaffold(
         containerColor = Color.Transparent
@@ -415,13 +426,6 @@ fun HomeTab(
             }
 
             // 5. Urgent Upcoming Assignments
-            val upcomingAssigns = remember(assignments) {
-                assignments
-                    .filter { !it.isCompleted }
-                    .sortedBy { if (it.dueDateMillis > 0) it.dueDateMillis else Long.MAX_VALUE }
-                    .take(3)
-            }
-
             if (upcomingAssigns.isNotEmpty()) {
                 item(key = "upcoming_assignments_section") {
                     ScholarCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
@@ -497,10 +501,6 @@ fun HomeTab(
             }
 
             // 6. Active Study Tasks
-            val activeTasks = remember(tasks) {
-                tasks.filter { !it.isCompleted }.take(4)
-            }
-
             if (activeTasks.isNotEmpty()) {
                 item(key = "active_tasks_section") {
                     ScholarCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
