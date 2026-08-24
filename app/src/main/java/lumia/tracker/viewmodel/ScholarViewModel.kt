@@ -361,7 +361,7 @@ private val _streakPercentage = MutableStateFlow(0f)
 
             val doneTasks = maxOf(tasksToday.count { it.isCompleted }, netDoneTasksToday)
             val doneAssignments = maxOf(assignmentsToday.count { it.isCompleted }, netDoneAssignmentsToday)
-            val donePomos = pomosToday.sumOf { it.durationMinutes }
+            val donePomos = pomosToday.filter { it.durationMinutes >= 1 }.sumOf { it.durationMinutes }
             
             var totalRequired = 0f
             var totalDone = 0f

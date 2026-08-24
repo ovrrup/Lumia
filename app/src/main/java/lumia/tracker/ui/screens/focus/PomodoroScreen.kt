@@ -299,6 +299,16 @@ fun PomodoroScreen(
                 onSkip = { sendServiceAction("SKIP") },
                 onStop = { sendServiceAction("STOP") },
                 onStopAlarm = { sendServiceAction("STOP_ALARM") },
+                onStartAod = {
+                    lumia.tracker.util.TrueAodManager.showAodOverlay(
+                        context = context,
+                        useAccessibility = true,
+                        dimnessLevel = 0.85f,
+                        sensitivity = "highest",
+                        lockTimeoutSeconds = 0,
+                        onExit = {}
+                    )
+                },
                 onOpenZenMode = { isZenModeActive = true },
                 onOpenSettings = { showSettingsSheet = true }
             )
@@ -377,5 +387,22 @@ private fun ModeTabItem(
                 color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun FocusMetricItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    value: String,
+    unit: String,
+    label: String
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
+            Text(unit, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

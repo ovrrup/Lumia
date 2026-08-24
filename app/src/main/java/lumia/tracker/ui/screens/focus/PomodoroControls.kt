@@ -30,6 +30,7 @@ fun PomodoroControls(
     onSkip: () -> Unit,
     onStop: () -> Unit,
     onStopAlarm: () -> Unit,
+    onStartAod: () -> Unit,
     onOpenZenMode: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
@@ -111,17 +112,32 @@ fun PomodoroControls(
             }
         }
 
-        // 3. Secondary Utility Row: Zen Fullscreen Mode, Timer Settings
+        // 3. Secondary Utility Row: True AOD, Zen Fullscreen Mode, Timer Settings
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // True AOD Low-Power Mode
+            FilterChip(
+                selected = false,
+                onClick = onStartAod,
+                label = { Text("True AOD", fontWeight = FontWeight.SemiBold) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Rounded.BrightnessLow,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
+                shape = RoundedCornerShape(16.dp)
+            )
+
             // Zen Fullscreen Immersion Mode
             FilterChip(
                 selected = false,
                 onClick = onOpenZenMode,
-                label = { Text("Zen Fullscreen", fontWeight = FontWeight.SemiBold) },
+                label = { Text("Zen Mode", fontWeight = FontWeight.SemiBold) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Rounded.Fullscreen,
@@ -136,7 +152,7 @@ fun PomodoroControls(
             FilterChip(
                 selected = false,
                 onClick = onOpenSettings,
-                label = { Text("Intervals & Targets", fontWeight = FontWeight.SemiBold) },
+                label = { Text("Intervals", fontWeight = FontWeight.SemiBold) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Rounded.Tune,
