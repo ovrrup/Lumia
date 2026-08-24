@@ -15,6 +15,7 @@ import lumia.tracker.ui.screens.home.ProfileMenuScreen
 import lumia.tracker.ui.screens.search.SearchScreen
 import lumia.tracker.ui.screens.settings.*
 import lumia.tracker.ui.screens.study.*
+import lumia.tracker.ui.screens.sync.MultiDeviceSyncScreen
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
@@ -193,6 +194,15 @@ fun AppNavigationGraph(
 
         composable("settings/about") {
             AboutAppScreen(navController = navController, viewModel = viewModel)
+        }
+
+        // Multi-Device P2P / WebRTC Synchronization Hub
+        composable("settings/sync") {
+            MultiDeviceSyncScreen(navController = navController, viewModel = viewModel)
+        }
+
+        composable("p2p_sync") {
+            MultiDeviceSyncScreen(navController = navController, viewModel = viewModel)
         }
 
         // In-App Document & Syllabus PDF Viewer

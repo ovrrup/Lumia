@@ -210,7 +210,16 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             Spacer(modifier = Modifier.height(16.dp))
             
             // Data Management
-            SettingsGroupCard(title = "Storage & Versioning", icon = Icons.Rounded.Storage) {
+            SettingsGroupCard(title = "Storage & Synchronization", icon = Icons.Rounded.Storage) {
+                SettingsActionItemInCard(
+                    title = "Multi-Device P2P Sync",
+                    subtitle = "Zero-trust WebRTC & local network synchronization with QR/PIN pairing",
+                    icon = Icons.Rounded.Sync,
+                    onClick = { navController.navigate("settings/sync") }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
                 SettingsActionItemInCard(
                     title = "Database & Management",
                     subtitle = "Manage secure active backups, exports & resets",
