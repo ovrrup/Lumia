@@ -201,7 +201,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
 
                 SettingsToggleItem(
                     title = "Auto-Deactivate with Bright Themes",
-                    subtitle = "Automatically replace True Black with a beautifully dimmed themed focus screen when using Light theme, dynamic layouts, or Glass UI",
+                    subtitle = "Automatically replace True Black with a beautifully dimmed themed focus screen when using Light theme or dynamic layouts",
                     checked = aodAutoDeactivateTrueBlack,
                     onCheckedChange = { viewModel.updateAodAutoDeactivateTrueBlack(it) }
                 )

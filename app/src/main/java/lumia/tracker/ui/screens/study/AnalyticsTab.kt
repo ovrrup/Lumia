@@ -204,7 +204,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
-                lumia.tracker.ui.components.GlassCard(
+                lumia.tracker.ui.components.ScholarCard(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                     shape = RoundedCornerShape(32.dp)
                 ) {
@@ -280,7 +280,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                         }
                     }
                     
-                    lumia.tracker.ui.components.GlassCard(
+                    lumia.tracker.ui.components.ScholarCard(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                         shape = RoundedCornerShape(32.dp)
                     ) {
@@ -591,7 +591,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
 
             if (actionLogs.isEmpty()) {
             item {
-                lumia.tracker.ui.components.GlassCard(
+                lumia.tracker.ui.components.ScholarCard(
                     modifier = Modifier.fillMaxWidth().height(200.dp),
                     shape = RoundedCornerShape(32.dp)
                 ) {
@@ -625,7 +625,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
             }
         } else {
             items(actionLogs, key = { it.id }) { log ->
-                lumia.tracker.ui.components.GlassCard(
+                lumia.tracker.ui.components.ScholarCard(
                     modifier = Modifier.animateItem().fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp)
                 ) {

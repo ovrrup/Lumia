@@ -595,9 +595,6 @@ private val _streakPercentage = MutableStateFlow(0f)
     private val _navBarLabelMode = MutableStateFlow(prefs.getString("nav_bar_label_mode", "Always") ?: "Always")
     val navBarLabelMode = _navBarLabelMode.asStateFlow()
 
-    private val _navBarGlassForceEnabled = MutableStateFlow(prefs.getBoolean("nav_bar_glass_force_enabled", false))
-    val navBarGlassForceEnabled = _navBarGlassForceEnabled.asStateFlow()
-
     private val _navBarIndicatorAlpha = MutableStateFlow(prefs.getFloat("nav_bar_indicator_alpha", 0.15f))
     val navBarIndicatorAlpha = _navBarIndicatorAlpha.asStateFlow()
 
@@ -672,35 +669,8 @@ private val _streakPercentage = MutableStateFlow(0f)
         _systemBarVisible.value = visible
     }
 
-    private val _betaGlassUi = MutableStateFlow(prefs.getBoolean("beta_glass_ui", false))
-    val betaGlassUi = _betaGlassUi.asStateFlow()
-
-    private val _betaGlassDynamic = MutableStateFlow(prefs.getBoolean("beta_glass_dynamic", true))
-    val betaGlassDynamic = _betaGlassDynamic.asStateFlow()
-
-    private val _betaFrostGlass = MutableStateFlow(prefs.getBoolean("beta_frost_glass", true))
-    val betaFrostGlass = _betaFrostGlass.asStateFlow()
-
-    private val _glassBackdropStyle = MutableStateFlow(prefs.getString("glass_backdrop_style", "Translucent") ?: "Translucent")
-    val glassBackdropStyle = _glassBackdropStyle.asStateFlow()
-
-    private val _glassOpacityValue = MutableStateFlow(prefs.getFloat("glass_opacity_value", 0.6f))
-    val glassOpacityValue = _glassOpacityValue.asStateFlow()
-
-    private val _navBarGlassOpacityValue = MutableStateFlow(0.6f)
-    val navBarGlassOpacityValue = _navBarGlassOpacityValue.asStateFlow()
-
     private val _betaNavBarSizeControls = MutableStateFlow(prefs.getBoolean("beta_nav_bar_size_controls", false))
     val betaNavBarSizeControls = _betaNavBarSizeControls.asStateFlow()
-
-    private val _navBarGlassLinkedToMain = MutableStateFlow(prefs.getBoolean("nav_bar_glass_linked_to_main", true))
-    val navBarGlassLinkedToMain = _navBarGlassLinkedToMain.asStateFlow()
-
-    private val _navBarGlassBackdropStyle = MutableStateFlow(prefs.getString("nav_bar_glass_backdrop_style", "Translucent") ?: "Translucent")
-    val navBarGlassBackdropStyle = _navBarGlassBackdropStyle.asStateFlow()
-
-    private val _navBarGlassDynamic = MutableStateFlow(prefs.getBoolean("nav_bar_glass_dynamic", true))
-    val navBarGlassDynamic = _navBarGlassDynamic.asStateFlow()
 
     private val _betaEnhancedHeader = MutableStateFlow(prefs.getBoolean("beta_enhanced_header", false))
     val betaEnhancedHeader = _betaEnhancedHeader.asStateFlow()
@@ -939,10 +909,10 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun updateAodTrueBlackOled(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_themeMode.value == "Light" || _betaGlassUi.value || _betaDynamicBackground.value)) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_themeMode.value == "Light" || _betaDynamicBackground.value)) {
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "AOD Style Warning",
-                description = "Enabling 'True Black OLED' mode during Light theme, Dynamic wallpapers, or Glass UI can lead to strong contrast transitions when AOD focus opens or exits. Consider allowing auto-deactivation instead.",
+                description = "Enabling 'True Black OLED' mode during Light theme or Dynamic background lighting can lead to high contrast transitions when AOD opens or exits.",
                 isConflict = true,
                 onConfirm = {
                     _safetyPinDialogData.value = null
@@ -1967,8 +1937,7 @@ private val _streakPercentage = MutableStateFlow(0f)
         val editor = prefs.edit()
         val booleanKeys = setOf(
             "onboarding_completed", "was_installed_before", "pure_black_mode", "beta_floating_nav",
-            "nav_bar_glass_force_enabled", "beta_notes", "more_rounds", "beta_glass_ui", "beta_glass_dynamic",
-            "beta_frost_glass", "beta_nav_bar_size_controls", "nav_bar_glass_linked_to_main", "nav_bar_glass_dynamic",
+            "beta_notes", "more_rounds", "beta_nav_bar_size_controls",
             "beta_enhanced_header", "beta_minimalist_mode", "beta_dynamic_background", "system_auto_link_by_name",
             "system_enable_synergy", "system_auto_create_subject", "system_fuse_subjects_courses", "system_advanced_tasks",
             "system_pomodoro_auto_log", "feature_subject_enabled", "feature_self_study_enabled", "feature_analytics_enabled",
@@ -1981,7 +1950,7 @@ private val _streakPercentage = MutableStateFlow(0f)
 
         val floatKeys = setOf(
             "nav_bar_height", "nav_bar_padding_horizontal", "nav_bar_padding_bottom", "nav_bar_corner_radius",
-            "nav_bar_indicator_alpha", "glass_opacity_value", "nav_bar_glass_opacity_value", "aod_motion_sensitivity",
+            "nav_bar_indicator_alpha", "aod_motion_sensitivity",
             "aod_dimness_level", "streak_partial_threshold", "streak_brightness"
         )
 
@@ -2004,9 +1973,6 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "pure_black_mode" -> _pureBlackMode.value = boolVal
                             "beta_floating_nav" -> _betaFloatingNav.value = boolVal
                             "beta_notes" -> _betaNotes.value = boolVal
-                            "beta_glass_ui" -> _betaGlassUi.value = boolVal
-                            "beta_glass_dynamic" -> _betaGlassDynamic.value = boolVal
-                            "beta_frost_glass" -> _betaFrostGlass.value = boolVal
                             "beta_enhanced_header" -> _betaEnhancedHeader.value = boolVal
                             "beta_minimalist_mode" -> _betaMinimalistMode.value = boolVal
                             "beta_dynamic_background" -> _betaDynamicBackground.value = boolVal
@@ -2023,10 +1989,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "system_fuse_subjects_courses" -> _systemFuseSubjectsCourses.value = boolVal
                             "system_advanced_tasks" -> _systemAdvancedTasks.value = boolVal
                             "system_pomodoro_auto_log" -> _systemPomodoroAutoLog.value = boolVal
-                            "nav_bar_glass_force_enabled" -> _navBarGlassForceEnabled.value = boolVal
                             "beta_nav_bar_size_controls" -> _betaNavBarSizeControls.value = boolVal
-                            "nav_bar_glass_linked_to_main" -> _navBarGlassLinkedToMain.value = boolVal
-                            "nav_bar_glass_dynamic" -> _navBarGlassDynamic.value = boolVal
                             "aod_true_aod_enabled" -> _aodTrueAodEnabled.value = boolVal
                             "streak_is_complete_today" -> _streakIsCompleteToday.value = boolVal
                         }
@@ -2040,8 +2003,6 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "nav_bar_padding_bottom" -> _navBarPaddingBottom.value = floatVal
                             "nav_bar_corner_radius" -> _navBarCornerRadius.value = floatVal
                             "nav_bar_indicator_alpha" -> _navBarIndicatorAlpha.value = floatVal
-                            "glass_opacity_value" -> _glassOpacityValue.value = floatVal
-                            "nav_bar_glass_opacity_value" -> _navBarGlassOpacityValue.value = floatVal
                             "aod_motion_sensitivity" -> _aodMotionSensitivity.value = floatVal
                             "aod_dimness_level" -> _aodDimnessLevel.value = floatVal
                             "streak_partial_threshold" -> _streakPartialThreshold.value = floatVal
@@ -2084,8 +2045,6 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "custom_surface" -> _customSurface.value = value
                             "custom_text" -> _customText.value = value
                             "nav_bar_label_mode" -> _navBarLabelMode.value = value
-                            "glass_backdrop_style" -> _glassBackdropStyle.value = value
-                            "nav_bar_glass_backdrop_style" -> _navBarGlassBackdropStyle.value = value
                             "aod_true_aod_mode" -> _aodTrueAodMode.value = value
                             "aod_sensitivity" -> _aodSensitivity.value = value
                             "streak_progress_color" -> _streakProgressColor.value = value
@@ -2390,14 +2349,12 @@ private val _streakPercentage = MutableStateFlow(0f)
 
     fun updatePureBlackMode(enabled: Boolean) {
         val conflictsWithDynamicBg = _betaDynamicBackground.value
-        val conflictsWithGlassUi = _betaGlassUi.value
         val conflictsWithPalette = _betaBetterTextsPalette.value
         val conflictsWithEnhancedHeader = _betaEnhancedHeader.value
 
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (conflictsWithDynamicBg || conflictsWithGlassUi || conflictsWithPalette || conflictsWithEnhancedHeader)) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (conflictsWithDynamicBg || conflictsWithPalette || conflictsWithEnhancedHeader)) {
             val opposingFeatures = mutableListOf<String>()
             if (conflictsWithDynamicBg) opposingFeatures.add("'Dynamic Lighting Background'")
-            if (conflictsWithGlassUi) opposingFeatures.add("'Glass UI'")
             if (conflictsWithPalette) opposingFeatures.add("'Use Palette Shades for Text'")
             if (conflictsWithEnhancedHeader) opposingFeatures.add("'Enhanced Header'")
             
@@ -2410,7 +2367,6 @@ private val _streakPercentage = MutableStateFlow(0f)
                     _pureBlackMode.value = true
                     prefs.edit().putBoolean("pure_black_mode", true).apply()
                     if (conflictsWithDynamicBg) updateBetaDynamicBackground(false)
-                    if (conflictsWithGlassUi) updateBetaGlassUi(false)
                     if (conflictsWithPalette) updateBetaBetterTextsPalette(false)
                     if (conflictsWithEnhancedHeader) updateBetaEnhancedHeader(false)
                 },
@@ -2488,11 +2444,6 @@ private val _streakPercentage = MutableStateFlow(0f)
         prefs.edit().putString("nav_bar_label_mode", mode).apply()
     }
 
-    fun updateNavBarGlassForceEnabled(enabled: Boolean) {
-        _navBarGlassForceEnabled.value = enabled
-        prefs.edit().putBoolean("nav_bar_glass_force_enabled", enabled).apply()
-    }
-
     fun updateNavBarIndicatorAlpha(alpha: Float) {
         _navBarIndicatorAlpha.value = alpha
         prefs.edit().putFloat("nav_bar_indicator_alpha", alpha).apply()
@@ -2501,21 +2452,6 @@ private val _streakPercentage = MutableStateFlow(0f)
     fun updateBetaNavBarSizeControls(enabled: Boolean) {
         _betaNavBarSizeControls.value = enabled
         prefs.edit().putBoolean("beta_nav_bar_size_controls", enabled).apply()
-    }
-
-    fun updateNavBarGlassLinkedToMain(enabled: Boolean) {
-        _navBarGlassLinkedToMain.value = enabled
-        prefs.edit().putBoolean("nav_bar_glass_linked_to_main", enabled).apply()
-    }
-
-    fun updateNavBarGlassBackdropStyle(style: String) {
-        _navBarGlassBackdropStyle.value = style
-        prefs.edit().putString("nav_bar_glass_backdrop_style", style).apply()
-    }
-
-    fun updateNavBarGlassDynamic(enabled: Boolean) {
-        _navBarGlassDynamic.value = enabled
-        prefs.edit().putBoolean("nav_bar_glass_dynamic", enabled).apply()
     }
 
     fun updateBetaNotes(enabled: Boolean) {
@@ -2547,23 +2483,22 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun updateBetaMinimalistMode(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaGlassUi.value || _betaDynamicBackground.value || _betaEnhancedHeader.value || _betaFloatingNav.value || _betaBetterTexts.value || _displayLayoutMode.value != "Immersive" || _appAnimationMode.value != "Minimal" || _moreRounds.value)) {
+        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaDynamicBackground.value || _betaEnhancedHeader.value || _betaFloatingNav.value || _betaBetterTexts.value || _displayLayoutMode.value != "Immersive" || _appAnimationMode.value != "Minimal" || _moreRounds.value)) {
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Feature Conflict Detected",
-                description = "Activating 'Minimalist Mode' will force-disable 'Glass UI', 'Dynamic Lighting', 'Enhanced Header', 'Floating Action Bar', 'Better Texts', bouncy animations, and rounded UI components, locking them to drastically reduce visual clutter. Additionally, 'Immersive Mode' will be turned ON. Proceed?",
+                description = "Activating 'Minimalist Mode' will lock complex visuals for high focus. Dynamic Lighting, Enhanced Header, Floating Action Bar, Better Texts, and animations will be simplified. Proceed?",
                 isConflict = true,
                 onConfirm = {
                     _safetyPinDialogData.value = null
                     _betaMinimalistMode.value = true
                     prefs.edit().putBoolean("beta_minimalist_mode", true).apply()
-                    if (_betaGlassUi.value) updateBetaGlassUi(false)
                     if (_betaDynamicBackground.value) updateBetaDynamicBackground(false)
                     if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
                     if (_betaFloatingNav.value) updateBetaFloatingNav(false)
                     if (_betaBetterTexts.value) updateBetaBetterTexts(false)
                     if (_moreRounds.value) updateMoreRounds(false)
-                    if (_appAnimationMode.value != "Minimal") updateAppAnimationMode("Minimal")
                     if (_displayLayoutMode.value != "Immersive") updateDisplayLayoutMode("Immersive")
+                    if (_appAnimationMode.value != "Minimal") updateAppAnimationMode("Minimal")
                 },
                 onIgnore = { _safetyPinDialogData.value = null }
             )
@@ -2573,88 +2508,15 @@ private val _streakPercentage = MutableStateFlow(0f)
         _betaMinimalistMode.value = enabled
         prefs.edit().putBoolean("beta_minimalist_mode", enabled).apply()
         
-        if (enabled && !_safetyPinEnabled.value) {
-            if (_betaGlassUi.value) updateBetaGlassUi(false)
+        if (enabled) {
             if (_betaDynamicBackground.value) updateBetaDynamicBackground(false)
             if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
             if (_betaFloatingNav.value) updateBetaFloatingNav(false)
             if (_betaBetterTexts.value) updateBetaBetterTexts(false)
+            if (_moreRounds.value) updateMoreRounds(false)
             if (_displayLayoutMode.value != "Immersive") updateDisplayLayoutMode("Immersive")
+            if (_appAnimationMode.value != "Minimal") updateAppAnimationMode("Minimal")
         }
-    }
-
-    fun updateBetaGlassUi(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Feature Conflict Detected",
-                description = "The activation of 'Glass UI' directly opposes the functionality of 'Pure Black Mode'. Glass UI requires background colors to create frosted translucency. Proceeding will automatically deactivate 'Pure Black Mode'.",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaGlassUi.value = true
-                    prefs.edit().putBoolean("beta_glass_ui", true).apply()
-                    updatePureBlackMode(false)
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
-
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && (!_betaDynamicBackground.value || !_betaFloatingNav.value || !_betaBetterTexts.value || !_betaEnhancedHeader.value)) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For an enhanced visual experience, it is highly recommended to activate 'Dynamic Lighting Background', 'Floating Action Bar', 'Better Texts', and 'Enhanced Header' alongside 'Glass UI'. Would you like to apply these complementary settings?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaGlassUi.value = true
-                    prefs.edit().putBoolean("beta_glass_ui", true).apply()
-                    updateBetaDynamicBackground(true)
-                    updateBetaFloatingNav(true)
-                    updateBetaBetterTexts(true)
-                    updateBetaEnhancedHeader(true)
-                },
-                onIgnore = { 
-                    _safetyPinDialogData.value = null
-                    _betaGlassUi.value = true
-                    prefs.edit().putBoolean("beta_glass_ui", true).apply()
-                }
-            )
-            return
-        }
-        _betaGlassUi.value = enabled
-        prefs.edit().putBoolean("beta_glass_ui", enabled).apply()
-    }
-
-    fun updateBetaGlassDynamic(enabled: Boolean) {
-        _betaGlassDynamic.value = enabled
-        prefs.edit().putBoolean("beta_glass_dynamic", enabled).apply()
-    }
-
-    fun updateBetaFrostGlass(enabled: Boolean) {
-        _betaFrostGlass.value = enabled
-        prefs.edit().putBoolean("beta_frost_glass", enabled).apply()
-    }
-
-    fun updateGlassBackdropStyle(style: String) {
-        _glassBackdropStyle.value = style
-        prefs.edit().putString("glass_backdrop_style", style).apply()
-    }
-
-    fun updateGlassOpacityValue(value: Float) {
-        _glassOpacityValue.value = value
-        prefs.edit().putFloat("glass_opacity_value", value).apply()
-    }
-
-    fun updateNavBarGlassOpacityValue(value: Float, alias: String, isDark: Boolean) {
-        val key = "nav_glass_opacity_${alias}_${if (isDark) "dark" else "light"}"
-        _navBarGlassOpacityValue.value = value
-        prefs.edit().putFloat(key, value).apply()
-    }
-
-    fun refreshNavBarGlassOpacity(alias: String, isDark: Boolean) {
-        val key = "nav_glass_opacity_${alias}_${if (isDark) "dark" else "light"}"
-        _navBarGlassOpacityValue.value = prefs.getFloat(key, 0.6f)
     }
 
     fun updateBetaEnhancedHeader(enabled: Boolean) {
@@ -2674,26 +2536,6 @@ private val _streakPercentage = MutableStateFlow(0f)
             return
         }
         
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaGlassUi.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For the best visual fidelity when using 'Enhanced Header', it is highly recommended to activate 'Glass UI'. This combination creates a stunning translucent effect. Would you like to enable it?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaEnhancedHeader.value = true
-                    prefs.edit().putBoolean("beta_enhanced_header", true).apply()
-                    updateBetaGlassUi(true)
-                },
-                onIgnore = { 
-                    _safetyPinDialogData.value = null
-                    _betaEnhancedHeader.value = true
-                    prefs.edit().putBoolean("beta_enhanced_header", true).apply()
-                }
-            )
-            return
-        }
-
         _betaEnhancedHeader.value = enabled
         prefs.edit().putBoolean("beta_enhanced_header", enabled).apply()
     }
@@ -2711,26 +2553,6 @@ private val _streakPercentage = MutableStateFlow(0f)
                     updatePureBlackMode(false)
                 },
                 onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
-        
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaGlassUi.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For the best visual fidelity when using 'Dynamic Lighting Background', it is highly recommended to activate 'Glass UI'. This combination creates a stunning translucent depth effect. Would you like to enable it?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaDynamicBackground.value = true
-                    prefs.edit().putBoolean("beta_dynamic_background", true).apply()
-                    updateBetaGlassUi(true)
-                },
-                onIgnore = { 
-                    _safetyPinDialogData.value = null
-                    _betaDynamicBackground.value = true
-                    prefs.edit().putBoolean("beta_dynamic_background", true).apply()
-                }
             )
             return
         }
@@ -2883,9 +2705,6 @@ fun clearAllData() {
             _betaFloatingNav.value = false
             _betaNotes.value = false
             _displayLayoutMode.value = "Immersive"
-            _betaGlassUi.value = false
-            _betaGlassDynamic.value = true
-            _betaFrostGlass.value = true
             
             _aodTrueAodEnabled.value = false
             _aodTrueAodMode.value = "Clock"

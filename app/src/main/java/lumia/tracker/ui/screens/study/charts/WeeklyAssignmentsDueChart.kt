@@ -109,7 +109,7 @@ fun WeeklyAssignmentsDueChart(
 
     val maxCount = groups.maxOf { it.third.size }.coerceAtLeast(1)
 
-    lumia.tracker.ui.components.GlassCard(
+    lumia.tracker.ui.components.ScholarCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge
     ) {
@@ -263,7 +263,7 @@ fun WeeklyAssignmentsDueChart(
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { selectedGroup = null }
         ) {
-            lumia.tracker.ui.components.GlassCard(
+            lumia.tracker.ui.components.ScholarCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.65f)

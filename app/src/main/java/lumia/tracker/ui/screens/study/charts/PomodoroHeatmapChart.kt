@@ -111,7 +111,7 @@ fun PomodoroHeatmapChart(
     
     val maxDuration = dailyDurations.maxOrNull()?.takeIf { it > 0 } ?: 60 // fallback to 60 as max base
 
-    lumia.tracker.ui.components.GlassCard(
+    lumia.tracker.ui.components.ScholarCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge
     ) {

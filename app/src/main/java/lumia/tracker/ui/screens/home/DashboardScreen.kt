@@ -27,8 +27,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.R
 import lumia.tracker.ui.components.BouncyIconButton
+import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.StreakWidget
 import lumia.tracker.ui.screens.home.HomeTab
+import lumia.tracker.ui.screens.home.components.ScholarInnovativeHeader
 import lumia.tracker.ui.screens.study.*
 import lumia.tracker.ui.theme.LocalAppAnimationMode
 import lumia.tracker.ui.theme.bouncyClick
@@ -62,91 +64,11 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
             containerColor = Color.Transparent,
             topBar = {
-                val titleText = when (selectedTab) {
-                    0 -> stringResource(id = R.string.app_name)
-                    1 -> "Your Courses"
-                    2 -> "Your Subjects"
-                    3 -> "Self Study & Tasks"
-                    else -> "Analytics"
-                }
-                Box {
-                    if (betaEnhancedHeader) {
-                        HorizontalDivider(
-                            modifier = Modifier.align(Alignment.BottomCenter),
-                            thickness = 1.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                        )
-                    }
-                    CenterAlignedTopAppBar(
-                        title = {
-                            Text(
-                                text = titleText,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        navigationIcon = {
-                            BouncyIconButton(
-                                onClick = { navController.navigate("search") },
-                                modifier = Modifier.padding(start = 12.dp).testTag("open_search_button")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Search,
-                                    contentDescription = "Open Global Search",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        },
-                        actions = {
-                            StreakWidget(viewModel, navController)
-                            val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
-                            Box(
-                                modifier = Modifier
-                                    .padding(end = 16.dp)
-                                    .size(42.dp)
-                                    .shadow(elevation = 3.dp, shape = CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                                    .clip(CircleShape)
-                                    .bouncyClick(
-                                        onClick = { navController.navigate("profile_menu") }
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                val isLocalImage = activeProfile.avatarEmoji.startsWith("/") ||
-                                        activeProfile.avatarEmoji.startsWith("file://") ||
-                                        activeProfile.avatarEmoji.startsWith("content://")
-                                if (isLocalImage) {
-                                    coil.compose.AsyncImage(
-                                        model = activeProfile.avatarEmoji,
-                                        contentDescription = "Profile Picture",
-                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                } else {
-                                    val fallback = if (activeProfile.avatarEmoji.isNotBlank() &&
-                                        activeProfile.avatarEmoji.length <= 2 &&
-                                        activeProfile.avatarEmoji != "A" && activeProfile.avatarEmoji != "U"
-                                    ) {
-                                        activeProfile.avatarEmoji.uppercase()
-                                    } else {
-                                        activeProfile.name.take(2).uppercase()
-                                    }
-                                    Text(
-                                        text = fallback,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        },
-                        scrollBehavior = scrollBehavior,
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = if (betaEnhancedHeader) MaterialTheme.colorScheme.surface.copy(alpha = 0.95f) else MaterialTheme.colorScheme.surface,
-                            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
-                        )
-                    )
-                }
+                ScholarInnovativeHeader(
+                    selectedTab = selectedTab,
+                    navController = navController,
+                    viewModel = viewModel
+                )
             },
             bottomBar = {
                 if (!betaFloatingNav) {

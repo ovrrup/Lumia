@@ -86,7 +86,7 @@ fun AssignmentsPerCourseBarChart(
     backgroundColor: Color,
     barColor: Color
 ) {
-    lumia.tracker.ui.components.GlassCard(
+    lumia.tracker.ui.components.ScholarCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge
     ) {

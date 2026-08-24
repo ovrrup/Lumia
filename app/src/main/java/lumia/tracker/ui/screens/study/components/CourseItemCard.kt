@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import lumia.tracker.model.Course
 import lumia.tracker.ui.components.BouncyIconButton
-import lumia.tracker.ui.components.GlassCard
+import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.viewmodel.ScholarViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -47,7 +47,7 @@ fun CourseItemCard(
         list.distinct()
     }
 
-    GlassCard(
+    ScholarCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().animateContentSize(),
         shape = MaterialTheme.shapes.extraLarge,

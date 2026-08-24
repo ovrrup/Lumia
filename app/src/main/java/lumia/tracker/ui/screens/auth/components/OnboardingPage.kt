@@ -62,9 +62,9 @@ fun OnboardingPage(icon: ImageVector, title: String, description: String, isActi
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (title.contains("Glassmorphism", ignoreCase = true)) {
-                    // Glassmorphism visual representation
-                    GlassmorphicRepresentation()
+                if (title.contains("Personalization", ignoreCase = true) || title.contains("Glassmorphism", ignoreCase = true)) {
+                    // Modern personalization visual representation
+                    PersonalizationRepresentation()
                 } else {
                     // Pomodoro Focus visual representation
                     PomodoroTimerRepresentation()
@@ -126,7 +126,7 @@ fun OnboardingPage(icon: ImageVector, title: String, description: String, isActi
 }
 
 @Composable
-fun GlassmorphicRepresentation() {
+fun PersonalizationRepresentation() {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val primaryColor = MaterialTheme.colorScheme.primary
     val secondaryColor = MaterialTheme.colorScheme.secondary

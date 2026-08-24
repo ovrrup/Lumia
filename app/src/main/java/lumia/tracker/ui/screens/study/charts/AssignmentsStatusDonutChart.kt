@@ -87,7 +87,7 @@ fun AssignmentsStatusDonutChart(
     primaryColor: Color,
     secondaryColor: Color
 ) {
-    lumia.tracker.ui.components.GlassCard(
+    lumia.tracker.ui.components.ScholarCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge
     ) {

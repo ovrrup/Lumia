@@ -419,7 +419,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             ) {
                 if (course.instructor.isNotBlank() || course.schedule.isNotBlank() || course.description.isNotBlank()) {
                     item {
-                        lumia.tracker.ui.components.GlassCard(
+                        lumia.tracker.ui.components.ScholarCard(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(32.dp)
                         ) {
@@ -545,7 +545,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     var isMonthlyView by remember { mutableStateOf(false) }
                     var displayMonthOffset by remember { mutableIntStateOf(0) }
 
-                    lumia.tracker.ui.components.GlassCard(
+                    lumia.tracker.ui.components.ScholarCard(
                         modifier = Modifier.fillMaxWidth().animateContentSize(),
                         shape = RoundedCornerShape(32.dp)
                     ) {
@@ -858,7 +858,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
                 if (courseNotes.isEmpty()) {
                     item {
-                        lumia.tracker.ui.components.GlassCard(
+                        lumia.tracker.ui.components.ScholarCard(
                             modifier = Modifier.fillMaxWidth().height(100.dp),
                             shape = RoundedCornerShape(24.dp)
                         ) {
@@ -873,7 +873,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                 } else {
                     items(courseNotes, key = { "cn_${it.id}" }) { note ->
-                        lumia.tracker.ui.components.GlassCard(
+                        lumia.tracker.ui.components.ScholarCard(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             shape = RoundedCornerShape(20.dp)
                         ) {
@@ -975,7 +975,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
                             modifier = Modifier.animateItem()
                         ) {
-                            lumia.tracker.ui.components.GlassCard(
+                            lumia.tracker.ui.components.ScholarCard(
                                 modifier = Modifier.fillMaxWidth().height(200.dp),
                                 shape = RoundedCornerShape(32.dp)
                             ) {
@@ -1014,7 +1014,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             val cardColor by androidx.compose.animation.animateColorAsState(
                                 if (assignment.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
                             )
-                            lumia.tracker.ui.components.GlassCard(
+                            lumia.tracker.ui.components.ScholarCard(
                                 modifier = Modifier.detectReorderAfterLongPress(reorderableState).animateItem().fillMaxWidth().animateContentSize(),
                                 shape = RoundedCornerShape(24.dp),
                                 containerColor = cardColor
@@ -1140,7 +1140,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                     items(localTasks, key = { "task_${it.id}" }) { task ->
                         ReorderableItem(reorderableState, key = "task_${task.id}") { isDragging ->
-                            lumia.tracker.ui.components.GlassCard(
+                            lumia.tracker.ui.components.ScholarCard(
                                 modifier = Modifier.detectReorderAfterLongPress(reorderableState).animateItem().fillMaxWidth().animateContentSize()
                                     .graphicsLayer {
                                         shadowElevation = if (isDragging) 16f else 0f
@@ -1251,7 +1251,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
                 if (attachments.isEmpty()) {
                     item {
-                        lumia.tracker.ui.components.GlassCard(
+                        lumia.tracker.ui.components.ScholarCard(
                             modifier = Modifier.fillMaxWidth().height(120.dp),
                             shape = RoundedCornerShape(24.dp)
                         ) {
@@ -1295,7 +1295,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                             }
                         }
 
-                        lumia.tracker.ui.components.GlassCard(
+                        lumia.tracker.ui.components.ScholarCard(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp)
                         ) {

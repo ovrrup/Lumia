@@ -96,7 +96,7 @@ fun QuickNotesScreen(navController: NavController) {
                 }
             }
             itemsIndexed(notesList) { index, note ->
-                lumia.tracker.ui.components.GlassCard(
+                lumia.tracker.ui.components.ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
                 ) {

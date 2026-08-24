@@ -239,7 +239,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                         "Default" to "Classic smooth rotation and clean fire pulse.",
                         "Material" to "Expressive segment tracker with glowing corona aura.",
                         "Bouncy" to "Energetic dancing flames with orbiting active sparks.",
-                        "Glass Liquid" to "Glossy frosted glass container with a fluid sine wave."
+                        "Fluid Wave" to "Dynamic resonant container with fluid sine-wave motion."
                     )
                     stylesWithDesc.forEach { (style, description) ->
                         Row(

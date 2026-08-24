@@ -295,6 +295,25 @@ class PomodoroService : Service() {
                 syncToState()
             }
             return START_NOT_STICKY
+        if (action == "ADJUST_TIME") {
+            val delta = intent?.getIntExtra("deltaSeconds", 0) ?: 0
+            if (delta != 0) {
+                timeLeft = (timeLeft + delta).coerceAtLeast(10)
+                originalTime = (originalTime + delta).coerceAtLeast(10)
+                syncToState()
+                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.notify(2002, buildNotification(timeLeft))
+            }
+            return START_NOT_STICKY
+        }
+
+        if (action == "SWITCH_MODE") {
+            val targetModeStr = intent?.getStringExtra("targetMode") ?: "WORK"
+            val targetMode = try { PomodoroMode.valueOf(targetModeStr) } catch (e: Exception) { PomodoroMode.WORK }
+            currentMode = targetMode
+            startCurrentMode(startPaused = isPaused)
+            syncToState()
+            return START_NOT_STICKY
         }
 
         if (action == "START" || action == "RESET") {

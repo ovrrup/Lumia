@@ -83,7 +83,7 @@ fun AssignmentCategoryDistributionChart(
     modifier: Modifier = Modifier,
     assignments: List<lumia.tracker.model.PracticeAssignment>
 ) {
-    lumia.tracker.ui.components.GlassCard(
+    lumia.tracker.ui.components.ScholarCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge
     ) {

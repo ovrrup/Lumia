@@ -40,7 +40,7 @@ import lumia.tracker.R
 import lumia.tracker.model.*
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
-import lumia.tracker.ui.components.GlassCard
+import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.ui.util.getTagColors
 import lumia.tracker.viewmodel.ScholarViewModel
 import java.text.SimpleDateFormat
@@ -552,7 +552,7 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(searchResults) { result ->
-                        GlassCard(
+                        ScholarCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("search_result_item_${result.type}_${result.id}"),

@@ -64,7 +64,7 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
         animationSpec = when (animOverride) {
             "Bouncy" -> spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessLow)
             "Material" -> tween(durationMillis = 1400, easing = CubicBezierEasing(0.2f, 0.8f, 0.2f, 1.0f))
-            "Glass Liquid" -> tween(durationMillis = 2000, easing = LinearOutSlowInEasing)
+            "Fluid Wave", "Glass Liquid" -> tween(durationMillis = 2000, easing = LinearOutSlowInEasing)
             else -> tween(durationMillis = 1200, easing = FastOutSlowInEasing)
         },
         label = "streak_progress"
@@ -311,10 +311,10 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
                             }
                         }
                     }
-                    "Glass Liquid" -> {
-                        // Frosted outer border
+                    "Fluid Wave", "Glass Liquid" -> {
+                        // Resonant outer border
                         drawCircle(
-                            color = color.copy(alpha = 0.05f),
+                            color = color.copy(alpha = 0.08f),
                             radius = radius,
                             style = Stroke(width = strokeWidth)
                         )
@@ -405,7 +405,7 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
                 "Bouncy" -> {
                     if (isCompleteToday) color else color.copy(alpha = 0.75f)
                 }
-                "Glass Liquid" -> {
+                "Fluid Wave", "Glass Liquid" -> {
                     if (isCompleteToday) Color.White else color.copy(alpha = 0.85f)
                 }
                 else -> {
@@ -416,14 +416,14 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
             val iconScaleX = when (animOverride) {
                 "Material" -> scaleMaterial
                 "Bouncy" -> scaleBouncyX
-                "Glass Liquid" -> scaleGlass
+                "Fluid Wave", "Glass Liquid" -> scaleGlass
                 else -> completeScale
             }
             
             val iconScaleY = when (animOverride) {
                 "Material" -> scaleMaterial
                 "Bouncy" -> scaleBouncyY
-                "Glass Liquid" -> scaleGlass
+                "Fluid Wave", "Glass Liquid" -> scaleGlass
                 else -> completeScale
             }
             

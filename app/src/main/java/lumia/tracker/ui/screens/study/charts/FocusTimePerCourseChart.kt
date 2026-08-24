@@ -84,7 +84,7 @@ fun FocusTimePerCourseChart(
     sessions: List<lumia.tracker.model.PomodoroSession>,
     courses: List<lumia.tracker.model.Course>
 ) {
-    lumia.tracker.ui.components.GlassCard(
+    lumia.tracker.ui.components.ScholarCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge
     ) {

@@ -37,7 +37,7 @@ import lumia.tracker.model.Chapter
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
-import lumia.tracker.ui.components.GlassCard
+import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.viewmodel.ScholarViewModel
 import lumia.tracker.ui.util.getTagColors
 import java.text.SimpleDateFormat
@@ -161,7 +161,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         ) {
             // Stats Banner Card
             item {
-                GlassCard(
+                ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp)
                 ) {
@@ -259,7 +259,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             } else {
                 items(linkedCourses, key = { "course_${it.id}" }) { course ->
                     val color = try { Color(android.graphics.Color.parseColor(course.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-                    GlassCard(
+                    ScholarCard(
                         onClick = { navController.navigate("courseDetail/${course.id}") },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -336,7 +336,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             }
             if (subjectChapters.isEmpty() && subjectTopics.isEmpty()) {
                 item {
-                    GlassCard(
+                    ScholarCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp)
                     ) {
@@ -373,7 +373,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     }
                     var showChapterMenu by remember { mutableStateOf(false) }
 
-                    GlassCard(
+                    ScholarCard(
                         modifier = Modifier.fillMaxWidth().animateContentSize()
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -590,7 +590,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 if (unassignedTopics.isNotEmpty()) {
                     item {
                         var isExpandedUnassigned by remember { mutableStateOf(true) }
-                        GlassCard(
+                        ScholarCard(
                             modifier = Modifier.fillMaxWidth().animateContentSize()
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
@@ -746,7 +746,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             } else {
                 items(subjectTasks, key = { "task_${it.id}" }) { task ->
                     var showTaskMenu by remember { mutableStateOf(false) }
-                    GlassCard(
+                    ScholarCard(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -842,7 +842,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             } else {
                 items(subjectAssignments, key = { "assignment_${it.id}" }) { assignment ->
                     var showAssignmentMenu by remember { mutableStateOf(false) }
-                    GlassCard(
+                    ScholarCard(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -950,7 +950,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             } else {
                 items(subjectNotes, key = { "note_${it.id}" }) { note ->
                     var isExpanded by remember { mutableStateOf(false) }
-                    GlassCard(
+                    ScholarCard(
                         onClick = { isExpanded = !isExpanded },
                         modifier = Modifier.fillMaxWidth().animateContentSize()
                     ) {
@@ -1663,7 +1663,7 @@ fun EmptySectionCard(
     buttonText: String,
     onClick: () -> Unit
 ) {
-    GlassCard(
+    ScholarCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
     ) {

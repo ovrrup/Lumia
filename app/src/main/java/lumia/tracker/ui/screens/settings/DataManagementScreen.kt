@@ -108,7 +108,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             val pomodoroSessionsCount by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
 
 
-            lumia.tracker.ui.components.GlassCard(
+            lumia.tracker.ui.components.ScholarCard(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     shape = RoundedCornerShape(24.dp)
                 ) {

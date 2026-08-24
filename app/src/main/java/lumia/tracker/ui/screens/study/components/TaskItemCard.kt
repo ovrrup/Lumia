@@ -26,7 +26,7 @@ import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
-import lumia.tracker.ui.components.GlassCard
+import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.viewmodel.ScholarViewModel
 import lumia.tracker.ui.util.getTagColors
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -38,7 +38,7 @@ import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 
 @Composable
 fun TaskItemCard(task: Task, viewModel: ScholarViewModel, onEdit: () -> Unit, modifier: Modifier = Modifier, navController: NavController? = null) {
-    GlassCard(onClick = onEdit, modifier = modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+    ScholarCard(onClick = onEdit, modifier = modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
                 checked = task.isCompleted,

@@ -1,6 +1,7 @@
 package lumia.tracker.ui.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -11,6 +12,10 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import lumia.tracker.ui.theme.bouncyClick
 
+/**
+ * ScholarCard - Lumia's standard modern Material 3 card container.
+ * Features tactile spring animations, subtle tonal elevation, and customizable rounding.
+ */
 @Composable
 fun ScholarCard(
     modifier: Modifier = Modifier,
@@ -41,6 +46,10 @@ fun ScholarCard(
     }
 }
 
+/**
+ * ScholarHeroCard - High-emphasis hero card used for dashboard banners, streak highlights,
+ * and key interactive statistics.
+ */
 @Composable
 fun ScholarHeroCard(
     modifier: Modifier = Modifier,
@@ -68,21 +77,3 @@ fun ScholarHeroCard(
         }
     }
 }
-
-// Deprecated aliases for backwards compatibility during migration
-@Composable
-fun GlassCard(
-    modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(24.dp),
-    containerColor: Color? = null,
-    onClick: (() -> Unit)? = null,
-    content: @Composable BoxScope.() -> Unit
-) = ScholarCard(modifier, shape, containerColor, onClick, content)
-
-@Composable
-fun GlassHeroCard(
-    modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(32.dp),
-    onClick: (() -> Unit)? = null,
-    content: @Composable BoxScope.() -> Unit
-) = ScholarHeroCard(modifier, shape, onClick, content)

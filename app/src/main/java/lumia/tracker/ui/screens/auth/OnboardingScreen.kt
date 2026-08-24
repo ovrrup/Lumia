@@ -64,8 +64,8 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                 when (page) {
                     0 -> OnboardingPage(
                         icon = Icons.Rounded.AutoAwesome,
-                        title = "Glassmorphism & Style",
-                        description = "Experience Lumia's distinctive Frosted Glass layouts! Custom theme overlays, floating adaptive navigation rails, and tactile actions elevate your routine.",
+                        title = "Personalization & Style",
+                        description = "Experience Lumia's modern adaptive layouts! Custom theme palettes, dynamic ambient lighting, tactile bouncy actions, and multi-profile workspaces elevate your routine.",
                         isActive = pagerState.currentPage == page
                     )
                     1 -> OnboardingPage(
