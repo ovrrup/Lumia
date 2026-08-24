@@ -423,22 +423,6 @@ fun HomeTab(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
                             )
-                            BouncyIconButton(
-                                onClick = onAddCourseClick,
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                        CircleShape
-                                    )
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Add,
-                                    contentDescription = "Add",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
                         }
                         Spacer(Modifier.height(8.dp))
 
