@@ -1,0 +1,6 @@
+Lumia v1.0.7:
+• Seamless P2P Multi-Device Sync: End-to-end encrypted device syncing with 1-time mutual pairing handshake and continuous silent auto-sync.
+• Academic Command Center: Re-engineered Home tab featuring today's focus metrics, interactive 5-day lecture timetable, urgent assignments, and prioritized tasks checklist.
+• Course Attendance Health Gauge: Real-time course attendance percentage and threshold warning badges.
+• Subject Syllabus Coverage: Visual progress bars tracking topic completion per subject.
+• Architectural Hardening: SQLite cascading deletions, zero duplicate UI elements, unclickable visual streak counter, and 100% zero emojis.

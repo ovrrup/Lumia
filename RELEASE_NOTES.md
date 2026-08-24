@@ -1,5 +1,13 @@
 # Lumia Release Notes
 
+## 🌟 What's New in v1.0.7 (P2P Multi-Device Sync, Academic Command Center & Architectural Hardening)
+- **Seamless P2P Multi-Device Sync**: Full end-to-end encrypted device syncing over local network and WebRTC. Supports 1-time mutual handshake with persistent PSK trust and continuous silent background synchronization.
+- **Academic Command Center (Home Tab)**: Complete overhaul of the home dashboard featuring live focus statistics, active task counts, a 5-day interactive lecture schedule browser, and urgent assignment deadline countdowns.
+- **Course Attendance Health Gauge**: Real-time course attendance percentage with color-coded standing badges (Green for $\ge 75\%$, Amber for $65\%-74\%$, and Red warning for $< 65\%$).
+- **Subject Syllabus Progress**: Visual topic completion progress bar per subject.
+- **Data Integrity & Cascading Cleanups**: Hardened SQLite schema to automatically clean up orphaned tasks, notes, topics, and assignments upon course or subject deletion.
+- **Clean Vector Iconography**: Removed all emojis across the entire app in favor of crisp Material 3 vector iconography.
+
 ## 🌟 What's New in v1.0.6 (Glass Redesign, Onboarding Polish & Tag Consolidation)
 - **Dynamic Obsidian Infusion**: Completely redesigned the glass UI color blending algorithms for dark mode. Cards, hero banners, progress pills, and navigation elements now dynamically infuse a portion of the active theme's primary color (Twilight, Gold, Emerald, Rose, etc.) into the backing canvas, generating a luxurious, customized semi-translucent obsidian sheen.
 - **Iridescent Glass Border Refinements**: Introduced a new, high-contrast iridescent glowing border gradient. Rather than using static outline shades, dark mode card edges now render light-refracting gradient highlights that transition beautifully from primary-toned glow highlights to satin transparency.
