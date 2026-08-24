@@ -1,11 +1,15 @@
 package lumia.tracker.ui.screens.home.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.*
@@ -24,14 +28,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import lumia.tracker.service.PomodoroService
 import lumia.tracker.ui.components.StreakWidget
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
+import java.util.Locale
 
 /**
- * ScholarInnovativeHeader - Dissolved serialized action header.
- * Eliminates broad heavy app banners in favor of a minimal, floating horizontal
- * cluster of essential action buttons and live unclickable indicators.
+ * ScholarInnovativeHeader - iOS Dynamic Island & Action Capsule.
+ * Displays live Focus state, search pill, streak status, and profile capsule in a cohesive Apple-grade bar.
  */
 @Composable
 fun ScholarInnovativeHeader(
@@ -41,6 +46,8 @@ fun ScholarInnovativeHeader(
     modifier: Modifier = Modifier
 ) {
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
+    val pomodoroState by PomodoroService.state.collectAsStateWithLifecycle()
+    val isFocusRunning = pomodoroState.isRunning
 
     Box(
         modifier = modifier
@@ -51,12 +58,14 @@ fun ScholarInnovativeHeader(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 1. Serialized Button: Quick Search Pill
+            // 1. iOS Search Bar Pill
             Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
+                shape = RoundedCornerShape(22.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                shadowElevation = 0.5.dp,
                 modifier = Modifier
                     .weight(1f)
                     .height(40.dp)
@@ -74,22 +83,35 @@ fun ScholarInnovativeHeader(
                         imageVector = Icons.Rounded.Search,
                         contentDescription = "Search",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(17.dp)
                     )
                     Text(
-                        text = "Search...",
+                        text = "Search workspace...",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        maxLines = 1
                     )
                 }
             }
 
-            Spacer(Modifier.width(10.dp))
+            // 2. iOS Dynamic Focus Live Activity Pill
+            val focusPillBg by animateColorAsState(
+                targetValue = if (isFocusRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                label = "focus_pill_color"
+            )
+            val focusPillText by animateColorAsState(
+                targetValue = if (isFocusRunning) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
+                label = "focus_pill_text_color"
+            )
 
-            // 2. Serialized Button: 1-Tap Pomodoro Focus Space Pill
             Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
+                shape = RoundedCornerShape(22.dp),
+                color = focusPillBg,
+                border = BorderStroke(
+                    0.6.dp,
+                    if (isFocusRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                ),
+                shadowElevation = if (isFocusRunning) 2.dp else 0.5.dp,
                 modifier = Modifier
                     .height(40.dp)
                     .bouncyClick(onClick = { navController.navigate("pomodoro") })
@@ -98,42 +120,42 @@ fun ScholarInnovativeHeader(
                 Row(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .padding(horizontal = 14.dp),
+                        .padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Timer,
+                        imageVector = if (isFocusRunning) Icons.Rounded.GraphicEq else Icons.Rounded.Timer,
                         contentDescription = "Focus Space",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
+                        tint = focusPillText,
+                        modifier = Modifier.size(17.dp)
                     )
+                    val mins = pomodoroState.timeLeft / 60
+                    val secs = pomodoroState.timeLeft % 60
+                    val timerStr = String.format(Locale.US, "%02d:%02d", mins, secs)
+
                     Text(
-                        text = "Focus",
+                        text = if (isFocusRunning) timerStr else "Focus",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = focusPillText
                     )
                 }
             }
 
-            Spacer(Modifier.width(8.dp))
-
-            // 3. Serialized Indicator: Unclickable Streak Flame Counter
+            // 3. Streak Flame Badge
             StreakWidget(
                 viewModel = viewModel,
                 navController = navController
             )
 
-            Spacer(Modifier.width(8.dp))
-
-            // 4. Serialized Button: Active Profile Avatar Capsule
+            // 4. iOS Profile Avatar Capsule
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .shadow(elevation = 2.dp, shape = CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                    .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
+                    .size(38.dp)
+                    .shadow(elevation = 1.dp, shape = CircleShape)
+                    .background(MaterialTheme.colorScheme.surface, CircleShape)
+                    .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
                     .clip(CircleShape)
                     .bouncyClick(onClick = { navController.navigate("profile_menu") }),
                 contentAlignment = Alignment.Center
@@ -159,9 +181,9 @@ fun ScholarInnovativeHeader(
                     }
                     Text(
                         text = fallback,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        fontWeight = FontWeight.ExtraBold
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Black
                     )
                 }
             }

@@ -143,11 +143,11 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
         item {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // NEW: Study Sessions Today counter
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                // NEW: Study Sessions Today counter
+                lumia.tracker.ui.components.ScholarCard(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
                 ) {
-                    Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Study Sessions Today", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                         Text(
                             text = viewModel.getSessionsTodayCount().toString(),
@@ -159,11 +159,10 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                 }
 
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                    lumia.tracker.ui.components.ScholarCard(
                         modifier = Modifier.weight(1f)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.secondaryContainer).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                              Text("Total Notes", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
                             Text(
                                 text = viewModel.getNotesCount().toString(),
@@ -173,11 +172,10 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                             )
                         }
                     }
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+                    lumia.tracker.ui.components.ScholarCard(
                         modifier = Modifier.weight(1f)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.tertiaryContainer).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                              Text("Active Tasks", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
                             Text(
                                 text = viewModel.getActiveTasksCount().toString(),
@@ -237,7 +235,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("Complete", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(streakTotalComplete.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color(0xFFE67E22))
+                                Text(streakTotalComplete.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
                             }
                         }
                     }
@@ -324,7 +322,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                     Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text("Pass Rate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text("$passRate%", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = if (passRate >= 75) Color(0xFF2ECC71) else Color(0xFFE74C3C))
+                                        Text("$passRate%", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = if (passRate >= 75) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error)
                                     }
                                 }
 
@@ -369,10 +367,10 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                             val subjAvg = subjTests.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }.average().toFloat()
                                             
                                             val (statusText, statusColor) = when {
-                                                subjAvg >= 85f -> "MASTER" to Color(0xFF2ECC71)
-                                                subjAvg >= 70f -> "PROFICIENT" to MaterialTheme.colorScheme.secondary
-                                                subjAvg >= 50f -> "DEVELOPING" to MaterialTheme.colorScheme.tertiary
-                                                else -> "NEEDS WORK" to Color(0xFFE74C3C)
+                                                subjAvg >= 85f -> "MASTER" to MaterialTheme.colorScheme.tertiary
+                                                subjAvg >= 70f -> "PROFICIENT" to MaterialTheme.colorScheme.primary
+                                                subjAvg >= 50f -> "DEVELOPING" to MaterialTheme.colorScheme.secondary
+                                                else -> "NEEDS WORK" to MaterialTheme.colorScheme.error
                                             }
 
                                             Column(modifier = Modifier.fillMaxWidth()) {
@@ -427,9 +425,9 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                     allTagsMap.entries.sortedByDescending { it.value.average() }.take(4).forEach { (tag, scores) ->
                                         val tagAvg = scores.average().toFloat()
                                         val tagColor = when {
-                                            tagAvg >= 80f -> Color(0xFF2ECC71)
+                                            tagAvg >= 80f -> MaterialTheme.colorScheme.tertiary
                                             tagAvg >= 60f -> MaterialTheme.colorScheme.primary
-                                            else -> Color(0xFFE74C3C)
+                                            else -> MaterialTheme.colorScheme.error
                                         }
 
                                         Box(
@@ -476,8 +474,8 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                             val tTests = allTestRecords.filter { it.topicId == tId }
                                             val tAvg = tTests.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }.average().toFloat()
                                             
-                                            val statusColor = if (tAvg >= 80) Color(0xFF2ECC71) else if (tAvg >= 50) MaterialTheme.colorScheme.primary else Color(0xFFE74C3C)
-                                            val iconTint = if (topicObj.isCompleted) Color(0xFF2ECC71) else MaterialTheme.colorScheme.onSurfaceVariant
+                                            val statusColor = if (tAvg >= 80) MaterialTheme.colorScheme.tertiary else if (tAvg >= 50) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                            val iconTint = if (topicObj.isCompleted) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant
 
                                             Row(
                                                 modifier = Modifier

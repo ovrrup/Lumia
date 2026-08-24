@@ -81,7 +81,7 @@ fun TestCornerCard(
                     AnalyticsStatItem(label = "Average", value = "${avgMarks.toInt()}%")
                     AnalyticsStatItem(label = "Best", value = "${bestMark.toInt()}%")
                     
-                    val trendColor = if (trend > 0) Color(0xFF2ECC71) else if (trend < 0) Color(0xFFE74C3C) else MaterialTheme.colorScheme.onTertiaryContainer
+                    val trendColor = if (trend > 0) MaterialTheme.colorScheme.tertiary else if (trend < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onTertiaryContainer
                     val trendIcon = if (trend > 0) Icons.Rounded.TrendingUp else if (trend < 0) Icons.Rounded.TrendingDown else Icons.Rounded.TrendingFlat
                     
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -168,7 +168,7 @@ fun TestCornerCard(
                                 Text("${test.marksObtained} / ${test.totalMarks}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 
                                 val pct = if (test.totalMarks > 0) (test.marksObtained / test.totalMarks * 100) else 0f
-                                val pctColor = if (pct >= 80) Color(0xFF2ECC71) else if (pct >= 50) Color(0xFFF1C40F) else Color(0xFFE74C3C)
+                                val pctColor = if (pct >= 80) MaterialTheme.colorScheme.tertiary else if (pct >= 50) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
                                 LinearProgressIndicator(
                                     progress = if (test.totalMarks > 0) (test.marksObtained / test.totalMarks) else 0f,
                                     modifier = Modifier.fillMaxWidth().height(4.dp).padding(top = 8.dp),

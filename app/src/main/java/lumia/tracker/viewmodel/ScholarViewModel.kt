@@ -130,14 +130,15 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun defragmentDatabase() {
-        viewModelScope.launch {
-            _defragStatus.value = "Scanning indexes & parsing orphans..."
-            kotlinx.coroutines.delay(1000)
-            _defragStatus.value = "Executing SQLite VACUUM optimization..."
-            // Perform vacuum cleaning and compacting simulation on the SQLite db pages
-            repository.dao.exportAllCourses() // harmless read to keep db warm
-            kotlinx.coroutines.delay(1200)
-            _defragStatus.value = "Optimized! 100% Index health. SQLite database pages compacted successfully!"
+        viewModelScope.launch(Dispatchers.IO) {
+            _defragStatus.value = "Running SQLite VACUUM optimization..."
+            try {
+                val db = AppDatabase.getDatabase(getApplication()).openHelper.writableDatabase
+                db.execSQL("VACUUM")
+                _defragStatus.value = "Optimized! Database compacted successfully."
+            } catch (e: Exception) {
+                _defragStatus.value = "Optimization failed: ${e.message}"
+            }
             loadDBStatistics()
         }
     }

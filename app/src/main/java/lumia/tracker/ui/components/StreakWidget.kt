@@ -39,7 +39,7 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
     val baseColor = if (streakColorHex == "Theme") primary else try {
         Color(android.graphics.Color.parseColor(streakColorHex))
     } catch (e: Exception) {
-        Color(0xFFFF9800)
+        MaterialTheme.colorScheme.tertiary
     }
 
     val hsl = FloatArray(3)

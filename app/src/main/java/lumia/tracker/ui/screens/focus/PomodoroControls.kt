@@ -15,6 +15,9 @@ import androidx.compose.ui.unit.dp
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.theme.bouncyClick
+import androidx.compose.ui.platform.LocalContext
+import android.provider.Settings
+import lumia.tracker.util.TrueAodManager
 
 /**
  * PomodoroControls - Primary tactile interaction suite for focus sessions.
@@ -35,6 +38,7 @@ fun PomodoroControls(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -121,7 +125,21 @@ fun PomodoroControls(
             // True AOD Low-Power Mode
             FilterChip(
                 selected = false,
-                onClick = onStartAod,
+                onClick = {
+                    if (Settings.canDrawOverlays(context)) {
+                        TrueAodManager.showAodOverlay(
+                            context = context,
+                            useAccessibility = false,
+                            dimnessLevel = 0.95f,
+                            sensitivity = "medium",
+                            motionSensitivity = 1.2f,
+                            lockTimeoutSeconds = 0,
+                            onExit = { }
+                        )
+                    } else {
+                        onStartAod()
+                    }
+                },
                 label = { Text("True AOD", fontWeight = FontWeight.SemiBold) },
                 leadingIcon = {
                     Icon(

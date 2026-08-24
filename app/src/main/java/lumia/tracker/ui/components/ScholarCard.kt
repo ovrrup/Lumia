@@ -1,5 +1,6 @@
 package lumia.tracker.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,24 +14,31 @@ import androidx.compose.ui.unit.dp
 import lumia.tracker.ui.theme.bouncyClick
 
 /**
- * ScholarCard - Lumia's standard modern Material 3 card container.
- * Features tactile spring animations, subtle tonal elevation, and customizable rounding.
+ * ScholarCard - Lumia's standard modern iOS Inset Grouped card container.
+ * Features tactile spring animations, subtle border stroke, and customizable rounding.
  */
 @Composable
 fun ScholarCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(24.dp),
+    shape: Shape = RoundedCornerShape(20.dp),
     containerColor: Color? = null,
+    border: BorderStroke? = null,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val targetColor = containerColor ?: MaterialTheme.colorScheme.surfaceContainer
+    val targetColor = containerColor ?: MaterialTheme.colorScheme.surface
+    val targetBorder = border ?: BorderStroke(
+        width = 0.6.dp,
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    )
+    
     if (onClick != null) {
         Surface(
             modifier = modifier.bouncyClick(onClick = onClick),
             shape = shape,
             color = targetColor,
-            tonalElevation = if (containerColor == null) 2.dp else 0.dp
+            border = targetBorder,
+            shadowElevation = 0.5.dp
         ) {
             Box(content = content)
         }
@@ -39,7 +47,8 @@ fun ScholarCard(
             modifier = modifier,
             shape = shape,
             color = targetColor,
-            tonalElevation = if (containerColor == null) 2.dp else 0.dp
+            border = targetBorder,
+            shadowElevation = 0.5.dp
         ) {
             Box(content = content)
         }
@@ -53,16 +62,25 @@ fun ScholarCard(
 @Composable
 fun ScholarHeroCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(32.dp),
+    shape: Shape = RoundedCornerShape(24.dp),
+    containerColor: Color? = null,
+    border: BorderStroke? = null,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val targetColor = containerColor ?: MaterialTheme.colorScheme.primaryContainer
+    val targetBorder = border ?: BorderStroke(
+        width = 0.8.dp,
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+    )
+    
     if (onClick != null) {
         Surface(
             modifier = modifier.bouncyClick(onClick = onClick),
             shape = shape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            tonalElevation = 0.dp
+            color = targetColor,
+            border = targetBorder,
+            shadowElevation = 1.dp
         ) {
             Box(content = content)
         }
@@ -70,8 +88,9 @@ fun ScholarHeroCard(
         Surface(
             modifier = modifier,
             shape = shape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            tonalElevation = 0.dp
+            color = targetColor,
+            border = targetBorder,
+            shadowElevation = 1.dp
         ) {
             Box(content = content)
         }

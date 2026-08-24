@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
- * Standard settings action item row with icon badge, title, expandable info dialog, and click action.
+ * Standard settings action item row with iOS squircle icon badge, title, subtitle, and chevron.
  */
 @Composable
 fun SettingsActionItem(
@@ -27,19 +27,28 @@ fun SettingsActionItem(
     icon: ImageVector,
     isDestructive: Boolean = false,
     inCard: Boolean = false,
+    iconBgColor: androidx.compose.ui.graphics.Color? = null,
+    iconTint: androidx.compose.ui.graphics.Color? = null,
     onClick: () -> Unit
 ) {
-    var showInfo by remember { mutableStateOf(false) }
     val contentColor = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-    val badgeShape = if (inCard) RoundedCornerShape(8.dp) else CircleShape
+    val badgeShape = RoundedCornerShape(9.dp)
+    val actualBg = iconBgColor ?: (
+        if (isDestructive) MaterialTheme.colorScheme.error
+        else MaterialTheme.colorScheme.primary
+    )
+    val actualTint = iconTint ?: (
+        if (isDestructive) androidx.compose.ui.graphics.Color.White
+        else androidx.compose.ui.graphics.Color.White
+    )
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
             .padding(
-                horizontal = if (inCard) 4.dp else 14.dp,
-                vertical = 8.dp
+                horizontal = if (inCard) 6.dp else 14.dp,
+                vertical = 10.dp
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -47,23 +56,20 @@ fun SettingsActionItem(
             modifier = Modifier
                 .size(32.dp)
                 .clip(badgeShape)
-                .background(
-                    if (isDestructive) MaterialTheme.colorScheme.errorContainer.copy(alpha = if (inCard) 0.5f else 1.0f)
-                    else MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (inCard) 0.5f else 1.0f)
-                ),
+                .background(actualBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (isDestructive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp)
+                tint = actualTint,
+                modifier = Modifier.size(18.dp)
             )
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(14.dp))
 
-        Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
@@ -71,42 +77,20 @@ fun SettingsActionItem(
                 color = contentColor
             )
             if (subtitle.isNotBlank()) {
-                Spacer(modifier = Modifier.width(6.dp))
-                IconButton(
-                    onClick = { showInfo = true },
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Info,
-                        contentDescription = "Info",
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
         Icon(
             imageVector = Icons.Rounded.ChevronRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
             modifier = Modifier.size(20.dp)
-        )
-    }
-
-    if (showInfo) {
-        AlertDialog(
-            onDismissRequest = { showInfo = false },
-            icon = { Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-            title = { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
-            text = { Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-            confirmButton = {
-                TextButton(onClick = { showInfo = false }) {
-                    Text("Got it")
-                }
-            },
-            shape = RoundedCornerShape(24.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     }
 }

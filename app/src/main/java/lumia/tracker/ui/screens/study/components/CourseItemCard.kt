@@ -187,8 +187,8 @@ fun CourseItemCard(
                 if (attendancePercentage != null) {
                     val isGood = attendancePercentage >= 75
                     val isWarning = attendancePercentage in 65..74
-                    val statusColor = if (isGood) Color(0xFF2E7D32) else if (isWarning) Color(0xFFEF6C00) else MaterialTheme.colorScheme.error
-                    val containerColor = if (isGood) Color(0xFF4CAF50).copy(alpha = 0.15f) else if (isWarning) Color(0xFFFF9800).copy(alpha = 0.15f) else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                    val statusColor = if (isGood) MaterialTheme.colorScheme.tertiary else if (isWarning) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+                    val containerColor = if (isGood) MaterialTheme.colorScheme.tertiaryContainer else if (isWarning) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
 
                     Surface(
                         shape = RoundedCornerShape(8.dp),

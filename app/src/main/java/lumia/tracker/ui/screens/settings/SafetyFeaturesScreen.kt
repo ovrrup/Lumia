@@ -131,7 +131,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Safety Guard", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
@@ -141,7 +141,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+                    containerColor = Color.Transparent
                 )
             )
         }

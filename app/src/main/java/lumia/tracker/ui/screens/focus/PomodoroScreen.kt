@@ -228,9 +228,7 @@ fun PomodoroScreen(
                         isSelected = currentMode == PomodoroMode.WORK,
                         activeColor = MaterialTheme.colorScheme.primary,
                         onClick = {
-                            if (pomodoroState.isRunning) {
-                                sendServiceAction("SWITCH_MODE") { putExtra("targetMode", "WORK") }
-                            }
+                            sendServiceAction("SWITCH_MODE") { putExtra("targetMode", "WORK") }
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -239,9 +237,7 @@ fun PomodoroScreen(
                         isSelected = currentMode == PomodoroMode.SHORT_BREAK,
                         activeColor = MaterialTheme.colorScheme.secondary,
                         onClick = {
-                            if (pomodoroState.isRunning) {
-                                sendServiceAction("SWITCH_MODE") { putExtra("targetMode", "SHORT_BREAK") }
-                            }
+                            sendServiceAction("SWITCH_MODE") { putExtra("targetMode", "SHORT_BREAK") }
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -250,9 +246,7 @@ fun PomodoroScreen(
                         isSelected = currentMode == PomodoroMode.LONG_BREAK,
                         activeColor = MaterialTheme.colorScheme.tertiary,
                         onClick = {
-                            if (pomodoroState.isRunning) {
-                                sendServiceAction("SWITCH_MODE") { putExtra("targetMode", "LONG_BREAK") }
-                            }
+                            sendServiceAction("SWITCH_MODE") { putExtra("targetMode", "LONG_BREAK") }
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -379,8 +373,9 @@ private fun ModeTabItem(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         color = if (isSelected) activeColor else Color.Transparent,
+        shadowElevation = if (isSelected) 1.5.dp else 0.dp,
         modifier = modifier
             .bouncyClick(onClick = onClick)
     ) {

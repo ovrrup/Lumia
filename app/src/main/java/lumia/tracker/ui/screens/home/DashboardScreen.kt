@@ -27,7 +27,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.R
 import lumia.tracker.ui.components.BouncyIconButton
-import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.StreakWidget
 import lumia.tracker.ui.screens.home.HomeTab
 import lumia.tracker.ui.screens.home.components.ScholarInnovativeHeader
@@ -62,7 +61,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
-            containerColor = Color.Transparent,
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 ScholarInnovativeHeader(
                     selectedTab = selectedTab,

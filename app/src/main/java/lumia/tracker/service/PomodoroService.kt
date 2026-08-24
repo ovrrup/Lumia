@@ -131,6 +131,7 @@ class PomodoroService : Service() {
     private var job: Job? = null
     private val scope = CoroutineScope(Dispatchers.Default)
     
+    private var deadlineMillis: Long = 0L
     private var timeLeft = 0
     private var isWork = true
     private var originalTime = 0
@@ -258,6 +259,9 @@ class PomodoroService : Service() {
             if (!isPaused && (job == null || job?.isActive != true)) {
                 startTimer()
             } else {
+                if (!isPaused) {
+                    deadlineMillis = System.currentTimeMillis() + (timeLeft * 1000L)
+                }
                 val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.notify(2002, buildNotification(timeLeft))
                 sendTick()
@@ -301,7 +305,7 @@ class PomodoroService : Service() {
             val delta = intent?.getIntExtra("deltaSeconds", 0) ?: 0
             if (delta != 0) {
                 timeLeft = (timeLeft + delta).coerceAtLeast(10)
-                originalTime = (originalTime + delta).coerceAtLeast(10)
+                deadlineMillis += (delta * 1000L)
                 syncToState()
                 val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.notify(2002, buildNotification(timeLeft))
@@ -467,10 +471,11 @@ class PomodoroService : Service() {
         job?.cancel()
         job = scope.launch {
             syncToState()
+            deadlineMillis = System.currentTimeMillis() + (timeLeft * 1000L)
             while (timeLeft > 0) {
                 if (!isPaused) {
                     delay(1000)
-                    timeLeft--
+                    timeLeft = ((deadlineMillis - System.currentTimeMillis()) / 1000).toInt().coerceAtLeast(0)
                     
                     val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                     notificationManager.notify(2002, buildNotification(timeLeft))
@@ -573,7 +578,8 @@ class PomodoroService : Service() {
             topicId?.let { finishedIntent.putExtra("topicId", it) }
             sendBroadcast(finishedIntent)
             
-            val mins = Math.max(1, originalTime / 60)
+            val actualElapsedSeconds = originalTime - timeLeft
+            val mins = Math.max(1, actualElapsedSeconds / 60)
             scope.launch(Dispatchers.IO) {
                 logAndAwardSession(durationMinutes = mins, isFullCompletion = true, isWorkSession = (completedMode == PomodoroMode.WORK))
             }

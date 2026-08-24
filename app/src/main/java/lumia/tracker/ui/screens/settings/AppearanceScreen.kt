@@ -50,7 +50,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
     val appAnimationMode by viewModel.appAnimationMode.collectAsStateWithLifecycle()
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Appearance & Themes", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
@@ -60,7 +60,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+                    containerColor = Color.Transparent
                 )
             )
         }

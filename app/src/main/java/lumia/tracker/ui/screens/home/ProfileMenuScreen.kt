@@ -58,7 +58,7 @@ fun ProfileMenuScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             TopAppBar(
                 title = {
@@ -82,7 +82,7 @@ fun ProfileMenuScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+                    containerColor = Color.Transparent
                 )
             )
         }
@@ -147,7 +147,7 @@ fun ProfileMenuScreen(
                         // Status Chip
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF4CAF50).copy(alpha = 0.2f)
+                            color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -157,7 +157,7 @@ fun ProfileMenuScreen(
                                 Icon(
                                     imageVector = Icons.Rounded.VerifiedUser,
                                     contentDescription = null,
-                                    tint = Color(0xFF4CAF50),
+                                    tint = MaterialTheme.colorScheme.tertiary,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(

@@ -1,6 +1,7 @@
 package lumia.tracker.ui.screens.settings.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
@@ -12,6 +13,8 @@ fun SettingsActionItemInCard(
     subtitle: String = "",
     icon: ImageVector,
     isDestructive: Boolean = false,
+    iconBgColor: Color? = null,
+    iconTint: Color? = null,
     onClick: () -> Unit
 ) {
     SettingsActionItem(
@@ -20,6 +23,8 @@ fun SettingsActionItemInCard(
         icon = icon,
         isDestructive = isDestructive,
         inCard = true,
+        iconBgColor = iconBgColor,
+        iconTint = iconTint,
         onClick = onClick
     )
 }

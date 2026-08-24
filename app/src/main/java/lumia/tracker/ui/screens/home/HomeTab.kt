@@ -101,10 +101,7 @@ fun HomeTab(
     }
     val nextCourseToday = scheduledCoursesToday.firstOrNull()
 
-    Scaffold(
-        containerColor = Color.Transparent
-    ) { _ ->
-        LazyColumn(
+    LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 16.dp,
@@ -135,84 +132,73 @@ fun HomeTab(
                             .bouncyClick { navController.navigate("pomodoro") { launchSingleTop = true } },
                         shape = RoundedCornerShape(24.dp)
                     ) {
-                        Box(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(
-                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                        )
-                                    )
-                                )
-                                .padding(18.dp)
+                                .padding(18.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = if (isFocusRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
-                                    ) {
-                                        Text(
-                                            text = if (isFocusRunning) "Focus in Progress" else "Focus Command Space",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (isFocusRunning) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                        )
-                                    }
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(
-                                        text = if (todayFocusMinutes >= 60) "${todayFocusMinutes / 60}h ${todayFocusMinutes % 60}m" else "${todayFocusMinutes}m",
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        fontWeight = FontWeight.Black,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = if (isFocusRunning) "Tap to open active timer • ${pomodoroState.timeLeft / 60}m remaining" else "Daily Focus Target: 120m • Tap to enter Focus Space",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
-                                Spacer(Modifier.width(12.dp))
-
-                                // Interactive Quick Start Play Button
-                                Box(
-                                    modifier = Modifier
-                                        .size(54.dp)
-                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
-                                        .clickable {
-                                            if (!isFocusRunning) {
-                                                val intent = Intent(context, PomodoroService::class.java).apply {
-                                                    action = "START"
-                                                    putExtra("workDuration", workDurationMin * 60)
-                                                    putExtra("shortBreakDuration", 5 * 60)
-                                                    putExtra("longBreakDuration", 15 * 60)
-                                                    putExtra("periodSessions", 4)
-                                                }
-                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                    context.startForegroundService(intent)
-                                                } else {
-                                                    context.startService(intent)
-                                                }
-                                            }
-                                            navController.navigate("pomodoro") { launchSingleTop = true }
-                                        },
-                                    contentAlignment = Alignment.Center
+                            Column(modifier = Modifier.weight(1f)) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isFocusRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
                                 ) {
-                                    Icon(
-                                        imageVector = if (isFocusRunning) Icons.Rounded.GraphicEq else Icons.Rounded.PlayArrow,
-                                        contentDescription = "Start Focus",
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(28.dp)
+                                    Text(
+                                        text = if (isFocusRunning) "Focus in Progress" else "Focus Command Space",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isFocusRunning) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                     )
                                 }
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = if (todayFocusMinutes >= 60) "${todayFocusMinutes / 60}h ${todayFocusMinutes % 60}m" else "${todayFocusMinutes}m",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (isFocusRunning) "Tap to open active timer • ${pomodoroState.timeLeft / 60}m remaining" else "Daily Focus Target: 120m • Tap to enter Focus Space",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            Spacer(Modifier.width(12.dp))
+
+                            // Interactive Quick Start Play Button
+                            FilledIconButton(
+                                onClick = {
+                                    if (!isFocusRunning) {
+                                        val intent = Intent(context, PomodoroService::class.java).apply {
+                                            action = "START"
+                                            putExtra("workDuration", workDurationMin * 60)
+                                            putExtra("shortBreakDuration", 5 * 60)
+                                            putExtra("longBreakDuration", 15 * 60)
+                                            putExtra("periodSessions", 4)
+                                        }
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            context.startForegroundService(intent)
+                                        } else {
+                                            context.startService(intent)
+                                        }
+                                    }
+                                    navController.navigate("pomodoro") { launchSingleTop = true }
+                                },
+                                modifier = Modifier.size(54.dp),
+                                shape = CircleShape,
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = if (isFocusRunning) Icons.Rounded.GraphicEq else Icons.Rounded.PlayArrow,
+                                    contentDescription = "Start Focus",
+                                    modifier = Modifier.size(28.dp)
+                                )
                             }
                         }
                     }
@@ -462,40 +448,54 @@ fun HomeTab(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            for (i in -2..2) {
-                                val calOffset = todayCalendar.clone() as Calendar
-                                val targetOffset = i
-                                calOffset.add(Calendar.DAY_OF_MONTH, targetOffset)
-                                val isSelected = selectedDateOffset == targetOffset
-                                val dayLetter = SimpleDateFormat("E", Locale.getDefault()).format(calOffset.time).take(3)
-                                val dayNumber = calOffset.get(Calendar.DAY_OF_MONTH).toString()
+                        // iOS-Style 5-Day Segmented selector row
+                        val todayCalendar = Calendar.getInstance()
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                for (i in -2..2) {
+                                    val calOffset = todayCalendar.clone() as Calendar
+                                    val targetOffset = i
+                                    calOffset.add(Calendar.DAY_OF_MONTH, targetOffset)
+                                    val isSelected = selectedDateOffset == targetOffset
+                                    val dayLetter = SimpleDateFormat("E", Locale.getDefault()).format(calOffset.time).take(3)
+                                    val dayNumber = calOffset.get(Calendar.DAY_OF_MONTH).toString()
 
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(horizontal = 3.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(
-                                            if (isSelected) MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(horizontal = 2.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(
+                                                if (isSelected) MaterialTheme.colorScheme.primary
+                                                else Color.Transparent
+                                            )
+                                            .clickable { selectedDateOffset = targetOffset }
+                                            .padding(vertical = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = dayLetter,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
-                                        .clickable { selectedDateOffset = targetOffset }
-                                        .padding(vertical = 8.dp)
-                                ) {
-                                    Text(
-                                        text = dayLetter,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = dayNumber,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Black,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                                    )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = dayNumber,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Black,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -504,7 +504,7 @@ fun HomeTab(
 
                         if (scheduledCourses.isEmpty()) {
                             Surface(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -525,15 +525,12 @@ fun HomeTab(
                                         MaterialTheme.colorScheme.primary
                                     }
 
-                                    Surface(
-                                        shape = RoundedCornerShape(14.dp),
-                                        color = courseColor.copy(alpha = 0.08f),
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, courseColor.copy(alpha = 0.2f)),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .bouncyClick {
-                                                navController.navigate("courseDetail/${course.id}") { launchSingleTop = true }
-                                            }
+                                    ScholarCard(
+                                        shape = RoundedCornerShape(16.dp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        onClick = {
+                                            navController.navigate("courseDetail/${course.id}") { launchSingleTop = true }
+                                        }
                                     ) {
                                         Row(
                                             modifier = Modifier.padding(12.dp),
@@ -541,14 +538,14 @@ fun HomeTab(
                                         ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .size(36.dp)
-                                                    .background(courseColor.copy(alpha = 0.2f), CircleShape),
+                                                    .size(38.dp)
+                                                    .background(courseColor.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Text(
                                                     course.name.take(2).uppercase(),
                                                     color = courseColor,
-                                                    fontWeight = FontWeight.Bold,
+                                                    fontWeight = FontWeight.Black,
                                                     style = MaterialTheme.typography.labelLarge
                                                 )
                                             }
@@ -574,14 +571,14 @@ fun HomeTab(
                                             Icon(
                                                 Icons.Rounded.ChevronRight,
                                                 contentDescription = null,
-                                                tint = courseColor.copy(alpha = 0.6f),
-                                                modifier = Modifier.size(20.dp)
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                                modifier = Modifier.size(18.dp)
                                             )
                                         }
                                     }
                                 }
                             }
-                        }
+                        }   }
                     }
                 }
             }
@@ -620,9 +617,8 @@ fun HomeTab(
                                         MaterialTheme.colorScheme.primary
                                     }
 
-                                    Surface(
+                                    ScholarCard(
                                         shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Row(
@@ -692,37 +688,60 @@ fun HomeTab(
 
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 activeTasks.forEach { task ->
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .bouncyClick { viewModel.toggleTaskCompleted(task) }
+                                    ScholarCard(
+                                        shape = RoundedCornerShape(14.dp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        onClick = { viewModel.toggleTaskCompleted(task) }
                                     ) {
                                         Row(
-                                            modifier = Modifier.padding(10.dp),
+                                            modifier = Modifier.padding(12.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Checkbox(
-                                                checked = task.isCompleted,
-                                                onCheckedChange = { viewModel.toggleTaskCompleted(task) },
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                            Spacer(Modifier.width(10.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(24.dp)
+                                                    .clip(CircleShape)
+                                                    .border(
+                                                        width = 2.dp,
+                                                        color = if (task.isCompleted) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline,
+                                                        shape = CircleShape
+                                                    )
+                                                    .background(
+                                                        if (task.isCompleted) MaterialTheme.colorScheme.tertiary else Color.Transparent
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (task.isCompleted) {
+                                                    Icon(
+                                                        Icons.Rounded.Check,
+                                                        contentDescription = null,
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(14.dp)
+                                                    )
+                                                }
+                                            }
+                                            Spacer(Modifier.width(12.dp))
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(
                                                     text = task.title,
                                                     style = MaterialTheme.typography.bodyMedium,
-                                                    fontWeight = FontWeight.Medium,
+                                                    fontWeight = FontWeight.SemiBold,
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
                                                 if (task.tags.isNotBlank()) {
-                                                    Text(
-                                                        text = task.tags,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
+                                                    Spacer(Modifier.height(2.dp))
+                                                    Surface(
+                                                        shape = RoundedCornerShape(6.dp),
+                                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                                                    ) {
+                                                        Text(
+                                                            text = task.tags,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -774,7 +793,6 @@ fun HomeTab(
                 }
             }
         }
-    }
 
     if (showQuickAddTaskDialog) {
         AddTaskDialog(

@@ -28,7 +28,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Settings", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
@@ -38,7 +38,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+                    containerColor = Color.Transparent
                 )
             )
         }
@@ -55,17 +55,22 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             SettingsGroupCard(title = "Personalization", icon = Icons.Rounded.Palette) {
                 SettingsActionItemInCard(
                     title = "Appearance & Theme",
-                    subtitle = "Themes, AMOLED pure black, lighting & custom color palettes",
+                    subtitle = "Themes, AMOLED pure black, lighting & custom palettes",
                     icon = Icons.Rounded.Palette,
+                    iconBgColor = androidx.compose.ui.graphics.Color(0xFF007AFF),
                     onClick = { navController.navigate("settings/appearance") }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                    modifier = Modifier.padding(start = 48.dp)
+                )
 
                 SettingsActionItemInCard(
                     title = "Streak Goals & Requirements",
                     subtitle = "Daily targets, completion thresholds & motivational tones",
                     icon = Icons.Rounded.LocalFireDepartment,
+                    iconBgColor = androidx.compose.ui.graphics.Color(0xFFFF9500),
                     onClick = { navController.navigate("settings/streaks") }
                 )
             }
@@ -76,15 +81,20 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     title = "Tag Management",
                     subtitle = "Customize tag colors and global taxonomies",
                     icon = Icons.Rounded.LocalOffer,
+                    iconBgColor = androidx.compose.ui.graphics.Color(0xFF30B0C7),
                     onClick = { navController.navigate("tags_hub") }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                    modifier = Modifier.padding(start = 48.dp)
+                )
 
                 SettingsActionItemInCard(
                     title = "System Configuration",
                     subtitle = "Course-subject linking, synergy scoring & Pomodoro defaults",
                     icon = Icons.Rounded.Settings,
+                    iconBgColor = androidx.compose.ui.graphics.Color(0xFF5856D6),
                     onClick = { navController.navigate("settings/system") }
                 )
             }
@@ -95,15 +105,20 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     title = "Safety System Guard",
                     subtitle = "App PIN lock, biometric protection & safety alerts",
                     icon = Icons.Rounded.Lock,
+                    iconBgColor = androidx.compose.ui.graphics.Color(0xFFFF3B30),
                     onClick = { navController.navigate("settings/safety") }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                    modifier = Modifier.padding(start = 48.dp)
+                )
 
                 SettingsActionItemInCard(
                     title = "Notifications & Reminders",
                     subtitle = "Notification channels, study alarms & reminders",
                     icon = Icons.Rounded.Notifications,
+                    iconBgColor = androidx.compose.ui.graphics.Color(0xFF34C759),
                     onClick = { navController.navigate("settings/notifications") }
                 )
             }
@@ -114,33 +129,46 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     title = "Multi-Device P2P Sync",
                     subtitle = "End-to-end encrypted device syncing with 1-time mutual pairing",
                     icon = Icons.Rounded.Autorenew,
+                    iconBgColor = androidx.compose.ui.graphics.Color(0xFFAF52DE),
                     onClick = { navController.navigate("settings/sync") }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                    modifier = Modifier.padding(start = 48.dp)
+                )
 
                 SettingsActionItemInCard(
                     title = "Data & Backups",
                     subtitle = "Export, import, database backups & complete resets",
                     icon = Icons.Rounded.Storage,
+                    iconBgColor = androidx.compose.ui.graphics.Color(0xFF8E8E93),
                     onClick = { navController.navigate("settings/data") }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                    modifier = Modifier.padding(start = 48.dp)
+                )
 
                 SettingsActionItemInCard(
                     title = "Scholar Profiles",
                     subtitle = "Active: ${activeProfile.name.ifBlank { "Scholar" }} • Multi-profile workspaces",
                     icon = Icons.Rounded.Person,
+                    iconBgColor = androidx.compose.ui.graphics.Color(0xFFFF2D55),
                     onClick = { navController.navigate("profile_menu") }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                    modifier = Modifier.padding(start = 48.dp)
+                )
 
                 SettingsActionItemInCard(
                     title = "About Lumia",
                     subtitle = "Version v1.0.7, license & open source repository",
                     icon = Icons.Rounded.Info,
+                    iconBgColor = androidx.compose.ui.graphics.Color(0xFF636366),
                     onClick = { navController.navigate("settings/about") }
                 )
             }

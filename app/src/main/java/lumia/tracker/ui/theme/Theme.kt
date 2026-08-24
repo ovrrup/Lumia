@@ -24,9 +24,9 @@ fun createLightScheme(
     primary: Color, primaryContainer: Color,
     secondary: Color, secondaryContainer: Color,
     tertiary: Color, tertiaryContainer: Color,
-    bg: Color = Color(0xFFFAFAFA),
+    bg: Color = Color(0xFFF2F2F7),
     surface: Color = Color(0xFFFFFFFF),
-    onSurfaceText: Color = Color(0xFF1A1C1A)
+    onSurfaceText: Color = Color(0xFF1C1C1E)
 ) = lightColorScheme(
     primary = primary, onPrimary = Color.White,
     primaryContainer = primaryContainer, onPrimaryContainer = Color.Black.mix(primaryContainer, 0.85f),
@@ -36,10 +36,11 @@ fun createLightScheme(
     tertiaryContainer = tertiaryContainer, onTertiaryContainer = Color.Black.mix(tertiaryContainer, 0.85f),
     background = bg, onBackground = onSurfaceText,
     surface = surface, onSurface = onSurfaceText,
-    surfaceVariant = Color(0xFFEAEAEA).mix(bg, 0.5f), onSurfaceVariant = onSurfaceText.mix(bg, 0.35f),
-    outline = Color(0xFF79747E).mix(bg, 0.5f), outlineVariant = Color(0xFFCAC4D0).mix(bg, 0.5f),
-    error = Color(0xFFBA1A1A), onError = Color.White,
-    errorContainer = Color(0xFFFFDAD6), onErrorContainer = Color(0xFF410002),
+    surfaceVariant = Color(0xFFE5E5EA), onSurfaceVariant = Color(0xFF8E8E93),
+    surfaceContainer = Color(0xFFFFFFFF), surfaceContainerHigh = Color(0xFFF2F2F7),
+    outline = Color(0xFFD1D1D6), outlineVariant = Color(0xFFE5E5EA),
+    error = Color(0xFFFF3B30), onError = Color.White,
+    errorContainer = Color(0xFFFFE5E5), onErrorContainer = Color(0xFFD70015),
     surfaceTint = primary
 )
 
@@ -47,101 +48,102 @@ fun createDarkScheme(
     primary: Color, primaryContainer: Color,
     secondary: Color, secondaryContainer: Color,
     tertiary: Color, tertiaryContainer: Color,
-    bg: Color = Color(0xFF101010),
-    surface: Color = Color(0xFF1A1A1A),
-    onSurfaceText: Color = Color(0xFFE2E2E2)
+    bg: Color = Color(0xFF000000),
+    surface: Color = Color(0xFF1C1C1E),
+    onSurfaceText: Color = Color(0xFFFFFFFF)
 ) = darkColorScheme(
-    primary = primary, onPrimary = Color(0xFF101010),
+    primary = primary, onPrimary = Color.White,
     primaryContainer = primaryContainer, onPrimaryContainer = Color.White.mix(primaryContainer, 0.85f),
-    secondary = secondary, onSecondary = Color(0xFF101010),
+    secondary = secondary, onSecondary = Color.White,
     secondaryContainer = secondaryContainer, onSecondaryContainer = Color.White.mix(secondaryContainer, 0.85f),
-    tertiary = tertiary, onTertiary = Color(0xFF101010),
+    tertiary = tertiary, onTertiary = Color.White,
     tertiaryContainer = tertiaryContainer, onTertiaryContainer = Color.White.mix(tertiaryContainer, 0.85f),
     background = bg, onBackground = onSurfaceText,
     surface = surface, onSurface = onSurfaceText,
-    surfaceVariant = Color(0xFF2E2E2E).mix(bg, 0.5f), onSurfaceVariant = onSurfaceText.mix(bg, 0.35f),
-    outline = Color(0xFF8E918F).mix(bg, 0.5f), outlineVariant = Color(0xFF444746).mix(bg, 0.5f),
-    error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
-    errorContainer = Color(0xFF93000A), onErrorContainer = Color(0xFFFFDAD6),
+    surfaceVariant = Color(0xFF2C2C2E), onSurfaceVariant = Color(0xFF8E8E93),
+    surfaceContainer = Color(0xFF1C1C1E), surfaceContainerHigh = Color(0xFF2C2C2E),
+    outline = Color(0xFF38383A), outlineVariant = Color(0xFF2C2C2E),
+    error = Color(0xFFFF453A), onError = Color.White,
+    errorContainer = Color(0xFF5E110E), onErrorContainer = Color(0xFFFFB4AB),
     surfaceTint = primary
 )
 
 val OceanLight = createLightScheme(
-    primary = Color(0xFF0061A4), primaryContainer = Color(0xFFD1E4FF), 
-    secondary = Color(0xFF535F70), secondaryContainer = Color(0xFFD7E3F7), 
-    tertiary = Color(0xFF6B5778), tertiaryContainer = Color(0xFFF2DAFF),
-    bg = Color(0xFFF3F6FA), surface = Color(0xFFFFFFFF)
+    primary = Color(0xFF007AFF), primaryContainer = Color(0xFFD0E6FF), 
+    secondary = Color(0xFF5856D6), secondaryContainer = Color(0xFFE5E4FF), 
+    tertiary = Color(0xFF34C759), tertiaryContainer = Color(0xFFD5F5DD),
+    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
 )
 val OceanDark = createDarkScheme(
-    primary = Color(0xFF9ECAFF), primaryContainer = Color(0xFF00497D), 
-    secondary = Color(0xFFBBC7DB), secondaryContainer = Color(0xFF3B4858), 
-    tertiary = Color(0xFFD6BEE4), tertiaryContainer = Color(0xFF523F5F),
-    bg = Color(0xFF0B121A), surface = Color(0xFF121922)
+    primary = Color(0xFF0A84FF), primaryContainer = Color(0xFF004080), 
+    secondary = Color(0xFF5E5CE6), secondaryContainer = Color(0xFF282766), 
+    tertiary = Color(0xFF30D158), tertiaryContainer = Color(0xFF0E5420),
+    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
 )
 
 val EmeraldLight = createLightScheme(
-    primary = Color(0xFF006D36), primaryContainer = Color(0xFF95F9B7), 
-    secondary = Color(0xFF506353), secondaryContainer = Color(0xFFD2E8D3), 
-    tertiary = Color(0xFF3A656F), tertiaryContainer = Color(0xFFBDEAF6),
-    bg = Color(0xFFF2FAF4), surface = Color(0xFFFFFFFF)
+    primary = Color(0xFF34C759), primaryContainer = Color(0xFFD5F5DD), 
+    secondary = Color(0xFF30B0C7), secondaryContainer = Color(0xFFD5F3F7), 
+    tertiary = Color(0xFF007AFF), tertiaryContainer = Color(0xFFD0E6FF),
+    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
 )
 val EmeraldDark = createDarkScheme(
-    primary = Color(0xFF79DC9C), primaryContainer = Color(0xFF005227), 
-    secondary = Color(0xFFB6CCB8), secondaryContainer = Color(0xFF384B3C), 
-    tertiary = Color(0xFFA1CED9), tertiaryContainer = Color(0xFF204D56),
-    bg = Color(0xFF09120D), surface = Color(0xFF101914)
+    primary = Color(0xFF30D158), primaryContainer = Color(0xFF0E5420), 
+    secondary = Color(0xFF40CBE0), secondaryContainer = Color(0xFF104B54), 
+    tertiary = Color(0xFF0A84FF), tertiaryContainer = Color(0xFF004080),
+    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
 )
 
 val GoldLight = createLightScheme(
-    primary = Color(0xFF7D5700), primaryContainer = Color(0xFFFFDE9C), 
-    secondary = Color(0xFF6C5D3F), secondaryContainer = Color(0xFFF5E0BB), 
-    tertiary = Color(0xFF4B6546), tertiaryContainer = Color(0xFFBCDEB2),
-    bg = Color(0xFFFBF9F1), surface = Color(0xFFFFFFFF)
+    primary = Color(0xFFFF9500), primaryContainer = Color(0xFFFFECC4), 
+    secondary = Color(0xFFFF2D55), secondaryContainer = Color(0xFFFFD5DD), 
+    tertiary = Color(0xFF34C759), tertiaryContainer = Color(0xFFD5F5DD),
+    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
 )
 val GoldDark = createDarkScheme(
-    primary = Color(0xFFFABD00), primaryContainer = Color(0xFF5E4000), 
-    secondary = Color(0xFFD8C4A0), secondaryContainer = Color(0xFF53452A), 
-    tertiary = Color(0xFFB1CEA8), tertiaryContainer = Color(0xFF344D30),
-    bg = Color(0xFF13110A), surface = Color(0xFF1A1810)
+    primary = Color(0xFFFF9F0A), primaryContainer = Color(0xFF6B3E00), 
+    secondary = Color(0xFFFF375F), secondaryContainer = Color(0xFF660E1F), 
+    tertiary = Color(0xFF30D158), tertiaryContainer = Color(0xFF0E5420),
+    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
 )
 
 val RoseLight = createLightScheme(
-    primary = Color(0xFFBF0031), primaryContainer = Color(0xFFFFDAD9), 
-    secondary = Color(0xFF775656), secondaryContainer = Color(0xFFFFDAD9), 
-    tertiary = Color(0xFF755A2F), tertiaryContainer = Color(0xFFFFDDAF),
-    bg = Color(0xFFFFF2F2), surface = Color(0xFFFFFFFF)
+    primary = Color(0xFFFF2D55), primaryContainer = Color(0xFFFFD5DD), 
+    secondary = Color(0xFFAF52DE), secondaryContainer = Color(0xFFF2DCFA), 
+    tertiary = Color(0xFFFF9500), tertiaryContainer = Color(0xFFFFECC4),
+    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
 )
 val RoseDark = createDarkScheme(
-    primary = Color(0xFFFFB3B4), primaryContainer = Color(0xFF8E0021), 
-    secondary = Color(0xFFE7BDBE), secondaryContainer = Color(0xFF5D3F3F), 
-    tertiary = Color(0xFFE5C18D), tertiaryContainer = Color(0xFF5C421A),
-    bg = Color(0xFF170D0E), surface = Color(0xFF1F1213)
+    primary = Color(0xFFFF375F), primaryContainer = Color(0xFF660E1F), 
+    secondary = Color(0xFFBF5AF2), secondaryContainer = Color(0xFF4B1E66), 
+    tertiary = Color(0xFFFF9F0A), tertiaryContainer = Color(0xFF6B3E00),
+    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
 )
 
 val SageLight = createLightScheme(
-    primary = Color(0xFF3B6939), primaryContainer = Color(0xFFBCF0B4), 
-    secondary = Color(0xFF53634F), secondaryContainer = Color(0xFFD6E8CE), 
-    tertiary = Color(0xFF38656A), tertiaryContainer = Color(0xFFBCEBF0), 
-    bg = Color(0xFFF5F9F3), surface = Color(0xFFFFFFFF)
+    primary = Color(0xFF30B0C7), primaryContainer = Color(0xFFD5F3F7), 
+    secondary = Color(0xFF34C759), secondaryContainer = Color(0xFFD5F5DD), 
+    tertiary = Color(0xFF5856D6), tertiaryContainer = Color(0xFFE5E4FF), 
+    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
 )
 val SageDark = createDarkScheme(
-    primary = Color(0xFFA1D39A), primaryContainer = Color(0xFF225024), 
-    secondary = Color(0xFFBACCB3), secondaryContainer = Color(0xFF3C4B38), 
-    tertiary = Color(0xFFA0CFD4), tertiaryContainer = Color(0xFF1F4D52), 
-    bg = Color(0xFF0F140E), surface = Color(0xFF151B14)
+    primary = Color(0xFF40CBE0), primaryContainer = Color(0xFF104B54), 
+    secondary = Color(0xFF30D158), secondaryContainer = Color(0xFF0E5420), 
+    tertiary = Color(0xFF5E5CE6), tertiaryContainer = Color(0xFF282766), 
+    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
 )
 
 val TwilightLight = createLightScheme(
-    primary = Color(0xFF5B53A8), primaryContainer = Color(0xFFE3DFFF), 
-    secondary = Color(0xFF5D5D72), secondaryContainer = Color(0xFFE3E0F9), 
-    tertiary = Color(0xFF795369), tertiaryContainer = Color(0xFFFFD8EC), 
-    bg = Color(0xFFF7F4FB), surface = Color(0xFFFFFFFF)
+    primary = Color(0xFF5856D6), primaryContainer = Color(0xFFE5E4FF), 
+    secondary = Color(0xFFAF52DE), secondaryContainer = Color(0xFFF2DCFA), 
+    tertiary = Color(0xFF007AFF), tertiaryContainer = Color(0xFFD0E6FF), 
+    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
 )
 val TwilightDark = createDarkScheme(
-    primary = Color(0xFFC4C0FF), primaryContainer = Color(0xFF433B8E), 
-    secondary = Color(0xFFC7C4DC), secondaryContainer = Color(0xFF454559), 
-    tertiary = Color(0xFFEBB9D6), tertiaryContainer = Color(0xFF5F3C51), 
-    bg = Color(0xFF111016), surface = Color(0xFF17161F)
+    primary = Color(0xFF5E5CE6), primaryContainer = Color(0xFF282766), 
+    secondary = Color(0xFFBF5AF2), secondaryContainer = Color(0xFF4B1E66), 
+    tertiary = Color(0xFF0A84FF), tertiaryContainer = Color(0xFF004080), 
+    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
 )
 
 fun Color.mix(other: Color, weight: Float): Color {
@@ -382,11 +384,11 @@ fun Modifier.bouncyScale(interactionSource: androidx.compose.foundation.interact
     
     val targetScale = if (isPressed) {
         when (animationMode) {
-            "Bouncy" -> if (moreRounds) 1.22f else 1.15f
-            "Dynamic" -> if (moreRounds) 1.12f else 1.08f
-            else -> 1.02f
+            "Bouncy" -> 0.92f
+            "Dynamic" -> 0.95f
+            else -> 0.97f
         }
-    } else 1f
+    } else 1.0f
 
     val scale by animateFloatAsState(
         targetValue = targetScale,
@@ -415,11 +417,11 @@ fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Mod
     
     val targetScale = if (isPressed) {
         when (animationMode) {
-            "Bouncy" -> if (moreRounds) 1.22f else 1.15f
-            "Dynamic" -> if (moreRounds) 1.12f else 1.08f
-            else -> 1.02f
+            "Bouncy" -> 0.92f
+            "Dynamic" -> 0.95f
+            else -> 0.97f
         }
-    } else 1f
+    } else 1.0f
 
     val scale by animateFloatAsState(
         targetValue = targetScale,
@@ -431,15 +433,15 @@ fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Mod
         label = "bouncyClickScale"
     )
     
-    return this.graphicsLayer {
-        scaleX = scale
-        scaleY = scale
-    }.clickable(
+    return this.clickable(
         interactionSource = interactionSource,
         indication = androidx.compose.material3.ripple(),
         enabled = enabled,
         onClick = onClick
-    )
+    ).graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }
 }
 
 @Composable

@@ -577,14 +577,14 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     val badgeColor = when (result.type) {
-                                        "Course" -> Color(0xFF3197D6)
-                                        "Subject" -> Color(0xFF4CAF50)
-                                        "Chapter" -> Color(0xFFFF9800)
-                                        "Topic" -> Color(0xFF9C27B0)
-                                        "Assignment" -> Color(0xFFE91E63)
-                                        "Task" -> Color(0xFF3F51B5)
-                                        "Note" -> Color(0xFF607D8B)
-                                        else -> Color(0xFF9E9E9E)
+                                        "Course" -> MaterialTheme.colorScheme.primary
+                                        "Subject" -> MaterialTheme.colorScheme.secondary
+                                        "Chapter" -> MaterialTheme.colorScheme.tertiary
+                                        "Topic" -> MaterialTheme.colorScheme.error
+                                        "Assignment" -> MaterialTheme.colorScheme.primary
+                                        "Task" -> MaterialTheme.colorScheme.secondary
+                                        "Note" -> MaterialTheme.colorScheme.tertiary
+                                        else -> MaterialTheme.colorScheme.outline
                                     }
 
                                     Box(
@@ -745,12 +745,12 @@ fun SearchDetailDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val badgeColor = when (result.type) {
-                        "Chapter" -> Color(0xFFFF9800)
-                        "Topic" -> Color(0xFF9C27B0)
-                        "Assignment" -> Color(0xFFE91E63)
-                        "Task" -> Color(0xFF3F51B5)
-                        "Note" -> Color(0xFF607D8B)
-                        else -> Color(0xFF9E9E9E)
+                        "Chapter" -> MaterialTheme.colorScheme.tertiary
+                        "Topic" -> MaterialTheme.colorScheme.error
+                        "Assignment" -> MaterialTheme.colorScheme.primary
+                        "Task" -> MaterialTheme.colorScheme.secondary
+                        "Note" -> MaterialTheme.colorScheme.tertiary
+                        else -> MaterialTheme.colorScheme.outline
                     }
 
                     Box(
