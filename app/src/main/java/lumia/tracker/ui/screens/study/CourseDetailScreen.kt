@@ -443,10 +443,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 // Interconnected Study Subject & Synergy Score Section
                 if (linkedSubjects.isNotEmpty()) {
                     item {
-                        lumia.tracker.ui.components.GlassCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        lumia.tracker.ui.components.ScholarCard(
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(

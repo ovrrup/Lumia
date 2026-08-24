@@ -259,8 +259,11 @@ private fun SyncErrorContent(
     BouncyButton(
         onClick = onDismiss,
         modifier = Modifier.fillMaxWidth(),
-        containerColor = MaterialTheme.colorScheme.surfaceVariant
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     ) {
-        Text("Close", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Close")
     }
 }

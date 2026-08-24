@@ -247,7 +247,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.Sync,
+                            imageVector = Icons.Rounded.Autorenew,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(26.dp)

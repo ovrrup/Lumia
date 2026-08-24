@@ -63,7 +63,7 @@ object SyncMergeEngine {
                         // Create new profile locally
                         targetProfileId = profileManager.addProfile(
                             name = remoteProf.name,
-                            avatarEmoji = remoteProf.avatarEmoji,
+                            avatar = remoteProf.avatarEmoji,
                             alias = remoteProf.alias,
                             starterTheme = remoteProf.starterTheme
                         )

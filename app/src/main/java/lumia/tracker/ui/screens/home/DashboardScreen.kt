@@ -162,55 +162,17 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         modifier = Modifier.height(navBarHeight.dp + bottomInset),
                         containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     ) {
-                        val labelModeAlways = navBarLabelMode == "Always"
-                        val hideLabels = navBarLabelMode == "Hidden"
-
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
-                            label = if (hideLabels) null else { { Text("Home") } },
-                            selected = selectedTab == 0,
-                            onClick = { viewModel.setSelectedDashboardTab(0) },
-                            colors = navItemColors,
-                            alwaysShowLabel = labelModeAlways
+                        DashboardNavItems(
+                            selectedTab = selectedTab,
+                            onSelectTab = { viewModel.setSelectedDashboardTab(it) },
+                            navItemColors = navItemColors,
+                            alwaysShowLabel = navBarLabelMode == "Always",
+                            hideLabels = navBarLabelMode == "Hidden",
+                            featureSubjectEnabled = featureSubjectEnabled,
+                            fuseSubjectsCourses = fuseSubjectsCourses,
+                            featureSelfStudyEnabled = featureSelfStudyEnabled,
+                            featureAnalyticsEnabled = featureAnalyticsEnabled
                         )
-                        NavigationBarItem(
-                            icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
-                            label = if (hideLabels) null else { { Text("Courses") } },
-                            selected = selectedTab == 1,
-                            onClick = { viewModel.setSelectedDashboardTab(1) },
-                            colors = navItemColors,
-                            alwaysShowLabel = labelModeAlways
-                        )
-                        if (featureSubjectEnabled && !fuseSubjectsCourses) {
-                            NavigationBarItem(
-                                icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
-                                label = if (hideLabels) null else { { Text("Subjects") } },
-                                selected = selectedTab == 2,
-                                onClick = { viewModel.setSelectedDashboardTab(2) },
-                                colors = navItemColors,
-                                alwaysShowLabel = labelModeAlways
-                            )
-                        }
-                        if (featureSelfStudyEnabled) {
-                            NavigationBarItem(
-                                icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Tasks") },
-                                label = if (hideLabels) null else { { Text("Tasks") } },
-                                selected = selectedTab == 3,
-                                onClick = { viewModel.setSelectedDashboardTab(3) },
-                                colors = navItemColors,
-                                alwaysShowLabel = labelModeAlways
-                            )
-                        }
-                        if (featureAnalyticsEnabled) {
-                            NavigationBarItem(
-                                icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
-                                label = if (hideLabels) null else { { Text("Analytics") } },
-                                selected = selectedTab == 4,
-                                onClick = { viewModel.setSelectedDashboardTab(4) },
-                                colors = navItemColors,
-                                alwaysShowLabel = labelModeAlways
-                            )
-                        }
                     }
                 }
             }
@@ -337,55 +299,17 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     tonalElevation = 0.dp,
                     windowInsets = WindowInsets(0, 0, 0, 0)
                 ) {
-                    val labelModeAlways = navBarLabelMode == "Always"
-                    val hideLabels = navBarLabelMode == "Hidden"
-
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
-                        label = if (hideLabels) null else { { Text("Home") } },
-                        selected = selectedTab == 0,
-                        onClick = { viewModel.setSelectedDashboardTab(0) },
-                        colors = navItemColors,
-                        alwaysShowLabel = labelModeAlways
+                    DashboardNavItems(
+                        selectedTab = selectedTab,
+                        onSelectTab = { viewModel.setSelectedDashboardTab(it) },
+                        navItemColors = navItemColors,
+                        alwaysShowLabel = navBarLabelMode == "Always",
+                        hideLabels = navBarLabelMode == "Hidden",
+                        featureSubjectEnabled = featureSubjectEnabled,
+                        fuseSubjectsCourses = fuseSubjectsCourses,
+                        featureSelfStudyEnabled = featureSelfStudyEnabled,
+                        featureAnalyticsEnabled = featureAnalyticsEnabled
                     )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
-                        label = if (hideLabels) null else { { Text("Courses") } },
-                        selected = selectedTab == 1,
-                        onClick = { viewModel.setSelectedDashboardTab(1) },
-                        colors = navItemColors,
-                        alwaysShowLabel = labelModeAlways
-                    )
-                    if (featureSubjectEnabled && !fuseSubjectsCourses) {
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
-                            label = if (hideLabels) null else { { Text("Subjects") } },
-                            selected = selectedTab == 2,
-                            onClick = { viewModel.setSelectedDashboardTab(2) },
-                            colors = navItemColors,
-                            alwaysShowLabel = labelModeAlways
-                        )
-                    }
-                    if (featureSelfStudyEnabled) {
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Self Study") },
-                            label = if (hideLabels) null else { { Text("Self Study") } },
-                            selected = selectedTab == 3,
-                            onClick = { viewModel.setSelectedDashboardTab(3) },
-                            colors = navItemColors,
-                            alwaysShowLabel = labelModeAlways
-                        )
-                    }
-                    if (featureAnalyticsEnabled) {
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
-                            label = if (hideLabels) null else { { Text("Analytics") } },
-                            selected = selectedTab == 4,
-                            onClick = { viewModel.setSelectedDashboardTab(4) },
-                            colors = navItemColors,
-                            alwaysShowLabel = labelModeAlways
-                        )
-                    }
                 }
             }
         }
@@ -401,6 +325,66 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
         AddSubjectDialog(
             viewModel = viewModel,
             onDismiss = { showAddSubjectDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun RowScope.DashboardNavItems(
+    selectedTab: Int,
+    onSelectTab: (Int) -> Unit,
+    navItemColors: NavigationBarItemColors,
+    alwaysShowLabel: Boolean,
+    hideLabels: Boolean,
+    featureSubjectEnabled: Boolean,
+    fuseSubjectsCourses: Boolean,
+    featureSelfStudyEnabled: Boolean,
+    featureAnalyticsEnabled: Boolean
+) {
+    NavigationBarItem(
+        icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
+        label = if (hideLabels) null else { { Text("Home") } },
+        selected = selectedTab == 0,
+        onClick = { onSelectTab(0) },
+        colors = navItemColors,
+        alwaysShowLabel = alwaysShowLabel
+    )
+    NavigationBarItem(
+        icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
+        label = if (hideLabels) null else { { Text("Courses") } },
+        selected = selectedTab == 1,
+        onClick = { onSelectTab(1) },
+        colors = navItemColors,
+        alwaysShowLabel = alwaysShowLabel
+    )
+    if (featureSubjectEnabled && !fuseSubjectsCourses) {
+        NavigationBarItem(
+            icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
+            label = if (hideLabels) null else { { Text("Subjects") } },
+            selected = selectedTab == 2,
+            onClick = { onSelectTab(2) },
+            colors = navItemColors,
+            alwaysShowLabel = alwaysShowLabel
+        )
+    }
+    if (featureSelfStudyEnabled) {
+        NavigationBarItem(
+            icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Tasks") },
+            label = if (hideLabels) null else { { Text("Tasks") } },
+            selected = selectedTab == 3,
+            onClick = { onSelectTab(3) },
+            colors = navItemColors,
+            alwaysShowLabel = alwaysShowLabel
+        )
+    }
+    if (featureAnalyticsEnabled) {
+        NavigationBarItem(
+            icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
+            label = if (hideLabels) null else { { Text("Analytics") } },
+            selected = selectedTab == 4,
+            onClick = { onSelectTab(4) },
+            colors = navItemColors,
+            alwaysShowLabel = alwaysShowLabel
         )
     }
 }
