@@ -66,6 +66,7 @@ fun PomodoroScreen(
     // UI State & Sheets
     var showSettingsSheet by remember { mutableStateOf(false) }
     var isZenModeActive by remember { mutableStateOf(false) }
+    var isAodModeActive by remember { mutableStateOf(false) }
     var keepScreenAwake by remember { mutableStateOf(false) }
 
     // Screen Keep Awake (Wake Lock)
@@ -118,6 +119,20 @@ fun PomodoroScreen(
         } else {
             context.startService(intent)
         }
+    }
+
+    // True AOD Low-Power Mode Overlay
+    if (isAodModeActive) {
+        PomodoroAodOverlay(
+            timeLeftSeconds = if (pomodoroState.isRunning) pomodoroState.timeLeft else workDurationMin * 60,
+            sessionsCompleted = pomodoroState.sessionsCompleted,
+            modeString = currentMode.name,
+            isRunning = pomodoroState.isRunning,
+            isPaused = pomodoroState.isPaused,
+            onPauseResume = { sendServiceAction("PAUSE_RESUME") },
+            onClose = { isAodModeActive = false }
+        )
+        return
     }
 
     // Zen Fullscreen Mode Overlay
@@ -300,14 +315,7 @@ fun PomodoroScreen(
                 onStop = { sendServiceAction("STOP") },
                 onStopAlarm = { sendServiceAction("STOP_ALARM") },
                 onStartAod = {
-                    lumia.tracker.util.TrueAodManager.showAodOverlay(
-                        context = context,
-                        useAccessibility = true,
-                        dimnessLevel = 0.85f,
-                        sensitivity = "highest",
-                        lockTimeoutSeconds = 0,
-                        onExit = {}
-                    )
+                    isAodModeActive = true
                 },
                 onOpenZenMode = { isZenModeActive = true },
                 onOpenSettings = { showSettingsSheet = true }
