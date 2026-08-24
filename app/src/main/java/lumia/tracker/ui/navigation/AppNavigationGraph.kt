@@ -37,7 +37,7 @@ fun AppNavigationGraph(
         startDestination = if (isOnboardingCompleted) "dashboard" else "onboarding",
         // Forward screen entry transition
         enterTransition = {
-            val spec = when (appAnimationMode) {
+            val spec: FiniteAnimationSpec<Float> = when (appAnimationMode) {
                 "Bouncy" -> spring(dampingRatio = 0.45f, stiffness = 200f)
                 "Dynamic" -> spring(dampingRatio = 0.75f, stiffness = 500f)
                 else -> tween(300, easing = LinearOutSlowInEasing)
@@ -47,7 +47,7 @@ fun AppNavigationGraph(
         },
         // Forward screen exit transition
         exitTransition = {
-            val spec = when (appAnimationMode) {
+            val spec: FiniteAnimationSpec<Float> = when (appAnimationMode) {
                 "Bouncy" -> spring(dampingRatio = 0.45f, stiffness = 200f)
                 "Dynamic" -> spring(dampingRatio = 0.75f, stiffness = 500f)
                 else -> tween(300, easing = FastOutLinearInEasing)
@@ -57,7 +57,7 @@ fun AppNavigationGraph(
         },
         // Pop/backstack return entry transition
         popEnterTransition = {
-            val spec = when (appAnimationMode) {
+            val spec: FiniteAnimationSpec<Float> = when (appAnimationMode) {
                 "Bouncy" -> spring(dampingRatio = 0.45f, stiffness = 200f)
                 "Dynamic" -> spring(dampingRatio = 0.75f, stiffness = 500f)
                 else -> tween(300, easing = LinearOutSlowInEasing)
@@ -67,7 +67,7 @@ fun AppNavigationGraph(
         },
         // Pop/backstack return exit transition
         popExitTransition = {
-            val spec = when (appAnimationMode) {
+            val spec: FiniteAnimationSpec<Float> = when (appAnimationMode) {
                 "Bouncy" -> spring(dampingRatio = 0.45f, stiffness = 200f)
                 "Dynamic" -> spring(dampingRatio = 0.75f, stiffness = 500f)
                 else -> tween(300, easing = FastOutLinearInEasing)

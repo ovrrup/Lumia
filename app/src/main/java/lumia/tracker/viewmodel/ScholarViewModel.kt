@@ -665,6 +665,13 @@ private val _streakPercentage = MutableStateFlow(0f)
     private val _displayLayoutMode = MutableStateFlow(prefs.getString("display_layout_mode", "Immersive") ?: "Immersive")
     val displayLayoutMode = _displayLayoutMode.asStateFlow()
 
+    private val _systemBarVisible = MutableStateFlow(false)
+    val systemBarVisible = _systemBarVisible.asStateFlow()
+
+    fun setSystemBarVisible(visible: Boolean) {
+        _systemBarVisible.value = visible
+    }
+
     private val _betaGlassUi = MutableStateFlow(prefs.getBoolean("beta_glass_ui", false))
     val betaGlassUi = _betaGlassUi.asStateFlow()
 

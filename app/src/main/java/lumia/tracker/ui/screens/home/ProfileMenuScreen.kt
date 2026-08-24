@@ -1,4 +1,4 @@
-package lumia.tracker.ui.screens
+package lumia.tracker.ui.screens.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +25,9 @@ import androidx.navigation.NavController
 import lumia.tracker.viewmodel.ScholarViewModel
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
+import lumia.tracker.ui.screens.settings.components.SettingsActionItemInCard
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.Color
