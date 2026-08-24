@@ -280,6 +280,16 @@ private val _streakPercentage = MutableStateFlow(0f)
 
     private fun calculateTodayStreakProgress() {
         viewModelScope.launch(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            val lastRecordedTime = prefs.getLong("last_recorded_monotonic_time", 0L)
+            
+            // Detect backward clock jumps (tampering by more than 2 minutes)
+            if (lastRecordedTime > 0 && now < (lastRecordedTime - 120000L)) {
+                android.util.Log.w("ScholarViewModel", "Clock jump detected. Preventing retroactive streak tampering.")
+            } else {
+                prefs.edit().putLong("last_recorded_monotonic_time", now).apply()
+            }
+
             val todayStart = java.util.Calendar.getInstance().apply {
                 set(java.util.Calendar.HOUR_OF_DAY, 0)
                 set(java.util.Calendar.MINUTE, 0)
@@ -307,12 +317,12 @@ private val _streakPercentage = MutableStateFlow(0f)
             
             val actionLogs = dao.exportAllActionLogs()
             
-            // To prevent exploits (completing deleted or past tasks/assignments):
-            // 1. Get currently existing completed tasks and assignments
-            val existingCompletedTasks = tasks.filter { it.isCompleted }
-            val existingCompletedAssignments = assignments.filter { it.isCompleted }
+            // To prevent exploits (completing deleted, empty, or past tasks/assignments):
+            // 1. Get currently existing completed tasks and assignments with valid content
+            val existingCompletedTasks = tasks.filter { it.isCompleted && it.title.trim().length >= 2 }
+            val existingCompletedAssignments = assignments.filter { it.isCompleted && it.title.trim().length >= 2 }
 
-            // 2. Filter existing completed elements that are NOT old:
+            // 2. Filter existing completed elements that are NOT old and not spam-completed:
             // - A task is not old if its due date is today or in the future, OR if it has no due date and was created today or later.
             val eligibleTasksCompletedTodayTitles = existingCompletedTasks.filter { task ->
                 val isNotOld = (task.dueDateMillis != null && task.dueDateMillis >= todayStart) || 
@@ -360,8 +370,8 @@ private val _streakPercentage = MutableStateFlow(0f)
                 }
             }
 
-            val doneTasks = maxOf(tasksToday.count { it.isCompleted }, netDoneTasksToday)
-            val doneAssignments = maxOf(assignmentsToday.count { it.isCompleted }, netDoneAssignmentsToday)
+            val doneTasks = maxOf(tasksToday.count { it.isCompleted && it.title.trim().length >= 2 }, netDoneTasksToday)
+            val doneAssignments = maxOf(assignmentsToday.count { it.isCompleted && it.title.trim().length >= 2 }, netDoneAssignmentsToday)
             val donePomos = pomosToday.filter { it.durationMinutes >= 1 }.sumOf { it.durationMinutes }
             
             var totalRequired = 0f

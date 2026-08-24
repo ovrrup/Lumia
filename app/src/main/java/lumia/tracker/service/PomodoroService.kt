@@ -493,8 +493,8 @@ class PomodoroService : Service() {
     private fun saveElapsedWorkSessionIfNeeded() {
         if (currentMode != PomodoroMode.WORK || hasSavedCurrentSession) return
         val elapsedSeconds = originalTime - timeLeft
-        if (elapsedSeconds >= 60) {
-            val mins = Math.max(1, elapsedSeconds / 60)
+        if (elapsedSeconds >= 120) {
+            val mins = elapsedSeconds / 60
             hasSavedCurrentSession = true
             scope.launch(Dispatchers.IO) {
                 logAndAwardSession(durationMinutes = mins, isFullCompletion = false, isWorkSession = (currentMode == PomodoroMode.WORK))
@@ -503,7 +503,7 @@ class PomodoroService : Service() {
     }
 
     private suspend fun logAndAwardSession(durationMinutes: Int, isFullCompletion: Boolean, isWorkSession: Boolean) {
-        if (!isWorkSession) return
+        if (!isWorkSession || durationMinutes <= 0) return
         try {
             // Check preference "system_pomodoro_auto_log" in profile prefs
             val profMgr = lumia.tracker.data.ProfileManager(applicationContext)
@@ -579,9 +579,11 @@ class PomodoroService : Service() {
             sendBroadcast(finishedIntent)
             
             val actualElapsedSeconds = originalTime - timeLeft
-            val mins = Math.max(1, actualElapsedSeconds / 60)
-            scope.launch(Dispatchers.IO) {
-                logAndAwardSession(durationMinutes = mins, isFullCompletion = true, isWorkSession = (completedMode == PomodoroMode.WORK))
+            if (actualElapsedSeconds >= 120) {
+                val mins = maxOf(1, actualElapsedSeconds / 60)
+                scope.launch(Dispatchers.IO) {
+                    logAndAwardSession(durationMinutes = mins, isFullCompletion = true, isWorkSession = (completedMode == PomodoroMode.WORK))
+                }
             }
         }
 

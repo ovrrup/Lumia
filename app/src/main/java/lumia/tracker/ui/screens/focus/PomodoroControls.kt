@@ -117,6 +117,8 @@ fun PomodoroControls(
         }
 
         // 3. Secondary Utility Row: True AOD, Zen Fullscreen Mode, Timer Settings
+        var showAodPermissionDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
@@ -137,7 +139,7 @@ fun PomodoroControls(
                             onExit = { }
                         )
                     } else {
-                        onStartAod()
+                        showAodPermissionDialog = true
                     }
                 },
                 label = { Text("True AOD", fontWeight = FontWeight.SemiBold) },
@@ -179,6 +181,45 @@ fun PomodoroControls(
                     )
                 },
                 shape = RoundedCornerShape(16.dp)
+            )
+        }
+
+        if (showAodPermissionDialog) {
+            AlertDialog(
+                onDismissRequest = { showAodPermissionDialog = false },
+                icon = { Icon(Icons.Rounded.BrightnessLow, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                title = { Text("Enable True AOD Display", fontWeight = FontWeight.Bold) },
+                text = {
+                    Text(
+                        "True Always-On Display floats over all apps as a hardware-level black OLED screen with gesture wake-up.\n\nTo use True AOD, please enable 'Display over other apps' in Android settings, or use standard In-App AOD.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    BouncyButton(onClick = {
+                        showAodPermissionDialog = false
+                        try {
+                            val intent = android.content.Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                android.net.Uri.parse("package:${context.packageName}")
+                            )
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            onStartAod()
+                        }
+                    }) {
+                        Text("Grant Permission")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showAodPermissionDialog = false
+                        onStartAod()
+                    }) {
+                        Text("Use In-App AOD")
+                    }
+                },
+                shape = RoundedCornerShape(24.dp)
             )
         }
     }
