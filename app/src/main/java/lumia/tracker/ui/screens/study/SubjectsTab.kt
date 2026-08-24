@@ -28,7 +28,6 @@ import lumia.tracker.model.Subject
 import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ScholarCard
-import lumia.tracker.ui.screens.study.dialogs.EditSubjectDialog
 import lumia.tracker.ui.theme.animateItemEntry
 import lumia.tracker.viewmodel.ScholarViewModel
 

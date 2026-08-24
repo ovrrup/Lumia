@@ -8,7 +8,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import lumia.tracker.model.*
 import lumia.tracker.ui.components.ScholarCard
-import lumia.tracker.ui.screens.study.dialogs.*
 import lumia.tracker.ui.theme.bouncyClick
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll

@@ -1,7 +1,10 @@
-package lumia.tracker.ui.screens
+package lumia.tracker.ui.screens.settings
 
 import lumia.tracker.service.AodAccessibilityService
 import lumia.tracker.util.TrueAodManager
+import lumia.tracker.ui.screens.settings.components.*
+import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.viewmodel.ScholarViewModel
 import android.content.Intent
 import android.provider.Settings
 import android.net.Uri

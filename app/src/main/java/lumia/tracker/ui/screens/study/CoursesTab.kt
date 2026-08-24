@@ -23,8 +23,6 @@ import androidx.navigation.NavController
 import lumia.tracker.model.Course
 import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.ScholarCard
-import lumia.tracker.ui.screens.study.components.CourseItemCard
-import lumia.tracker.ui.screens.study.dialogs.EditCourseDialog
 import lumia.tracker.ui.theme.animateItemEntry
 import lumia.tracker.ui.theme.bouncyScale
 import lumia.tracker.viewmodel.ScholarViewModel

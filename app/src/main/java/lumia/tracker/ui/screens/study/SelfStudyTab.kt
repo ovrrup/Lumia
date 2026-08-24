@@ -108,21 +108,21 @@ fun SelfStudyTab(
             
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    GlassCard(modifier = Modifier.weight(1f).aspectRatio(1f), shape = MaterialTheme.shapes.large) {
+                    ScholarCard(modifier = Modifier.weight(1f).aspectRatio(1f), shape = MaterialTheme.shapes.large) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(upcomingAssignments.size.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.secondary)
                             Spacer(Modifier.height(8.dp))
                             Text("Upcoming Assignments", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         }
                     }
-                    GlassCard(modifier = Modifier.weight(1f).aspectRatio(1f), shape = MaterialTheme.shapes.large) {
+                    ScholarCard(modifier = Modifier.weight(1f).aspectRatio(1f), shape = MaterialTheme.shapes.large) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(pendingTasks.size.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.error)
                             Spacer(Modifier.height(8.dp))
                             Text("Pending Tasks", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         }
                     }
-                    GlassCard(modifier = Modifier.weight(1f).aspectRatio(1f), shape = MaterialTheme.shapes.large) {
+                    ScholarCard(modifier = Modifier.weight(1f).aspectRatio(1f), shape = MaterialTheme.shapes.large) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(futureTasks.size.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.height(8.dp))
@@ -132,7 +132,7 @@ fun SelfStudyTab(
                 }
                 Spacer(Modifier.height(16.dp))
                 
-                GlassCard(
+                ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     onClick = {
