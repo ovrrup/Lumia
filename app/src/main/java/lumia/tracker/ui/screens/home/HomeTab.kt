@@ -1,13 +1,13 @@
 package lumia.tracker.ui.screens.home
 
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,10 +24,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.model.Course
-import lumia.tracker.model.Subject
+import lumia.tracker.model.PracticeAssignment
+import lumia.tracker.model.Task
 import lumia.tracker.ui.components.*
 import lumia.tracker.ui.screens.home.components.DashboardStatusCard
 import lumia.tracker.ui.theme.bouncyClick
@@ -35,6 +37,11 @@ import lumia.tracker.viewmodel.ScholarViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * HomeTab - Professional Academic Command Center.
+ * Aggregates daily focus metrics, active course timetable, urgent assignments,
+ * and high-priority study tasks into a unified, non-repetitive dashboard.
+ */
 @Composable
 fun HomeTab(
     navController: NavController,
@@ -47,181 +54,175 @@ fun HomeTab(
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
-    val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
-    val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
+    val betaNotes by viewModel.betaNotes.collectAsStateWithLifecycle()
     val streakCurrent by viewModel.streakCurrent.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val pomodoros by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
 
     var selectedDateOffset by remember { mutableIntStateOf(0) }
 
+    // Calculate today's study focus minutes
+    val todayStartMillis = remember {
+        Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+    val todayFocusMinutes = remember(pomodoros, todayStartMillis) {
+        pomodoros.filter { it.timestampMillis >= todayStartMillis }.sumOf { it.durationMinutes }
+    }
+
+    val pendingTasksCount = remember(tasks) { tasks.count { !it.isCompleted } }
+    val completedTasksCount = remember(tasks) { tasks.count { it.isCompleted } }
+
     Scaffold(
         containerColor = Color.Transparent
-    ) { padding ->
+    ) { _ ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
-                top = bottomPadding.calculateTopPadding() + 16.dp,
+                top = bottomPadding.calculateTopPadding() + 8.dp,
                 bottom = bottomPadding.calculateBottomPadding() + 32.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // 1. Permission Health Check Panels
             item(key = "permissions") {
                 NotificationPermissionPanel()
                 ExactAlarmPermissionPanel()
                 BatteryOptimizationPermissionPanel()
             }
 
+            // 2. High-Utility Academic Metric Cards
+            item(key = "academic_metrics") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Focus Time Card
+                    ScholarCard(
+                        modifier = Modifier
+                            .weight(1f)
+                            .bouncyClick { navController.navigate("pomodoro") },
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Timer,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                text = if (todayFocusMinutes >= 60) "${todayFocusMinutes / 60}h ${todayFocusMinutes % 60}m" else "${todayFocusMinutes}m",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Focus Today",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    // Tasks Remaining Card
+                    ScholarCard(
+                        modifier = Modifier
+                            .weight(1f)
+                            .bouncyClick { onNavigateToTasks() },
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Rounded.TaskAlt,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                text = "$pendingTasksCount Left",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "$completedTasksCount Done",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    // Courses Enrolled Card
+                    ScholarCard(
+                        modifier = Modifier
+                            .weight(1f)
+                            .bouncyClick { viewModel.setSelectedDashboardTab(1) },
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.MenuBook,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                text = "${courses.size}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Courses",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 3. Weekly Study & Attendance Matrix
             item(key = "dashboard_status") {
                 DashboardStatusCard(
-                    userName = activeProfile.name.ifBlank { "Scholar" },
+                    userName = "",
                     streakDays = streakCurrent,
-                    viewModel = viewModel,
-                    onStartFocus = { navController.navigate("pomodoro") }
+                    viewModel = viewModel
                 )
             }
 
-            item(key = "stats_row") {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Tasks Completed Card
-                    ScholarHeroCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(140.dp),
-                        shape = RoundedCornerShape(28.dp),
-                        onClick = onNavigateToTasks
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.TaskAlt,
-                                contentDescription = "Completed Tasks",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.12f),
-                                        CircleShape
-                                    )
-                                    .padding(8.dp)
-                            )
-                            Column {
-                                Text(
-                                    "${tasks.count { it.isCompleted }}",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Black,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text(
-                                    "Tasks Done",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                )
-                            }
-                        }
-                    }
-
-                    // Courses Stats Card
-                    ScholarHeroCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(140.dp),
-                        shape = RoundedCornerShape(28.dp),
-                        onClick = { viewModel.setSelectedDashboardTab(1) }
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.MenuBook,
-                                contentDescription = "Courses",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.12f),
-                                        CircleShape
-                                    )
-                                    .padding(8.dp)
-                            )
-                            Column {
-                                Text(
-                                    "${courses.size}",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Black,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text(
-                                    "Enrolled",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (betaNotes) {
-                item(key = "notes_tool") {
-                    ScholarCard(
-                        onClick = { navController.navigate("notes") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(90.dp),
-                        shape = RoundedCornerShape(24.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 20.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    "Quick Notes",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    "Draft thoughts & formulas",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Notes,
-                                contentDescription = "Quick Notes",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                        CircleShape
-                                    )
-                                    .padding(8.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
+            // 4. Daily Class Schedule & Timetable
             item(key = "today_classes_calendar") {
                 val baseCalendar = Calendar.getInstance()
                 baseCalendar.add(Calendar.DAY_OF_MONTH, selectedDateOffset)
@@ -235,56 +236,55 @@ fun HomeTab(
 
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(28.dp)
+                    shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(20.dp)
+                            .padding(18.dp)
                     ) {
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column {
-                                Text(
-                                    text = when (selectedDateOffset) {
-                                        0 -> "Today's Schedule"
-                                        1 -> "Tomorrow's Schedule"
-                                        -1 -> "Yesterday's Schedule"
-                                        else -> "$currentDayOfWeekStr's Schedule"
-                                    },
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Black,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "$currentDayOfWeekStr, $todayMonthStr $todayDayNum",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                                    .clickable { selectedDateOffset = 0 },
-                                contentAlignment = Alignment.Center
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Icon(
-                                    Icons.Rounded.CalendarMonth,
-                                    contentDescription = "Today",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    Icons.Rounded.CalendarToday,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
+                                Column {
+                                    Text(
+                                        text = when (selectedDateOffset) {
+                                            0 -> "Today's Timetable"
+                                            1 -> "Tomorrow's Timetable"
+                                            -1 -> "Yesterday's Timetable"
+                                            else -> "$currentDayOfWeekStr's Timetable"
+                                        },
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "$currentDayOfWeekStr, $todayMonthStr $todayDayNum",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            if (selectedDateOffset != 0) {
+                                BouncyTextButton(onClick = { selectedDateOffset = 0 }) {
+                                    Text("Reset to Today", style = MaterialTheme.typography.labelMedium)
+                                }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        // Day chips selector
+                        // 5-Day selector row
                         val todayCalendar = Calendar.getInstance()
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -292,10 +292,10 @@ fun HomeTab(
                         ) {
                             for (i in -2..2) {
                                 val calOffset = todayCalendar.clone() as Calendar
-                                val targetOffset = selectedDateOffset + i
+                                val targetOffset = i
                                 calOffset.add(Calendar.DAY_OF_MONTH, targetOffset)
-                                val isSelected = i == 0
-                                val dayLetter = SimpleDateFormat("E", Locale.getDefault()).format(calOffset.time).take(1)
+                                val isSelected = selectedDateOffset == targetOffset
+                                val dayLetter = SimpleDateFormat("E", Locale.getDefault()).format(calOffset.time).take(3)
                                 val dayNumber = calOffset.get(Calendar.DAY_OF_MONTH).toString()
 
                                 Column(
@@ -303,51 +303,49 @@ fun HomeTab(
                                     modifier = Modifier
                                         .weight(1f)
                                         .padding(horizontal = 3.dp)
-                                        .clip(RoundedCornerShape(14.dp))
+                                        .clip(RoundedCornerShape(12.dp))
                                         .background(
                                             if (isSelected) MaterialTheme.colorScheme.primary
                                             else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                                         )
                                         .clickable { selectedDateOffset = targetOffset }
-                                        .padding(vertical = 10.dp)
+                                        .padding(vertical = 8.dp)
                                 ) {
                                     Text(
                                         text = dayLetter,
                                         style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                         color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = dayNumber,
                                         style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.Black,
                                         color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
                         if (scheduledCourses.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                                        RoundedCornerShape(16.dp)
-                                    )
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    "No classes scheduled for this day.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                Box(modifier = Modifier.padding(16.dp), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        "No academic lectures scheduled for this day.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         } else {
-                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 scheduledCourses.forEach { course ->
                                     val courseColor = try {
                                         Color(android.graphics.Color.parseColor(course.colorHex.ifBlank { "#3197D6" }))
@@ -355,47 +353,139 @@ fun HomeTab(
                                         MaterialTheme.colorScheme.primary
                                     }
 
-                                    Row(
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = courseColor.copy(alpha = 0.08f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, courseColor.copy(alpha = 0.2f)),
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .background(courseColor.copy(alpha = 0.08f))
-                                            .border(1.dp, courseColor.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
-                                            .clickable { navController.navigate("courseDetail/${course.id}") }
-                                            .padding(14.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                            .bouncyClick {
+                                                navController.navigate("courseDetail/${course.id}") { launchSingleTop = true }
+                                            }
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(36.dp)
-                                                .background(courseColor.copy(alpha = 0.2f), CircleShape),
-                                            contentAlignment = Alignment.Center
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(
-                                                course.name.take(1).uppercase(),
-                                                color = courseColor,
-                                                fontWeight = FontWeight.Bold,
-                                                style = MaterialTheme.typography.titleMedium
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = course.name,
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            if (course.schedule.isNotBlank()) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(36.dp)
+                                                    .background(courseColor.copy(alpha = 0.2f), CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
                                                 Text(
-                                                    text = course.schedule,
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    course.name.take(2).uppercase(),
+                                                    color = courseColor,
+                                                    fontWeight = FontWeight.Bold,
+                                                    style = MaterialTheme.typography.labelLarge
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = course.name,
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    fontWeight = FontWeight.Bold,
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
+                                                if (course.schedule.isNotBlank()) {
+                                                    Text(
+                                                        text = course.schedule,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
+                                            }
+                                            Icon(
+                                                Icons.Rounded.ChevronRight,
+                                                contentDescription = null,
+                                                tint = courseColor.copy(alpha = 0.6f),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. Urgent Upcoming Assignments
+            val upcomingAssigns = remember(assignments) {
+                assignments
+                    .filter { !it.isCompleted }
+                    .sortedBy { if (it.dueDateMillis > 0) it.dueDateMillis else Long.MAX_VALUE }
+                    .take(3)
+            }
+
+            if (upcomingAssigns.isNotEmpty()) {
+                item(key = "upcoming_assignments_section") {
+                    ScholarCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+                        Column(modifier = Modifier.padding(18.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Icon(
+                                        Icons.Rounded.AssignmentLate,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        "Assignments & Projects",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(12.dp))
+
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                upcomingAssigns.forEach { assignment ->
+                                    val catColor = try {
+                                        Color(android.graphics.Color.parseColor(assignment.categoryColor.ifEmpty { "#3197D6" }))
+                                    } catch (e: Exception) {
+                                        MaterialTheme.colorScheme.primary
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(10.dp)
+                                                    .background(catColor, CircleShape)
+                                            )
+                                            Spacer(Modifier.width(10.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = assignment.title,
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                if (assignment.dueDateMillis > 0) {
+                                                    val df = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                                                    Text(
+                                                        text = "Due ${df.format(Date(assignment.dueDateMillis))}",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.secondary
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -406,63 +496,76 @@ fun HomeTab(
                 }
             }
 
-            item(key = "upcoming_classes_assignments") {
-                ScholarCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Upcoming Assignments",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
+            // 6. Active Study Tasks
+            val activeTasks = remember(tasks) {
+                tasks.filter { !it.isCompleted }.take(4)
+            }
 
-                        val upcomingAssigns = assignments
-                            .filter { !it.isCompleted && it.dueDateMillis > System.currentTimeMillis() }
-                            .sortedBy { it.dueDateMillis }
-                            .take(3)
-
-                        if (upcomingAssigns.isEmpty()) {
-                            Text(
-                                "No pending assignments.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        } else {
-                            upcomingAssigns.forEach { assignment ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    val catColor = try {
-                                        Color(android.graphics.Color.parseColor(assignment.categoryColor.ifEmpty { "#3197D6" }))
-                                    } catch (e: Exception) {
-                                        MaterialTheme.colorScheme.primary
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .size(8.dp)
-                                            .background(catColor, CircleShape)
+            if (activeTasks.isNotEmpty()) {
+                item(key = "active_tasks_section") {
+                    ScholarCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+                        Column(modifier = Modifier.padding(18.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Icon(
+                                        Icons.Rounded.CheckCircleOutline,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.tertiary,
+                                        modifier = Modifier.size(20.dp)
                                     )
-                                    Spacer(Modifier.width(8.dp))
                                     Text(
-                                        text = assignment.title,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        "Prioritized Tasks",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
                                     )
+                                }
+                                BouncyTextButton(onClick = onNavigateToTasks) {
+                                    Text("View All", style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                            Spacer(Modifier.height(10.dp))
+
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                activeTasks.forEach { task ->
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .bouncyClick { viewModel.toggleTaskCompleted(task) }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(10.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Checkbox(
+                                                checked = task.isCompleted,
+                                                onCheckedChange = { viewModel.toggleTaskCompleted(task) },
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(Modifier.width(10.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = task.title,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.Medium,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                if (task.tags.isNotBlank()) {
+                                                    Text(
+                                                        text = task.tags,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -470,77 +573,41 @@ fun HomeTab(
                 }
             }
 
-            item(key = "upcoming_tasks") {
-                ScholarCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+            // 7. Quick Notes Card (If Enabled)
+            if (betaNotes) {
+                item(key = "notes_tool") {
+                    ScholarCard(
+                        onClick = { navController.navigate("notes") { launchSingleTop = true } },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                "Upcoming Tasks",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.tertiary
-                            )
-                            BouncyIconButton(
-                                onClick = onNavigateToTasks,
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
-                                        CircleShape
-                                    )
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Add,
-                                    contentDescription = "Add",
-                                    tint = MaterialTheme.colorScheme.tertiary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(8.dp))
-
-                        val upcomingTasks = tasks
-                            .filter { !it.isCompleted }
-                            .sortedBy { it.dueDateMillis ?: Long.MAX_VALUE }
-                            .take(3)
-
-                        if (upcomingTasks.isEmpty()) {
-                            Text(
-                                "No upcoming tasks.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        } else {
-                            upcomingTasks.forEach { task ->
-                                Row(
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                        .bouncyClick { viewModel.toggleTaskCompleted(task) },
-                                    verticalAlignment = Alignment.CenterVertically
+                                        .size(36.dp)
+                                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Checkbox(
-                                        checked = task.isCompleted,
-                                        onCheckedChange = { _ -> viewModel.toggleTaskCompleted(task) },
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        text = task.title,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                    Icon(
+                                        Icons.AutoMirrored.Rounded.Notes,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
+                                Column {
+                                    Text("Academic Scratchpad", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                    Text("Draft equations, quick formulas & thoughts", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
                             }
+                            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
