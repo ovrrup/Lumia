@@ -18,6 +18,10 @@ import lumia.tracker.ui.screens.settings.components.SettingsActionItemInCard
 import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
 import lumia.tracker.viewmodel.ScholarViewModel
 
+/**
+ * SettingsScreen - Clean, structured academic preferences and configuration hub.
+ * Logically organized into 4 distinct groups with zero redundancy or duplicate entries.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
@@ -27,7 +31,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Settings Hub", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                title = { Text("Settings", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
                     BouncyIconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
@@ -43,15 +47,15 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Personalization Group
+            // 1. Personalization Group
             SettingsGroupCard(title = "Personalization", icon = Icons.Rounded.Palette) {
                 SettingsActionItemInCard(
                     title = "Appearance & Theme",
-                    subtitle = "Themes, color palettes, dynamic colors & layout modifiers",
+                    subtitle = "Themes, AMOLED pure black, lighting & custom color palettes",
                     icon = Icons.Rounded.Palette,
                     onClick = { navController.navigate("settings/appearance") }
                 )
@@ -59,71 +63,56 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                 SettingsActionItemInCard(
-                    title = "Streak Goals & Visuals",
-                    subtitle = "Configure percentage limits, fire color, and liquid animations",
+                    title = "Streak Goals & Requirements",
+                    subtitle = "Daily targets, completion thresholds & motivational tones",
                     icon = Icons.Rounded.LocalFireDepartment,
                     onClick = { navController.navigate("settings/streaks") }
                 )
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
 
-            // Academic Tools Group
-            SettingsGroupCard(title = "Academic Experience", icon = Icons.Rounded.School) {
+            // 2. Academic System Configuration
+            SettingsGroupCard(title = "Academic & Study System", icon = Icons.Rounded.School) {
                 SettingsActionItemInCard(
                     title = "Tag Management",
-                    subtitle = "Customize tag aesthetics and academic connections",
+                    subtitle = "Customize tag colors and global taxonomies",
                     icon = Icons.Rounded.LocalOffer,
                     onClick = { navController.navigate("tags_hub") }
                 )
-                
+
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                 SettingsActionItemInCard(
                     title = "System Configuration",
-                    subtitle = "Advanced background features, course-subject fusion, and interconnections",
+                    subtitle = "Course-subject linking, synergy scoring & Pomodoro defaults",
                     icon = Icons.Rounded.Settings,
                     onClick = { navController.navigate("settings/system") }
                 )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                
-                SettingsActionItemInCard(
-                    title = "Experimental Features",
-                    subtitle = "Quick tools, floating bars, and beta layouts",
-                    icon = Icons.Rounded.Science,
-                    onClick = { navController.navigate("settings/beta") }
-                )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Safety & Notifications Group
-            SettingsGroupCard(title = "Alerts & Security", icon = Icons.Rounded.Lock) {
+            // 3. Security & Notifications
+            SettingsGroupCard(title = "Security & Alerts", icon = Icons.Rounded.Lock) {
                 SettingsActionItemInCard(
                     title = "Safety System Guard",
-                    subtitle = "Automatic alerts, security PIN and smart recommendations",
+                    subtitle = "App PIN lock, biometric protection & safety alerts",
                     icon = Icons.Rounded.Lock,
                     onClick = { navController.navigate("settings/safety") }
                 )
-                
+
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                 SettingsActionItemInCard(
-                    title = "Notifications Management",
-                    subtitle = "Tones, schedules, and active task alerts",
+                    title = "Notifications & Reminders",
+                    subtitle = "Notification channels, study alarms & reminders",
                     icon = Icons.Rounded.Notifications,
                     onClick = { navController.navigate("settings/notifications") }
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Storage & Synchronization Group
-            SettingsGroupCard(title = "Storage & Synchronization", icon = Icons.Rounded.Storage) {
+            // 4. Data, Sync & Accounts
+            SettingsGroupCard(title = "Data & Connectivity", icon = Icons.Rounded.Storage) {
                 SettingsActionItemInCard(
                     title = "Multi-Device P2P Sync",
-                    subtitle = "Zero-trust WebRTC & local network synchronization with QR/PIN pairing",
+                    subtitle = "End-to-end encrypted device syncing with 1-time mutual pairing",
                     icon = Icons.Rounded.Autorenew,
                     onClick = { navController.navigate("settings/sync") }
                 )
@@ -131,8 +120,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                 SettingsActionItemInCard(
-                    title = "Database & Management",
-                    subtitle = "Manage secure active backups, exports & schema resets",
+                    title = "Data & Backups",
+                    subtitle = "Export, import, database backups & complete resets",
                     icon = Icons.Rounded.Storage,
                     onClick = { navController.navigate("settings/data") }
                 )
@@ -140,8 +129,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                 SettingsActionItemInCard(
-                    title = "User Account & Profiles",
-                    subtitle = "Active: ${activeProfile.name} • Manage multi-profile workspaces",
+                    title = "Scholar Profiles",
+                    subtitle = "Active: ${activeProfile.name.ifBlank { "Scholar" }} • Multi-profile workspaces",
                     icon = Icons.Rounded.Person,
                     onClick = { navController.navigate("profile_menu") }
                 )
@@ -149,14 +138,14 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                 SettingsActionItemInCard(
-                    title = "About App",
-                    subtitle = "Developer info, update status & open source details",
+                    title = "About Lumia",
+                    subtitle = "Version v1.0.7, license & open source repository",
                     icon = Icons.Rounded.Info,
                     onClick = { navController.navigate("settings/about") }
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

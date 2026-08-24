@@ -25,13 +25,11 @@ fun PomodoroControls(
     isRunning: Boolean,
     isPaused: Boolean,
     isAlarmActive: Boolean,
-    isSoundscapeActive: Boolean,
     onStart: () -> Unit,
     onPauseResume: () -> Unit,
     onSkip: () -> Unit,
     onStop: () -> Unit,
     onStopAlarm: () -> Unit,
-    onToggleSoundscape: () -> Unit,
     onOpenZenMode: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
@@ -113,32 +111,17 @@ fun PomodoroControls(
             }
         }
 
-        // 3. Secondary Utility Row: Ambient Soundscape, Zen Fullscreen Mode, Settings
+        // 3. Secondary Utility Row: Zen Fullscreen Mode, Timer Settings
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ambient Soundscapes
-            FilterChip(
-                selected = isSoundscapeActive,
-                onClick = onToggleSoundscape,
-                label = { Text("Ambient Audio", fontWeight = FontWeight.SemiBold) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = if (isSoundscapeActive) Icons.Rounded.VolumeUp else Icons.Rounded.VolumeOff,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                shape = RoundedCornerShape(16.dp)
-            )
-
             // Zen Fullscreen Immersion Mode
             FilterChip(
                 selected = false,
                 onClick = onOpenZenMode,
-                label = { Text("Zen Mode", fontWeight = FontWeight.SemiBold) },
+                label = { Text("Zen Fullscreen", fontWeight = FontWeight.SemiBold) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Rounded.Fullscreen,
@@ -153,7 +136,7 @@ fun PomodoroControls(
             FilterChip(
                 selected = false,
                 onClick = onOpenSettings,
-                label = { Text("Intervals", fontWeight = FontWeight.SemiBold) },
+                label = { Text("Intervals & Targets", fontWeight = FontWeight.SemiBold) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Rounded.Tune,

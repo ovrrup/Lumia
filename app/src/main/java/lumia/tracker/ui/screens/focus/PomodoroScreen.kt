@@ -7,10 +7,7 @@ import android.os.Build
 import android.view.WindowManager
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,14 +36,11 @@ import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.ui.screens.focus.*
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
-import java.text.SimpleDateFormat
-import java.util.*
 
 /**
  * PomodoroScreen - Completely redesigned, feature-packed Focus Space.
  * Provides interactive mode selection (Work / Short Break / Long Break), circular glowing gauge,
- * dynamic academic context linking, synthesized offline ambient soundscapes, fullscreen OLED zen mode,
- * session metrics, and customizable timer intervals.
+ * dynamic academic context linking, fullscreen OLED zen mode, session metrics, and customizable timer intervals.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +55,6 @@ fun PomodoroScreen(
 ) {
     val context = LocalContext.current
     val courses by viewModel.courses.collectAsStateWithLifecycle(initialValue = emptyList())
-    val subjects by viewModel.subjects.collectAsStateWithLifecycle(initialValue = emptyList())
     val pomodoroState by PomodoroService.state.collectAsStateWithLifecycle()
 
     // Configured Durations from ViewModel
@@ -72,7 +65,6 @@ fun PomodoroScreen(
 
     // UI State & Sheets
     var showSettingsSheet by remember { mutableStateOf(false) }
-    var showSoundscapeSheet by remember { mutableStateOf(false) }
     var isZenModeActive by remember { mutableStateOf(false) }
     var keepScreenAwake by remember { mutableStateOf(false) }
 
@@ -148,13 +140,6 @@ fun PomodoroScreen(
         PomodoroSettingsDialog(
             viewModel = viewModel,
             onDismiss = { showSettingsSheet = false }
-        )
-    }
-
-    // Soundscape Modal Sheet
-    if (showSoundscapeSheet) {
-        PomodoroSoundscapeSheet(
-            onDismiss = { showSoundscapeSheet = false }
         )
     }
 
@@ -298,7 +283,6 @@ fun PomodoroScreen(
                 isRunning = pomodoroState.isRunning,
                 isPaused = pomodoroState.isPaused,
                 isAlarmActive = pomodoroState.isAlarmActive,
-                isSoundscapeActive = PomodoroSoundscapeEngine.isPlaying(),
                 onStart = {
                     sendServiceAction("START") {
                         putExtra("workDuration", workDurationMin * 60)
@@ -315,7 +299,6 @@ fun PomodoroScreen(
                 onSkip = { sendServiceAction("SKIP") },
                 onStop = { sendServiceAction("STOP") },
                 onStopAlarm = { sendServiceAction("STOP_ALARM") },
-                onToggleSoundscape = { showSoundscapeSheet = true },
                 onOpenZenMode = { isZenModeActive = true },
                 onOpenSettings = { showSettingsSheet = true }
             )
@@ -391,48 +374,8 @@ private fun ModeTabItem(
                 text = title,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = if (isSelected) FontWeight.Black else FontWeight.SemiBold,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    }
-}
-
-/**
- * FocusMetricItem - Compact statistic display item for focus time, sessions, and cycles.
- */
-@Composable
-private fun FocusMetricItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    value: String,
-    unit: String,
-    label: String
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp)
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = unit,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
