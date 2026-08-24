@@ -18,6 +18,21 @@ data class SyncDevice(
 ) : Serializable
 
 /**
+ * Represents a permanently paired trusted device stored locally after 1-time handshake.
+ * Eliminates the need for any repeated PIN entry or QR scanning.
+ */
+@JsonClass(generateAdapter = true)
+data class TrustedPeer(
+    val deviceId: String,
+    val deviceName: String,
+    val preSharedKey: String, // 256-bit Hex PSK derived during initial 1-time handshake
+    val pairedAt: Long = System.currentTimeMillis(),
+    val lastSyncAt: Long = 0L,
+    val autoSyncEnabled: Boolean = true,
+    val avatarEmoji: String = "DEV"
+) : Serializable
+
+/**
  * Sync modes available during peer-to-peer data exchange.
  */
 enum class SyncMode {
@@ -90,13 +105,15 @@ data class SyncPairingToken(
  */
 @JsonClass(generateAdapter = true)
 data class SyncMessage(
-    val type: String, // HELLO, CHALLENGE, AUTH, AUTH_OK, AUTH_FAIL, SYNC_REQ, SYNC_DATA, SYNC_ACK, ERROR, DISCONNECT
+    val type: String, // HELLO, CHALLENGE, AUTH, AUTH_OK, AUTH_FAIL, SYNC_DATA, SYNC_ACK, ERROR, DISCONNECT
     val deviceId: String = "",
     val deviceName: String = "",
     val avatarEmoji: String = "DEV",
     val nonce: String = "",
     val authHash: String = "",
     val syncMode: String = "SMART_MERGE",
+    val isTrustedAuth: Boolean = false, // True when utilizing 1-time handshake PSK
+    val psk: String? = null, // Derived PSK sent during 1-time pairing setup
     val payloadEncryptedBase64: String? = null,
     val ivBase64: String? = null,
     val reportJson: String? = null,

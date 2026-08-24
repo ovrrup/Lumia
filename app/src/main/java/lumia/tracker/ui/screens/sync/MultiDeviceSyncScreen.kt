@@ -35,19 +35,23 @@ import lumia.tracker.sync.SyncManager
 import lumia.tracker.sync.model.SyncDevice
 import lumia.tracker.sync.model.SyncMode
 import lumia.tracker.sync.model.SyncState
+import lumia.tracker.sync.model.TrustedPeer
 import lumia.tracker.sync.qr.QrCodeCanvas
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.ScholarCard
-import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
 import lumia.tracker.ui.screens.sync.components.SyncProgressDialog
 import lumia.tracker.ui.screens.sync.components.SyncRadarView
+import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
- * MultiDeviceSyncScreen - P2P Multi-Device Sync Hub with WebRTC / Socket data channels,
- * zero-trust mutual authentication, QR code pairing, and automated local network discovery.
+ * MultiDeviceSyncScreen - P2P Multi-Device Sync Hub supporting:
+ * 1. Permanent 1-Time Mutual Handshake (PSK storage).
+ * 2. All-Time Continuous Background Auto-Sync on local Wi-Fi / Hotspot.
+ * 3. 1-Click Instant Sync with trusted peers without repeating PINs.
+ * 4. Zero-Trust AES-256-GCM encryption & HMAC verification.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,17 +70,20 @@ fun MultiDeviceSyncScreen(
     }
 
     val discoveredPeers by syncManager.discoveredPeers.collectAsStateWithLifecycle()
+    val trustedPeers by syncManager.trustedPeers.collectAsStateWithLifecycle()
+    val continuousAutoSync by syncManager.continuousAutoSyncEnabled.collectAsStateWithLifecycle()
     val syncState by syncManager.syncState.collectAsStateWithLifecycle()
     val pairingPin by syncManager.pairingPin.collectAsStateWithLifecycle()
     val pairingToken by syncManager.pairingToken.collectAsStateWithLifecycle()
     val syncHistory by syncManager.syncHistory.collectAsStateWithLifecycle()
     val isServerRunning by syncManager.isServerRunning.collectAsStateWithLifecycle()
 
-    var selectedTab by remember { mutableIntStateOf(0) } // 0: Radar/Nearby, 1: QR & PIN, 2: History
+    var selectedTab by remember { mutableIntStateOf(0) } // 0: Trusted & Radar, 1: QR & PIN, 2: History
     var showPinDialogForPeer by remember { mutableStateOf<SyncDevice?>(null) }
     var showDirectConnectDialog by remember { mutableStateOf(false) }
     var showTokenInputDialog by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
+    var peerToUnpair by remember { mutableStateOf<TrustedPeer?>(null) }
 
     val isScanning = syncState is SyncState.Discovering
 
@@ -88,7 +95,7 @@ fun MultiDeviceSyncScreen(
                     Column {
                         Text("Multi-Device Sync", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                         Text(
-                            "Zero-Trust P2P & WebRTC Protocol",
+                            "Persistent P2P 1-Time Handshake Protocol",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -115,13 +122,13 @@ fun MultiDeviceSyncScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Local Device Status Banner
+            // Local Device Status Header
             LocalDeviceHeader(
                 syncManager = syncManager,
                 isServerRunning = isServerRunning
             )
 
-            // Category Tab Bar
+            // Navigation Tab Bar
             PrimaryTabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = MaterialTheme.colorScheme.surface
@@ -129,13 +136,13 @@ fun MultiDeviceSyncScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("Radar Scan") },
-                    icon = { Icon(Icons.Rounded.Radar, contentDescription = null) }
+                    text = { Text("Peers & Radar") },
+                    icon = { Icon(Icons.Rounded.Devices, contentDescription = null) }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("QR & PIN") },
+                    text = { Text("Pair New (QR/PIN)") },
                     icon = { Icon(Icons.Rounded.QrCode, contentDescription = null) }
                 )
                 Tab(
@@ -146,16 +153,37 @@ fun MultiDeviceSyncScreen(
                 )
             }
 
-            // Tab Contents
+            // Tab View Area
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
-                    0 -> RadarScanTab(
+                    0 -> TrustedAndRadarTab(
                         isScanning = isScanning,
                         discoveredPeers = discoveredPeers,
+                        trustedPeers = trustedPeers,
+                        continuousAutoSync = continuousAutoSync,
+                        onToggleContinuousAutoSync = { syncManager.setContinuousAutoSyncEnabled(it) },
                         onToggleScan = {
                             if (isScanning) syncManager.stopDiscovery() else syncManager.startDiscovery()
                         },
-                        onConnectPeer = { peer -> showPinDialogForPeer = peer },
+                        onSyncTrustedPeer = { peer ->
+                            val matchingDiscovered = discoveredPeers.find { it.id == peer.deviceId }
+                            if (matchingDiscovered != null) {
+                                syncManager.connectToTrustedPeer(matchingDiscovered, peer)
+                            } else {
+                                Toast.makeText(context, "${peer.deviceName} is not currently detected on this Wi-Fi network.", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onTogglePeerAutoSync = { peerId, enabled ->
+                            syncManager.toggleTrustedPeerAutoSync(peerId, enabled)
+                        },
+                        onRequestUnpair = { peer -> peerToUnpair = peer },
+                        onConnectDiscoveredPeer = { peer ->
+                            if (syncManager.isPeerTrusted(peer.id)) {
+                                syncManager.connectToTrustedPeer(peer)
+                            } else {
+                                showPinDialogForPeer = peer
+                            }
+                        },
                         onDirectConnect = { showDirectConnectDialog = true },
                         onPasteToken = { showTokenInputDialog = true }
                     )
@@ -182,7 +210,33 @@ fun MultiDeviceSyncScreen(
         onDismiss = { syncManager.resetSyncState() }
     )
 
-    // Peer PIN & Sync Mode Selection Dialog
+    // Unpair Confirmation Dialog
+    peerToUnpair?.let { peer ->
+        AlertDialog(
+            onDismissRequest = { peerToUnpair = null },
+            title = { Text("Unpair ${peer.deviceName}?") },
+            text = {
+                Text("Removing this device will revoke automatic synchronization. You will need to perform a new 1-time handshake to sync in the future.")
+            },
+            confirmButton = {
+                BouncyButton(
+                    onClick = {
+                        syncManager.removeTrustedPeer(peer.deviceId)
+                        peerToUnpair = null
+                        Toast.makeText(context, "Device unpaired successfully.", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Unpair Device")
+                }
+            },
+            dismissButton = {
+                BouncyTextButton(onClick = { peerToUnpair = null }) { Text("Cancel") }
+            }
+        )
+    }
+
+    // Peer PIN & Sync Mode Selection Dialog (For Initial 1-Time Handshake)
     showPinDialogForPeer?.let { peer ->
         PeerPinAuthDialog(
             peer = peer,
@@ -200,7 +254,7 @@ fun MultiDeviceSyncScreen(
             onDismiss = { showDirectConnectDialog = false },
             onConnect = { ip, port, pin, mode ->
                 showDirectConnectDialog = false
-                val peer = SyncDevice(id = "manual", name = "Manual Peer ($ip)", ipAddress = ip, port = port)
+                val peer = SyncDevice(id = "manual_$ip", name = "Manual Peer ($ip)", ipAddress = ip, port = port)
                 syncManager.connectToPeer(peer, pin, mode)
             }
         )
@@ -244,7 +298,12 @@ private fun LocalDeviceHeader(
                     .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(localDevice.avatarEmoji, fontSize = 22.sp)
+                Icon(
+                    imageVector = Icons.Rounded.PhoneAndroid,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
             }
             Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -260,23 +319,40 @@ private fun LocalDeviceHeader(
                             .background(if (isServerRunning) Color(0xFF4CAF50) else Color(0xFFFFA000), CircleShape)
                     )
                     Text(
-                        text = "${localDevice.ipAddress}:${localDevice.port}",
+                        text = if (isServerRunning) "P2P Server Active (Local Wi-Fi)" else "Initializing Server...",
                         style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ) {
+                Text(
+                    text = "${localDevice.ipAddress}:${localDevice.port}",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
 }
 
 @Composable
-private fun RadarScanTab(
+private fun TrustedAndRadarTab(
     isScanning: Boolean,
     discoveredPeers: List<SyncDevice>,
+    trustedPeers: List<TrustedPeer>,
+    continuousAutoSync: Boolean,
+    onToggleContinuousAutoSync: (Boolean) -> Unit,
     onToggleScan: () -> Unit,
-    onConnectPeer: (SyncDevice) -> Unit,
+    onSyncTrustedPeer: (TrustedPeer) -> Unit,
+    onTogglePeerAutoSync: (String, Boolean) -> Unit,
+    onRequestUnpair: (TrustedPeer) -> Unit,
+    onConnectDiscoveredPeer: (SyncDevice) -> Unit,
     onDirectConnect: () -> Unit,
     onPasteToken: () -> Unit
 ) {
@@ -285,7 +361,192 @@ private fun RadarScanTab(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Radar Animation Card
+        // 1. Continuous Auto-Sync Master Toggle
+        item {
+            ScholarCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Sync,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    "Continuous Auto-Sync",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "All-Time Background Synchronization",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Switch(
+                            checked = continuousAutoSync,
+                            onCheckedChange = onToggleContinuousAutoSync
+                        )
+                    }
+
+                    Text(
+                        text = "Once paired via 1-time handshake, Lumia will continuously and silently sync your courses, tasks, notes, and focus sessions whenever paired devices are on the same Wi-Fi, hotspot, or local network without requiring any PIN entry.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        // 2. Trusted Paired Devices Section
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "PAIRED TRUSTED DEVICES (${trustedPeers.size})",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+
+        if (trustedPeers.isEmpty()) {
+            item {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.DevicesFold,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text("No paired devices yet", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            "Pair another phone or tablet once using QR Code or PIN from the 'Pair New' tab. After pairing, synchronization is 100% automatic forever.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        } else {
+            items(trustedPeers) { peer ->
+                val isOnline = discoveredPeers.any { it.id == peer.deviceId }
+                ScholarCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .background(if (isOnline) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.TabletAndroid,
+                                        contentDescription = null,
+                                        tint = if (isOnline) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(peer.deviceName, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = if (isOnline) Color(0xFF4CAF50).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
+                                        ) {
+                                            Text(
+                                                text = if (isOnline) "Online" else "Offline",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = if (isOnline) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        text = if (peer.lastSyncAt > 0) "Last synced ${formatRelativeTime(peer.lastSyncAt)}" else "Never synced yet",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            // 1-Click Instant Sync Button
+                            BouncyButton(
+                                onClick = { onSyncTrustedPeer(peer) },
+                                enabled = isOnline
+                            ) {
+                                Icon(Icons.Rounded.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Sync Now")
+                            }
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                        // Controls Row: Auto-Sync Toggle & Unpair Button
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Switch(
+                                    checked = peer.autoSyncEnabled,
+                                    onCheckedChange = { onTogglePeerAutoSync(peer.deviceId, it) },
+                                    modifier = Modifier.size(width = 44.dp, height = 24.dp)
+                                )
+                                Text("Auto-Sync on Connect", style = MaterialTheme.typography.labelMedium)
+                            }
+
+                            BouncyTextButton(
+                                onClick = { onRequestUnpair(peer) },
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Icon(Icons.Rounded.LinkOff, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Unpair", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Radar Discovery Card
         item {
             ScholarCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(
@@ -331,14 +592,14 @@ private fun RadarScanTab(
                         ) {
                             Icon(if (isScanning) Icons.Rounded.Stop else Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text(if (isScanning) "Stop Radar" else "Start Scan")
+                            Text(if (isScanning) "Stop Radar" else "Start Radar Scan")
                         }
                     }
                 }
             }
         }
 
-        // Quick Manual Actions
+        // 4. Quick Manual Actions
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedCard(
@@ -375,10 +636,10 @@ private fun RadarScanTab(
             }
         }
 
-        // Discovered Devices Heading
+        // 5. Discovered Devices Heading
         item {
             Text(
-                text = "DISCOVERED PEERS (${discoveredPeers.size})",
+                text = "NEARBY DISCOVERED DEVICES (${discoveredPeers.size})",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -393,14 +654,14 @@ private fun RadarScanTab(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(Icons.Rounded.DevicesOther, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(40.dp))
+                        Icon(Icons.Rounded.DevicesOther, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(36.dp))
                         Spacer(Modifier.height(8.dp))
-                        Text("No peers detected yet", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("No nearby devices detected", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            "Ensure both devices are on the same Wi-Fi or Hotspot and have Lumia open.",
+                            "Ensure both devices are connected to the same Wi-Fi network or mobile hotspot.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -410,6 +671,7 @@ private fun RadarScanTab(
             }
         } else {
             items(discoveredPeers) { peer ->
+                val isTrusted = trustedPeers.any { it.deviceId == peer.id }
                 ScholarCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -421,11 +683,29 @@ private fun RadarScanTab(
                                 .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(peer.avatarEmoji, fontSize = 20.sp)
+                            Icon(
+                                imageVector = Icons.Rounded.PhoneAndroid,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(22.dp)
+                            )
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(peer.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(peer.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                                if (isTrusted) {
+                                    Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                                        Text(
+                                            "Trusted",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
                             Text(
                                 "${peer.ipAddress}:${peer.port}",
                                 style = MaterialTheme.typography.bodySmall,
@@ -433,8 +713,8 @@ private fun RadarScanTab(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        BouncyButton(onClick = { onConnectPeer(peer) }) {
-                            Text("Sync")
+                        BouncyButton(onClick = { onConnectDiscoveredPeer(peer) }) {
+                            Text(if (isTrusted) "1-Click Sync" else "Pair & Sync")
                         }
                     }
                 }
@@ -465,9 +745,9 @@ private fun QrAndPinTab(
                 modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Peer Pairing QR Code", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("1-Time Handshake QR Code", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    "Scan this QR code from another device to initiate zero-trust pairing.",
+                    "Scan this QR code once from another device to establish permanent mutual trust.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -611,11 +891,11 @@ private fun PeerPinAuthDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Pair with ${peer.name}") },
+        title = { Text("1-Time Pair with ${peer.name}") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Enter the 6-digit security PIN displayed on ${peer.name}'s screen:",
+                    "Enter the 6-digit security PIN displayed on ${peer.name}'s screen. Once paired, you will never need to enter a PIN again for this device:",
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -653,7 +933,7 @@ private fun PeerPinAuthDialog(
                 onClick = { if (pin.length >= 4) onConnect(pin, syncMode) },
                 enabled = pin.length >= 4
             ) {
-                Text("Start Sync")
+                Text("Pair & Start Sync")
             }
         },
         dismissButton = {
@@ -770,8 +1050,12 @@ private fun SyncHelpDialog(onDismiss: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(Modifier.height(6.dp))
+                Text("1-Time Handshake & Permanent Trust:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                Text("Pair two devices once via QR code or 6-digit PIN. Both devices securely derive and store a cryptographic Pre-Shared Key (PSK). After this initial pairing, subsequent syncs occur automatically and silently with zero PIN entry.", style = MaterialTheme.typography.bodySmall)
+
+                Spacer(Modifier.height(6.dp))
                 Text("End-to-End Encryption:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                Text("All sync payloads are protected with AES-256-GCM encryption with keys derived from a zero-trust HMAC challenge-response.", style = MaterialTheme.typography.bodySmall)
+                Text("All sync payloads are protected with AES-256-GCM encryption with keys derived from zero-trust HMAC challenge-response.", style = MaterialTheme.typography.bodySmall)
 
                 Spacer(Modifier.height(6.dp))
                 Text("Smart Data Merge:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
@@ -792,4 +1076,14 @@ private fun formatTimestamp(timeMillis: Long): String {
     val date = java.util.Date(timeMillis)
     val sdf = java.text.SimpleDateFormat("MMM dd, HH:mm", java.util.Locale.getDefault())
     return sdf.format(date)
+}
+
+private fun formatRelativeTime(timeMillis: Long): String {
+    val diff = System.currentTimeMillis() - timeMillis
+    return when {
+        diff < 60_000 -> "just now"
+        diff < 3600_000 -> "${diff / 60_000}m ago"
+        diff < 86400_000 -> "${diff / 3600_000}h ago"
+        else -> "${diff / 86400_000}d ago"
+    }
 }

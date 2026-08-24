@@ -188,9 +188,9 @@ fun PomodoroScreen(
                     // Keep Screen Awake Toggle
                     BouncyIconButton(onClick = { keepScreenAwake = !keepScreenAwake }) {
                         Icon(
-                            imageVector = if (keepScreenAwake) Icons.Rounded.Lightbulb else Icons.Rounded.LightbulbOutline,
+                            imageVector = Icons.Rounded.Lightbulb,
                             contentDescription = "Keep Screen On",
-                            tint = if (keepScreenAwake) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = if (keepScreenAwake) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                         )
                     }
                     // Settings Button

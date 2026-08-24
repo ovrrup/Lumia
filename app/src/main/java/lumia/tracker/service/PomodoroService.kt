@@ -295,6 +295,8 @@ class PomodoroService : Service() {
                 syncToState()
             }
             return START_NOT_STICKY
+        }
+
         if (action == "ADJUST_TIME") {
             val delta = intent?.getIntExtra("deltaSeconds", 0) ?: 0
             if (delta != 0) {

@@ -113,21 +113,8 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize().then(
                         if (displayLayoutMode == "Notch Optimization") Modifier.displayCutoutPadding() else Modifier
-                    ).then(
-                        if (displayLayoutMode == "Immersive") {
-                            Modifier.pointerInput(Unit) {
-                                detectVerticalDragGestures(
-                                    onDragEnd = { dragAccumulator.value = 0f },
-                                    onDragCancel = { dragAccumulator.value = 0f },
-                                    onVerticalDrag = { _, dragAmount ->
-                                        dragAccumulator.value += dragAmount
-                                        if (dragAccumulator.value > 50f) { viewModel.setSystemBarVisible(true); dragAccumulator.value = 0f }
-                                        else if (dragAccumulator.value < -50f) { viewModel.setSystemBarVisible(false); dragAccumulator.value = 0f }
-                                    }
-                                )
-                            }
-                        } else Modifier
-                    ), color = MaterialTheme.colorScheme.background
+                    ),
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     if (startupState.value == "splash") {
                         ProfileSplashLoadingScreen(activeProfile = activeProfile, onEnter = { startupState.value = "main" }, onSwitchAccount = { startupState.value = "selector" })

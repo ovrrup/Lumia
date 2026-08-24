@@ -21,11 +21,16 @@ import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * High-performance P2P DataChannel transport engine over secure local framing.
+ * High-performance P2P DataChannel transport engine over secure local TCP framing.
+ * Supports both initial 1-time mutual handshake (PIN/QR) with permanent PSK derivation,
+ * and continuous anytime zero-interaction synchronization with trusted peers.
  */
 class P2PDataChannelEngine(
     private val context: Context,
     private val profileManager: ProfileManager,
+    private val trustedPeerProvider: (deviceId: String) -> TrustedPeer?,
+    private val onPeerPaired: (TrustedPeer) -> Unit,
+    private val onPeerSynced: (deviceId: String) -> Unit,
     private val onStateChanged: (SyncState) -> Unit
 ) {
 
@@ -56,7 +61,6 @@ class P2PDataChannelEngine(
 
         serverJob = scope.launch {
             try {
-                // Try standard port first, fall back to ephemeral port
                 serverSocket = try {
                     ServerSocket(DEFAULT_PORT).also { activePort = DEFAULT_PORT }
                 } catch (e: Exception) {
@@ -81,11 +85,13 @@ class P2PDataChannelEngine(
 
     /**
      * Connects as client to a peer device and executes synchronization.
+     * If [trustedPSK] is provided, uses the permanent 1-time handshake key (no PIN prompt required).
      */
     fun connectAndSync(
         peer: SyncDevice,
-        pin: String,
+        pinOrPsk: String,
         localDevice: SyncDevice,
+        isTrustedAuth: Boolean = false,
         mode: SyncMode = SyncMode.SMART_MERGE,
         onComplete: (SyncMergeReport?) -> Unit
     ) {
@@ -109,7 +115,8 @@ class P2PDataChannelEngine(
                     deviceName = localDevice.name,
                     avatarEmoji = localDevice.avatarEmoji,
                     nonce = clientNonce,
-                    syncMode = mode.name
+                    syncMode = mode.name,
+                    isTrustedAuth = isTrustedAuth
                 )
                 sendMessage(output, helloMsg)
 
@@ -120,26 +127,46 @@ class P2PDataChannelEngine(
 
                 onStateChanged(SyncState.Authenticating(peer.name))
 
-                // 3. Send AUTH response
-                val authHash = SyncCryptoManager.calculateAuthHash(pin, serverNonce, localDevice.id)
+                // 3. Calculate AUTH response
+                val keyForAuth = pinOrPsk
+                val authHash = SyncCryptoManager.calculateAuthHash(keyForAuth, serverNonce, localDevice.id)
                 val authMsg = SyncMessage(
                     type = "AUTH",
                     deviceId = localDevice.id,
                     deviceName = localDevice.name,
-                    authHash = authHash
+                    authHash = authHash,
+                    isTrustedAuth = isTrustedAuth
                 )
                 sendMessage(output, authMsg)
 
                 // 4. Receive AUTH_OK
                 val authOkMsg = receiveMessage(input) ?: throw IllegalStateException("Auth response missing")
                 if (authOkMsg.type != "AUTH_OK") {
-                    throw IllegalStateException("Authentication failed: Incorrect PIN or token")
+                    throw IllegalStateException("Authentication failed: Incorrect PIN, token, or trust key")
                 }
 
                 // Verify server's mutual auth hash
-                val isServerValid = SyncCryptoManager.verifyAuthHash(pin, clientNonce, peer.id, authOkMsg.authHash)
+                val isServerValid = SyncCryptoManager.verifyAuthHash(keyForAuth, clientNonce, peer.id, authOkMsg.authHash)
                 if (!isServerValid) {
                     throw IllegalStateException("Mutual authentication failed on peer verification")
+                }
+
+                // If this was an initial 1-time pairing (non-trusted PIN auth), derive and store permanent PSK
+                val sessionEncryptionKey = if (isTrustedAuth) {
+                    keyForAuth
+                } else {
+                    val derivedPsk = SyncCryptoManager.derivePSK(pinOrPsk, clientNonce, serverNonce)
+                    val newTrustedPeer = TrustedPeer(
+                        deviceId = peer.id,
+                        deviceName = peer.name,
+                        preSharedKey = derivedPsk,
+                        pairedAt = System.currentTimeMillis(),
+                        lastSyncAt = System.currentTimeMillis(),
+                        autoSyncEnabled = true,
+                        avatarEmoji = peer.avatarEmoji
+                    )
+                    onPeerPaired(newTrustedPeer)
+                    derivedPsk
                 }
 
                 onStateChanged(SyncState.ExchangingData(peer.name, 0.3f, "Packaging secure payload..."))
@@ -149,7 +176,7 @@ class P2PDataChannelEngine(
                 val localBackupJson = backupAdapter.toJson(localBackup)
                 val (encryptedLocal, localIv) = SyncCryptoManager.encryptPayload(
                     localBackupJson.toByteArray(Charsets.UTF_8),
-                    pin,
+                    sessionEncryptionKey,
                     serverNonce
                 )
 
@@ -172,7 +199,7 @@ class P2PDataChannelEngine(
                 val remoteEncrypted = peerSyncData.payloadEncryptedBase64 ?: throw IllegalStateException("Empty peer payload")
                 val remoteIv = peerSyncData.ivBase64 ?: throw IllegalStateException("Missing IV from peer")
 
-                val decryptedBytes = SyncCryptoManager.decryptPayload(remoteEncrypted, remoteIv, pin, clientNonce)
+                val decryptedBytes = SyncCryptoManager.decryptPayload(remoteEncrypted, remoteIv, sessionEncryptionKey, clientNonce)
                 val remoteBackup = backupAdapter.fromJson(String(decryptedBytes, Charsets.UTF_8))
                     ?: throw IllegalStateException("Failed to parse remote backup")
 
@@ -184,13 +211,11 @@ class P2PDataChannelEngine(
                         SyncMergeEngine.mergeFullApp(context, profileManager, remoteBackup, peer.name, mode.name)
                     }
                     SyncMode.PULL_FROM_PEER -> {
-                        // Restore remote data locally
                         val db = AppDatabase.getDatabase(context, profileManager.getActiveProfileId())
                         db.scholarDao().restoreBackup(remoteBackup)
                         SyncMergeReport(peerDeviceName = peer.name, syncMode = mode.name)
                     }
                     SyncMode.PUSH_TO_PEER -> {
-                        // Remote is overwritten, local unchanged
                         SyncMergeReport(peerDeviceName = peer.name, syncMode = mode.name)
                     }
                 }
@@ -202,6 +227,7 @@ class P2PDataChannelEngine(
                 )
                 sendMessage(output, ackMsg)
 
+                onPeerSynced(peer.id)
                 onStateChanged(SyncState.Success(report))
                 onComplete(report)
             } catch (e: Exception) {
@@ -229,6 +255,7 @@ class P2PDataChannelEngine(
             val peerId = helloMsg.deviceId
             val clientNonce = helloMsg.nonce
             val mode = try { SyncMode.valueOf(helloMsg.syncMode) } catch (e: Exception) { SyncMode.SMART_MERGE }
+            val clientRequestsTrusted = helloMsg.isTrustedAuth
 
             onStateChanged(SyncState.Connecting(peerName))
 
@@ -240,7 +267,8 @@ class P2PDataChannelEngine(
                 deviceId = localDevice.id,
                 deviceName = localDevice.name,
                 avatarEmoji = localDevice.avatarEmoji,
-                nonce = serverNonce
+                nonce = serverNonce,
+                isTrustedAuth = clientRequestsTrusted
             )
             sendMessage(output, challengeMsg)
 
@@ -250,20 +278,44 @@ class P2PDataChannelEngine(
             val authMsg = receiveMessage(input) ?: return@withContext
             if (authMsg.type != "AUTH") return@withContext
 
-            val isClientValid = SyncCryptoManager.verifyAuthHash(pin, serverNonce, peerId, authMsg.authHash)
+            // Determine if using saved PSK or temporary pairing PIN
+            val trustedPeer = trustedPeerProvider(peerId)
+            val isUsingPsk = clientRequestsTrusted && trustedPeer != null
+            val expectedAuthKey = if (isUsingPsk) trustedPeer!!.preSharedKey else pin
+
+            val isClientValid = SyncCryptoManager.verifyAuthHash(expectedAuthKey, serverNonce, peerId, authMsg.authHash)
             if (!isClientValid) {
-                sendMessage(output, SyncMessage(type = "AUTH_FAIL", errorMessage = "Invalid PIN"))
-                onStateChanged(SyncState.Error("Peer authentication failed (incorrect PIN)"))
+                sendMessage(output, SyncMessage(type = "AUTH_FAIL", errorMessage = "Invalid PIN or trust key"))
+                onStateChanged(SyncState.Error("Peer authentication failed"))
                 return@withContext
             }
 
             // 4. Send AUTH_OK with mutual proof
-            val serverAuthHash = SyncCryptoManager.calculateAuthHash(pin, clientNonce, localDevice.id)
+            val serverAuthHash = SyncCryptoManager.calculateAuthHash(expectedAuthKey, clientNonce, localDevice.id)
             val authOkMsg = SyncMessage(
                 type = "AUTH_OK",
-                authHash = serverAuthHash
+                authHash = serverAuthHash,
+                isTrustedAuth = isUsingPsk
             )
             sendMessage(output, authOkMsg)
+
+            // If this was initial 1-time handshake (PIN auth), derive permanent PSK and register trusted peer
+            val sessionEncryptionKey = if (isUsingPsk) {
+                expectedAuthKey
+            } else {
+                val derivedPsk = SyncCryptoManager.derivePSK(pin, clientNonce, serverNonce)
+                val newTrustedPeer = TrustedPeer(
+                    deviceId = peerId,
+                    deviceName = peerName,
+                    preSharedKey = derivedPsk,
+                    pairedAt = System.currentTimeMillis(),
+                    lastSyncAt = System.currentTimeMillis(),
+                    autoSyncEnabled = true,
+                    avatarEmoji = helloMsg.avatarEmoji
+                )
+                onPeerPaired(newTrustedPeer)
+                derivedPsk
+            }
 
             onStateChanged(SyncState.ExchangingData(peerName, 0.4f, "Packaging encrypted payload..."))
 
@@ -272,7 +324,7 @@ class P2PDataChannelEngine(
             val localBackupJson = backupAdapter.toJson(localBackup)
             val (encryptedLocal, localIv) = SyncCryptoManager.encryptPayload(
                 localBackupJson.toByteArray(Charsets.UTF_8),
-                pin,
+                sessionEncryptionKey,
                 clientNonce
             )
 
@@ -293,7 +345,7 @@ class P2PDataChannelEngine(
             onStateChanged(SyncState.Merging("Smart merging remote dataset..."))
 
             // 8. Decrypt client's payload and merge
-            val decryptedBytes = SyncCryptoManager.decryptPayload(clientEncrypted, clientIv, pin, serverNonce)
+            val decryptedBytes = SyncCryptoManager.decryptPayload(clientEncrypted, clientIv, sessionEncryptionKey, serverNonce)
             val remoteBackup = backupAdapter.fromJson(String(decryptedBytes, Charsets.UTF_8)) ?: return@withContext
 
             val report = when (mode) {
@@ -301,19 +353,18 @@ class P2PDataChannelEngine(
                     SyncMergeEngine.mergeFullApp(context, profileManager, remoteBackup, peerName, mode.name)
                 }
                 SyncMode.PUSH_TO_PEER -> {
-                    // Client pushed to server: server applies remote backup
                     val db = AppDatabase.getDatabase(context, profileManager.getActiveProfileId())
                     db.scholarDao().restoreBackup(remoteBackup)
                     SyncMergeReport(peerDeviceName = peerName, syncMode = mode.name)
                 }
                 SyncMode.PULL_FROM_PEER -> {
-                    // Client pulled from server: server remains unchanged
                     SyncMergeReport(peerDeviceName = peerName, syncMode = mode.name)
                 }
             }
 
             // 9. Receive ACK
             val clientAck = receiveMessage(input)
+            onPeerSynced(peerId)
             onStateChanged(SyncState.Success(report))
         } catch (e: Exception) {
             Log.e(TAG, "Server connection handling error", e)
@@ -371,19 +422,16 @@ class P2PDataChannelEngine(
 
     private fun receiveMessage(input: DataInputStream): SyncMessage? {
         val length = input.readInt()
-        if (length <= 0 || length > 50 * 1024 * 1024) return null
+        if (length <= 0 || length > 100 * 1024 * 1024) return null
         val bytes = ByteArray(length)
         input.readFully(bytes)
-        val json = String(bytes, Charsets.UTF_8)
-        return messageAdapter.fromJson(json)
+        return messageAdapter.fromJson(String(bytes, Charsets.UTF_8))
     }
 
-    /**
-     * Stops the background sync server and cancels all active jobs.
-     */
     fun stop() {
         isRunning.set(false)
-        try { serverSocket?.close() } catch (ignored: Exception) {}
         serverJob?.cancel()
+        try { serverSocket?.close() } catch (ignored: Exception) {}
+        serverSocket = null
     }
 }
