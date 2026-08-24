@@ -113,8 +113,6 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
     val dynamicAppIcon by viewModel.dynamicAppIcon.collectAsStateWithLifecycle()
     val betaFrostGlass by viewModel.betaFrostGlass.collectAsStateWithLifecycle()
 
-    val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
-
     val isSystemSystemDarkForOpacity = androidx.compose.foundation.isSystemInDarkTheme()
     androidx.compose.runtime.LaunchedEffect(themeColor, themeMode) {
         val effectiveDark = themeMode == "Dark" || (themeMode == "System" && isSystemSystemDarkForOpacity)
@@ -122,34 +120,19 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
     }
 
     Scaffold(
-        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            androidx.compose.foundation.layout.Box {
-                if (betaEnhancedHeader || isGlass) {
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
-                    )
-                    androidx.compose.material3.HorizontalDivider(
-                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                    )
-                }
-                CenterAlignedTopAppBar(
-                    title = { Text("Appearance & Theme", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
-                    navigationIcon = {
-                        BouncyIconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                        scrolledContainerColor = androidx.compose.ui.graphics.Color.Transparent
-                    )
+            CenterAlignedTopAppBar(
+                title = { Text("Appearance & Theme", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                navigationIcon = {
+                    BouncyIconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
                 )
-            }
+            )
         }
     ) { padding ->
         Column(
@@ -479,8 +462,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     }
                 )
 
-                val isGlassTheme = lumia.tracker.ui.theme.LocalGlassMode.current
-                val isNavBarGlassActive = isGlassTheme || navBarGlassForceEnabled
+                val isNavBarGlassActive = navBarGlassForceEnabled
 
                 if (isNavBarGlassActive) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))

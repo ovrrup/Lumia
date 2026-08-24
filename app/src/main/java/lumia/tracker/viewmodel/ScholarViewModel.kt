@@ -153,7 +153,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     
     private val repository = ScholarRepository(AppDatabase.getDatabase(application).scholarDao())
     
-    private val prefs = profileManager.getProfilePrefs()
+    val prefs = profileManager.getProfilePrefs()
 
     init {
         calculateTodayStreakProgress()

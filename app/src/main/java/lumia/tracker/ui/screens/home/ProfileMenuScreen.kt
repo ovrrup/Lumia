@@ -34,54 +34,43 @@ import androidx.compose.ui.graphics.Color
 fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel) {
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
-    val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     
     var showEditDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            androidx.compose.foundation.layout.Box {
-                if (betaEnhancedHeader || isGlass) {
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .glassBar(shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
-                    )
-                }
-                TopAppBar(
-                    title = { Text("Profile & Menu", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { showEditDialog = true }) {
-                            Icon(Icons.Rounded.Edit, contentDescription = "Edit Profile")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = if (betaEnhancedHeader || isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                        scrolledContainerColor = if (betaEnhancedHeader || isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-                        titleContentColor = MaterialTheme.colorScheme.onBackground,
-                        actionIconContentColor = MaterialTheme.colorScheme.onBackground,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onBackground
-                    )
+            TopAppBar(
+                title = { Text("Profile & Menu", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showEditDialog = true }) {
+                        Icon(Icons.Rounded.Edit, contentDescription = "Edit Profile")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    actionIconContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground
                 )
-            }
+            )
         }
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 0.dp) // Removed padding so group cards stretch nicely, will pad inside
+            modifier = Modifier.fillMaxSize().padding(padding)
         ) {
             item {
                 Spacer(Modifier.height(16.dp))
                 // Profile Summary Card
 
                 Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    lumia.tracker.ui.components.GlassCard(
+                    lumia.tracker.ui.components.ScholarCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.large,
                         containerColor = MaterialTheme.colorScheme.primaryContainer

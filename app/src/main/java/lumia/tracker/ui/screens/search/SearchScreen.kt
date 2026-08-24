@@ -60,7 +60,6 @@ data class SearchResult(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
-    val isGlass = LocalGlassMode.current
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
 
@@ -332,27 +331,13 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Search Input Box
-                val glassModifier = if (isGlass) {
-                    Modifier
-                        .fillMaxWidth()
-                        .shadow(elevation = 0.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.12f))
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-                            shape = RoundedCornerShape(24.dp)
-                        )
-                } else {
-                    Modifier
-                        .fillMaxWidth()
-                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp))
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                }
+                val searchModifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
 
                 Row(
-                    modifier = glassModifier
+                    modifier = searchModifier
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -417,22 +402,18 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                         val filterBg = if (isSelected) {
                             MaterialTheme.colorScheme.primary
                         } else {
-                            if (isGlass) MaterialTheme.colorScheme.surface.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceContainerHigh
+                            MaterialTheme.colorScheme.surfaceContainerHigh
                         }
                         val filterContentColor = if (isSelected) {
                             MaterialTheme.colorScheme.onPrimary
                         } else {
                             MaterialTheme.colorScheme.onSurface
                         }
-                        val borderMod = if (!isSelected && isGlass) {
-                            Modifier.border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
-                        } else Modifier
 
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(filterBg)
-                                .then(borderMod)
                                 .clickable { selectedFilter = cat }
                                 .padding(horizontal = 14.dp, vertical = 8.dp)
                                 .testTag("filter_chip_$cat"),
@@ -730,7 +711,6 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
         SearchDetailDialog(
             result = result,
             viewModel = viewModel,
-            isGlass = isGlass,
             navController = navController,
             onDismiss = { selectedResultForDialog = null }
         )
@@ -742,7 +722,6 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
 fun SearchDetailDialog(
     result: SearchResult,
     viewModel: ScholarViewModel,
-    isGlass: Boolean,
     navController: NavController,
     onDismiss: () -> Unit
 ) {
@@ -750,26 +729,12 @@ fun SearchDetailDialog(
     val context = LocalContext.current
 
     Dialog(onDismissRequest = onDismiss) {
-        val glassCardModifier = if (isGlass) {
-            Modifier
-                .fillMaxWidth()
-                .shadow(elevation = 0.dp)
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.12f))
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(28.dp)
-                )
-        } else {
-            Modifier
-                .fillMaxWidth()
-                .shadow(elevation = 12.dp, shape = RoundedCornerShape(28.dp))
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-        }
+        val cardModifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
 
-        Box(modifier = glassCardModifier.padding(24.dp)) {
+        Box(modifier = cardModifier.padding(24.dp)) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)

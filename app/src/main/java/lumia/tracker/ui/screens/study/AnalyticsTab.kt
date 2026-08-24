@@ -103,7 +103,6 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
     val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
     var selectedCourseId by remember { mutableStateOf(-1) }
 
-    val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val systemInDark = androidx.compose.foundation.isSystemInDarkTheme()

@@ -55,11 +55,7 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
     val color = Color(androidx.core.graphics.ColorUtils.HSLToColor(hsl))
 
     val animationMode = LocalAppAnimationMode.current
-    val isGlass = LocalGlassMode.current
-        
     val animOverride by viewModel.streakAnimationOverride.collectAsStateWithLifecycle()
-    val applyGlass = animOverride == "Glass Liquid" || (animOverride == "Default" && isGlass)
-
     val isCompleteToday by viewModel.streakIsCompleteToday.collectAsStateWithLifecycle()
 
     // Animating the progress ring filling up
@@ -219,9 +215,9 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
             .height(44.dp)
             .clip(CircleShape)
             .bouncyClick(onClick = { navController.navigate("settings/streaks") })
-            .then(
-                if (applyGlass) Modifier.liquidGlass(CircleShape, tintAlpha = if(isCompleteToday) 0.35f else 0.15f)
-                else Modifier.background(if(isCompleteToday) color.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+            .background(
+                if (isCompleteToday) color.copy(alpha = 0.18f)
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             )
             .padding(horizontal = 14.dp, vertical = 6.dp)
     ) {

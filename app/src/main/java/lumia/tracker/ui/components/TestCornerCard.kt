@@ -47,7 +47,7 @@ fun TestCornerCard(
 ) {
     var showAddTestDialog by remember { mutableStateOf(false) }
 
-    GlassCard(
+        ScholarCard(
         modifier = Modifier.fillMaxWidth().animateContentSize(),
         shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
@@ -157,7 +157,7 @@ fun TestCornerCard(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(sortedRecords.reversed()) { test ->
                         var showEditDialog by remember { mutableStateOf(false) }
-                        GlassCard(
+                            ScholarCard(
                             modifier = Modifier.width(200.dp).clickable { showEditDialog = true },
                             shape = RoundedCornerShape(16.dp),
                             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)

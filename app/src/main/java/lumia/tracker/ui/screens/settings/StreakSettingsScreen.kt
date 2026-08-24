@@ -46,8 +46,6 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
     val animOverride by viewModel.streakAnimationOverride.collectAsStateWithLifecycle()
     val notificationTone by viewModel.streakNotificationTone.collectAsStateWithLifecycle()
 
-    val isGlass = LocalGlassMode.current
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -57,10 +55,10 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp))
             )
         },
-        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier

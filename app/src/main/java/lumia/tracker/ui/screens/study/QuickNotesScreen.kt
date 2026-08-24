@@ -61,9 +61,8 @@ fun QuickNotesScreen(navController: NavController) {
     var showAddDialog by remember { mutableStateOf(false) }
     var newNoteText by remember { mutableStateOf("") }
 
-    val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     Scaffold(
-        containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Quick Notes", fontWeight = FontWeight.Bold) },
@@ -72,7 +71,7 @@ fun QuickNotesScreen(navController: NavController) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp))
             )
         },
         floatingActionButton = {

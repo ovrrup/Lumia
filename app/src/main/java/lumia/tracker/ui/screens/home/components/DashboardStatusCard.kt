@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import lumia.tracker.ui.components.GlassCard
+import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.viewmodel.ScholarViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -29,7 +29,7 @@ fun DashboardStatusCard(
     val dateFull = remember { SimpleDateFormat("EEEE, MMMM dd", Locale.getDefault()).format(Date()) }
     val streakColor = MaterialTheme.colorScheme.primary
 
-    GlassCard(
+    ScholarCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp)
     ) {

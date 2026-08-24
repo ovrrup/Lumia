@@ -43,7 +43,6 @@ fun SelfStudyTab(
     val assignments by viewModel.assignments.collectAsStateWithLifecycle()
     val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val advancedTasks by viewModel.systemAdvancedTasks.collectAsStateWithLifecycle()
-    val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
 
     var showAddTaskDialog by remember { mutableStateOf(false) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }

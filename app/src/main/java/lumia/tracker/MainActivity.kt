@@ -65,15 +65,11 @@ class MainActivity : ComponentActivity() {
             val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
             val pureBlackMode by viewModel.pureBlackMode.collectAsStateWithLifecycle()
             val displayLayoutMode by viewModel.displayLayoutMode.collectAsStateWithLifecycle()
-            val betaGlassDynamic by viewModel.betaGlassDynamic.collectAsStateWithLifecycle()
-            val betaFrostGlass by viewModel.betaFrostGlass.collectAsStateWithLifecycle()
             val betaDynamicBackground by viewModel.betaDynamicBackground.collectAsStateWithLifecycle()
             val dynamicBgLightBrightness by viewModel.dynamicBgLightBrightness.collectAsStateWithLifecycle()
             val dynamicBgDarkBrightness by viewModel.dynamicBgDarkBrightness.collectAsStateWithLifecycle()
             val betaBetterTexts by viewModel.betaBetterTexts.collectAsStateWithLifecycle()
             val betaBetterTextsPalette by viewModel.betaBetterTextsPalette.collectAsStateWithLifecycle()
-            val glassBackdropStyle by viewModel.glassBackdropStyle.collectAsStateWithLifecycle()
-            val glassOpacityValue by viewModel.glassOpacityValue.collectAsStateWithLifecycle()
             val appAnimationMode by viewModel.appAnimationMode.collectAsStateWithLifecycle()
             val moreRounds by viewModel.moreRounds.collectAsStateWithLifecycle()
 
@@ -83,16 +79,6 @@ class MainActivity : ComponentActivity() {
             val customSurface by viewModel.customSurface.collectAsStateWithLifecycle()
             val customText by viewModel.customText.collectAsStateWithLifecycle()
             val isOnboardingCompleted by viewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
-
-            val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
-            val effectiveDark = themeMode == "Dark" || (themeMode == "System" && isSystemDark)
-
-            val navBarGlassOpacityValue by viewModel.navBarGlassOpacityValue.collectAsStateWithLifecycle()
-            val navBarGlassLinkedToMain by viewModel.navBarGlassLinkedToMain.collectAsStateWithLifecycle()
-            val navBarGlassBackdropStyle by viewModel.navBarGlassBackdropStyle.collectAsStateWithLifecycle()
-            val navBarGlassDynamic by viewModel.navBarGlassDynamic.collectAsStateWithLifecycle()
-
-            LaunchedEffect(effectiveDark, themeColor) { viewModel.refreshNavBarGlassOpacity(themeColor, effectiveDark) }
 
             val systemBarVisible by viewModel.systemBarVisible.collectAsStateWithLifecycle()
             LaunchedEffect(displayLayoutMode, systemBarVisible) {
@@ -111,14 +97,18 @@ class MainActivity : ComponentActivity() {
             val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
 
             ScholarTheme(
-                themeMode = themeMode, themeColor = themeColor, pureBlackMode = pureBlackMode, glassMode = false,
-                glassDynamic = betaGlassDynamic, frostGlass = betaFrostGlass, glassBackdropStyle = glassBackdropStyle,
-                glassOpacityValue = glassOpacityValue, navBarGlassOpacityValue = navBarGlassOpacityValue,
-                navBarGlassLinkedToMain = navBarGlassLinkedToMain, navBarGlassBackdropStyle = navBarGlassBackdropStyle,
-                navBarGlassDynamic = navBarGlassDynamic, betterTexts = betaBetterTexts, betterTextsPalette = betaBetterTextsPalette,
-                appAnimationMode = appAnimationMode, moreRounds = moreRounds, customPrimary = customPrimary,
-                customPrimaryContainer = customPrimaryContainer, customBackground = customBackground,
-                customSurface = customSurface, customText = customText
+                themeMode = themeMode,
+                themeColor = themeColor,
+                customPrimary = customPrimary,
+                customPrimaryContainer = customPrimaryContainer,
+                customBackground = customBackground,
+                customSurface = customSurface,
+                customText = customText,
+                pureBlackMode = pureBlackMode,
+                betterTexts = betaBetterTexts,
+                betterTextsPalette = betaBetterTextsPalette,
+                appAnimationMode = appAnimationMode,
+                moreRounds = moreRounds
             ) {
                 val dragAccumulator = remember { mutableStateOf(0f) }
                 Surface(
