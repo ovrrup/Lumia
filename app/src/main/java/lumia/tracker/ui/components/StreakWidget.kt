@@ -211,15 +211,13 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
-            .padding(end = 12.dp)
-            .height(44.dp)
+            .height(40.dp)
             .clip(CircleShape)
-            .bouncyClick(onClick = { navController.navigate("settings/streaks") })
             .background(
                 if (isCompleteToday) color.copy(alpha = 0.18f)
                 else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             )
-            .padding(horizontal = 14.dp, vertical = 6.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Text(
             text = streakCurrent.toString(),

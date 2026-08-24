@@ -260,7 +260,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 items(linkedCourses, key = { "course_${it.id}" }) { course ->
                     val color = try { Color(android.graphics.Color.parseColor(course.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
                     ScholarCard(
-                        onClick = { navController.navigate("courseDetail/${course.id}") },
+                        onClick = { navController.navigate("courseDetail/${course.id}") { launchSingleTop = true } },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
