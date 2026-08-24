@@ -310,18 +310,14 @@ fun SelfStudyTab(
         }
     }
 
-    if (showAddTaskDialog) {
+    if (showAddTaskDialog || taskToEdit != null) {
         lumia.tracker.ui.screens.study.dialogs.AddTaskDialog(
             viewModel = viewModel,
-            onDismiss = { showAddTaskDialog = false }
-        )
-    }
-
-    taskToEdit?.let { task ->
-        lumia.tracker.ui.screens.study.dialogs.EditTaskDialog(
-            task = task,
-            viewModel = viewModel,
-            onDismiss = { taskToEdit = null }
+            taskToEdit = taskToEdit,
+            onDismiss = {
+                showAddTaskDialog = false
+                taskToEdit = null
+            }
         )
     }
 }

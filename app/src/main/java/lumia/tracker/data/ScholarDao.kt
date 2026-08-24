@@ -55,11 +55,17 @@ interface ScholarDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTopic(topic: Topic): Long
 
-    @Update
-    suspend fun updateTopic(topic: Topic)
+    @Query("DELETE FROM topics WHERE subjectId = :subjectId")
+    suspend fun deleteTopicsForSubject(subjectId: Int)
 
-    @Delete
-    suspend fun deleteTopic(topic: Topic)
+    @Query("DELETE FROM chapters WHERE subjectId = :subjectId")
+    suspend fun deleteChaptersForSubject(subjectId: Int)
+
+    @Query("DELETE FROM assignments WHERE courseId = :courseId")
+    suspend fun deleteAssignmentsForCourse(courseId: Int)
+
+    @Query("DELETE FROM attendance_records WHERE courseId = :courseId")
+    suspend fun deleteAttendanceForCourse(courseId: Int)
 
 
     @Query("SELECT * FROM assignments WHERE courseId = :courseId ORDER BY priority DESC, orderIndex ASC, dueDateMillis ASC")

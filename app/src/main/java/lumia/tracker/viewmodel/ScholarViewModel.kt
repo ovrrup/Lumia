@@ -1403,7 +1403,9 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun deleteCourse(course: Course) {
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            repository.dao.deleteAssignmentsForCourse(course.id)
+            repository.dao.deleteAttendanceForCourse(course.id)
             repository.deleteCourse(course)
             logAction("Deleted course: ${course.name}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
@@ -1625,9 +1627,13 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun deleteSubject(subject: Subject) {
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            repository.dao.deleteTopicsForSubject(subject.id)
+            repository.dao.deleteChaptersForSubject(subject.id)
             repository.deleteSubject(subject)
             logAction("Deleted subject: ${subject.name}")
+            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+            calculateTodayStreakProgress()
         }
     }
 
