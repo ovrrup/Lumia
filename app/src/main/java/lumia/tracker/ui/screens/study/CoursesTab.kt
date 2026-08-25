@@ -26,10 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.model.Course
-import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
-import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.ui.screens.study.components.CourseItemCard
+import lumia.tracker.ui.screens.study.components.StudyEmptyStateCard
+import lumia.tracker.ui.screens.study.components.StudyHeaderStatCard
 import lumia.tracker.ui.screens.study.dialogs.EditCourseDialog
 import lumia.tracker.ui.theme.animateItemEntry
 import lumia.tracker.ui.theme.bouncyScale
@@ -88,6 +88,7 @@ fun CoursesTab(
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
+            clipToPadding = false,
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
@@ -104,84 +105,24 @@ fun CoursesTab(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // Total Courses
-                        ScholarCard(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(18.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.School,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Column {
-                                    Text(
-                                        text = "$totalCourses",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Black,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Enrolled",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
+                        StudyHeaderStatCard(
+                            value = "$totalCourses",
+                            label = "Enrolled",
+                            icon = Icons.Rounded.School,
+                            iconColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
 
                         // Attendance Rate
-                        ScholarCard(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(18.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                val isGood = (avgAttendancePct ?: 0) >= 75
-                                val statusColor = if (isGood) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(statusColor.copy(alpha = 0.12f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.FactCheck,
-                                        contentDescription = null,
-                                        tint = statusColor,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Column {
-                                    Text(
-                                        text = if (avgAttendancePct != null) "$avgAttendancePct%" else "N/A",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Black,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Attendance",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
+                        val isGood = (avgAttendancePct ?: 0) >= 75
+                        val statusColor = if (isGood) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary
+                        StudyHeaderStatCard(
+                            value = if (avgAttendancePct != null) "$avgAttendancePct%" else "N/A",
+                            label = "Attendance",
+                            icon = Icons.Rounded.FactCheck,
+                            iconColor = statusColor,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
@@ -189,60 +130,17 @@ fun CoursesTab(
             // Course List / Empty State
             if (courses.isEmpty()) {
                 item(key = "empty_courses") {
-                    ScholarCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        shape = RoundedCornerShape(28.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(76.dp)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.MenuBook,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(38.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(18.dp))
-                            Text(
-                                text = "No courses enrolled yet",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = "Add your university or school courses to track lectures, attendance, assignments, and curriculum.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(20.dp))
-                            BouncyButton(
-                                onClick = onAddCourseClick,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            ) {
-                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Add Your First Course", fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
+                    StudyEmptyStateCard(
+                        icon = Icons.AutoMirrored.Rounded.MenuBook,
+                        title = "No courses enrolled yet",
+                        description = "Add your university or school courses to track lectures, attendance, assignments, and curriculum.",
+                        buttonText = "Add Your First Course",
+                        onButtonClick = onAddCourseClick,
+                        modifier = Modifier.padding(top = 16.dp),
+                        accentColor = MaterialTheme.colorScheme.primary,
+                        buttonContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        buttonContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 }
             } else {
                 itemsIndexed(courses, key = { _, course -> course.id }) { index, course ->

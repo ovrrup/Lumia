@@ -1,168 +1,169 @@
 package lumia.tracker.ui.theme
 
 import android.app.Activity
+import android.content.Context
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.animation.core.*
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.Modifier
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
-
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.shape.CircleShape
+import androidx.core.view.WindowCompat
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 
-fun createLightScheme(
-    primary: Color, primaryContainer: Color,
-    secondary: Color, secondaryContainer: Color,
-    tertiary: Color, tertiaryContainer: Color,
-    bg: Color = Color(0xFFF2F2F7),
-    surface: Color = Color(0xFFFFFFFF),
-    onSurfaceText: Color = Color(0xFF1C1C1E)
-) = lightColorScheme(
-    primary = primary, onPrimary = Color.White,
-    primaryContainer = primaryContainer, onPrimaryContainer = Color.Black.mix(primaryContainer, 0.85f),
-    secondary = secondary, onSecondary = Color.White,
-    secondaryContainer = secondaryContainer, onSecondaryContainer = Color.Black.mix(secondaryContainer, 0.85f),
-    tertiary = tertiary, onTertiary = Color.White,
-    tertiaryContainer = tertiaryContainer, onTertiaryContainer = Color.Black.mix(tertiaryContainer, 0.85f),
-    background = bg, onBackground = onSurfaceText,
-    surface = surface, onSurface = onSurfaceText,
-    surfaceVariant = Color(0xFFE5E5EA), onSurfaceVariant = Color(0xFF8E8E93),
-    surfaceContainer = Color(0xFFFFFFFF), surfaceContainerHigh = Color(0xFFF2F2F7),
-    outline = Color(0xFFD1D1D6), outlineVariant = Color(0xFFE5E5EA),
-    error = Color(0xFFFF3B30), onError = Color.White,
-    errorContainer = Color(0xFFFFE5E5), onErrorContainer = Color(0xFFD70015),
-    surfaceTint = primary
-)
+/**
+ * Theme - Core Theme Engine & Visual Customization Subsystem for Lumia Academic Tracker.
+ * Manages reactive Material 3 color schemes, dynamic wallpaper harmonizing, OLED pure black tokens,
+ * and high-performance fluid theme transitions without flicker or restarts.
+ */
 
-fun createDarkScheme(
-    primary: Color, primaryContainer: Color,
-    secondary: Color, secondaryContainer: Color,
-    tertiary: Color, tertiaryContainer: Color,
-    bg: Color = Color(0xFF000000),
-    surface: Color = Color(0xFF1C1C1E),
-    onSurfaceText: Color = Color(0xFFFFFFFF)
-) = darkColorScheme(
-    primary = primary, onPrimary = Color.White,
-    primaryContainer = primaryContainer, onPrimaryContainer = Color.White.mix(primaryContainer, 0.85f),
-    secondary = secondary, onSecondary = Color.White,
-    secondaryContainer = secondaryContainer, onSecondaryContainer = Color.White.mix(secondaryContainer, 0.85f),
-    tertiary = tertiary, onTertiary = Color.White,
-    tertiaryContainer = tertiaryContainer, onTertiaryContainer = Color.White.mix(tertiaryContainer, 0.85f),
-    background = bg, onBackground = onSurfaceText,
-    surface = surface, onSurface = onSurfaceText,
-    surfaceVariant = Color(0xFF2C2C2E), onSurfaceVariant = Color(0xFF8E8E93),
-    surfaceContainer = Color(0xFF1C1C1E), surfaceContainerHigh = Color(0xFF2C2C2E),
-    outline = Color(0xFF38383A), outlineVariant = Color(0xFF2C2C2E),
-    error = Color(0xFFFF453A), onError = Color.White,
-    errorContainer = Color(0xFF5E110E), onErrorContainer = Color(0xFFFFB4AB),
-    surfaceTint = primary
-)
+// ============================================================================
+// COMPOSITION LOCALS
+// ============================================================================
 
-val OceanLight = createLightScheme(
-    primary = Color(0xFF007AFF), primaryContainer = Color(0xFFD0E6FF), 
-    secondary = Color(0xFF5856D6), secondaryContainer = Color(0xFFE5E4FF), 
-    tertiary = Color(0xFF34C759), tertiaryContainer = Color(0xFFD5F5DD),
-    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
-)
-val OceanDark = createDarkScheme(
-    primary = Color(0xFF0A84FF), primaryContainer = Color(0xFF004080), 
-    secondary = Color(0xFF5E5CE6), secondaryContainer = Color(0xFF282766), 
-    tertiary = Color(0xFF30D158), tertiaryContainer = Color(0xFF0E5420),
-    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
-)
+@ValueScore(score = 88, importance = Importance.HIGH, description = "Composition local for touch spring animation mode", category = "Theme")
+val LocalAppAnimationMode = compositionLocalOf { "Normal" }
 
-val EmeraldLight = createLightScheme(
-    primary = Color(0xFF34C759), primaryContainer = Color(0xFFD5F5DD), 
-    secondary = Color(0xFF30B0C7), secondaryContainer = Color(0xFFD5F3F7), 
-    tertiary = Color(0xFF007AFF), tertiaryContainer = Color(0xFFD0E6FF),
-    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
-)
-val EmeraldDark = createDarkScheme(
-    primary = Color(0xFF30D158), primaryContainer = Color(0xFF0E5420), 
-    secondary = Color(0xFF40CBE0), secondaryContainer = Color(0xFF104B54), 
-    tertiary = Color(0xFF0A84FF), tertiaryContainer = Color(0xFF004080),
-    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
-)
+@ValueScore(score = 86, importance = Importance.MEDIUM, description = "Composition local for hyper-rounded UI corner shapes", category = "Theme")
+val LocalMoreRounds = compositionLocalOf { false }
 
-val GoldLight = createLightScheme(
-    primary = Color(0xFFFF9500), primaryContainer = Color(0xFFFFECC4), 
-    secondary = Color(0xFFFF2D55), secondaryContainer = Color(0xFFFFD5DD), 
-    tertiary = Color(0xFF34C759), tertiaryContainer = Color(0xFFD5F5DD),
-    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
-)
-val GoldDark = createDarkScheme(
-    primary = Color(0xFFFF9F0A), primaryContainer = Color(0xFF6B3E00), 
-    secondary = Color(0xFFFF375F), secondaryContainer = Color(0xFF660E1F), 
-    tertiary = Color(0xFF30D158), tertiaryContainer = Color(0xFF0E5420),
-    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
-)
+@ValueScore(score = 84, importance = Importance.LOW, description = "Composition local for hyper-rounded corner color styling", category = "Theme")
+val LocalMoreRoundsMode = compositionLocalOf { "Pastel" }
 
-val RoseLight = createLightScheme(
-    primary = Color(0xFFFF2D55), primaryContainer = Color(0xFFFFD5DD), 
-    secondary = Color(0xFFAF52DE), secondaryContainer = Color(0xFFF2DCFA), 
-    tertiary = Color(0xFFFF9500), tertiaryContainer = Color(0xFFFFECC4),
-    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
-)
-val RoseDark = createDarkScheme(
-    primary = Color(0xFFFF375F), primaryContainer = Color(0xFF660E1F), 
-    secondary = Color(0xFFBF5AF2), secondaryContainer = Color(0xFF4B1E66), 
-    tertiary = Color(0xFFFF9F0A), tertiaryContainer = Color(0xFF6B3E00),
-    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
-)
+@ValueScore(score = 88, importance = Importance.HIGH, description = "Composition local for active pure AMOLED black mode", category = "Theme")
+val LocalPureBlackMode = compositionLocalOf { false }
 
-val SageLight = createLightScheme(
-    primary = Color(0xFF30B0C7), primaryContainer = Color(0xFFD5F3F7), 
-    secondary = Color(0xFF34C759), secondaryContainer = Color(0xFFD5F5DD), 
-    tertiary = Color(0xFF5856D6), tertiaryContainer = Color(0xFFE5E4FF), 
-    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
-)
-val SageDark = createDarkScheme(
-    primary = Color(0xFF40CBE0), primaryContainer = Color(0xFF104B54), 
-    secondary = Color(0xFF30D158), secondaryContainer = Color(0xFF0E5420), 
-    tertiary = Color(0xFF5E5CE6), tertiaryContainer = Color(0xFF282766), 
-    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
-)
+@ValueScore(score = 88, importance = Importance.HIGH, description = "Composition local for current theme palette name", category = "Theme")
+val LocalThemeColor = compositionLocalOf { "Ocean" }
 
-val TwilightLight = createLightScheme(
-    primary = Color(0xFF5856D6), primaryContainer = Color(0xFFE5E4FF), 
-    secondary = Color(0xFFAF52DE), secondaryContainer = Color(0xFFF2DCFA), 
-    tertiary = Color(0xFF007AFF), tertiaryContainer = Color(0xFFD0E6FF), 
-    bg = Color(0xFFF2F2F7), surface = Color(0xFFFFFFFF)
-)
-val TwilightDark = createDarkScheme(
-    primary = Color(0xFF5E5CE6), primaryContainer = Color(0xFF282766), 
-    secondary = Color(0xFFBF5AF2), secondaryContainer = Color(0xFF4B1E66), 
-    tertiary = Color(0xFF0A84FF), tertiaryContainer = Color(0xFF004080), 
-    bg = Color(0xFF000000), surface = Color(0xFF1C1C1E)
-)
+// ============================================================================
+// SMOOTH COLOR SCHEME INTERPOLATION (Zero Flicker / Instant Switch)
+// ============================================================================
 
-fun Color.mix(other: Color, weight: Float): Color {
-    return Color(
-        red = this.red * weight + other.red * (1f - weight),
-        green = this.green * weight + other.green * (1f - weight),
-        blue = this.blue * weight + other.blue * (1f - weight),
-        alpha = this.alpha * weight + other.alpha * (1f - weight)
+/**
+ * Interpolates color scheme changes smoothly across all open screens without screen flashing or restarts.
+ */
+@ValueScore(score = 95, importance = Importance.CRITICAL, description = "Smooth reactive color scheme transition engine", category = "Theme")
+@Composable
+fun animateColorSchemeAsState(
+    targetColorScheme: ColorScheme,
+    animationMode: String
+): ColorScheme {
+    if (animationMode == "Off" || animationMode == "None") {
+        return targetColorScheme
+    }
+
+    val spec: AnimationSpec<Color> = spring(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessMedium
     )
+
+    val primary by animateColorAsState(targetColorScheme.primary, spec, label = "primary")
+    val onPrimary by animateColorAsState(targetColorScheme.onPrimary, spec, label = "onPrimary")
+    val primaryContainer by animateColorAsState(targetColorScheme.primaryContainer, spec, label = "primaryContainer")
+    val onPrimaryContainer by animateColorAsState(targetColorScheme.onPrimaryContainer, spec, label = "onPrimaryContainer")
+    val secondary by animateColorAsState(targetColorScheme.secondary, spec, label = "secondary")
+    val onSecondary by animateColorAsState(targetColorScheme.onSecondary, spec, label = "onSecondary")
+    val secondaryContainer by animateColorAsState(targetColorScheme.secondaryContainer, spec, label = "secondaryContainer")
+    val onSecondaryContainer by animateColorAsState(targetColorScheme.onSecondaryContainer, spec, label = "onSecondaryContainer")
+    val tertiary by animateColorAsState(targetColorScheme.tertiary, spec, label = "tertiary")
+    val onTertiary by animateColorAsState(targetColorScheme.onTertiary, spec, label = "onTertiary")
+    val tertiaryContainer by animateColorAsState(targetColorScheme.tertiaryContainer, spec, label = "tertiaryContainer")
+    val onTertiaryContainer by animateColorAsState(targetColorScheme.onTertiaryContainer, spec, label = "onTertiaryContainer")
+    val background by animateColorAsState(targetColorScheme.background, spec, label = "background")
+    val onBackground by animateColorAsState(targetColorScheme.onBackground, spec, label = "onBackground")
+    val surface by animateColorAsState(targetColorScheme.surface, spec, label = "surface")
+    val onSurface by animateColorAsState(targetColorScheme.onSurface, spec, label = "onSurface")
+    val surfaceVariant by animateColorAsState(targetColorScheme.surfaceVariant, spec, label = "surfaceVariant")
+    val onSurfaceVariant by animateColorAsState(targetColorScheme.onSurfaceVariant, spec, label = "onSurfaceVariant")
+    val surfaceTint by animateColorAsState(targetColorScheme.surfaceTint, spec, label = "surfaceTint")
+    val outline by animateColorAsState(targetColorScheme.outline, spec, label = "outline")
+    val outlineVariant by animateColorAsState(targetColorScheme.outlineVariant, spec, label = "outlineVariant")
+    val error by animateColorAsState(targetColorScheme.error, spec, label = "error")
+    val onError by animateColorAsState(targetColorScheme.onError, spec, label = "onError")
+    val errorContainer by animateColorAsState(targetColorScheme.errorContainer, spec, label = "errorContainer")
+    val onErrorContainer by animateColorAsState(targetColorScheme.onErrorContainer, spec, label = "onErrorContainer")
+    val surfaceContainerLowest by animateColorAsState(targetColorScheme.surfaceContainerLowest, spec, label = "surfaceContainerLowest")
+    val surfaceContainerLow by animateColorAsState(targetColorScheme.surfaceContainerLow, spec, label = "surfaceContainerLow")
+    val surfaceContainer by animateColorAsState(targetColorScheme.surfaceContainer, spec, label = "surfaceContainer")
+    val surfaceContainerHigh by animateColorAsState(targetColorScheme.surfaceContainerHigh, spec, label = "surfaceContainerHigh")
+    val surfaceContainerHighest by animateColorAsState(targetColorScheme.surfaceContainerHighest, spec, label = "surfaceContainerHighest")
+
+    return remember(
+        primary, onPrimary, primaryContainer, onPrimaryContainer,
+        secondary, onSecondary, secondaryContainer, onSecondaryContainer,
+        tertiary, onTertiary, tertiaryContainer, onTertiaryContainer,
+        background, onBackground, surface, onSurface,
+        surfaceVariant, onSurfaceVariant, surfaceTint, outline, outlineVariant,
+        error, onError, errorContainer, onErrorContainer,
+        surfaceContainerLowest, surfaceContainerLow, surfaceContainer,
+        surfaceContainerHigh, surfaceContainerHighest
+    ) {
+        targetColorScheme.copy(
+            primary = primary,
+            onPrimary = onPrimary,
+            primaryContainer = primaryContainer,
+            onPrimaryContainer = onPrimaryContainer,
+            secondary = secondary,
+            onSecondary = onSecondary,
+            secondaryContainer = secondaryContainer,
+            onSecondaryContainer = onSecondaryContainer,
+            tertiary = tertiary,
+            onTertiary = onTertiary,
+            tertiaryContainer = tertiaryContainer,
+            onTertiaryContainer = onTertiaryContainer,
+            background = background,
+            onBackground = onBackground,
+            surface = surface,
+            onSurface = onSurface,
+            surfaceVariant = surfaceVariant,
+            onSurfaceVariant = onSurfaceVariant,
+            surfaceTint = surfaceTint,
+            outline = outline,
+            outlineVariant = outlineVariant,
+            error = error,
+            onError = onError,
+            errorContainer = errorContainer,
+            onErrorContainer = onErrorContainer,
+            surfaceContainerLowest = surfaceContainerLowest,
+            surfaceContainerLow = surfaceContainerLow,
+            surfaceContainer = surfaceContainer,
+            surfaceContainerHigh = surfaceContainerHigh,
+            surfaceContainerHighest = surfaceContainerHighest
+        )
+    }
 }
 
-val LocalAppAnimationMode = androidx.compose.runtime.compositionLocalOf { "Normal" }
-val LocalMoreRounds = androidx.compose.runtime.compositionLocalOf { false }
-val LocalMoreRoundsMode = androidx.compose.runtime.compositionLocalOf { "Pastel" }
+// ============================================================================
+// ROOT SCHOLAR THEME COMPOSABLE
+// ============================================================================
 
+/**
+ * ScholarTheme - Root Material 3 Theme for Lumia Academic Tracker.
+ * Dynamically resolves palettes, applies pure black OLED surface tokens,
+ * harmonizes typography, and configures translucent system status & navigation bars.
+ */
+@ValueScore(
+    score = 98,
+    importance = Importance.CRITICAL,
+    description = "Root Material 3 dynamic theme container with instant switching & OLED tokens",
+    category = "Theme"
+)
 @Composable
 fun ScholarTheme(
     themeMode: String = "System",
-    themeColor: String = "Default",
+    themeColor: String = "Ocean",
     customPrimary: String = "",
     customPrimaryContainer: String = "",
     customBackground: String = "",
@@ -185,143 +186,126 @@ fun ScholarTheme(
     }
 
     val context = LocalContext.current
-    var colorScheme = when {
-        themeColor == "Dynamic" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            if (isDark) {
-                dynamicDarkColorScheme(context)
-            } else {
-                dynamicLightColorScheme(context)
-            }
-        }
-        else -> when (themeColor) {
-            "Ocean" -> if (isDark) OceanDark else OceanLight
-            "Emerald" -> if (isDark) EmeraldDark else EmeraldLight
-            "Gold" -> if (isDark) GoldDark else GoldLight
-            "Rose" -> if (isDark) RoseDark else RoseLight
-            "Sage" -> if (isDark) SageDark else SageLight
-            "Twilight" -> if (isDark) TwilightDark else TwilightLight
-            "Custom" -> {
-                fun safeColor(hex: String, fallback: Color): Color {
-                    if (hex.isBlank()) return fallback
-                    return try { Color(android.graphics.Color.parseColor(hex)) } catch(e: Exception) { fallback }
-                }
-                
-                val p = safeColor(customPrimary, Color(0xFF3197D6))
-                val pc = safeColor(customPrimaryContainer, Color(0xFFDAF1FF))
-                val bgIn = safeColor(customBackground, if (isDark) Color(0xFF101010) else Color(0xFFFAFAFA))
-                val sfIn = safeColor(customSurface, if (isDark) Color(0xFF1A1A1A) else Color(0xFFFFFFFF))
-                val txtIn = safeColor(customText, if (isDark) Color(0xFFE2E2E2) else Color(0xFF1A1C1A))
 
-                // Safe luminance calculation helper
-                val bgInLum = bgIn.red * 0.299f + bgIn.green * 0.587f + bgIn.blue * 0.114f
-                val sfInLum = sfIn.red * 0.299f + sfIn.green * 0.587f + sfIn.blue * 0.114f
-                val txtInLum = txtIn.red * 0.299f + txtIn.green * 0.587f + txtIn.blue * 0.114f
-
-                // Intelligent adaptive custom colors to prevent contrast collisions:
-                val bg = if (isDark) {
-                    if (bgInLum > 0.35f) bgIn.mix(Color.Black, 0.08f) else bgIn
+    // Resolve base ColorScheme
+    val targetScheme: ColorScheme = remember(
+        themeColor, isDark, pureBlackMode, customPrimary,
+        customPrimaryContainer, customBackground, customSurface, customText
+    ) {
+        when {
+            themeColor == "Dynamic" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                val dynScheme = if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                if (isDark && pureBlackMode) {
+                    dynScheme.copy(
+                        background = OledBackground,
+                        surface = OledSurface,
+                        surfaceVariant = OledSurfaceVariant,
+                        surfaceContainerLowest = OledContainerLowest,
+                        surfaceContainerLow = OledContainerLow,
+                        surfaceContainer = OledContainer,
+                        surfaceContainerHigh = OledContainerHigh,
+                        surfaceContainerHighest = OledContainerHighest,
+                        outline = OledOutline,
+                        outlineVariant = OledOutlineVariant
+                    )
                 } else {
-                    if (bgInLum < 0.65f) bgIn.mix(Color.White, 0.96f) else bgIn
-                }
-
-                val sf = if (isDark) {
-                    if (sfInLum > 0.35f) sfIn.mix(Color.Black, 0.13f) else sfIn
-                } else {
-                    if (sfInLum < 0.65f) sfIn.mix(Color.White, 0.99f) else sfIn
-                }
-
-                val txt = if (isDark) {
-                    if (txtInLum <= 0.6f) p.mix(Color.White, 0.88f) else txtIn
-                } else {
-                    if (txtInLum >= 0.4f) p.mix(Color.Black, 0.15f) else txtIn
-                }
-
-                // Adjust Custom Primary based on theme mode requirement
-                val pLum = p.red * 0.299f + p.green * 0.587f + p.blue * 0.114f
-                val pDark = if (pLum < 0.5f) p.mix(Color.White, 0.65f) else p
-                val pLight = if (pLum > 0.5f) p.mix(Color.Black, 0.65f) else p
-                
-                val pcLum = pc.red * 0.299f + pc.green * 0.587f + pc.blue * 0.114f
-                val pcDark = if (pcLum > 0.3f) pc.mix(Color.Black, 0.5f) else pc
-                val pcLight = if (pcLum < 0.7f) pc.mix(Color.White, 0.5f) else pc
-
-                if (isDark) {
-                     createDarkScheme(primary = pDark, primaryContainer = pcDark, secondary = pDark, secondaryContainer = pcDark, tertiary = pDark, tertiaryContainer = pcDark, bg = bg, surface = sf, onSurfaceText = txt)
-                } else {
-                     createLightScheme(primary = pLight, primaryContainer = pcLight, secondary = pLight, secondaryContainer = pcLight, tertiary = pLight, tertiaryContainer = pcLight, bg = bg, surface = sf, onSurfaceText = txt)
+                    dynScheme
                 }
             }
-            else -> if (isDark) OceanDark else OceanLight
+            themeColor == "Custom" -> {
+                buildAdaptiveCustomScheme(
+                    customPrimary = customPrimary,
+                    customPrimaryContainer = customPrimaryContainer,
+                    customBackground = customBackground,
+                    customSurface = customSurface,
+                    customText = customText,
+                    isDark = isDark,
+                    isOled = pureBlackMode
+                )
+            }
+            else -> {
+                val preset = LumiaThemePresets.find { it.id.equals(themeColor, ignoreCase = true) }
+                    ?: LumiaThemePresets[0] // fallback to Ocean
+                when {
+                    isDark && pureBlackMode -> preset.oledDarkScheme
+                    isDark -> preset.darkScheme
+                    else -> preset.lightScheme
+                }
+            }
         }
     }
 
-    if (isDark && pureBlackMode) {
-        colorScheme = colorScheme.copy(
-            background = Color.Black,
-            surface = Color(0xCC000000),
-            surfaceVariant = Color(0xFF1E1E1E)
-        )
+    // Apply Material 3 harmonious micro-tuning & tone adjustments
+    var refinedScheme = remember(targetScheme, isDark, pureBlackMode) {
+        if (isDark && pureBlackMode) {
+            targetScheme.copy(
+                background = OledBackground,
+                surface = OledSurface,
+                surfaceContainerLowest = OledContainerLowest,
+                surfaceContainerLow = OledContainerLow,
+                surfaceContainer = OledContainer,
+                surfaceContainerHigh = OledContainerHigh,
+                surfaceContainerHighest = OledContainerHighest,
+                outline = OledOutline,
+                outlineVariant = OledOutlineVariant
+            )
+        } else {
+            targetScheme.copy(
+                background = if (isDark) targetScheme.background else targetScheme.background.mix(targetScheme.primary, 0.985f),
+                surface = if (isDark) targetScheme.surface else targetScheme.surface.mix(targetScheme.primary, 0.98f),
+                surfaceVariant = targetScheme.surfaceVariant.mix(targetScheme.secondary, 0.96f),
+                primaryContainer = targetScheme.primaryContainer.mix(targetScheme.primary, 0.94f),
+                secondaryContainer = targetScheme.secondaryContainer.mix(targetScheme.secondary, 0.94f),
+                tertiaryContainer = targetScheme.tertiaryContainer.mix(targetScheme.tertiary, 0.94f)
+            )
+        }
     }
 
-    // Apply highly polished and harmonious Material 3 tones:
-    colorScheme = colorScheme.copy(
-        background = if (isDark && pureBlackMode) Color.Black else colorScheme.background.mix(colorScheme.primary, 0.98f),
-        surface = if (isDark && pureBlackMode) Color(0xCC000000) else colorScheme.surface.mix(colorScheme.primary, 0.97f),
-        surfaceVariant = colorScheme.surfaceVariant.mix(colorScheme.secondary, 0.95f),
-        primaryContainer = colorScheme.primaryContainer.mix(colorScheme.primary, 0.93f),
-        secondaryContainer = colorScheme.secondaryContainer.mix(colorScheme.secondary, 0.93f),
-        tertiaryContainer = colorScheme.tertiaryContainer.mix(colorScheme.tertiary, 0.93f),
-        surfaceContainer = if (isDark && pureBlackMode) Color(0xFF121212) else colorScheme.surface.mix(colorScheme.primary, 0.92f),
-        surfaceContainerLow = if (isDark && pureBlackMode) Color(0xFF0A0A0A) else colorScheme.surface.mix(colorScheme.primary, 0.95f),
-        surfaceContainerHigh = if (isDark && pureBlackMode) Color(0xFF1E1E1E) else colorScheme.surface.mix(colorScheme.primary, 0.88f),
-        surfaceContainerLowest = if (isDark && pureBlackMode) Color.Black else colorScheme.surface.mix(colorScheme.primary, 0.99f),
-        surfaceContainerHighest = if (isDark && pureBlackMode) Color(0xFF282828) else colorScheme.surface.mix(colorScheme.primary, 0.83f)
-    )
-
+    // Enhanced Typography contrast calibration
     if (betterTexts) {
         val baseTextSourceColor = if (themeColor == "Custom" && customText.isNotBlank()) {
-            try { Color(android.graphics.Color.parseColor(customText)) } catch(e: Exception) { colorScheme.primary }
+            safeParseColor(customText, refinedScheme.primary)
         } else {
-            colorScheme.primary
+            refinedScheme.primary
         }
 
-        if (betterTextsPalette) {
+        refinedScheme = if (betterTextsPalette) {
             if (isDark) {
-                val highContrastOnSurface = baseTextSourceColor.mix(Color.White, 0.15f)
-                colorScheme = colorScheme.copy(
+                val highContrastOnSurface = baseTextSourceColor.mix(Color.White, 0.12f)
+                refinedScheme.copy(
                     onSurface = highContrastOnSurface,
                     onBackground = highContrastOnSurface,
-                    onSurfaceVariant = baseTextSourceColor.mix(Color.White, 0.25f).copy(alpha = 0.88f),
+                    onSurfaceVariant = baseTextSourceColor.mix(Color.White, 0.22f).copy(alpha = 0.92f),
                     onPrimaryContainer = highContrastOnSurface,
-                    onSecondaryContainer = colorScheme.secondary.mix(Color.White, 0.15f),
-                    onTertiaryContainer = colorScheme.tertiary.mix(Color.White, 0.15f)
+                    onSecondaryContainer = refinedScheme.secondary.mix(Color.White, 0.12f),
+                    onTertiaryContainer = refinedScheme.tertiary.mix(Color.White, 0.12f)
                 )
             } else {
-                val highContrastOnSurface = baseTextSourceColor.mix(Color.Black, 0.15f)
-                colorScheme = colorScheme.copy(
+                val highContrastOnSurface = baseTextSourceColor.mix(Color.Black, 0.12f)
+                refinedScheme.copy(
                     onSurface = highContrastOnSurface,
                     onBackground = highContrastOnSurface,
-                    onSurfaceVariant = baseTextSourceColor.mix(Color.Black, 0.25f).copy(alpha = 0.88f),
+                    onSurfaceVariant = baseTextSourceColor.mix(Color.Black, 0.22f).copy(alpha = 0.92f),
                     onPrimaryContainer = highContrastOnSurface,
-                    onSecondaryContainer = colorScheme.secondary.mix(Color.Black, 0.15f),
-                    onTertiaryContainer = colorScheme.tertiary.mix(Color.Black, 0.15f)
+                    onSecondaryContainer = refinedScheme.secondary.mix(Color.Black, 0.12f),
+                    onTertiaryContainer = refinedScheme.tertiary.mix(Color.Black, 0.12f)
                 )
             }
         } else {
             if (isDark) {
-                colorScheme = colorScheme.copy(
+                refinedScheme.copy(
                     onSurface = Color.White,
                     onBackground = Color.White,
-                    onSurfaceVariant = Color.White.copy(alpha = 0.85f),
+                    onSurfaceVariant = Color.White.copy(alpha = 0.88f),
                     onPrimaryContainer = Color.White,
                     onSecondaryContainer = Color.White,
                     onTertiaryContainer = Color.White
                 )
             } else {
-                colorScheme = colorScheme.copy(
+                refinedScheme.copy(
                     onSurface = Color.Black,
                     onBackground = Color.Black,
-                    onSurfaceVariant = Color.Black.copy(alpha = 0.85f),
+                    onSurfaceVariant = Color.Black.copy(alpha = 0.88f),
                     onPrimaryContainer = Color.Black,
                     onSecondaryContainer = Color.Black,
                     onTertiaryContainer = Color.Black
@@ -330,18 +314,26 @@ fun ScholarTheme(
         }
     }
 
+    // Pastel tones adaptation when moreRounds is enabled
     if (moreRounds && moreRoundsMode == "Pastel") {
-        colorScheme = colorScheme.copy(
-            primary = colorScheme.primary.mix(if (isDark) Color.White else Color.Black, 0.4f).copy(alpha = 0.9f),
-            secondary = colorScheme.secondary.mix(if (isDark) Color.White else Color.Black, 0.4f).copy(alpha = 0.9f),
-            tertiary = colorScheme.tertiary.mix(if (isDark) Color.White else Color.Black, 0.4f).copy(alpha = 0.9f)
+        refinedScheme = refinedScheme.copy(
+            primary = refinedScheme.primary.mix(if (isDark) Color.White else Color.Black, 0.40f).copy(alpha = 0.95f),
+            secondary = refinedScheme.secondary.mix(if (isDark) Color.White else Color.Black, 0.40f).copy(alpha = 0.95f),
+            tertiary = refinedScheme.tertiary.mix(if (isDark) Color.White else Color.Black, 0.40f).copy(alpha = 0.95f)
         )
     }
 
+    // Animate color scheme transitions smoothly to eliminate flicker & restarts
+    val animatedScheme = animateColorSchemeAsState(
+        targetColorScheme = refinedScheme,
+        animationMode = appAnimationMode
+    )
+
+    // Dynamic System Bar Inset Synchronizer
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            var contextActivity = view.context
+            var contextActivity: Context = view.context
             while (contextActivity is android.content.ContextWrapper && contextActivity !is Activity) {
                 contextActivity = contextActivity.baseContext
             }
@@ -349,26 +341,30 @@ fun ScholarTheme(
                 val window = contextActivity.window
                 window.statusBarColor = android.graphics.Color.TRANSPARENT
                 window.navigationBarColor = android.graphics.Color.TRANSPARENT
-                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDark
-                WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !isDark
+                val insetsController = WindowCompat.getInsetsController(window, view)
+                insetsController.isAppearanceLightStatusBars = !isDark
+                insetsController.isAppearanceLightNavigationBars = !isDark
             }
         }
     }
 
-    androidx.compose.runtime.CompositionLocalProvider(
+    CompositionLocalProvider(
         LocalAppAnimationMode provides appAnimationMode,
         LocalMoreRounds provides moreRounds,
-        LocalMoreRoundsMode provides moreRoundsMode
+        LocalMoreRoundsMode provides moreRoundsMode,
+        LocalPureBlackMode provides pureBlackMode,
+        LocalThemeColor provides themeColor
     ) {
         val currentShapes = if (moreRounds) Shapes(
-            extraSmall = RoundedCornerShape(4.dp),
-            small = RoundedCornerShape(8.dp),
-            medium = RoundedCornerShape(20.dp),
-            large = RoundedCornerShape(28.dp),
-            extraLarge = RoundedCornerShape(36.dp)
+            extraSmall = RoundedCornerShape(8.dp),
+            small = RoundedCornerShape(14.dp),
+            medium = RoundedCornerShape(22.dp),
+            large = RoundedCornerShape(30.dp),
+            extraLarge = RoundedCornerShape(38.dp)
         ) else Shapes
+
         MaterialTheme(
-            colorScheme = colorScheme,
+            colorScheme = animatedScheme,
             typography = Typography,
             shapes = currentShapes,
             content = content
@@ -376,12 +372,20 @@ fun ScholarTheme(
     }
 }
 
+// ============================================================================
+// INTERACTION & TACTILE ANIMATION MODIFIERS
+// ============================================================================
+
+/**
+ * Adds an interactive spring compression scale effect upon user press.
+ */
+@ValueScore(score = 89, importance = Importance.HIGH, description = "Touch press bouncy compression modifier", category = "Animation")
 @Composable
 fun Modifier.bouncyScale(interactionSource: androidx.compose.foundation.interaction.InteractionSource): Modifier {
     val animationMode = LocalAppAnimationMode.current
     val moreRounds = LocalMoreRounds.current
     val isPressed by interactionSource.collectIsPressedAsState()
-    
+
     val targetScale = if (isPressed) {
         when (animationMode) {
             "Bouncy" -> 0.92f
@@ -393,37 +397,41 @@ fun Modifier.bouncyScale(interactionSource: androidx.compose.foundation.interact
     val scale by animateFloatAsState(
         targetValue = targetScale,
         animationSpec = when (animationMode) {
-            "Bouncy" -> spring(dampingRatio = if (moreRounds) 0.3f else 0.35f, stiffness = if (moreRounds) 250f else 300f)
-            "Dynamic" -> spring(dampingRatio = if (moreRounds) 0.5f else 0.6f, stiffness = 600f)
+            "Bouncy" -> spring(dampingRatio = if (moreRounds) 0.30f else 0.35f, stiffness = if (moreRounds) 250f else 300f)
+            "Dynamic" -> spring(dampingRatio = if (moreRounds) 0.50f else 0.60f, stiffness = 600f)
             else -> spring(dampingRatio = 0.85f, stiffness = 1000f)
         },
         label = "bouncyScale"
     )
-    
+
     return this.graphicsLayer {
         scaleX = scale
         scaleY = scale
     }
 }
 
+/**
+ * Combines clickable interaction with high-precision spring feedback and Material ripple.
+ */
+@ValueScore(score = 91, importance = Importance.HIGH, description = "Interactive bouncy click modifier with ripple", category = "Animation")
 @Composable
 fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Modifier {
     val animationMode = LocalAppAnimationMode.current
     if (!enabled) return this
-    
-    val interactionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
-    
+
+    val interactionSource = remember { MutableInteractionSource() }
+
     if (animationMode == "Off" || animationMode == "None") {
         return this.clickable(
             interactionSource = interactionSource,
-            indication = androidx.compose.material3.ripple(),
+            indication = ripple(),
             enabled = enabled,
             onClick = onClick
         )
     }
 
     val isPressed by interactionSource.collectIsPressedAsState()
-    
+
     val targetScale = if (isPressed) {
         when (animationMode) {
             "Bouncy" -> 0.92f
@@ -436,72 +444,65 @@ fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Mod
         targetValue = targetScale,
         animationSpec = when (animationMode) {
             "Bouncy" -> spring(dampingRatio = 0.35f, stiffness = 300f)
-            "Dynamic" -> spring(dampingRatio = 0.6f, stiffness = 600f)
+            "Dynamic" -> spring(dampingRatio = 0.60f, stiffness = 600f)
             else -> spring(dampingRatio = 0.85f, stiffness = 1000f)
         },
         label = "bouncyClickScale"
     )
-    
-    return this.clickable(
-        interactionSource = interactionSource,
-        indication = androidx.compose.material3.ripple(),
-        enabled = enabled,
-        onClick = onClick
-    ).graphicsLayer {
-        scaleX = scale
-        scaleY = scale
-    }
+
+    return this
+        .clickable(
+            interactionSource = interactionSource,
+            indication = ripple(),
+            enabled = enabled,
+            onClick = onClick
+        )
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
 }
 
+/**
+ * Staggered cascade entrance animation modifier for lists and cards.
+ */
+@ValueScore(score = 87, importance = Importance.MEDIUM, description = "Staggered item entrance transition modifier", category = "Animation")
 @Composable
 fun Modifier.animateItemEntry(index: Int): Modifier {
     val animationMode = LocalAppAnimationMode.current
-    if (animationMode == "None") return this
-    
-    val visibleState = remember { 
-        MutableTransitionState(false).apply { targetState = true } 
+    if (animationMode == "None" || animationMode == "Off") return this
+
+    val visibleState = remember {
+        MutableTransitionState(false).apply { targetState = true }
     }
     val transition = rememberTransition(visibleState, label = "itemEntry")
-    
-    val delay = (index * 45).coerceAtMost(300) // staggered delay with a reasonable cap
-    
+
+    val delay = (index * 45).coerceAtMost(300)
+
     val offset by transition.animateDp(
         transitionSpec = {
             if (animationMode == "Bouncy") {
-                spring(
-                    dampingRatio = 0.55f, 
-                    stiffness = Spring.StiffnessMediumLow
-                )
+                spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow)
             } else {
-                tween(
-                    durationMillis = 350, 
-                    delayMillis = delay, 
-                    easing = FastOutSlowInEasing
-                )
+                tween(durationMillis = 350, delayMillis = delay, easing = FastOutSlowInEasing)
             }
         },
         label = "offset"
     ) { state ->
         if (state) 0.dp else 16.dp
     }
-    
+
     val alpha by transition.animateFloat(
         transitionSpec = {
-            tween(
-                durationMillis = 300, 
-                delayMillis = delay, 
-                easing = LinearOutSlowInEasing
-            )
+            tween(durationMillis = 300, delayMillis = delay, easing = LinearOutSlowInEasing)
         },
         label = "alpha"
     ) { state ->
         if (state) 1f else 0f
     }
-    
-    return this
-        .graphicsLayer {
-            translationY = offset.toPx()
-            this.alpha = alpha
-        }
-}
 
+    return this.graphicsLayer {
+        translationY = offset.toPx()
+        this.alpha = alpha
+    }
+}

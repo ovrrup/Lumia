@@ -704,6 +704,12 @@ fun MultiDeviceSyncScreen(
 /**
  * Cockpit Header with Animated Live Beacon and Host Details.
  */
+@ValueScore(
+    score = 91,
+    importance = Importance.HIGH,
+    description = "Animated live beacon radar header displaying connected mesh fleet status and host daemon endpoint",
+    category = "UI"
+)
 @Composable
 private fun MeshCockpitHeader(
     onlineCount: Int,
@@ -875,6 +881,12 @@ private fun MeshCockpitHeader(
 /**
  * Paired Device Fleet Card Item.
  */
+@ValueScore(
+    score = 93,
+    importance = Importance.HIGH,
+    description = "Fleet device card rendering paired peer status, 1-click sync action, and auto-sync toggles",
+    category = "UI"
+)
 @Composable
 private fun PairedDeviceFleetCard(
     peer: TrustedPeer,

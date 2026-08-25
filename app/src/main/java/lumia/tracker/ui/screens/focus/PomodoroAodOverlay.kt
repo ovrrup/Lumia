@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import lumia.tracker.ui.components.BouncyIconButton
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -33,6 +35,12 @@ import java.util.*
  * Features 100% pure OLED black canvas, dynamic pixel burn-in shifting, minimal text luminescence,
  * live focus countdown, and instant tap-to-dismiss.
  */
+@ValueScore(
+    score = 88,
+    importance = Importance.HIGH,
+    description = "True Always-On Display low-power OLED focus overlay with anti-burn-in pixel shifting",
+    category = "Focus"
+)
 @Composable
 fun PomodoroAodOverlay(
     timeLeftSeconds: Int,

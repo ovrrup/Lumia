@@ -45,12 +45,12 @@ import kotlin.math.sin
 
 /**
  * PomodoroZenOverlay - Pure OLED black AMOLED immersion overlay for deep focus sessions.
- * Features 100% #000000 true black background, subtle orbital clock simulation, ambient breathing pulse aura,
+ * Features 100% #000000 true black background, subtle orbital clock simulation, ambient rhythmic breathing pulse aura,
  * tap-to-toggle HUD, and touch-and-hold to exit with a smooth progress bar.
  */
 @ValueScore(
-    score = 88,
-    importance = Importance.HIGH,
+    score = 92,
+    importance = Importance.CRITICAL,
     description = "AMOLED Pure Black immersion overlay with subtle orbital clock and touch-and-hold exit progress bar",
     category = "Focus"
 )
@@ -126,8 +126,7 @@ fun PomodoroZenOverlay(
     ) {
         // 1. Subtle Orbital Clock Ring & Rotating Celestial Particle
         Canvas(
-            modifier = Modifier
-                .size(330.dp)
+            modifier = Modifier.size(330.dp)
         ) {
             val trackRadius = (size.minDimension / 2f) - 6.dp.toPx()
             val orbitalRad = Math.toRadians((orbitalAngleDeg - 90.0)).toFloat()
@@ -141,12 +140,13 @@ fun PomodoroZenOverlay(
                 style = Stroke(width = 1.dp.toPx(), cap = StrokeCap.Round)
             )
 
-            // Orbital orbiting particle
+            // Outer orbital glowing particle aura
             drawCircle(
                 color = ringColor.copy(alpha = 0.30f),
                 radius = 7.dp.toPx(),
                 center = Offset(particleX, particleY)
             )
+            // Inner bright core
             drawCircle(
                 color = Color.White.copy(alpha = 0.85f),
                 radius = 2.5.dp.toPx(),
@@ -298,7 +298,7 @@ fun PomodoroZenOverlay(
  * HoldToExitBar - Interactive progress bar filling up as the user holds down.
  */
 @ValueScore(
-    score = 75,
+    score = 78,
     importance = Importance.HIGH,
     description = "Touch-and-hold progress bar for deliberate, non-accidental Zen mode exit",
     category = "Focus"

@@ -51,7 +51,7 @@ enum class SyncOperation {
 @ValueScore(
     score = 98,
     importance = Importance.CRITICAL,
-    description = "Atomic differential CRDT mutation unit for real-time live mesh synchronization",
+    description = "Atomic differential CRDT mutation unit with Lamport timestamps for real-time live mesh synchronization",
     category = "SYNC"
 )
 @JsonClass(generateAdapter = true)
@@ -61,7 +61,8 @@ data class SyncDelta(
     val operation: SyncOperation = SyncOperation.UPSERT,
     val entityGlobalId: String, // Deterministic natural key or UUID
     val payloadJson: String? = null, // Serialized entity JSON (null on DELETE)
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = System.currentTimeMillis(), // Physical wall-clock timestamp
+    val lamportTimestamp: Long = 0L, // Lamport logical timestamp for strict causal ordering
     val originDeviceId: String,
     val version: Long = 1L
 ) : Serializable
@@ -81,6 +82,7 @@ data class SyncDeltaPacket(
     val channelId: String,
     val senderDeviceId: String,
     val timestamp: Long = System.currentTimeMillis(),
+    val lamportTimestamp: Long = 0L,
     val deltas: List<SyncDelta> = emptyList(),
     val vectorClock: Map<String, Long> = emptyMap()
 ) : Serializable

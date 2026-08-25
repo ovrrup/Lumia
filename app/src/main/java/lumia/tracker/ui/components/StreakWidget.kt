@@ -28,6 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import lumia.tracker.ui.components.BouncyButton
+import lumia.tracker.ui.components.BouncyOutlinedButton
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.theme.LocalAppAnimationMode
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
@@ -39,6 +43,12 @@ import kotlin.math.sin
  * StreakWidget - Compact, animated flame badge with dynamic custom shaders / styles,
  * spring scaling on touch, and a comprehensive Streak Detail Bottom Sheet popup.
  */
+@ValueScore(
+    score = 86,
+    importance = Importance.HIGH,
+    description = "Interactive animated streak flame badge with custom shaders and detail bottom sheet",
+    category = "Widget"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StreakWidget(
@@ -245,7 +255,7 @@ fun StreakWidget(
                 else MaterialTheme.colorScheme.surfaceContainerHigh
             )
             .border(
-                0.75.dp,
+                0.8.dp,
                 if (isCompleteToday) color.copy(alpha = 0.5f)
                 else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
                 CircleShape
@@ -505,7 +515,7 @@ fun StreakWidget(
                 // Today's Progress Card
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(22.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -586,12 +596,12 @@ fun StreakWidget(
                     )
                 }
 
-                // Action Buttons
+                // Action Buttons (Standardized Bouncy Variants)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    OutlinedButton(
+                    BouncyOutlinedButton(
                         onClick = {
                             showStreakSheet = false
                             navController.navigate("settings/streaks")
@@ -600,14 +610,14 @@ fun StreakWidget(
                             .weight(1f)
                             .height(48.dp),
                         shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Settings", fontWeight = FontWeight.SemiBold)
                     }
 
-                    Button(
+                    BouncyButton(
                         onClick = { showStreakSheet = false },
                         modifier = Modifier
                             .weight(1f)
@@ -627,6 +637,12 @@ fun StreakWidget(
     }
 }
 
+@ValueScore(
+    score = 70,
+    importance = Importance.MEDIUM,
+    description = "Daily streak requirement item with icon, label and planned target",
+    category = "Widget"
+)
 @Composable
 private fun StreakReqItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -658,6 +674,12 @@ private fun StreakReqItem(
     }
 }
 
+@ValueScore(
+    score = 74,
+    importance = Importance.MEDIUM,
+    description = "Milestone metric statistic card for streak records",
+    category = "Widget"
+)
 @Composable
 private fun StreakStatCard(
     modifier: Modifier = Modifier,
@@ -668,7 +690,7 @@ private fun StreakStatCard(
 ) {
     ScholarCard(
         modifier = modifier,
-        shape = RoundedCornerShape(18.dp)
+        shape = RoundedCornerShape(22.dp)
     ) {
         Column(
             modifier = Modifier

@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.*
@@ -36,14 +35,14 @@ import lumia.tracker.viewmodel.ScholarViewModel
 import java.util.Locale
 
 /**
- * ScholarInnovativeHeader - Modern Dynamic Island & Action Capsule Bar.
- * Unifies context-aware tab title/search capsule (42dp, 22dp radius),
- * responsive Focus pill with live countdown, streak widget, and iOS avatar capsule.
+ * ScholarInnovativeHeader - Dynamic Island & Action Capsule Bar.
+ * Unifies context-aware tab title/search capsule, responsive Focus pill with live countdown,
+ * streak widget, and iOS avatar capsule in uniform 42dp height.
  */
 @ValueScore(
     score = 96,
     importance = Importance.CRITICAL,
-    description = "Dynamic Island inspired action capsule header unifying tab-aware search capsule, focus pill, streak widget, and profile avatar",
+    description = "Dynamic Island inspired action capsule header unifying tab-aware search capsule, focus pill, streak widget, and profile avatar with 42dp uniform capsule height",
     category = "Navigation"
 )
 @Composable
@@ -68,32 +67,34 @@ fun ScholarInnovativeHeader(
                 .padding(horizontal = 16.dp, vertical = 6.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 1. Search / Tab Title Action Capsule (Reflects "Academics" on Tab 1)
+                // 1. Search / Tab Title Action Capsule (Reflects active tab context)
                 ScholarSearchCapsule(
                     selectedTab = selectedTab,
                     onClick = { navController.navigate("search") },
                     modifier = Modifier.weight(1f)
                 )
 
-                // 2. Responsive Live Focus Pill
+                // 2. Responsive Live Focus Countdown Pill
                 ScholarFocusPill(
                     isRunning = pomodoroState.isRunning,
                     timeLeft = pomodoroState.timeLeft,
                     onClick = { navController.navigate("pomodoro") }
                 )
 
-                // 3. Streak Flame Badge Widget (interactive with bottom sheet)
+                // 3. Streak Flame Badge Widget (Interactive bottom sheet)
                 StreakWidget(
                     viewModel = viewModel,
                     navController = navController,
                     modifier = Modifier.height(42.dp)
                 )
 
-                // 4. iOS Profile Avatar Capsule
+                // 4. iOS Profile Avatar Capsule (Settings navigation)
                 ScholarProfileAvatar(
                     avatarEmoji = activeProfile.avatarEmoji,
                     displayName = activeProfile.name,
@@ -106,12 +107,12 @@ fun ScholarInnovativeHeader(
 
 /**
  * ScholarSearchCapsule - Search bar capsule button triggering search navigation,
- * dynamically updating title and icon based on active tab (reflects "Academics" on tab 1).
+ * dynamically updating title and icon based on active tab with uniform 42dp height.
  */
 @ValueScore(
     score = 88,
     importance = Importance.HIGH,
-    description = "Tab-responsive search and title capsule button triggering search workspace with animated tab title transitions",
+    description = "Tab-responsive search and title capsule button triggering search workspace with animated tab title transitions and uniform 42dp height",
     category = "Navigation"
 )
 @Composable
@@ -121,7 +122,7 @@ fun ScholarSearchCapsule(
     selectedTab: Int = 0
 ) {
     Surface(
-        shape = RoundedCornerShape(22.dp),
+        shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(
             0.75.dp,
@@ -131,7 +132,7 @@ fun ScholarSearchCapsule(
         tonalElevation = 1.dp,
         modifier = modifier
             .height(42.dp)
-            .clip(RoundedCornerShape(22.dp))
+            .clip(CircleShape)
             .bouncyClick(onClick = onClick)
             .testTag("open_search_button")
     ) {
@@ -153,7 +154,7 @@ fun ScholarSearchCapsule(
         ) { targetTab ->
             val (icon, title) = when (targetTab) {
                 0 -> Icons.Rounded.Search to "Search workspace..."
-                1 -> Icons.Rounded.School to "Academics"
+                1 -> Icons.AutoMirrored.Rounded.MenuBook to "Academics"
                 2 -> Icons.Rounded.AutoStories to "Tasks"
                 3 -> Icons.Rounded.Analytics to "Analytics"
                 else -> Icons.Rounded.Search to "Search workspace..."
@@ -199,12 +200,12 @@ fun ScholarSearchCapsule(
 }
 
 /**
- * ScholarFocusPill - Dynamic Island live countdown pill with pulse and equalizer animation.
+ * ScholarFocusPill - Dynamic Island live countdown pill with pulse equalizer wave and smooth transitions.
  */
 @ValueScore(
     score = 93,
     importance = Importance.CRITICAL,
-    description = "Live Focus/Pomodoro countdown pill with active equalizer animation and dynamic color transition",
+    description = "Live Focus/Pomodoro countdown pill with active equalizer wave animation, smooth color transitions, and uniform 42dp height",
     category = "Focus"
 )
 @Composable
@@ -233,11 +234,11 @@ fun ScholarFocusPill(
         label = "focus_pill_text_color"
     )
 
-    // Equalizer wave animation when active
+    // Equalizer wave pulse animation when active
     val infiniteTransition = rememberInfiniteTransition(label = "focus_pulse")
     val eqScale by infiniteTransition.animateFloat(
-        initialValue = 0.9f,
-        targetValue = 1.15f,
+        initialValue = 0.88f,
+        targetValue = 1.18f,
         animationSpec = infiniteRepeatable(
             animation = tween(800, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -246,7 +247,7 @@ fun ScholarFocusPill(
     )
 
     Surface(
-        shape = RoundedCornerShape(22.dp),
+        shape = CircleShape,
         color = focusPillBg,
         border = BorderStroke(
             0.75.dp,
@@ -260,7 +261,7 @@ fun ScholarFocusPill(
         tonalElevation = if (isRunning) 4.dp else 1.dp,
         modifier = modifier
             .height(42.dp)
-            .clip(RoundedCornerShape(22.dp))
+            .clip(CircleShape)
             .bouncyClick(onClick = onClick)
             .testTag("open_pomodoro_button")
     ) {
@@ -280,7 +281,7 @@ fun ScholarFocusPill(
                             scaleX = eqScale
                             scaleY = eqScale
                         }
-                        .background(Color.White, CircleShape)
+                        .background(MaterialTheme.colorScheme.onPrimary, CircleShape)
                 )
                 Icon(
                     imageVector = Icons.Rounded.GraphicEq,
@@ -297,16 +298,26 @@ fun ScholarFocusPill(
                 )
             }
 
-            val mins = timeLeft / 60
-            val secs = timeLeft % 60
+            val mins = (timeLeft / 60).coerceAtLeast(0)
+            val secs = (timeLeft % 60).coerceAtLeast(0)
             val timerStr = String.format(Locale.US, "%02d:%02d", mins, secs)
 
-            Text(
-                text = if (isRunning) timerStr else "Focus",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = focusPillText
-            )
+            AnimatedContent(
+                targetState = isRunning to (if (isRunning) timerStr else "Focus"),
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(200)) + slideInVertically { it / 3 })
+                        .togetherWith(fadeOut(animationSpec = tween(150)) + slideOutVertically { -it / 3 })
+                },
+                label = "focus_pill_text_transition"
+            ) { (_, labelText) ->
+                Text(
+                    text = labelText,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = focusPillText,
+                    maxLines = 1
+                )
+            }
         }
     }
 }
@@ -317,7 +328,7 @@ fun ScholarFocusPill(
 @ValueScore(
     score = 82,
     importance = Importance.HIGH,
-    description = "Avatar capsule displaying user profile emoji, photo, or monogram with direct settings navigation",
+    description = "Avatar capsule displaying user profile emoji, photo, or monogram with direct settings navigation and uniform 42dp diameter",
     category = "Navigation"
 )
 @Composable
@@ -334,7 +345,8 @@ fun ScholarProfileAvatar(
             .background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape)
             .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.75f), CircleShape)
             .clip(CircleShape)
-            .bouncyClick(onClick = onClick),
+            .bouncyClick(onClick = onClick)
+            .testTag("profile_avatar_button"),
         contentAlignment = Alignment.Center
     ) {
         val isLocalImage = avatarEmoji.startsWith("/") ||

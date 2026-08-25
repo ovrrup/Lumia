@@ -213,3 +213,36 @@ data class FullAppBackup(
     val globalPrefs: Map<String, String> = emptyMap(),
     val profileBackupsJson: Map<String, String> = emptyMap() // Map of ProfileID -> ScholarBackup JSON
 )
+
+@JsonClass(generateAdapter = true)
+data class TopicCoverageStats(
+    val totalTopics: Int = 0,
+    val completedTopics: Int = 0,
+    val coverageFraction: Float = 0f,
+    val coveragePercentage: Int = 0
+) : Serializable
+
+@JsonClass(generateAdapter = true)
+data class ChapterWithTopics(
+    val chapter: Chapter,
+    val topics: List<Topic> = emptyList(),
+    val stats: TopicCoverageStats = TopicCoverageStats()
+) : Serializable
+
+@JsonClass(generateAdapter = true)
+data class SubjectCurriculumHierarchy(
+    val subject: Subject,
+    val chapters: List<ChapterWithTopics> = emptyList(),
+    val unassignedTopics: List<Topic> = emptyList(),
+    val unassignedStats: TopicCoverageStats = TopicCoverageStats(),
+    val overallStats: TopicCoverageStats = TopicCoverageStats(),
+    val linkedCourses: List<Course> = emptyList()
+) : Serializable
+
+@JsonClass(generateAdapter = true)
+data class CourseCurriculumHierarchy(
+    val course: Course,
+    val linkedSubjects: List<SubjectCurriculumHierarchy> = emptyList(),
+    val overallStats: TopicCoverageStats = TopicCoverageStats()
+) : Serializable
+

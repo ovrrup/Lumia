@@ -242,7 +242,8 @@ class P2PDiscoveryManager(private val context: Context) {
                 }
 
                 override fun onServiceResolved(resolvedInfo: NsdServiceInfo) {
-                    val host = resolvedInfo.host?.hostAddress ?: return
+                    val rawHost = resolvedInfo.host?.hostAddress ?: return
+                    val host = rawHost.substringBefore("%") // Strip IPv6 zone index if present
                     val port = resolvedInfo.port
                     var deviceId = resolvedInfo.serviceName
                     var deviceName = resolvedInfo.serviceName

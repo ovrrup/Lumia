@@ -12,16 +12,22 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.BatteryManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
+import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.rounded.BatteryChargingFull
+import androidx.compose.material.icons.rounded.BatteryStd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,14 +53,30 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.delay
 import lumia.tracker.service.AodAccessibilityService
 import lumia.tracker.service.PomodoroService
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.sin
 
+/**
+ * TrueAodManager - Hardware-accelerated True Always-On Display overlay manager.
+ * Manages full-screen overlay attachment, lifecycle binding, anti-burn-in protection,
+ * and multi-sensor wake gestures across Android 8 through 15+.
+ */
+@ValueScore(
+    score = 95,
+    importance = Importance.CRITICAL,
+    description = "Hardware-accelerated True AOD overlay engine with idempotent WindowManager attachment and crash-proof lifecycle management",
+    category = "Overlay"
+)
 @SuppressLint("StaticFieldLeak")
 object TrueAodManager {
+    private const val TAG = "TrueAodManager"
+    private val mainHandler = Handler(Looper.getMainLooper())
+
     @Volatile
     private var windowManager: WindowManager? = null
     @Volatile
@@ -72,7 +94,11 @@ object TrueAodManager {
         }
 
         fun onCreate() {
-            savedStateRegistryController.performRestore(null)
+            try {
+                savedStateRegistryController.performRestore(null)
+            } catch (e: Exception) {
+                Log.w(TAG, "Error restoring saved state", e)
+            }
             lifecycleRegistry.currentState = Lifecycle.State.CREATED
         }
 
@@ -85,8 +111,12 @@ object TrueAodManager {
         }
 
         fun onDestroy() {
-            lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
-            mViewModelStore.clear()
+            try {
+                lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+                mViewModelStore.clear()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error destroying overlay lifecycle", e)
+            }
         }
 
         override val lifecycle: Lifecycle = lifecycleRegistry
@@ -98,6 +128,9 @@ object TrueAodManager {
         return composeView != null
     }
 
+    /**
+     * Attaches True AOD overlay idempotently and safely to WindowManager on the Main Thread.
+     */
     @Synchronized
     @SuppressLint("ClickableViewAccessibility")
     fun showAodOverlay(
@@ -110,34 +143,69 @@ object TrueAodManager {
         burnInShiftIntervalSeconds: Int = 10,
         onExit: () -> Unit
     ) {
-        if (composeView != null) return
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post {
+                showAodOverlay(
+                    context,
+                    useAccessibility,
+                    dimnessLevel,
+                    sensitivity,
+                    motionSensitivity,
+                    lockTimeoutSeconds,
+                    burnInShiftIntervalSeconds,
+                    onExit
+                )
+            }
+            return
+        }
 
-        val overlayContext = if (useAccessibility) {
+        // Idempotency check: dismiss existing overlay if any before re-adding
+        if (composeView != null) {
+            dismissAodOverlay()
+        }
+
+        val overlayContext = if (useAccessibility && AodAccessibilityService.instance != null) {
             AodAccessibilityService.instance ?: context
         } else {
             context
         }
 
-        val wm = overlayContext.getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return
+        // Check overlay permission if not using accessibility service
+        if (!useAccessibility || AodAccessibilityService.instance == null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(overlayContext)) {
+                Log.e(TAG, "SYSTEM_ALERT_WINDOW permission not granted and Accessibility Service inactive")
+                onExit()
+                return
+            }
+        }
+
+        val wm = overlayContext.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
+        if (wm == null) {
+            Log.e(TAG, "WindowManager service not available")
+            onExit()
+            return
+        }
 
         val localLifecycle = OverlayLifecycleOwner()
         localLifecycle.onCreate()
         localLifecycle.onStart()
         localLifecycle.onResume()
 
+        val windowType = if (useAccessibility && overlayContext is android.accessibilityservice.AccessibilityService) {
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            } else {
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
+            }
+        }
+
         val layoutParams = WindowManager.LayoutParams().apply {
             width = WindowManager.LayoutParams.MATCH_PARENT
             height = WindowManager.LayoutParams.MATCH_PARENT
-            type = if (useAccessibility && overlayContext is android.accessibilityservice.AccessibilityService) {
-                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
-            } else {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                } else {
-                    @Suppress("DEPRECATION")
-                    WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
-                }
-            }
+            type = windowType
             flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
@@ -148,7 +216,7 @@ object TrueAodManager {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
             }
-            screenBrightness = 0.005f
+            screenBrightness = (1.0f - dimnessLevel).coerceIn(0.001f, 0.05f)
             format = PixelFormat.TRANSLUCENT
             gravity = Gravity.FILL
         }
@@ -178,20 +246,42 @@ object TrueAodManager {
             composeView = view
             windowManager = wm
             lifecycleOwner = localLifecycle
+            Log.i(TAG, "True AOD overlay successfully attached with windowType=$windowType")
+        } catch (e: WindowManager.BadTokenException) {
+            Log.e(TAG, "BadTokenException adding AOD overlay window", e)
+            cleanupFailedAttachment(localLifecycle)
+            onExit()
+        } catch (e: WindowManager.InvalidDisplayException) {
+            Log.e(TAG, "InvalidDisplayException adding AOD overlay window", e)
+            cleanupFailedAttachment(localLifecycle)
+            onExit()
         } catch (e: Exception) {
-            e.printStackTrace()
-            try {
-                localLifecycle.onDestroy()
-            } catch (ignored: Exception) {}
-            composeView = null
-            windowManager = null
-            lifecycleOwner = null
+            Log.e(TAG, "Unexpected error adding AOD overlay window", e)
+            cleanupFailedAttachment(localLifecycle)
+            onExit()
         }
     }
 
+    private fun cleanupFailedAttachment(lifecycle: OverlayLifecycleOwner) {
+        try {
+            lifecycle.onDestroy()
+        } catch (ignored: Exception) {}
+        composeView = null
+        windowManager = null
+        lifecycleOwner = null
+    }
+
+    /**
+     * Dismisses True AOD overlay cleanly and idempotently on the Main Thread.
+     */
     @Synchronized
     fun dismissAodOverlay() {
-        val view = composeView ?: return
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { dismissAodOverlay() }
+            return
+        }
+
+        val view = composeView
         val wm = windowManager
         val lifecycle = lifecycleOwner
 
@@ -199,28 +289,33 @@ object TrueAodManager {
         windowManager = null
         lifecycleOwner = null
 
-        if (wm != null) {
+        if (view != null && wm != null) {
             try {
                 if (view.isAttachedToWindow) {
                     wm.removeViewImmediate(view)
                 } else {
                     wm.removeView(view)
                 }
+                Log.i(TAG, "True AOD overlay removed from WindowManager")
             } catch (e: IllegalArgumentException) {
-                // View was not attached
+                Log.w(TAG, "View was not attached when attempting removal", e)
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "Error removing AOD view from WindowManager", e)
             }
         }
 
         try {
             lifecycle?.onDestroy()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Error cleaning up lifecycle owner", e)
         }
     }
 }
 
+/**
+ * TrueAodOverlayUi - Full-screen 100% OLED black composable with anti-burn-in shifting,
+ * real-time battery status, focus clock, and touch/motion wake sensors.
+ */
 @Composable
 fun TrueAodOverlayUi(
     dimnessLevel: Float,
@@ -237,7 +332,7 @@ fun TrueAodOverlayUi(
     var currentTimeStr by remember { mutableStateOf(timeFormat.format(Date())) }
     var currentDateStr by remember { mutableStateOf(dateFormat.format(Date())) }
 
-    // Tick real time & date
+    // Tick real time & date every second
     LaunchedEffect(Unit) {
         while (true) {
             val now = Date()
@@ -272,7 +367,11 @@ fun TrueAodOverlayUi(
             batteryLevel = if (level >= 0 && scale > 0) (level * 100 / scale) else 100
         }
         onDispose {
-            try { context.unregisterReceiver(receiver) } catch (e: Exception) {}
+            try {
+                context.unregisterReceiver(receiver)
+            } catch (e: Exception) {
+                Log.w("TrueAodOverlayUi", "Battery receiver unregister exception", e)
+            }
         }
     }
 
@@ -286,7 +385,7 @@ fun TrueAodOverlayUi(
         }
     }
 
-    // Touch holding stats for Secure Hold Sensitivity
+    // Touch holding logic for Secure Hold Sensitivity
     var isHolding by remember { mutableStateOf(false) }
     var holdProgress by remember { mutableFloatStateOf(0f) }
 
@@ -321,20 +420,18 @@ fun TrueAodOverlayUi(
             }
             else -> {
                 Modifier.pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            awaitFirstDown()
-                            isHolding = true
-                            waitForUpOrCancellation()
-                            isHolding = false
-                        }
+                    awaitEachGesture {
+                        awaitFirstDown()
+                        isHolding = true
+                        waitForUpOrCancellation()
+                        isHolding = false
                     }
                 }
             }
         }
     }
 
-    // Sensor listeners: Proximity and Motion
+    // Sensor listeners: Proximity and Motion for motion-wake mode
     if (sensitivity == "motion") {
         val sensorManager = remember {
             context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
@@ -420,24 +517,24 @@ fun TrueAodOverlayUi(
                     sm.registerListener(listener, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("TrueAodOverlayUi", "Error registering motion/proximity sensors", e)
             }
 
             onDispose {
                 try {
                     sm.unregisterListener(listener)
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.w("TrueAodOverlayUi", "Error unregistering sensors", e)
                 }
             }
         }
     }
 
-    // Dynamic Pixel Burn-in Orbital Shifter
-    val shiftSpeed = if (burnInShiftIntervalSeconds > 0) burnInShiftIntervalSeconds else 10
-    val burnInOffset = remember(serviceState.timeLeft, shiftSpeed) {
+    // Dynamic Anti-Burn-In Orbital Pixel Shifter
+    val shiftInterval = if (burnInShiftIntervalSeconds > 0) burnInShiftIntervalSeconds else 10
+    val burnInOffset = remember(serviceState.timeLeft, shiftInterval) {
         val orbitRadiusDp = 6.0
-        val step = (serviceState.timeLeft / shiftSpeed)
+        val step = (serviceState.timeLeft / shiftInterval)
         val angleRad = (step % 12) * (2.0 * Math.PI / 12.0)
         val x = (orbitRadiusDp * cos(angleRad)).toFloat().dp
         val y = (orbitRadiusDp * sin(angleRad)).toFloat().dp

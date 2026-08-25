@@ -24,10 +24,18 @@ import lumia.tracker.ui.theme.bouncyClick
  * ScholarCardDefaults - Standard design tokens for Lumia's card system.
  * Provides unified shape, elevation, and border definitions to eliminate boilerplate.
  */
+@ValueScore(
+    score = 88,
+    importance = Importance.HIGH,
+    description = "Design system tokens and default parameters for ScholarCard Bento grid ecosystem",
+    category = "Container"
+)
 object ScholarCardDefaults {
-    val shape: Shape = RoundedCornerShape(20.dp)
-    val heroShape: Shape = RoundedCornerShape(24.dp)
+    val cornerRadius: Dp = 22.dp
+    val shape: Shape = RoundedCornerShape(22.dp)
+    val heroShape: Shape = RoundedCornerShape(22.dp)
     val compactShape: Shape = RoundedCornerShape(16.dp)
+    val borderWidth: Dp = 0.8.dp
     val shadowElevation: Dp = 0.5.dp
     val tonalElevation: Dp = 1.dp
     val heroShadowElevation: Dp = 1.5.dp
@@ -36,13 +44,13 @@ object ScholarCardDefaults {
     @Composable
     fun border(
         color: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-        width: Dp = 0.75.dp
+        width: Dp = borderWidth
     ): BorderStroke = BorderStroke(width = width, color = color)
 
     @Composable
     fun heroBorder(
         color: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
-        width: Dp = 0.8.dp
+        width: Dp = borderWidth
     ): BorderStroke = BorderStroke(width = width, color = color)
 }
 

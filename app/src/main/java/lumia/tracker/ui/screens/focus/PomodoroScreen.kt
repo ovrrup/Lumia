@@ -51,9 +51,9 @@ import lumia.tracker.viewmodel.ScholarViewModel
  * OLED Zen mode, True AOD launcher, keep-screen-on toggle, and daily focus metrics.
  */
 @ValueScore(
-    score = 95,
+    score = 96,
     importance = Importance.CRITICAL,
-    description = "Main focus and Pomodoro workspace screen with dynamic theme, mode switching, and daily statistics",
+    description = "Main focus and Pomodoro workspace screen with dynamic theme, fluid mode switching, and daily statistics",
     category = "Focus"
 )
 @OptIn(ExperimentalMaterial3Api::class)
@@ -424,13 +424,13 @@ fun PomodoroScreen(
  * FluidPillModeSelector - Mode selector with fluid animated sliding pill indicator.
  */
 @ValueScore(
-    score = 86,
+    score = 88,
     importance = Importance.HIGH,
     description = "Fluid sliding pill mode switcher for Work, Short Break, and Long Break intervals",
     category = "Focus"
 )
 @Composable
-private fun FluidPillModeSelector(
+fun FluidPillModeSelector(
     currentMode: PomodoroMode,
     workDurationMin: Int,
     shortBreakDurationMin: Int,
@@ -521,8 +521,14 @@ private fun FluidPillModeSelector(
 /**
  * PillModeTabItem - Content layer for individual mode tab with animated text/icon colors.
  */
+@ValueScore(
+    score = 70,
+    importance = Importance.MEDIUM,
+    description = "Individual mode tab item for the fluid pill mode switcher",
+    category = "Focus"
+)
 @Composable
-private fun PillModeTabItem(
+fun PillModeTabItem(
     title: String,
     durationText: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -582,7 +588,7 @@ private fun PillModeTabItem(
 }
 
 @ValueScore(
-    score = 60,
+    score = 62,
     importance = Importance.LOW,
     description = "Daily metric badge item for completed sessions, total focus time, and streaks",
     category = "Focus"

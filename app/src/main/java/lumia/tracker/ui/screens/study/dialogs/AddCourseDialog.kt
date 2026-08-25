@@ -96,8 +96,8 @@ fun AddCourseDialog(
                     leadingIcon = {
                         Icon(Icons.Rounded.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     },
-                    isError = nameTouched && name.isBlank(),
-                    supportingText = if (nameTouched && name.isBlank()) {
+                    isError = nameTouched && name.trim().isBlank(),
+                    supportingText = if (nameTouched && name.trim().isBlank()) {
                         { Text("Course name is required", color = MaterialTheme.colorScheme.error) }
                     } else null,
                     shape = RoundedCornerShape(14.dp),
@@ -187,7 +187,7 @@ fun AddCourseDialog(
         confirmButton = {
             BouncyButton(
                 onClick = {
-                    if (name.isNotBlank()) {
+                    if (name.trim().isNotBlank()) {
                         val computedSchedule = if (startTime.isNotBlank() && endTime.isNotBlank()) "$startTime - $endTime" else ""
                         viewModel.addCourse(
                             name = name.trim(),
@@ -204,9 +204,11 @@ fun AddCourseDialog(
                             subjectIds = selectedSubjectIds.joinToString(",")
                         )
                         onDismiss()
+                    } else {
+                        nameTouched = true
                     }
                 },
-                enabled = name.isNotBlank(),
+                enabled = name.trim().isNotBlank(),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Row(

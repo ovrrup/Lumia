@@ -76,6 +76,7 @@ fun SubjectsTab(
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
+            clipToPadding = false,
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
@@ -92,82 +93,22 @@ fun SubjectsTab(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // Total Subjects Card
-                        ScholarCard(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(18.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Category,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.tertiary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Column {
-                                    Text(
-                                        text = "$totalSubjects",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Black,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Subjects",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
+                        StudyHeaderStatCard(
+                            value = "$totalSubjects",
+                            label = "Subjects",
+                            icon = Icons.Rounded.Category,
+                            iconColor = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.weight(1f)
+                        )
 
                         // Syllabus Coverage Card
-                        ScholarCard(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(18.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.PieChart,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Column {
-                                    Text(
-                                        text = if (totalTopics > 0) "$overallCoveragePct%" else "$totalTopics Topics",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Black,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Coverage",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
+                        StudyHeaderStatCard(
+                            value = if (totalTopics > 0) "$overallCoveragePct%" else "$totalTopics Topics",
+                            label = "Coverage",
+                            icon = Icons.Rounded.PieChart,
+                            iconColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
@@ -175,60 +116,17 @@ fun SubjectsTab(
             // Subject List / Empty State
             if (subjects.isEmpty()) {
                 item(key = "empty_subjects") {
-                    ScholarCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        shape = RoundedCornerShape(28.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(76.dp)
-                                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.MenuBook,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(38.dp),
-                                    tint = MaterialTheme.colorScheme.tertiary
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(18.dp))
-                            Text(
-                                text = "No subjects registered yet",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = "Organize your academic curriculum by subject and break chapters down into syllabus topics.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(20.dp))
-                            BouncyButton(
-                                onClick = onAddSubjectClick,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                                )
-                            ) {
-                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Create First Subject", fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
+                    StudyEmptyStateCard(
+                        icon = Icons.AutoMirrored.Rounded.MenuBook,
+                        title = "No subjects registered yet",
+                        description = "Organize your academic curriculum by subject and break chapters down into syllabus topics.",
+                        buttonText = "Create First Subject",
+                        onButtonClick = onAddSubjectClick,
+                        modifier = Modifier.padding(top = 16.dp),
+                        accentColor = MaterialTheme.colorScheme.tertiary,
+                        buttonContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        buttonContentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
                 }
             } else {
                 itemsIndexed(subjects, key = { _, subject -> subject.id }) { index, subject ->

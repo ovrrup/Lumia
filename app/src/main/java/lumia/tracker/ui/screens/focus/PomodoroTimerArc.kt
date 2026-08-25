@@ -34,13 +34,13 @@ import kotlin.math.sin
 
 /**
  * PomodoroTimerArc - Premium circular countdown arc with sweeping gradient progress,
- * dynamic stroke width, smooth pulse animations, orbital head particle,
+ * dynamic stroke width, rhythmic breathing pulse animations, multi-layer orbital head particle,
  * bold non-jittering monospace typography, and tactile on-the-fly minute nudges.
  */
 @ValueScore(
-    score = 92,
+    score = 95,
     importance = Importance.CRITICAL,
-    description = "280dp sweeping gradient timer arc with dynamic stroke width, pulse animations, and orbital progress indicator",
+    description = "280dp sweeping gradient timer arc with dynamic stroke width, rhythmic breathing pulse, multi-layer orbital head particle, and tactile duration nudges",
     category = "Focus"
 )
 @Composable
@@ -67,7 +67,7 @@ fun PomodoroTimerArc(
         label = "pomodoro_arc_progress"
     )
 
-    // Pulse animation for active running state
+    // Pulse animation for active running state (rhythmic breathing pulse)
     val infiniteTransition = rememberInfiniteTransition(label = "arc_pulse_transition")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.35f,
@@ -95,9 +95,9 @@ fun PomodoroTimerArc(
     // Sweeping gradient brush aligned with arc start
     val sweepGradientBrush = remember(ringColor) {
         Brush.sweepGradient(
-            0.0f to ringColor.copy(alpha = 0.40f),
-            0.4f to ringColor.copy(alpha = 0.75f),
-            0.85f to ringColor,
+            0.0f to ringColor.copy(alpha = 0.35f),
+            0.35f to ringColor.copy(alpha = 0.70f),
+            0.80f to ringColor,
             1.0f to ringColor.copy(alpha = 0.95f)
         )
     }
@@ -124,7 +124,7 @@ fun PomodoroTimerArc(
                 val radius = (size.minDimension - glowWidthPx) / 2f
                 val sweepAngleDeg = animatedProgress * 360f
 
-                // A. Background Track Ring
+                // A. Background Track Ring with subtle tick accents
                 drawCircle(
                     color = ringColor.copy(alpha = 0.08f),
                     radius = radius,
@@ -158,16 +158,22 @@ fun PomodoroTimerArc(
                         )
                     }
 
-                    // D. Glowing Orbital Head Particle at the current tip of the arc
+                    // D. Glowing Multi-Layer Orbital Head Particle at the current tip of the arc
                     val angleRad = Math.toRadians((sweepAngleDeg - 90.0)).toFloat()
                     val headX = center.x + radius * cos(angleRad)
                     val headY = center.y + radius * sin(angleRad)
                     val headCenter = Offset(headX, headY)
 
-                    // Outer halo
+                    // Outer glowing halo
                     drawCircle(
                         color = ringColor.copy(alpha = if (isRunning && !isPaused) 0.35f * pulseAlpha else 0.25f),
                         radius = strokeWidthPx * 0.95f,
+                        center = headCenter
+                    )
+                    // Mid aura
+                    drawCircle(
+                        color = ringColor.copy(alpha = if (isRunning && !isPaused) 0.65f * pulseAlpha else 0.50f),
+                        radius = strokeWidthPx * 0.60f,
                         center = headCenter
                     )
                     // Inner bright core
@@ -188,7 +194,7 @@ fun PomodoroTimerArc(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Large Bold Monospace Countdown Display
+                // Large Bold Monospace Countdown Display (tabular numbers to prevent jitter)
                 Text(
                     text = timeString,
                     style = MaterialTheme.typography.displayLarge.copy(
@@ -231,7 +237,7 @@ fun PomodoroTimerArc(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Cycle Session Progress Dots (e.g. 4 dots showing completed intervals)
+                // Cycle Session Progress Dots (showing completed intervals)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -239,12 +245,17 @@ fun PomodoroTimerArc(
                     val currentInCycle = (sessionsCompleted % periodSessions) + 1
                     for (i in 1..periodSessions) {
                         val isFilled = i <= currentInCycle
+                        val isCurrentActive = i == currentInCycle && isRunning && !isPaused
                         Box(
                             modifier = Modifier
                                 .size(if (isFilled) 8.dp else 6.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (isFilled) ringColor else ringColor.copy(alpha = 0.22f)
+                                    when {
+                                        isCurrentActive -> ringColor.copy(alpha = pulseAlpha)
+                                        isFilled -> ringColor
+                                        else -> ringColor.copy(alpha = 0.22f)
+                                    }
                                 )
                         )
                     }
@@ -252,23 +263,41 @@ fun PomodoroTimerArc(
             }
         }
 
-        // 2. Quick On-The-Fly Minute Nudges (-5m, -1m, +1m, +5m)
+        // 2. Tactile On-The-Fly Minute Nudges (-5m, -1m, +1m, +5m)
         if (onAdjustTime != null) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                QuickNudgePill(label = "-5m", onClick = { onAdjustTime(-300) })
-                QuickNudgePill(label = "-1m", onClick = { onAdjustTime(-60) })
-                QuickNudgePill(label = "+1m", onClick = { onAdjustTime(60) })
-                QuickNudgePill(label = "+5m", onClick = { onAdjustTime(300) })
-            }
+            PomodoroDurationNudgeRow(onAdjustTime = onAdjustTime)
         }
     }
 }
 
 /**
- * QuickNudgePill - Tactile minute adjustment chip with subtle spring bounce.
+ * PomodoroDurationNudgeRow - Deduplicated, reusable tactile row for quick on-the-fly time adjustments.
+ */
+@ValueScore(
+    score = 78,
+    importance = Importance.HIGH,
+    description = "Standardized reusable tactile row for quick minute adjustments during active sessions",
+    category = "Focus"
+)
+@Composable
+fun PomodoroDurationNudgeRow(
+    onAdjustTime: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        QuickNudgePill(label = "-5m", onClick = { onAdjustTime(-300) })
+        QuickNudgePill(label = "-1m", onClick = { onAdjustTime(-60) })
+        QuickNudgePill(label = "+1m", onClick = { onAdjustTime(60) })
+        QuickNudgePill(label = "+5m", onClick = { onAdjustTime(300) })
+    }
+}
+
+/**
+ * QuickNudgePill - Tactile minute adjustment chip with spring bounce.
  */
 @ValueScore(
     score = 65,
@@ -277,15 +306,16 @@ fun PomodoroTimerArc(
     category = "Focus"
 )
 @Composable
-private fun QuickNudgePill(
+fun QuickNudgePill(
     label: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shadowElevation = 0.5.dp,
-        modifier = Modifier.bouncyClick(onClick = onClick)
+        modifier = modifier.bouncyClick(onClick = onClick)
     ) {
         Box(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),

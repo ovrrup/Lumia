@@ -36,7 +36,7 @@ import lumia.tracker.ui.theme.bouncyClick
  * with search and filtering for academic tracking.
  */
 @ValueScore(
-    score = 85,
+    score = 88,
     importance = Importance.HIGH,
     description = "Academic study context selector with clean quick chips and searchable bottom sheet",
     category = "Focus"

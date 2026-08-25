@@ -15,6 +15,8 @@ import lumia.tracker.model.ActionLog
 import lumia.tracker.model.Chapter
 import lumia.tracker.model.Task
 import lumia.tracker.model.TagCustomization
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,6 +28,12 @@ import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
 
+@ValueScore(
+    score = 99,
+    importance = Importance.CRITICAL,
+    description = "Central reactive state coordinator and business logic engine for all Lumia academic domains",
+    category = "ViewModel"
+)
 class ScholarViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {

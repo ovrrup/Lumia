@@ -19,10 +19,19 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
 
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
+
 /**
  * Pure Kotlin QR Code Matrix generator with standard Byte encoding and Reed-Solomon error correction.
  * Operates 100% offline without external heavy native libraries.
  */
+@ValueScore(
+    score = 96,
+    importance = Importance.CRITICAL,
+    description = "Pure Kotlin zero-dependency QR code matrix generator with Byte mode encoding and GF(256) Reed-Solomon error correction",
+    category = "Sync"
+)
 object QrCodeGenerator {
 
     /**
@@ -316,6 +325,12 @@ object QrCodeGenerator {
 /**
  * Composable QR Code view that renders QR modules as stylized rounded squares on Canvas.
  */
+@ValueScore(
+    score = 94,
+    importance = Importance.HIGH,
+    description = "Jetpack Compose high-performance Canvas-rendered stylized QR Code component",
+    category = "UI"
+)
 @Composable
 fun QrCodeCanvas(
     content: String,

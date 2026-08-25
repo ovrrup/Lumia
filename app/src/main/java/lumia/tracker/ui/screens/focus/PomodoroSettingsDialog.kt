@@ -31,7 +31,7 @@ import lumia.tracker.viewmodel.ScholarViewModel
  * cycle lengths, automation auto-logging, and target alerts.
  */
 @ValueScore(
-    score = 82,
+    score = 86,
     importance = Importance.HIGH,
     description = "Modal configuration sheet for focus intervals, breaks, and auto-logging preferences",
     category = "Focus"

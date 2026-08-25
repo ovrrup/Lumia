@@ -92,6 +92,12 @@ class P2PDataChannelEngine(
     /**
      * Wire envelope for Global Live Mesh relay communication.
      */
+    @ValueScore(
+        score = 90,
+        importance = Importance.HIGH,
+        description = "Wire envelope for Global Live Mesh relay communication",
+        category = "Networking"
+    )
     @JsonClass(generateAdapter = true)
     data class RelayEnvelope(
         val action: String, // "join", "frame", "ping", "pong", "ack", "leave"
@@ -622,8 +628,9 @@ class P2PDataChannelEngine(
 
                         // Respond with encrypted ACK back over the live mesh channel
                         val localNonce = SyncCryptoManager.generateNonce()
+                        val reportJsonStr = reportAdapter.toJson(report)
                         val (ackEncrypted, ackIv) = SyncCryptoManager.encryptPayload(
-                            (syncMsg.reportJson ?: "").toByteArray(Charsets.UTF_8),
+                            reportJsonStr.toByteArray(Charsets.UTF_8),
                             peer.preSharedKey,
                             localNonce
                         )
@@ -634,7 +641,7 @@ class P2PDataChannelEngine(
                             nonce = localNonce,
                             payloadEncryptedBase64 = ackEncrypted,
                             ivBase64 = ackIv,
-                            reportJson = reportAdapter.toJson(report)
+                            reportJson = reportJsonStr
                         )
 
                         val ackEnvelope = RelayEnvelope(
@@ -649,7 +656,22 @@ class P2PDataChannelEngine(
                         onStateChanged(SyncState.Success(report))
                     }
                     "SYNC_ACK" -> {
-                        val report = syncMsg.reportJson?.let { reportAdapter.fromJson(it) }
+                        val report = if (!syncMsg.payloadEncryptedBase64.isNullOrBlank() && !syncMsg.ivBase64.isNullOrBlank()) {
+                            try {
+                                val decryptedBytes = SyncCryptoManager.decryptPayload(
+                                    syncMsg.payloadEncryptedBase64,
+                                    syncMsg.ivBase64,
+                                    peer.preSharedKey,
+                                    syncMsg.nonce
+                                )
+                                reportAdapter.fromJson(String(decryptedBytes, Charsets.UTF_8))
+                            } catch (e: Exception) {
+                                syncMsg.reportJson?.let { reportAdapter.fromJson(it) }
+                            }
+                        } else {
+                            syncMsg.reportJson?.let { reportAdapter.fromJson(it) }
+                        }
+
                         if (report != null) {
                             onPeerSynced(peer.deviceId)
                             onStateChanged(SyncState.Success(report))

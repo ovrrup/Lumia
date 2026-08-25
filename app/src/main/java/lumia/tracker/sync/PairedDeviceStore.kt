@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import lumia.tracker.sync.crypto.SyncCryptoManager
 import lumia.tracker.sync.model.SyncDevice
+import lumia.tracker.sync.model.SyncPairingToken
 import lumia.tracker.sync.model.TrustedPeer
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
@@ -34,6 +35,12 @@ import javax.crypto.spec.SecretKeySpec
  * Represents a permanently paired Lumia mesh device in the persistent encrypted store.
  * Once paired via 1-time PIN or QR code, devices never need repeated pairing and sync automatically.
  */
+@ValueScore(
+    score = 96,
+    importance = Importance.CRITICAL,
+    description = "Persistent permanently paired mesh device record carrying 256-bit AES-GCM session key",
+    category = "Sync"
+)
 @JsonClass(generateAdapter = true)
 data class PairedDevice(
     val deviceId: String,
@@ -76,6 +83,12 @@ data class PairedDevice(
  * Encrypted payload metadata transferred during 1-time Quick Pair PIN or QR scan.
  * Contains deviceId, deviceName, secretKey, channelId, IP, port, and security credentials.
  */
+@ValueScore(
+    score = 92,
+    importance = Importance.HIGH,
+    description = "Pairing metadata envelope exchanged during one-time QR or PIN mutual pairing handshake",
+    category = "Sync"
+)
 @JsonClass(generateAdapter = true)
 data class PairingMetadata(
     val deviceId: String,
@@ -119,6 +132,7 @@ class PairedDeviceStore(private val context: Context) {
         Types.newParameterizedType(List::class.java, TrustedPeer::class.java)
     )
     private val pairingMetadataAdapter = moshi.adapter(PairingMetadata::class.java)
+    private val pairingTokenAdapter = moshi.adapter(SyncPairingToken::class.java)
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val legacyPrefs: SharedPreferences = context.getSharedPreferences(LEGACY_PREFS_NAME, Context.MODE_PRIVATE)
@@ -145,6 +159,7 @@ class PairedDeviceStore(private val context: Context) {
         private const val GCM_IV_LENGTH = 12
         private const val GCM_TAG_LENGTH = 128
         private const val QR_PREFIX = "LUMIA_PAIR_V1:"
+        private const val QR_DOMAIN_SALT = "LUMIA_QR_PAIR_SALT_V1"
 
         @Volatile
         private var instance: PairedDeviceStore? = null
@@ -382,7 +397,7 @@ class PairedDeviceStore(private val context: Context) {
             val (cipherBase64, ivBase64) = SyncCryptoManager.encryptPayload(
                 json.toByteArray(Charsets.UTF_8),
                 pass,
-                metadata.channelId
+                QR_DOMAIN_SALT
             )
             val bundle = "$QR_PREFIX$ivBase64:$cipherBase64"
             Base64.encodeToString(bundle.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
@@ -395,6 +410,7 @@ class PairedDeviceStore(private val context: Context) {
 
     /**
      * Parses and decrypts a scanned QR Code payload or token string into PairingMetadata.
+     * Supports encrypted QR bundles, plain PairingMetadata JSON, and SyncPairingToken formats.
      */
     fun parseEncryptedQrPayload(rawContent: String, pinOrPasskey: String = ""): PairingMetadata? {
         return try {
@@ -404,6 +420,7 @@ class PairedDeviceStore(private val context: Context) {
                 rawContent.trim()
             }
 
+            // 1. Encrypted QR prefix payload
             if (decodedString.startsWith(QR_PREFIX)) {
                 val payload = decodedString.removePrefix(QR_PREFIX)
                 val parts = payload.split(":")
@@ -416,16 +433,38 @@ class PairedDeviceStore(private val context: Context) {
                         cipherBase64,
                         ivBase64,
                         pass,
-                        "lumia_mesh_channel"
+                        QR_DOMAIN_SALT
                     )
-                    return pairingMetadataAdapter.fromJson(String(decryptedBytes, Charsets.UTF_8))
+                    val decryptedJson = String(decryptedBytes, Charsets.UTF_8)
+                    return pairingMetadataAdapter.fromJson(decryptedJson)
+                        ?: parseTokenFallback(decryptedJson)
                 }
             }
 
-            // Fallback: direct JSON parse
+            // 2. Direct PairingMetadata JSON parse
             pairingMetadataAdapter.fromJson(decodedString)
+                ?: parseTokenFallback(decodedString)
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing QR payload", e)
+            null
+        }
+    }
+
+    private fun parseTokenFallback(jsonStr: String): PairingMetadata? {
+        return try {
+            val token = pairingTokenAdapter.fromJson(jsonStr) ?: return null
+            PairingMetadata(
+                deviceId = token.deviceId,
+                deviceName = token.deviceName,
+                secretKey = token.pskSeed.ifBlank { SyncCryptoManager.derivePSK(token.pin, token.deviceId, localDeviceId) },
+                channelId = token.channelId,
+                pin = token.pin,
+                ip = token.ip,
+                port = token.port,
+                avatarEmoji = token.avatarEmoji,
+                version = token.v
+            )
+        } catch (e: Exception) {
             null
         }
     }

@@ -38,7 +38,7 @@ import lumia.tracker.viewmodel.ScholarViewModel
  * secondary skip/reset/stop controls, quick utility launcher chips, and True AOD engine selection.
  */
 @ValueScore(
-    score = 90,
+    score = 92,
     importance = Importance.CRITICAL,
     description = "Tactile 64dp primary start/pause action cluster with spring micro-interactions and utility actions",
     category = "Focus"

@@ -1,6 +1,8 @@
 package lumia.tracker.ui.screens.study.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,6 +20,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -520,3 +523,200 @@ fun StudyEmptyStateCard(
         }
     }
 }
+
+/**
+ * AttendanceHealthBadge - Standardized attendance percentage and health indicator badge.
+ * Displays color-coded attendance health metrics with emerald, amber, and crimson threshold states.
+ */
+@ValueScore(
+    score = 75,
+    importance = Importance.HIGH,
+    description = "Color-coded attendance health gauge and status badge with threshold evaluation",
+    category = "Study"
+)
+@Composable
+fun AttendanceHealthBadge(
+    percentage: Int?,
+    modifier: Modifier = Modifier,
+    attendedCount: Int? = null,
+    totalCount: Int? = null,
+    compact: Boolean = false
+) {
+    if (percentage == null) return
+
+    val isGood = percentage >= 75
+    val isWarning = percentage in 50..74
+    val statusColor = when {
+        isGood -> Color(0xFF10B981)
+        isWarning -> Color(0xFFF59E0B)
+        else -> Color(0xFFEF4444)
+    }
+    val containerColor = statusColor.copy(alpha = 0.12f)
+    val statusIcon = when {
+        isGood -> Icons.Rounded.CheckCircle
+        isWarning -> Icons.Rounded.Warning
+        else -> Icons.Rounded.Error
+    }
+
+    val text = if (!compact && attendedCount != null && totalCount != null) {
+        "$percentage% Attendance ($attendedCount/$totalCount)"
+    } else {
+        "$percentage% Attendance"
+    }
+
+    StudyStatusBadge(
+        text = text,
+        icon = statusIcon,
+        color = statusColor,
+        containerColor = containerColor,
+        modifier = modifier
+    )
+}
+
+/**
+ * SyllabusCompletionChip - Compact syllabus completion status chip showing topic count and coverage percentage.
+ */
+@ValueScore(
+    score = 70,
+    importance = Importance.MEDIUM,
+    description = "Syllabus completion pill chip with topic progress count and dynamic color coding",
+    category = "Study"
+)
+@Composable
+fun SyllabusCompletionChip(
+    completedCount: Int,
+    totalCount: Int,
+    modifier: Modifier = Modifier,
+    showPercentage: Boolean = true,
+    compact: Boolean = false
+) {
+    val coveragePct = if (totalCount > 0) ((completedCount.toFloat() / totalCount) * 100).toInt() else 0
+    val isComplete = totalCount > 0 && completedCount >= totalCount
+    val isStarted = completedCount > 0
+
+    val chipColor = when {
+        isComplete -> Color(0xFF10B981)
+        isStarted -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.outline
+    }
+    val containerColor = when {
+        isComplete -> Color(0xFF10B981).copy(alpha = 0.12f)
+        isStarted -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    }
+    val chipIcon = when {
+        isComplete -> Icons.Rounded.CheckCircle
+        isStarted -> Icons.Rounded.PieChart
+        else -> Icons.Rounded.RadioButtonUnchecked
+    }
+
+    val labelText = if (totalCount == 0) {
+        "0 Topics"
+    } else if (compact) {
+        if (showPercentage) "$coveragePct%" else "$completedCount/$totalCount"
+    } else {
+        if (showPercentage) "$completedCount/$totalCount Topics ($coveragePct%)" else "$completedCount/$totalCount Topics"
+    }
+
+    StudyStatusBadge(
+        text = labelText,
+        icon = chipIcon,
+        color = chipColor,
+        containerColor = containerColor,
+        modifier = modifier
+    )
+}
+
+/**
+ * CurriculumChecklistItem - Interactive curriculum/topic checklist row with animated checkbox toggle,
+ * strike-through styling, chapter badge, and bouncy interaction.
+ */
+@ValueScore(
+    score = 75,
+    importance = Importance.HIGH,
+    description = "Interactive curriculum and syllabus checklist item with completion toggle and animated strike-through",
+    category = "Study"
+)
+@Composable
+fun CurriculumChecklistItem(
+    title: String,
+    isCompleted: Boolean,
+    onToggle: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    chapterName: String? = null,
+    order: Int? = null,
+    onClick: (() -> Unit)? = null
+) {
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (isCompleted) 0.6f else 1f,
+        animationSpec = tween(200),
+        label = "checklist_alpha"
+    )
+    val checkmarkColor by animateColorAsState(
+        targetValue = if (isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.outline,
+        animationSpec = tween(200),
+        label = "checklist_check_color"
+    )
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            IconButton(
+                onClick = { onToggle(!isCompleted) },
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = if (isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                    contentDescription = if (isCompleted) "Completed" else "Incomplete",
+                    tint = checkmarkColor,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            if (order != null) {
+                Text(
+                    text = "$order.",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha)
+                )
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isCompleted) FontWeight.Normal else FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
+                    textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (!chapterName.isNullOrBlank()) {
+                    Text(
+                        text = chapterName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f * contentAlpha),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
