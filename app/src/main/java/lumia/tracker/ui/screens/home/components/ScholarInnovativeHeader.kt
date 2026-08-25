@@ -157,7 +157,7 @@ fun ScholarInnovativeHeader(
                     .background(MaterialTheme.colorScheme.surface, CircleShape)
                     .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
                     .clip(CircleShape)
-                    .bouncyClick(onClick = { navController.navigate("profile_menu") }),
+                    .bouncyClick(onClick = { navController.navigate("settings") }),
                 contentAlignment = Alignment.Center
             ) {
                 val isLocalImage = activeProfile.avatarEmoji.startsWith("/") ||

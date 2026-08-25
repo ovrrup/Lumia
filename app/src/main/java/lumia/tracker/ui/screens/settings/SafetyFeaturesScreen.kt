@@ -131,12 +131,12 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Safety Guard", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                title = { Text("Safety Guard & AOD", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    BouncyIconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                     }
                 },

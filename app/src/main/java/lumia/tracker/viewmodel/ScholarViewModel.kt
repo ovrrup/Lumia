@@ -1245,7 +1245,11 @@ private val _streakPercentage = MutableStateFlow(0f)
                 initialValue = emptyList()
             )
         }
-    }
+    val allAttendanceRecords: StateFlow<List<lumia.tracker.model.AttendanceRecord>> = repository.allAttendanceRecords.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     private val attendanceFlowCache = HashMap<Int, StateFlow<List<lumia.tracker.model.AttendanceRecord>>>()
 

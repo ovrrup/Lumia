@@ -93,7 +93,7 @@ fun MultiDeviceSyncScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Multi-Device Sync", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Text("Multi-Device Sync", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                         Text(
                             "Persistent P2P 1-Time Handshake Protocol",
                             style = MaterialTheme.typography.labelSmall,
@@ -102,17 +102,17 @@ fun MultiDeviceSyncScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    BouncyIconButton(onClick = { navController.navigateUp() }) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showHelpDialog = true }) {
-                        Icon(Icons.Rounded.HelpOutline, contentDescription = "How it works")
+                    BouncyIconButton(onClick = { showHelpDialog = true }) {
+                        Icon(Icons.Rounded.HelpOutline, contentDescription = "How it works", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+                    containerColor = Color.Transparent
                 )
             )
         }

@@ -107,14 +107,14 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Advanced Theme", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                title = { Text("Custom Color Palette", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    BouncyIconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+                    containerColor = Color.Transparent
                 )
             )
         }

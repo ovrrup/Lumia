@@ -11,7 +11,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import lumia.tracker.ui.screens.*
-import lumia.tracker.ui.screens.home.ProfileMenuScreen
 import lumia.tracker.ui.screens.search.SearchScreen
 import lumia.tracker.ui.screens.settings.*
 import lumia.tracker.ui.screens.study.*
@@ -216,9 +215,9 @@ fun AppNavigationGraph(
             )
         }
 
-        // User Profile & Account Switcher Menu
+        // User Profile & Account Settings
         composable("profile_menu") {
-            ProfileMenuScreen(navController = navController, viewModel = viewModel)
+            SettingsScreen(navController = navController, viewModel = viewModel)
         }
 
         // Fast Profile Switch Trigger

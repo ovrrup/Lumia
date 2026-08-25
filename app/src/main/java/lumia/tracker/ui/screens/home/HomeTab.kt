@@ -91,16 +91,22 @@ fun HomeTab(
             .take(3)
     }
 
+    val allAttendanceRecords by viewModel.allAttendanceRecords.collectAsStateWithLifecycle()
+
     val activeTasks = remember(tasks) {
         tasks.filter { !it.isCompleted }.take(4)
     }
 
-    // Next scheduled lecture for today
+    // Pending scheduled lectures for today where attendance has not yet been marked
     val todayDayOfWeekStr = remember { SimpleDateFormat("EEEE", Locale.getDefault()).format(Date()) }
-    val scheduledCoursesToday = remember(courses, todayDayOfWeekStr) {
-        courses.filter { it.scheduleDays.contains(todayDayOfWeekStr, ignoreCase = true) }
+    val pendingAttendanceCoursesToday = remember(courses, todayDayOfWeekStr, allAttendanceRecords) {
+        val todayCourses = courses.filter { it.scheduleDays.contains(todayDayOfWeekStr, ignoreCase = true) }
+        todayCourses.filter { course ->
+            allAttendanceRecords.none { record ->
+                record.courseId == course.id && record.dateMillis == todayStartMillis
+            }
+        }
     }
-    val nextCourseToday = scheduledCoursesToday.firstOrNull()
 
     LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -327,56 +333,6 @@ fun HomeTab(
                             }
                         }
                     }
-
-                    // Bento 4: Next Lecture Pulse Tile (if scheduled today)
-                    if (nextCourseToday != null) {
-                        val nextColor = try { Color(android.graphics.Color.parseColor(nextCourseToday.colorHex.ifBlank { "#3197D6" })) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-                        Surface(
-                            shape = RoundedCornerShape(18.dp),
-                            color = nextColor.copy(alpha = 0.08f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, nextColor.copy(alpha = 0.25f)),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .bouncyClick { navController.navigate("courseDetail/${nextCourseToday.id}") { launchSingleTop = true } }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(nextColor.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.School,
-                                        contentDescription = null,
-                                        tint = nextColor,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "Today's Class: ${nextCourseToday.name}",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    if (nextCourseToday.schedule.isNotBlank()) {
-                                        Text(
-                                            text = nextCourseToday.schedule,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = nextColor)
-                            }
-                        }
-                    }
                 }
             }
 
@@ -577,7 +533,175 @@ fun HomeTab(
                 }
             }
 
-            // 4. Urgent Upcoming Assignments
+            // 4. Today's Pending Classes & Attendance Panel (Disappears once attendance is marked)
+            if (pendingAttendanceCoursesToday.isNotEmpty()) {
+                item(key = "today_classes_attendance_panel") {
+                    ScholarCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.FactCheck,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                    Column {
+                                        Text(
+                                            text = "Today's Class Attendance",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "Mark attendance for today's active lectures",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Text(
+                                        text = "${pendingAttendanceCoursesToday.size} pending",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                pendingAttendanceCoursesToday.forEach { course ->
+                                    val courseColor = try {
+                                        Color(android.graphics.Color.parseColor(course.colorHex.ifBlank { "#3197D6" }))
+                                    } catch (e: Exception) {
+                                        MaterialTheme.colorScheme.primary
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(18.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, courseColor.copy(alpha = 0.3f)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(42.dp)
+                                                    .background(courseColor.copy(alpha = 0.18f), RoundedCornerShape(12.dp)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = course.name.take(2).uppercase(),
+                                                    color = courseColor,
+                                                    fontWeight = FontWeight.Black,
+                                                    style = MaterialTheme.typography.titleSmall
+                                                )
+                                            }
+
+                                            Spacer(Modifier.width(12.dp))
+
+                                            Column(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clickable {
+                                                        navController.navigate("courseDetail/${course.id}") { launchSingleTop = true }
+                                                    }
+                                            ) {
+                                                Text(
+                                                    text = course.name,
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                if (course.schedule.isNotBlank()) {
+                                                    Text(
+                                                        text = course.schedule,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
+                                            }
+
+                                            Spacer(Modifier.width(8.dp))
+
+                                            // Quick Attendance Buttons
+                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                // Present Button
+                                                FilledTonalIconButton(
+                                                    onClick = {
+                                                        viewModel.addAttendanceRecord(course.id, todayStartMillis, "Present")
+                                                    },
+                                                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                                        containerColor = Color(0xFF34C759).copy(alpha = 0.2f),
+                                                        contentColor = Color(0xFF34C759)
+                                                    ),
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Icon(
+                                                        Icons.Rounded.Check,
+                                                        contentDescription = "Present",
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+
+                                                // Absent Button
+                                                FilledTonalIconButton(
+                                                    onClick = {
+                                                        viewModel.addAttendanceRecord(course.id, todayStartMillis, "Absent")
+                                                    },
+                                                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                                        containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                                                        contentColor = MaterialTheme.colorScheme.error
+                                                    ),
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Icon(
+                                                        Icons.Rounded.Close,
+                                                        contentDescription = "Absent",
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. Urgent Upcoming Assignments
             if (upcomingAssigns.isNotEmpty()) {
                 item(key = "upcoming_assignments_section") {
                     ScholarCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {

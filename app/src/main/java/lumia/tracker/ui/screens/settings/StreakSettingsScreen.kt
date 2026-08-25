@@ -17,6 +17,7 @@ import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.screens.settings.components.*
 import lumia.tracker.ui.theme.bouncyClick
 import androidx.compose.ui.Modifier
@@ -48,14 +49,14 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Streak Settings", fontWeight = FontWeight.Bold) },
+            CenterAlignedTopAppBar(
+                title = { Text("Streak Goals & Fire Chamber", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    BouncyIconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp))
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
             )
         },
         containerColor = MaterialTheme.colorScheme.background
