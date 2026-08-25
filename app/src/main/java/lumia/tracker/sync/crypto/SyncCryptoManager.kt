@@ -1,6 +1,8 @@
 package lumia.tracker.sync.crypto
 
 import android.util.Base64
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.Cipher
@@ -9,14 +11,29 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Handles end-to-end encryption (AES-256-GCM), mutual challenge-response authentication
- * (HMAC-SHA256), and permanent Pre-Shared Key (PSK) derivation for 1-time handshake P2P synchronization.
+ * SyncCryptoManager - Production-grade Zero-Trust Cryptographic Engine for Lumia P2P Sync.
+ * 
+ * Handles:
+ * 1. End-to-End Encryption (AES-256-GCM) with 128-bit authentication tag and dynamic 12-byte IVs.
+ * 2. Mutual challenge-response authentication (HMAC-SHA256).
+ * 3. Permanent Pre-Shared Key (PSK) derivation for 1-time handshake pairing.
+ * 4. Deterministic Global Live Mesh Relay Channel ID derivation with zero identity leakage.
+ * 5. Payload integrity checksum verification (SHA-256).
  */
+@ValueScore(
+    score = 96,
+    importance = Importance.CRITICAL,
+    description = "Cryptographic primitives for AES-256-GCM E2EE, HMAC-SHA256 mutual auth, deterministic mesh channels, and PSK key derivation",
+    category = "Security"
+)
 object SyncCryptoManager {
 
     private val secureRandom = SecureRandom()
     private const val GCM_TAG_LENGTH = 128
     private const val GCM_IV_LENGTH = 12
+    private const val PSK_SALT = "LUMIA_P2P_PERMANENT_PSK_SALT_"
+    private const val SYNC_KEY_SALT = "LUMIA_P2P_SYNC_SALT_"
+    private const val GLOBAL_MESH_CHANNEL_SALT = "LUMIA_GLOBAL_MESH_CHANNEL_SALT_v2_"
 
     /**
      * Generates a 6-digit numeric PIN for user pairing verification during initial setup.
@@ -40,7 +57,7 @@ object SyncCryptoManager {
      */
     fun derivePSK(pinOrSeed: String, clientNonce: String, serverNonce: String): String {
         val digest = MessageDigest.getInstance("SHA-256")
-        digest.update("LUMIA_P2P_PERMANENT_PSK_SALT_".toByteArray(Charsets.UTF_8))
+        digest.update(PSK_SALT.toByteArray(Charsets.UTF_8))
         digest.update(pinOrSeed.toByteArray(Charsets.UTF_8))
         digest.update(clientNonce.toByteArray(Charsets.UTF_8))
         digest.update(serverNonce.toByteArray(Charsets.UTF_8))
@@ -49,11 +66,38 @@ object SyncCryptoManager {
     }
 
     /**
+     * Derives a deterministic Global Live Mesh channel ID from a Pre-Shared Key (PSK).
+     * This allows paired devices anywhere in the world to subscribe to the exact same
+     * live relay topic over WebSocket/SSE without exposing device identifiers or metadata.
+     */
+    fun deriveMeshChannelId(psk: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        digest.update(GLOBAL_MESH_CHANNEL_SALT.toByteArray(Charsets.UTF_8))
+        digest.update(psk.toByteArray(Charsets.UTF_8))
+        val hash = digest.digest()
+        return hash.joinToString("") { "%02x".format(it) }.take(32)
+    }
+
+    /**
+     * Derives a deterministic pairwise Global Live Mesh channel ID for two specific device IDs and PSK.
+     * Sorts device IDs lexicographically so both devices compute the identical channel identifier.
+     */
+    fun derivePairwiseChannelId(deviceIdA: String, deviceIdB: String, psk: String): String {
+        val sortedIds = if (deviceIdA <= deviceIdB) "$deviceIdA:$deviceIdB" else "$deviceIdB:$deviceIdA"
+        val digest = MessageDigest.getInstance("SHA-256")
+        digest.update(GLOBAL_MESH_CHANNEL_SALT.toByteArray(Charsets.UTF_8))
+        digest.update(sortedIds.toByteArray(Charsets.UTF_8))
+        digest.update(psk.toByteArray(Charsets.UTF_8))
+        val hash = digest.digest()
+        return hash.joinToString("") { "%02x".format(it) }.take(32)
+    }
+
+    /**
      * Derives a 256-bit symmetric AES key from the pairing PIN/PSK and session nonce.
      */
     private fun deriveKey(keyOrPin: String, nonce: String): SecretKeySpec {
         val digest = MessageDigest.getInstance("SHA-256")
-        digest.update("LUMIA_P2P_SYNC_SALT_".toByteArray(Charsets.UTF_8))
+        digest.update(SYNC_KEY_SALT.toByteArray(Charsets.UTF_8))
         digest.update(keyOrPin.toByteArray(Charsets.UTF_8))
         digest.update(nonce.toByteArray(Charsets.UTF_8))
         val keyBytes = digest.digest()
@@ -85,7 +129,7 @@ object SyncCryptoManager {
     }
 
     /**
-     * Encrypts plaintext bytes using AES-256-GCM with a newly generated random IV.
+     * Encrypts plaintext bytes using AES-256-GCM with a newly generated random 12-byte IV.
      * Returns a Pair of (Base64 Encrypted Ciphertext, Base64 IV).
      */
     fun encryptPayload(plainBytes: ByteArray, keyOrPin: String, nonce: String): Pair<String, String> {
@@ -117,5 +161,41 @@ object SyncCryptoManager {
         cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec)
 
         return cipher.doFinal(cipherBytes)
+    }
+
+    /**
+     * Encrypts a UTF-8 string using AES-256-GCM.
+     */
+    fun encryptString(plainText: String, keyOrPin: String, nonce: String): Pair<String, String> {
+        return encryptPayload(plainText.toByteArray(Charsets.UTF_8), keyOrPin, nonce)
+    }
+
+    /**
+     * Decrypts AES-256-GCM Base64 ciphertext into a UTF-8 string.
+     */
+    fun decryptString(encryptedBase64: String, ivBase64: String, keyOrPin: String, nonce: String): String {
+        val decryptedBytes = decryptPayload(encryptedBase64, ivBase64, keyOrPin, nonce)
+        return String(decryptedBytes, Charsets.UTF_8)
+    }
+
+    /**
+     * Calculates SHA-256 checksum for payload integrity verification.
+     */
+    fun calculatePayloadChecksum(data: ByteArray): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hash = digest.digest(data)
+        return hash.joinToString("") { "%02x".format(it) }
+    }
+
+    /**
+     * Verifies SHA-256 checksum of data against an expected checksum.
+     */
+    fun verifyPayloadChecksum(data: ByteArray, expectedChecksum: String): Boolean {
+        return try {
+            val calculated = calculatePayloadChecksum(data)
+            calculated.equals(expectedChecksum, ignoreCase = true)
+        } catch (e: Exception) {
+            false
+        }
     }
 }

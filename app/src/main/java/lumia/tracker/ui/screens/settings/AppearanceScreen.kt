@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.ui.components.BouncyIconButton
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.settings.components.*
 import lumia.tracker.viewmodel.ScholarViewModel
 
@@ -35,6 +37,12 @@ import lumia.tracker.viewmodel.ScholarViewModel
  * Houses theme palettes, AMOLED pure black, dynamic background lighting, typography enhancements,
  * bottom navigation dock dimensions, and animation profiles with clean Material 3 design.
  */
+@ValueScore(
+    score = 92,
+    importance = Importance.HIGH,
+    description = "Visual, thematic, and tactile personalization hub for theme, AMOLED, lighting, and dock",
+    category = "Settings"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) {

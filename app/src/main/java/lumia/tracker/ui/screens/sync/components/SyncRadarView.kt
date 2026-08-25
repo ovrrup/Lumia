@@ -14,16 +14,27 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 
 /**
  * Animated radar scanning animation for P2P local network peer discovery.
  */
+@ValueScore(
+    score = 88,
+    importance = Importance.MEDIUM,
+    description = "Animated radar scanning canvas with concentric rings and sweeping beam for P2P mesh discovery",
+    category = "Sync"
+)
 @Composable
 fun SyncRadarView(
     isScanning: Boolean,
     modifier: Modifier = Modifier,
+    size: Dp = 160.dp,
     primaryColor: Color = MaterialTheme.colorScheme.primary,
+    accentColor: Color = MaterialTheme.colorScheme.tertiary,
     content: @Composable () -> Unit = {}
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "RadarTransition")
@@ -79,12 +90,12 @@ fun SyncRadarView(
     )
 
     Box(
-        modifier = modifier.size(160.dp),
+        modifier = modifier.size(size),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val center = Offset(size.width / 2f, size.height / 2f)
-            val maxRadius = size.minDimension / 2f
+            val center = Offset(this.size.width / 2f, this.size.height / 2f)
+            val maxRadius = this.size.minDimension / 2f
 
             // Static concentric grid circles
             drawCircle(
@@ -106,6 +117,20 @@ fun SyncRadarView(
                 style = Stroke(width = 2.0f)
             )
 
+            // Crosshair axes
+            drawLine(
+                color = primaryColor.copy(alpha = 0.08f),
+                start = Offset(center.x - maxRadius * 0.98f, center.y),
+                end = Offset(center.x + maxRadius * 0.98f, center.y),
+                strokeWidth = 1.dp.toPx()
+            )
+            drawLine(
+                color = primaryColor.copy(alpha = 0.08f),
+                start = Offset(center.x, center.y - maxRadius * 0.98f),
+                end = Offset(center.x, center.y + maxRadius * 0.98f),
+                strokeWidth = 1.dp.toPx()
+            )
+
             if (isScanning) {
                 // Expanding pulse waves
                 drawCircle(
@@ -115,7 +140,7 @@ fun SyncRadarView(
                     style = Stroke(width = 3.dp.toPx())
                 )
                 drawCircle(
-                    color = primaryColor.copy(alpha = pulseAlpha2 * 0.4f),
+                    color = accentColor.copy(alpha = pulseAlpha2 * 0.4f),
                     radius = maxRadius * pulseScale2,
                     center = center,
                     style = Stroke(width = 3.dp.toPx())
@@ -124,12 +149,16 @@ fun SyncRadarView(
                 // Rotating radar beam
                 val sweepRad = Math.toRadians(rotationAngle.toDouble())
                 val sweepEnd = Offset(
-                    (center.x + maxRadius * Math.cos(sweepRad)).toFloat(),
-                    (center.y + maxRadius * Math.sin(sweepRad)).toFloat()
+                    (center.x + maxRadius * 0.98f * Math.cos(sweepRad)).toFloat(),
+                    (center.y + maxRadius * 0.98f * Math.sin(sweepRad)).toFloat()
                 )
                 drawLine(
                     brush = Brush.linearGradient(
-                        colors = listOf(primaryColor.copy(alpha = 0.8f), Color.Transparent),
+                        colors = listOf(
+                            primaryColor.copy(alpha = 0.85f),
+                            accentColor.copy(alpha = 0.4f),
+                            Color.Transparent
+                        ),
                         start = center,
                         end = sweepEnd
                     ),

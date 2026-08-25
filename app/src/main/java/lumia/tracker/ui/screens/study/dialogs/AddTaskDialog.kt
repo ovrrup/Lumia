@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,6 +24,8 @@ import lumia.tracker.model.Task
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.viewmodel.ScholarViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -32,9 +33,15 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * AddTaskDialog - Redesigned modern modal for adding or editing tasks with
+ * AddTaskDialog - Modern Material 3 modal for adding or editing tasks with
  * priorities, deadline picker, tags, and subject/course linkages.
  */
+@ValueScore(
+    score = 88,
+    importance = Importance.HIGH,
+    description = "Comprehensive task creation and modification dialog with deadline, priority, and linkages",
+    category = "Dialog"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskDialog(
@@ -54,6 +61,7 @@ fun AddTaskDialog(
     var selectedCourseId by remember { mutableStateOf(taskToEdit?.courseId ?: initialCourseId) }
     var selectedAssignmentId by remember { mutableStateOf(taskToEdit?.assignmentId) }
     var dueDateMillis by remember { mutableStateOf(taskToEdit?.dueDateMillis) }
+    var titleTouched by remember { mutableStateOf(false) }
 
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val courses by viewModel.courses.collectAsStateWithLifecycle()
@@ -87,38 +95,13 @@ fun AddTaskDialog(
         shape = RoundedCornerShape(28.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(42.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = if (isEdit) Icons.Rounded.EditCalendar else Icons.Rounded.AddTask,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-                Column {
-                    Text(
-                        text = if (isEdit) "Edit Task" else "Add New Task",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Manage priority, deadline, and links",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            StudyDialogHeader(
+                icon = if (isEdit) Icons.Rounded.EditCalendar else Icons.Rounded.AddTask,
+                title = if (isEdit) "Edit Task" else "Add New Task",
+                subtitle = "Manage priority, deadline, and links",
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
         },
         text = {
             Column(
@@ -132,12 +115,19 @@ fun AddTaskDialog(
                 // Task Title
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = {
+                        title = it
+                        titleTouched = true
+                    },
                     label = { Text("Task Title *") },
                     placeholder = { Text("e.g. Complete Problem Set 3") },
                     leadingIcon = {
                         Icon(Icons.Rounded.TaskAlt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     },
+                    isError = titleTouched && title.isBlank(),
+                    supportingText = if (titleTouched && title.isBlank()) {
+                        { Text("Task title is required", color = MaterialTheme.colorScheme.error) }
+                    } else null,
                     shape = RoundedCornerShape(14.dp),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()

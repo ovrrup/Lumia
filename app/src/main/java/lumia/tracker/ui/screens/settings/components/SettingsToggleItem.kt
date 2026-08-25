@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import lumia.tracker.ui.meta.Importance
@@ -20,12 +22,12 @@ import lumia.tracker.ui.meta.ValueScore
 
 /**
  * SettingsToggleItem - Standardized toggle item with squircle badge, title,
- * optional long-text info dialog trigger, and Material 3 switch.
+ * tactile haptic feedback, optional long-text info dialog trigger, and Material 3 switch.
  */
 @ValueScore(
     score = 84,
     importance = Importance.HIGH,
-    description = "Interactive switch toggle item for boolean settings with info dialog support",
+    description = "Interactive switch toggle item for boolean settings with tactile feedback and info dialog support",
     category = "Settings"
 )
 @Composable
@@ -41,13 +43,17 @@ fun SettingsToggleItem(
     onCheckedChange: (Boolean) -> Unit
 ) {
     var showInfo by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = 52.dp)
             .clip(RoundedCornerShape(14.dp))
-            .clickable(enabled = enabled) { onCheckedChange(!checked) }
+            .clickable(enabled = enabled) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onCheckedChange(!checked)
+            }
             .padding(horizontal = 10.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -148,7 +154,7 @@ fun SettingsToggleItem(
                     Text("Got it")
                 }
             },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     }

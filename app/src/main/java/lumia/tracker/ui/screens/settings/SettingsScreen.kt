@@ -41,6 +41,8 @@ import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyOutlinedButton
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.settings.components.SettingsActionItemInCard
 import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
 import lumia.tracker.viewmodel.ScholarViewModel
@@ -53,6 +55,12 @@ import java.io.FileOutputStream
  * organized categorized group cards, zero circular shortcut loops,
  * and a polished footer with version info & quick actions.
  */
+@ValueScore(
+    score = 96,
+    importance = Importance.CRITICAL,
+    description = "Academic settings hub with hero profile card and categorized preference groups",
+    category = "Settings"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
@@ -112,8 +120,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
                     border = BorderStroke(
-                        width = 0.8.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        width = 0.75.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
                     ),
                     elevation = CardDefaults.outlinedCardElevation(defaultElevation = 0.dp)
                 ) {
@@ -126,7 +134,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Large Profile Avatar (64dp)
+                            // Large Profile Avatar Monogram / Image (64dp)
                             Box(
                                 modifier = Modifier
                                     .size(64.dp)
@@ -139,7 +147,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                                         ),
                                         shape = CircleShape
                                     )
-                                    .border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f), CircleShape)
+                                    .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.85f), CircleShape)
                                     .clip(CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -195,7 +203,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                            border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.20f))
                         ) {
                             Row(
                                 modifier = Modifier
@@ -933,7 +941,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     Text("Cancel")
                 }
             },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     }

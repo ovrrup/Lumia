@@ -6,7 +6,6 @@ import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -16,25 +15,16 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.FolderOpen
@@ -51,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -61,8 +50,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
-import lumia.tracker.model.Course
-import lumia.tracker.model.Subject
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.study.dialogs.AddCourseDialog
@@ -105,7 +92,7 @@ fun AcademicsScreen(
     val academicsAdjustedPadding = remember(bottomPadding, layoutDirection) {
         PaddingValues(
             start = bottomPadding.calculateStartPadding(layoutDirection),
-            top = bottomPadding.calculateTopPadding() + 44.dp,
+            top = bottomPadding.calculateTopPadding() + 48.dp,
             end = bottomPadding.calculateEndPadding(layoutDirection),
             bottom = bottomPadding.calculateBottomPadding()
         )
@@ -157,14 +144,14 @@ fun AcademicsScreen(
             }
         }
 
-        // 2. Floating Top-Right Capsule View Switcher
+        // 2. Floating Top-Right Capsule View Switcher (zero-clipping, elevated overlay)
         AcademicViewCapsuleSwitcher(
             activeView = activeView,
             onSelectView = { activeView = it },
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(top = bottomPadding.calculateTopPadding() + 8.dp, end = 16.dp)
-                .zIndex(10f)
+                .zIndex(20f)
         )
     }
 
@@ -186,7 +173,7 @@ fun AcademicsScreen(
 
 /**
  * AcademicViewCapsuleSwitcher - Dynamic floating capsule enabling rapid, one-tap toggling
- * between university courses and subject directories.
+ * between university courses and subject directories with zero clipping and tactile micro-interactions.
  */
 @ValueScore(
     score = 92,
@@ -201,18 +188,15 @@ fun AcademicViewCapsuleSwitcher(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.shadow(
-            elevation = 6.dp,
-            shape = CircleShape,
-            ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-        ),
+        modifier = modifier,
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
-        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        shadowElevation = 6.dp,
         tonalElevation = 4.dp
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
@@ -239,7 +223,7 @@ fun AcademicViewCapsuleSwitcher(
                             MaterialTheme.colorScheme.onTertiaryContainer
                         }
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                     },
                     animationSpec = tween(200),
                     label = "capsule_fg_${mode.name}"
@@ -262,9 +246,9 @@ fun AcademicViewCapsuleSwitcher(
                     color = containerColor
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
                             imageVector = mode.icon,

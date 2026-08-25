@@ -38,11 +38,20 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import lumia.tracker.service.AodAccessibilityService
+import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
 import lumia.tracker.ui.screens.settings.components.SettingsToggleItem
 import lumia.tracker.viewmodel.ScholarViewModel
 
+@ValueScore(
+    score = 90,
+    importance = Importance.HIGH,
+    description = "Safety guard monitoring, conflicts warnings, and OLED AOD burn-in protection configurations",
+    category = "Settings"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewModel) {
@@ -148,7 +157,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                         )
                         SettingsToggleItem(
                             title = "Aesthetic Recommendations",
-                            subtitle = "Suggest complementary layout features whenever core styles change",
+                            subtitle = "Show smart suggestions when optimal visual synergy settings are detected",
                             checked = safetyPinRecommendations,
                             onCheckedChange = { viewModel.updateSafetyPinRecommendations(it) }
                         )
@@ -156,11 +165,102 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 }
             }
 
-            // 2. Focus & OLED Safety Rules
-            SettingsGroupCard(title = "Focus & OLED Safety Rules", icon = Icons.Rounded.BrightnessLow) {
+            // 2. Always-On Display (AOD)
+            SettingsGroupCard(title = "Always-On Display (AOD)", icon = Icons.Rounded.ScreenLockPortrait) {
                 SettingsToggleItem(
-                    title = "True Black OLED Focus",
-                    subtitle = "AOD focus screen will use solid #000000 pixels to conserve battery on OLED hardware",
+                    title = "Active True AOD Guard",
+                    subtitle = "Sustain interactive minimalist focus clock and status upon device sleep",
+                    checked = aodTrueAodEnabled,
+                    icon = Icons.Rounded.Visibility,
+                    onCheckedChange = { viewModel.updateAodTrueAodEnabled(it) }
+                )
+
+                AnimatedVisibility(
+                    visible = aodTrueAodEnabled,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                            modifier = Modifier.padding(vertical = 6.dp)
+                        )
+
+                        // AOD Dimness Slider
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "AOD Dimness Level",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Text(
+                                    text = "${(aodDimnessLevel * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Slider(
+                            value = aodDimnessLevel,
+                            onValueChange = { viewModel.updateAodDimnessLevel(it) },
+                            valueRange = 0.1f..1.0f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                            modifier = Modifier.padding(vertical = 6.dp)
+                        )
+
+                        // Motion Sensitivity
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Motion Wake Sensitivity",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Text(
+                                    text = "${(aodMotionSensitivity * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Slider(
+                            value = aodMotionSensitivity,
+                            onValueChange = { viewModel.updateAodMotionSensitivity(it) },
+                            valueRange = 0.0f..1.0f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+
+            // 3. OLED Burn-In Prevention
+            SettingsGroupCard(title = "OLED Protection & Burn-In Shift", icon = Icons.Rounded.BrightnessLow) {
+                SettingsToggleItem(
+                    title = "Pure Black OLED Surface",
+                    subtitle = "Turn off individual OLED pixels in sleep preview mode to eliminate energy consumption",
                     checked = aodTrueBlackOled,
                     icon = Icons.Rounded.Contrast,
                     onCheckedChange = { viewModel.updateAodTrueBlackOled(it) }
@@ -172,381 +272,50 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 )
 
                 SettingsToggleItem(
-                    title = "Auto-Deactivate with Bright Themes",
-                    subtitle = "Automatically replace True Black with a dimmed themed focus screen when using Light theme",
-                    checked = aodAutoDeactivateTrueBlack,
-                    onCheckedChange = { viewModel.updateAodAutoDeactivateTrueBlack(it) }
-                )
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-
-                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
-                    Text(
-                        "Pixel Burn-In Shift Interval",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        "Period taken before slightly shifting always-on focus layout items to protect screen pixels",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp, bottom = 10.dp)
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        listOf(5, 10, 20, 30).forEach { seconds ->
-                            val isSelected = aodBurnInShiftSpeed == seconds
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { viewModel.updateAodBurnInShiftSpeed(seconds) },
-                                label = { Text("$seconds sec", fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                        }
-                    }
-                }
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-
-                SettingsToggleItem(
-                    title = "Lock Screen Protection",
-                    subtitle = "Allows AOD to safely bypass system lock screen without permanently waking display",
+                    title = "Lock Screen Synergy Support",
+                    subtitle = "Synchronize AOD timer states directly above system lock screens",
                     checked = aodLockScreenSupport,
                     icon = Icons.Rounded.Lock,
                     onCheckedChange = { viewModel.updateAodLockScreenSupport(it) }
                 )
-            }
 
-            // 3. True Always-On Display (Advanced Mode)
-            SettingsGroupCard(title = "True Always-On Display", icon = Icons.Rounded.CropFree) {
-                SettingsToggleItem(
-                    title = "True Always-On Display",
-                    subtitle = "Draw a full-screen system overlay clock directly over lockscreens, launchers, and apps",
-                    checked = aodTrueAodEnabled,
-                    icon = Icons.Rounded.CropFree,
-                    onCheckedChange = { viewModel.updateAodTrueAodEnabled(it) }
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                    modifier = Modifier.padding(vertical = 4.dp)
                 )
 
-                AnimatedVisibility(
-                    visible = aodTrueAodEnabled,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                // Burn In Shift Speed Slider
+                Column(modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                        // Integration Mode Selection
                         Text(
-                            text = "Integration Mode",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            text = "Pixel Shift Period",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
                         )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
                         ) {
-                            // Mode 1: System Overlay
-                            val isOverlaySelected = aodTrueAodMode == "overlay"
-                            Surface(
-                                onClick = { viewModel.updateAodTrueAodMode("overlay") },
-                                shape = RoundedCornerShape(16.dp),
-                                color = if (isOverlaySelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                                border = BorderStroke(
-                                    width = if (isOverlaySelected) 1.5.dp else 0.8.dp,
-                                    color = if (isOverlaySelected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                                ),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Column(modifier = Modifier.padding(14.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.ViewQuilt,
-                                            contentDescription = null,
-                                            tint = if (isOverlaySelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            "System Overlay",
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        "Fast responsive system clock layer.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-
-                            // Mode 2: Accessibility Overlay
-                            val isAccessSelected = aodTrueAodMode == "accessibility"
-                            Surface(
-                                onClick = { viewModel.updateAodTrueAodMode("accessibility") },
-                                shape = RoundedCornerShape(16.dp),
-                                color = if (isAccessSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                                border = BorderStroke(
-                                    width = if (isAccessSelected) 1.5.dp else 0.8.dp,
-                                    color = if (isAccessSelected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                                ),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Column(modifier = Modifier.padding(14.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Accessibility,
-                                            contentDescription = null,
-                                            tint = if (isAccessSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            "Accessibility",
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        "Safely behind lock controls.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-
-                        // Permission Warning if missing
-                        val currentPermissionGranted = if (aodTrueAodMode == "overlay") hasOverlayPermission else hasAccessibilityPermission
-                        if (!currentPermissionGranted) {
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(14.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Lock,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = if (aodTrueAodMode == "overlay") "Overlay Authorization Required" else "Accessibility Authorization Required",
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onErrorContainer
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = if (aodTrueAodMode == "overlay") {
-                                            "Enable 'Draw over other apps' to allow Lumia to overlay a pure black OLED focus clock."
-                                        } else {
-                                            "Enable Lumia's Accessibility Service to render the AOD safely behind system lock panels."
-                                        },
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.9f)
-                                    )
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Button(
-                                        onClick = {
-                                            if (aodTrueAodMode == "overlay") {
-                                                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                                                    data = Uri.parse("package:${context.packageName}")
-                                                }
-                                                try { context.startActivity(intent) } catch (e: Exception) {}
-                                            } else {
-                                                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                                                try { context.startActivity(intent) } catch (e: Exception) {}
-                                            }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Text("Grant Authorization", color = Color.White, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                        }
-
-                        // Accessibility mode secure lock option
-                        if (aodTrueAodMode == "accessibility" && hasAccessibilityPermission) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                            val isSecureLockEnabled = aodLockTimeout > 0
-                            SettingsToggleItem(
-                                title = "Secure Lock Fallback",
-                                subtitle = "Increase security: programmatically locks the system after AOD commences",
-                                checked = isSecureLockEnabled,
-                                onCheckedChange = { isChecked ->
-                                    viewModel.updateAodLockTimeout(if (isChecked) 30 else 0)
-                                }
-                            )
-
-                            if (isSecureLockEnabled) {
-                                Text(
-                                    text = "Screen Lock Timeout",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    listOf(5, 15, 30, 60, 120).forEach { seconds ->
-                                        val isSelected = aodLockTimeout == seconds
-                                        FilterChip(
-                                            selected = isSelected,
-                                            onClick = { viewModel.updateAodLockTimeout(seconds) },
-                                            label = { Text("${seconds}s", fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
-                                            shape = RoundedCornerShape(10.dp),
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                        // AOD Wake-up sensitivity
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
-                                text = "AOD Wake-Up Sensitivity",
-                                style = MaterialTheme.typography.titleSmall,
+                                text = "${aodBurnInShiftSpeed}s",
+                                style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                             )
-                            Text(
-                                text = "Control physical contact and motion thresholds required to wake up from Always-On Display",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            val sensitivityOptions = listOf(
-                                Pair("motion", "Motion & Tap"),
-                                Pair("highest", "Single Tap"),
-                                Pair("medium", "Double Tap"),
-                                Pair("secure", "Hold (1s)")
-                            )
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                sensitivityOptions.forEach { (sens, label) ->
-                                    val isSelected = aodSensitivity == sens
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = { viewModel.updateAodSensitivity(sens) },
-                                        label = { Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
-
-                            if (aodSensitivity == "motion") {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Motion Sensor Sensitivity",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                val motionOptions = listOf(
-                                    Pair(0.5f, "Very High"),
-                                    Pair(1.2f, "High"),
-                                    Pair(2.5f, "Medium"),
-                                    Pair(4.0f, "Low"),
-                                    Pair(0f, "Tap only")
-                                )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    motionOptions.forEach { (threshold, label) ->
-                                        val isSelected = aodMotionSensitivity == threshold
-                                        FilterChip(
-                                            selected = isSelected,
-                                            onClick = { viewModel.updateAodMotionSensitivity(threshold) },
-                                            label = { Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
-                                            shape = RoundedCornerShape(10.dp),
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-                        // Dimness override level
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                text = "Screen Dimness Override",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = "Controls pixel dimness to save battery power and enhance eye comfort",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            val dimnessLevels = listOf(
-                                Pair(0.50f, "50%"),
-                                Pair(0.75f, "75%"),
-                                Pair(0.90f, "90%"),
-                                Pair(0.95f, "95%"),
-                                Pair(0.99f, "99%")
-                            )
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                dimnessLevels.forEach { (level, percentString) ->
-                                    val isSelected = aodDimnessLevel == level
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = { viewModel.updateAodDimnessLevel(level) },
-                                        label = { Text(percentString, style = MaterialTheme.typography.labelMedium, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
                         }
                     }
+                    Slider(
+                        value = aodBurnInShiftSpeed.toFloat(),
+                        onValueChange = { viewModel.updateAodBurnInShiftSpeed(it.toInt()) },
+                        valueRange = 10f..120f,
+                        steps = 10,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
 

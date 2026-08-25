@@ -34,6 +34,7 @@ fun EditSubjectDialog(
 ) {
     var name by remember(subject) { mutableStateOf(subject.name) }
     var tags by remember(subject) { mutableStateOf(subject.tags) }
+    var nameTouched by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -57,7 +58,10 @@ fun EditSubjectDialog(
 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = {
+                        name = it
+                        nameTouched = true
+                    },
                     label = { Text("Subject Name *") },
                     leadingIcon = {
                         Icon(
@@ -67,6 +71,10 @@ fun EditSubjectDialog(
                             modifier = Modifier.size(20.dp)
                         )
                     },
+                    isError = nameTouched && name.isBlank(),
+                    supportingText = if (nameTouched && name.isBlank()) {
+                        { Text("Subject name is required", color = MaterialTheme.colorScheme.error) }
+                    } else null,
                     shape = RoundedCornerShape(14.dp),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()

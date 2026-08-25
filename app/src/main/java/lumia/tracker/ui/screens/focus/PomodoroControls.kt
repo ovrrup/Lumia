@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,17 +25,24 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.service.AodAccessibilityService
 import lumia.tracker.ui.components.BouncyButton
-import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.util.TrueAodManager
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
  * PomodoroControls - Primary tactile interaction suite for focus sessions.
- * Features a 64dp primary action button, secondary skip/reset/stop controls,
- * quick utility launcher chips, and True AOD engine selection with live permission indicators.
+ * Features a 64dp primary action button with spring-scale micro-interactions,
+ * secondary skip/reset/stop controls, quick utility launcher chips, and True AOD engine selection.
  */
+@ValueScore(
+    score = 90,
+    importance = Importance.CRITICAL,
+    description = "Tactile 64dp primary start/pause action cluster with spring micro-interactions and utility actions",
+    category = "Focus"
+)
 @Composable
 fun PomodoroControls(
     isRunning: Boolean,
@@ -140,7 +148,7 @@ fun PomodoroControls(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (!isRunning) {
-                // PRIMARY START BUTTON (64dp Height)
+                // PRIMARY START BUTTON (64dp Height with Tactile Micro-Interactions)
                 BouncyButton(
                     onClick = onStart,
                     modifier = Modifier
@@ -167,6 +175,17 @@ fun PomodoroControls(
                 }
             } else {
                 // RUNNING STATE: 64dp Pause/Resume + 64dp Skip + 64dp Stop
+                val pauseButtonBg by animateColorAsState(
+                    targetValue = if (isPaused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
+                    animationSpec = tween(250),
+                    label = "pause_btn_bg"
+                )
+                val pauseButtonContent by animateColorAsState(
+                    targetValue = if (isPaused) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
+                    animationSpec = tween(250),
+                    label = "pause_btn_content"
+                )
+
                 BouncyButton(
                     onClick = onPauseResume,
                     modifier = Modifier
@@ -174,24 +193,39 @@ fun PomodoroControls(
                         .height(64.dp),
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isPaused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = if (isPaused) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
+                        containerColor = pauseButtonBg,
+                        contentColor = pauseButtonContent
                     )
                 ) {
-                    Icon(
-                        imageVector = if (isPaused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
-                        contentDescription = if (isPaused) "Resume" else "Pause",
-                        modifier = Modifier.size(26.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (isPaused) "Resume" else "Pause",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    AnimatedContent(
+                        targetState = isPaused,
+                        transitionSpec = {
+                            (fadeIn(animationSpec = tween(220, delayMillis = 50)) +
+                                scaleIn(initialScale = 0.88f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)))
+                                .togetherWith(fadeOut(animationSpec = tween(120)) + scaleOut(targetScale = 0.88f))
+                        },
+                        label = "pause_resume_animated_content"
+                    ) { paused ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
+                                contentDescription = if (paused) "Resume" else "Pause",
+                                modifier = Modifier.size(26.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (paused) "Resume" else "Pause",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
 
-                // Skip Button
+                // Skip Button (64dp)
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -210,7 +244,7 @@ fun PomodoroControls(
                     }
                 }
 
-                // Stop / Reset Button
+                // Stop / Reset Button (64dp)
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.errorContainer,
@@ -388,6 +422,12 @@ fun PomodoroControls(
     }
 }
 
+@ValueScore(
+    score = 68,
+    importance = Importance.MEDIUM,
+    description = "Utility chip for launching Zen mode, True AOD, or interval configuration",
+    category = "Focus"
+)
 @Composable
 private fun UtilityFilterChip(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -423,6 +463,12 @@ private fun UtilityFilterChip(
     }
 }
 
+@ValueScore(
+    score = 72,
+    importance = Importance.HIGH,
+    description = "Engine selection card for True AOD overlay and accessibility modes with permission status badge",
+    category = "Focus"
+)
 @Composable
 private fun EngineSelectionCard(
     title: String,

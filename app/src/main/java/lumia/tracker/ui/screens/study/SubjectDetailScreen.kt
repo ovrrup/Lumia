@@ -46,6 +46,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.model.*
 import lumia.tracker.ui.components.*
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.study.dialogs.EditSubjectDialog
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.ui.util.getTagColors
@@ -58,6 +60,12 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
+@ValueScore(
+    score = 93,
+    importance = Importance.CRITICAL,
+    description = "Comprehensive Subject Detail screen with chapter hierarchies, syllabus progress rings, tasks, homework, and PDF export",
+    category = "Study"
+)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SubjectDetailScreen(
@@ -389,6 +397,12 @@ fun SubjectDetailScreen(
                     else -> MaterialTheme.colorScheme.primary
                 }
 
+                val animatedRingColor by animateColorAsState(
+                    targetValue = ringColor,
+                    animationSpec = tween(500),
+                    label = "subject_ring_color"
+                )
+
                 val masteryBadge = when {
                     totalTopics == 0 -> "No Topics Added"
                     topicPct == 100 -> "Subject Mastered (100%)"
@@ -399,7 +413,7 @@ fun SubjectDetailScreen(
 
                 ScholarHeroCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(26.dp),
+                    shape = RoundedCornerShape(22.dp),
                     containerColor = MaterialTheme.colorScheme.surface,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
                 ) {
@@ -413,7 +427,7 @@ fun SubjectDetailScreen(
                             Box(
                                 modifier = Modifier
                                     .size(56.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(18.dp)),
+                                    .background(MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(16.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
@@ -464,8 +478,8 @@ fun SubjectDetailScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(ringColor.copy(alpha = 0.08f), RoundedCornerShape(20.dp))
-                                .border(1.dp, ringColor.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                                .background(animatedRingColor.copy(alpha = 0.08f), RoundedCornerShape(18.dp))
+                                .border(1.dp, animatedRingColor.copy(alpha = 0.22f), RoundedCornerShape(18.dp))
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -477,8 +491,8 @@ fun SubjectDetailScreen(
                                 CircularProgressIndicator(
                                     progress = { progressFloat },
                                     modifier = Modifier.fillMaxSize(),
-                                    color = ringColor,
-                                    trackColor = ringColor.copy(alpha = 0.2f),
+                                    color = animatedRingColor,
+                                    trackColor = animatedRingColor.copy(alpha = 0.15f),
                                     strokeWidth = 8.dp,
                                     strokeCap = StrokeCap.Round
                                 )
@@ -487,7 +501,7 @@ fun SubjectDetailScreen(
                                         text = "$topicPct%",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Black,
-                                        color = ringColor
+                                        color = animatedRingColor
                                     )
                                     Text(
                                         text = "Mastery",
@@ -503,7 +517,7 @@ fun SubjectDetailScreen(
                                     Icon(
                                         imageVector = if (topicPct == 100) Icons.Rounded.CheckCircle else Icons.Rounded.Stars,
                                         contentDescription = null,
-                                        tint = ringColor,
+                                        tint = animatedRingColor,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -511,7 +525,7 @@ fun SubjectDetailScreen(
                                         text = masteryBadge,
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = ringColor
+                                        color = animatedRingColor
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(6.dp))
@@ -564,7 +578,7 @@ fun SubjectDetailScreen(
                     ScholarCard(
                         onClick = { navController.navigate("courseDetail/${course.id}") { launchSingleTop = true } },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -671,11 +685,12 @@ fun SubjectDetailScreen(
                     }
                     val chapterCompletedCount = chapterTopics.count { it.isCompleted }
                     val chapterProgress = if (chapterTopics.isNotEmpty()) chapterCompletedCount.toFloat() / chapterTopics.size else 0f
+                    val animatedChapterProgress by animateFloatAsState(targetValue = chapterProgress, label = "ch_progress_${chapter.id}")
                     var showChapterMenu by remember { mutableStateOf(false) }
 
                     ScholarCard(
                         modifier = Modifier.fillMaxWidth().animateContentSize(),
-                        shape = RoundedCornerShape(22.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(
@@ -763,9 +778,9 @@ fun SubjectDetailScreen(
                             if (chapterTopics.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 LinearProgressIndicator(
-                                    progress = { chapterProgress },
+                                    progress = { animatedChapterProgress },
                                     modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = if (chapterCompletedCount == chapterTopics.size) Color(0xFF10B981) else MaterialTheme.colorScheme.primary,
                                     trackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                                     strokeCap = StrokeCap.Round
                                 )
@@ -800,7 +815,10 @@ fun SubjectDetailScreen(
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                                                    .background(
+                                                        if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                                                        RoundedCornerShape(12.dp)
+                                                    )
                                                     .padding(horizontal = 8.dp, vertical = 6.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
@@ -811,7 +829,7 @@ fun SubjectDetailScreen(
                                                     Icon(
                                                         imageVector = if (topic.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
                                                         contentDescription = "Toggle Complete",
-                                                        tint = if (topic.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        tint = if (topic.isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant,
                                                         modifier = Modifier.size(20.dp)
                                                     )
                                                 }
@@ -824,11 +842,21 @@ fun SubjectDetailScreen(
                                                         color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
                                                     )
                                                     if (topic.tags.isNotBlank()) {
-                                                        Text(
-                                                            text = "Tags: ${topic.tags}",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                        )
+                                                        Row(
+                                                            modifier = Modifier.padding(top = 2.dp),
+                                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                        ) {
+                                                            topic.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.take(2).forEach { tag ->
+                                                                val colors = getTagColors(tag)
+                                                                Box(
+                                                                    modifier = Modifier
+                                                                        .background(colors.first, RoundedCornerShape(4.dp))
+                                                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                                ) {
+                                                                    Text(tag, style = MaterialTheme.typography.labelSmall, color = colors.second, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }
                                                 Box {
@@ -899,7 +927,7 @@ fun SubjectDetailScreen(
                         var isExpandedUnassigned by remember { mutableStateOf(true) }
                         ScholarCard(
                             modifier = Modifier.fillMaxWidth().animateContentSize(),
-                            shape = RoundedCornerShape(22.dp)
+                            shape = RoundedCornerShape(20.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(
@@ -959,7 +987,10 @@ fun SubjectDetailScreen(
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                                                    .background(
+                                                        if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                                                        RoundedCornerShape(12.dp)
+                                                    )
                                                     .padding(horizontal = 8.dp, vertical = 6.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
@@ -970,7 +1001,7 @@ fun SubjectDetailScreen(
                                                     Icon(
                                                         imageVector = if (topic.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
                                                         contentDescription = "Toggle Complete",
-                                                        tint = if (topic.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        tint = if (topic.isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant,
                                                         modifier = Modifier.size(20.dp)
                                                     )
                                                 }
@@ -983,11 +1014,21 @@ fun SubjectDetailScreen(
                                                         color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
                                                     )
                                                     if (topic.tags.isNotBlank()) {
-                                                        Text(
-                                                            text = "Tags: ${topic.tags}",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                        )
+                                                        Row(
+                                                            modifier = Modifier.padding(top = 2.dp),
+                                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                        ) {
+                                                            topic.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.take(2).forEach { tag ->
+                                                                val colors = getTagColors(tag)
+                                                                Box(
+                                                                    modifier = Modifier
+                                                                        .background(colors.first, RoundedCornerShape(4.dp))
+                                                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                                ) {
+                                                                    Text(tag, style = MaterialTheme.typography.labelSmall, color = colors.second, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }
                                                 Box {
@@ -1058,7 +1099,7 @@ fun SubjectDetailScreen(
                     var showTaskMenu by remember { mutableStateOf(false) }
                     ScholarCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -1070,7 +1111,7 @@ fun SubjectDetailScreen(
                                 Icon(
                                     imageVector = if (task.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
                                     contentDescription = "Toggle Complete",
-                                    tint = if (task.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = if (task.isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
@@ -1098,7 +1139,7 @@ fun SubjectDetailScreen(
                                 IconButton(onClick = { showTaskMenu = true }) {
                                     Icon(Icons.Rounded.MoreVert, contentDescription = "Task Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
-                                DropdownMenu(
+                                DropMenu(
                                     expanded = showTaskMenu,
                                     onDismissRequest = { showTaskMenu = false }
                                 ) {
@@ -1155,7 +1196,7 @@ fun SubjectDetailScreen(
                     var showAssignmentMenu by remember { mutableStateOf(false) }
                     ScholarCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -1167,7 +1208,7 @@ fun SubjectDetailScreen(
                                 Icon(
                                     imageVector = if (assignment.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
                                     contentDescription = "Toggle Complete",
-                                    tint = if (assignment.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = if (assignment.isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
@@ -1265,7 +1306,7 @@ fun SubjectDetailScreen(
                     ScholarCard(
                         onClick = { isExpanded = !isExpanded },
                         modifier = Modifier.fillMaxWidth().animateContentSize(),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(
@@ -1438,7 +1479,7 @@ fun SubjectDetailScreen(
 
                     ScholarCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -1680,13 +1721,15 @@ fun SubjectDetailScreen(
                         value = topicTitle,
                         onValueChange = { topicTitle = it },
                         label = { Text("Topic Title") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     OutlinedTextField(
                         value = topicTags,
                         onValueChange = { topicTags = it },
                         label = { Text("Tags (comma separated, optional)") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1694,7 +1737,8 @@ fun SubjectDetailScreen(
                     Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedCard(
                             onClick = { chapterDropdownExpanded = true },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -1784,19 +1828,22 @@ fun SubjectDetailScreen(
                         value = chapterName,
                         onValueChange = { chapterName = it },
                         label = { Text("Chapter Name") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     OutlinedTextField(
                         value = chapterDesc,
                         onValueChange = { chapterDesc = it },
                         label = { Text("Description (Optional)") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     OutlinedTextField(
                         value = chapterTags,
                         onValueChange = { chapterTags = it },
                         label = { Text("Tags (comma separated, optional)") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                 }
             },
@@ -1849,6 +1896,7 @@ fun SubjectDetailScreen(
                     onValueChange = { noteContent = it },
                     label = { Text("Note content") },
                     modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
                     minLines = 4
                 )
             },
@@ -1900,13 +1948,15 @@ fun SubjectDetailScreen(
                         value = taskTitle,
                         onValueChange = { taskTitle = it },
                         label = { Text("Task Title") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     OutlinedTextField(
                         value = taskDescription,
                         onValueChange = { taskDescription = it },
                         label = { Text("Description") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -2008,19 +2058,22 @@ fun SubjectDetailScreen(
                         value = assignmentTitle,
                         onValueChange = { assignmentTitle = it },
                         label = { Text("Title") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     OutlinedTextField(
                         value = assignmentDesc,
                         onValueChange = { assignmentDesc = it },
                         label = { Text("Description") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     OutlinedTextField(
                         value = assignmentTags,
                         onValueChange = { assignmentTags = it },
                         label = { Text("Tags (optional)") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -2141,11 +2194,16 @@ fun SubjectDetailScreen(
         )
     }
 
-    // Add Attachment (AI Study Guide PDF) Dialog
+    // Add Attachment (AI Study Guide PDF) Dialog (Polished Export Dialog)
     if (showAddAttachmentDialog) {
         AlertDialog(
             onDismissRequest = { showAddAttachmentDialog = false },
-            title = { Text("Generate Study Guide PDF", fontWeight = FontWeight.Bold) },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Text("Generate Study Guide PDF", fontWeight = FontWeight.Bold)
+                }
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
@@ -2157,13 +2215,16 @@ fun SubjectDetailScreen(
                         value = attachmentTitle,
                         onValueChange = { attachmentTitle = it },
                         label = { Text("Document Title") },
-                        modifier = Modifier.fillMaxWidth()
+                        placeholder = { Text("e.g. Syllabus Summary - ${subject.name}") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     OutlinedTextField(
                         value = attachmentContent,
                         onValueChange = { attachmentContent = it },
                         label = { Text("Study Guide / Syllabus Material Content") },
                         modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
                         minLines = 5
                     )
                 }
@@ -2174,7 +2235,11 @@ fun SubjectDetailScreen(
                         generateStudyGuidePdf(attachmentTitle, attachmentContent)
                         showAddAttachmentDialog = false
                     }
-                }) { Text("Generate PDF") }
+                }) {
+                    Icon(Icons.Rounded.PictureAsPdf, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Generate PDF", fontWeight = FontWeight.Bold)
+                }
             },
             dismissButton = {
                 BouncyTextButton(onClick = { showAddAttachmentDialog = false }) { Text("Cancel") }
@@ -2183,6 +2248,12 @@ fun SubjectDetailScreen(
     }
 }
 
+@ValueScore(
+    score = 40,
+    importance = Importance.MEDIUM,
+    description = "Section header with title and action button",
+    category = "Study"
+)
 @Composable
 fun SectionHeader(
     title: String,
@@ -2210,6 +2281,12 @@ fun SectionHeader(
     }
 }
 
+@ValueScore(
+    score = 35,
+    importance = Importance.LOW,
+    description = "Summary metric counter element for subject overview",
+    category = "Study"
+)
 @Composable
 fun StatItem(label: String, count: Int, detail: String? = null) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -2237,6 +2314,12 @@ fun StatItem(label: String, count: Int, detail: String? = null) {
     }
 }
 
+@ValueScore(
+    score = 30,
+    importance = Importance.LOW,
+    description = "Placeholder empty card for empty sections with action callout",
+    category = "Study"
+)
 @Composable
 fun EmptySectionCard(
     text: String,
@@ -2245,7 +2328,7 @@ fun EmptySectionCard(
 ) {
     ScholarCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp)
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

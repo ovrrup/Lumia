@@ -18,13 +18,13 @@ import lumia.tracker.ui.meta.ValueScore
 
 /**
  * SettingsGroupCard - Modern Material 3 Inset Grouped Section Card for Lumia settings.
- * Features rounded 22dp corners, subtle outline border, smooth animateContentSize() transitions,
+ * Features rounded 22dp corners, subtle 0.75dp outline border, smooth animateContentSize() transitions,
  * and unified section typography.
  */
 @ValueScore(
     score = 88,
     importance = Importance.HIGH,
-    description = "Categorized settings card container with unified typography and outline border",
+    description = "Categorized settings card container with unified typography and subtle outline border",
     category = "Settings"
 )
 @Composable
@@ -74,7 +74,7 @@ fun SettingsGroupCard(
                 containerColor = containerColor
             ),
             border = BorderStroke(
-                width = 0.8.dp,
+                width = 0.75.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
             ),
             elevation = CardDefaults.outlinedCardElevation(defaultElevation = 0.dp)

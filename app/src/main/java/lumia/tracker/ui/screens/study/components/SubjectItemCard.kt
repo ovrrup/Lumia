@@ -22,6 +22,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.model.Subject
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.util.getTagColors
 import lumia.tracker.viewmodel.ScholarViewModel
 
@@ -29,6 +31,12 @@ import lumia.tracker.viewmodel.ScholarViewModel
  * SubjectItemCard - Modern Subject Card with Topic Coverage Progress,
  * Linked Course Indicators, Syllabus Count, and Smooth Navigation.
  */
+@ValueScore(
+    score = 86,
+    importance = Importance.HIGH,
+    description = "Subject overview card with syllabus coverage progress, linked course chips, and quick actions",
+    category = "Study"
+)
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SubjectItemCard(
@@ -57,6 +65,13 @@ fun SubjectItemCard(
             course.subjectId == subject.id ||
                 course.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }.contains(subject.id)
         }
+    }
+
+    val progressColor = when {
+        rawProgress >= 1f -> Color(0xFF10B981)
+        rawProgress >= 0.5f -> MaterialTheme.colorScheme.tertiary
+        rawProgress > 0f -> Color(0xFFF59E0B)
+        else -> MaterialTheme.colorScheme.outlineVariant
     }
 
     ScholarCard(
@@ -195,13 +210,13 @@ fun SubjectItemCard(
                         )
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                            color = progressColor.copy(alpha = 0.15f)
                         ) {
                             Text(
                                 text = "$completedTopicsCount / $totalTopicsCount Topics (${(rawProgress * 100).toInt()}%)",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.tertiary,
+                                color = progressColor,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
@@ -212,7 +227,7 @@ fun SubjectItemCard(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = MaterialTheme.colorScheme.tertiary,
+                        color = progressColor,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }

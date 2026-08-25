@@ -14,9 +14,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 
+@ValueScore(
+    score = 82,
+    importance = Importance.HIGH,
+    description = "Segmented option picker with tactile feedback, subtle border, and rounded chip active state",
+    category = "Settings"
+)
 @Composable
 fun <T> SettingsSegmentedPicker(
     title: String,
@@ -25,6 +35,8 @@ fun <T> SettingsSegmentedPicker(
     selected: T,
     onSelected: (T) -> Unit
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -53,7 +65,7 @@ fun <T> SettingsSegmentedPicker(
                 .clip(RoundedCornerShape(14.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
                 .border(
-                    width = 1.dp,
+                    width = 0.75.dp,
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
                     shape = RoundedCornerShape(14.dp)
                 )
@@ -75,7 +87,12 @@ fun <T> SettingsSegmentedPicker(
                             color = if (isSelected) borderSelected else Color.Transparent,
                             shape = RoundedCornerShape(10.dp)
                         )
-                        .clickable { onSelected(value) }
+                        .clickable {
+                            if (value != selected) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            }
+                            onSelected(value)
+                        }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {

@@ -18,10 +18,18 @@ import lumia.tracker.ui.components.BatteryOptimizationPermissionPanel
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ExactAlarmPermissionPanel
 import lumia.tracker.ui.components.NotificationPermissionPanel
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
 import lumia.tracker.ui.screens.settings.components.SettingsToggleItem
 import lumia.tracker.viewmodel.ScholarViewModel
 
+@ValueScore(
+    score = 86,
+    importance = Importance.HIGH,
+    description = "Notification channels, persona tone, and academic reminder subscriptions",
+    category = "Settings"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(navController: NavController, viewModel: ScholarViewModel) {

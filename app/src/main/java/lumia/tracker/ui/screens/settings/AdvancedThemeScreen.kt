@@ -1,5 +1,6 @@
 package lumia.tracker.ui.screens.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -24,10 +25,18 @@ import androidx.navigation.NavController
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.settings.components.HexColorInputItem
 import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
 import lumia.tracker.viewmodel.ScholarViewModel
 
+@ValueScore(
+    score = 88,
+    importance = Importance.HIGH,
+    description = "Scientific hex palette generator and live preview canvas for custom themes",
+    category = "Settings"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewModel) {
@@ -152,8 +161,8 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
                                 },
                                 shape = RoundedCornerShape(16.dp),
                                 color = previewColor.copy(alpha = 0.12f),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    width = 1.2.dp,
+                                border = BorderStroke(
+                                    width = 1.dp,
                                     color = previewColor.copy(alpha = 0.5f)
                                 )
                             ) {
@@ -189,13 +198,9 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    Button(
+                    BouncyButton(
                         onClick = { viewModel.generatePaletteFromPrimaryHex(customPrimary) },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Icon(
@@ -270,7 +275,7 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
                         .padding(vertical = 6.dp),
                     shape = RoundedCornerShape(18.dp),
                     color = parsedBg,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(

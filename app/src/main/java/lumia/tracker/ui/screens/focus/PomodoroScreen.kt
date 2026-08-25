@@ -8,6 +8,8 @@ import android.view.WindowManager
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -36,16 +38,24 @@ import lumia.tracker.service.PomodoroMode
 import lumia.tracker.service.PomodoroService
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.focus.*
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
- * PomodoroScreen - Completely redesigned, feature-packed Focus Space.
- * Provides interactive pill-shaped mode selector (Work / Short Break / Long Break),
+ * PomodoroScreen - Redesigned, feature-packed Focus Space.
+ * Provides interactive fluid pill-sliding mode selector (Work / Short Break / Long Break),
  * sweeping 280dp glowing timer arc, contextual academic course/subject linking,
  * OLED Zen mode, True AOD launcher, keep-screen-on toggle, and daily focus metrics.
  */
+@ValueScore(
+    score = 95,
+    importance = Importance.CRITICAL,
+    description = "Main focus and Pomodoro workspace screen with dynamic theme, mode switching, and daily statistics",
+    category = "Focus"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PomodoroScreen(
@@ -258,51 +268,17 @@ fun PomodoroScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                // 1. Pill-shaped Animated Mode Switcher
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                // 1. Fluid Sliding Pill Mode Switcher (Work / Short Break / Long Break)
+                FluidPillModeSelector(
+                    currentMode = currentMode,
+                    workDurationMin = workDurationMin,
+                    shortBreakDurationMin = shortBreakDurationMin,
+                    longBreakDurationMin = longBreakDurationMin,
+                    onSelectMode = { mode ->
+                        sendServiceAction("SWITCH_MODE") { putExtra("targetMode", mode.name) }
+                    },
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        PillModeTab(
-                            title = "Focus",
-                            durationText = "${workDurationMin}m",
-                            icon = Icons.Rounded.Psychology,
-                            isSelected = currentMode == PomodoroMode.WORK,
-                            activeColor = MaterialTheme.colorScheme.primary,
-                            onClick = {
-                                sendServiceAction("SWITCH_MODE") { putExtra("targetMode", "WORK") }
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                        PillModeTab(
-                            title = "Short Break",
-                            durationText = "${shortBreakDurationMin}m",
-                            icon = Icons.Rounded.Coffee,
-                            isSelected = currentMode == PomodoroMode.SHORT_BREAK,
-                            activeColor = MaterialTheme.colorScheme.secondary,
-                            onClick = {
-                                sendServiceAction("SWITCH_MODE") { putExtra("targetMode", "SHORT_BREAK") }
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                        PillModeTab(
-                            title = "Long Break",
-                            durationText = "${longBreakDurationMin}m",
-                            icon = Icons.Rounded.SelfImprovement,
-                            isSelected = currentMode == PomodoroMode.LONG_BREAK,
-                            activeColor = MaterialTheme.colorScheme.tertiary,
-                            onClick = {
-                                sendServiceAction("SWITCH_MODE") { putExtra("targetMode", "LONG_BREAK") }
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
+                )
 
                 // 2. Centered Sweeping Timer Arc Gauge
                 val defaultDurationSec = when (currentMode) {
@@ -318,6 +294,8 @@ fun PomodoroScreen(
                     ringColor = ringColor,
                     sessionsCompleted = pomodoroState.sessionsCompleted,
                     periodSessions = periodSessions,
+                    isRunning = pomodoroState.isRunning,
+                    isPaused = pomodoroState.isPaused,
                     onAdjustTime = if (pomodoroState.isRunning) {
                         { delta -> sendServiceAction("ADJUST_TIME") { putExtra("deltaSeconds", delta) } }
                     } else null
@@ -443,58 +421,172 @@ fun PomodoroScreen(
 }
 
 /**
- * PillModeTab - Animated pill tab for Work / Break modes with duration indicator.
+ * FluidPillModeSelector - Mode selector with fluid animated sliding pill indicator.
  */
+@ValueScore(
+    score = 86,
+    importance = Importance.HIGH,
+    description = "Fluid sliding pill mode switcher for Work, Short Break, and Long Break intervals",
+    category = "Focus"
+)
 @Composable
-private fun PillModeTab(
-    title: String,
-    durationText: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    isSelected: Boolean,
-    activeColor: Color,
-    onClick: () -> Unit,
+private fun FluidPillModeSelector(
+    currentMode: PomodoroMode,
+    workDurationMin: Int,
+    shortBreakDurationMin: Int,
+    longBreakDurationMin: Int,
+    onSelectMode: (PomodoroMode) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val selectedIndex = when (currentMode) {
+        PomodoroMode.WORK -> 0
+        PomodoroMode.SHORT_BREAK -> 1
+        PomodoroMode.LONG_BREAK -> 2
+    }
+
+    val activeColor by animateColorAsState(
+        targetValue = when (currentMode) {
+            PomodoroMode.WORK -> MaterialTheme.colorScheme.primary
+            PomodoroMode.SHORT_BREAK -> MaterialTheme.colorScheme.secondary
+            PomodoroMode.LONG_BREAK -> MaterialTheme.colorScheme.tertiary
+        },
+        animationSpec = tween(300),
+        label = "pill_active_color"
+    )
+
     Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) activeColor else Color.Transparent,
-        shadowElevation = if (isSelected) 2.dp else 0.dp,
-        modifier = modifier.bouncyClick(onClick = onClick)
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = modifier
     ) {
-        Column(
-            modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
         ) {
+            val tabWidth = (maxWidth - 8.dp) / 3
+            val animatedOffset by animateDpAsState(
+                targetValue = tabWidth * selectedIndex + (selectedIndex * 4).dp,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                ),
+                label = "pill_sliding_offset"
+            )
+
+            // Sliding Indicator Background Pill
+            Box(
+                modifier = Modifier
+                    .offset(x = animatedOffset)
+                    .width(tabWidth)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(activeColor)
+            )
+
+            // Interactive Tab Items
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                PillModeTabItem(
+                    title = "Focus",
+                    durationText = "${workDurationMin}m",
+                    icon = Icons.Rounded.Psychology,
+                    isSelected = currentMode == PomodoroMode.WORK,
+                    onClick = { onSelectMode(PomodoroMode.WORK) },
+                    modifier = Modifier.weight(1f)
                 )
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = if (isSelected) FontWeight.Black else FontWeight.SemiBold,
-                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                PillModeTabItem(
+                    title = "Short Break",
+                    durationText = "${shortBreakDurationMin}m",
+                    icon = Icons.Rounded.Coffee,
+                    isSelected = currentMode == PomodoroMode.SHORT_BREAK,
+                    onClick = { onSelectMode(PomodoroMode.SHORT_BREAK) },
+                    modifier = Modifier.weight(1f)
+                )
+                PillModeTabItem(
+                    title = "Long Break",
+                    durationText = "${longBreakDurationMin}m",
+                    icon = Icons.Rounded.SelfImprovement,
+                    isSelected = currentMode == PomodoroMode.LONG_BREAK,
+                    onClick = { onSelectMode(PomodoroMode.LONG_BREAK) },
+                    modifier = Modifier.weight(1f)
                 )
             }
-            Text(
-                text = durationText,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Medium,
-                color = if (isSelected) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
         }
     }
 }
 
+/**
+ * PillModeTabItem - Content layer for individual mode tab with animated text/icon colors.
+ */
+@Composable
+private fun PillModeTabItem(
+    title: String,
+    durationText: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = tween(250),
+        label = "pill_tab_content_color"
+    )
+    val subtitleColor by animateColorAsState(
+        targetValue = if (isSelected) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.70f),
+        animationSpec = tween(250),
+        label = "pill_tab_sub_color"
+    )
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = contentColor
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (isSelected) FontWeight.Black else FontWeight.SemiBold,
+                color = contentColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Text(
+            text = durationText,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium,
+            color = subtitleColor
+        )
+    }
+}
+
+@ValueScore(
+    score = 60,
+    importance = Importance.LOW,
+    description = "Daily metric badge item for completed sessions, total focus time, and streaks",
+    category = "Focus"
+)
 @Composable
 private fun MetricBadgeItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,

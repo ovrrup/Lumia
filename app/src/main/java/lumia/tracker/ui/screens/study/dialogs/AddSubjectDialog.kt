@@ -31,6 +31,7 @@ fun AddSubjectDialog(
 ) {
     var name by remember { mutableStateOf("") }
     var tags by remember { mutableStateOf("") }
+    var nameTouched by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -40,7 +41,7 @@ fun AddSubjectDialog(
             StudyDialogHeader(
                 icon = Icons.Rounded.AutoStories,
                 title = "Add New Subject",
-                subtitle = "Organize chapters and topics",
+                subtitle = "Organize chapters, notes, and topics",
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
             )
@@ -54,7 +55,10 @@ fun AddSubjectDialog(
 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = {
+                        name = it
+                        nameTouched = true
+                    },
                     label = { Text("Subject Name *") },
                     placeholder = { Text("e.g. Physics, Macroeconomics") },
                     leadingIcon = {
@@ -65,6 +69,10 @@ fun AddSubjectDialog(
                             modifier = Modifier.size(20.dp)
                         )
                     },
+                    isError = nameTouched && name.isBlank(),
+                    supportingText = if (nameTouched && name.isBlank()) {
+                        { Text("Subject name is required", color = MaterialTheme.colorScheme.error) }
+                    } else null,
                     shape = RoundedCornerShape(14.dp),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()

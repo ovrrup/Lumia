@@ -15,10 +15,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.ui.components.BouncyIconButton
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
 import lumia.tracker.ui.screens.settings.components.SettingsToggleItem
 import lumia.tracker.viewmodel.ScholarViewModel
 
+@ValueScore(
+    score = 88,
+    importance = Importance.HIGH,
+    description = "System configuration for course-subject linkages, synergy scoring, and Pomodoro auto-logging",
+    category = "Settings"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewModel) {

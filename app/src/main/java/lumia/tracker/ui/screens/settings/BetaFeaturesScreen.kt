@@ -19,12 +19,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
+import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
 import lumia.tracker.ui.screens.settings.components.SettingsToggleItem
 import lumia.tracker.viewmodel.ScholarViewModel
 
+@ValueScore(
+    score = 82,
+    importance = Importance.EXPERIMENTAL,
+    description = "Experimental sandbox and beta feature diagnostics",
+    category = "Settings"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel) {
@@ -161,7 +171,8 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
     if (pendingFeature != null) {
         AlertDialog(
             onDismissRequest = { pendingFeature = null },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = {
                 Icon(
                     Icons.Rounded.Science,
@@ -192,7 +203,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 }
             },
             confirmButton = {
-                Button(
+                BouncyButton(
                     onClick = {
                         pendingFeature?.onConfirm?.invoke()
                         pendingFeature = null
@@ -203,7 +214,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingFeature = null }) {
+                BouncyTextButton(onClick = { pendingFeature = null }) {
                     Text("Cancel")
                 }
             }

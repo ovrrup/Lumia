@@ -21,6 +21,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 
@@ -28,6 +30,12 @@ import lumia.tracker.viewmodel.ScholarViewModel
  * PomodoroSettingsDialog - Interactive configuration modal for Pomodoro intervals,
  * cycle lengths, automation auto-logging, and target alerts.
  */
+@ValueScore(
+    score = 82,
+    importance = Importance.HIGH,
+    description = "Modal configuration sheet for focus intervals, breaks, and auto-logging preferences",
+    category = "Focus"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PomodoroSettingsDialog(
@@ -271,6 +279,12 @@ fun PomodoroSettingsDialog(
     }
 }
 
+@ValueScore(
+    score = 70,
+    importance = Importance.HIGH,
+    description = "Interactive slider and preset chip card for duration settings",
+    category = "Focus"
+)
 @Composable
 private fun DurationSettingCard(
     title: String,

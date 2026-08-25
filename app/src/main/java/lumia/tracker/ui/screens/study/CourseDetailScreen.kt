@@ -52,6 +52,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.model.*
 import lumia.tracker.ui.components.*
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.study.dialogs.EditCourseDialog
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.ui.util.getTagColors
@@ -69,6 +71,12 @@ import java.util.Locale
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
+@ValueScore(
+    score = 94,
+    importance = Importance.CRITICAL,
+    description = "Comprehensive Course Detail hub with dynamic attendance analytics, curriculum checklists, assignments, notes, and study guide generation",
+    category = "Study"
+)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CourseDetailScreen(
@@ -503,7 +511,7 @@ fun CourseDetailScreen(
             item {
                 ScholarHeroCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(26.dp),
+                    shape = RoundedCornerShape(22.dp),
                     containerColor = MaterialTheme.colorScheme.surface,
                     border = BorderStroke(1.dp, courseColor.copy(alpha = 0.25f))
                 ) {
@@ -629,7 +637,7 @@ fun CourseDetailScreen(
                                             navController.navigate("subjectDetail/${subj.id}")
                                         }
                                         .padding(4.dp)
-                                ) {
+                               Internal) {
                                     Icon(Icons.Rounded.AutoStories, contentDescription = null, tint = courseColor, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
@@ -669,7 +677,8 @@ fun CourseDetailScreen(
                                         modifier = Modifier.size(44.dp),
                                         color = badgeColor,
                                         trackColor = badgeColor.copy(alpha = 0.2f),
-                                        strokeWidth = 4.5.dp
+                                        strokeWidth = 4.5.dp,
+                                        strokeCap = StrokeCap.Round
                                     )
                                     Spacer(modifier = Modifier.width(14.dp))
                                     Column {
@@ -692,7 +701,7 @@ fun CourseDetailScreen(
                 }
             }
 
-            // 2. ATTENDANCE GAUGE & LOGS SECTION
+            // 2. ATTENDANCE GAUGE & LOGS SECTION (REFINED DYNAMIC COLOR THRESHOLDS & SMOOTH PROGRESS RING)
             item {
                 val attendanceRecords by viewModel.getAttendanceForCourse(courseId).collectAsStateWithLifecycle()
                 val attendanceByDay = remember(attendanceRecords) {
@@ -708,11 +717,11 @@ fun CourseDetailScreen(
                 var isMonthlyView by remember { mutableStateOf(false) }
                 var displayMonthOffset by remember { mutableIntStateOf(0) }
 
-                val cancelled = attendanceRecords.count { it.status == "Cancelled" || it.status == "Holiday" }
+                val cancelled = attendanceRecords.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
                 val effectiveTotal = attendanceRecords.size - cancelled
-                val presentCount = attendanceRecords.count { it.status == "Present" }
-                val lateCount = attendanceRecords.count { it.status == "Late" }
-                val absentCount = attendanceRecords.count { it.status == "Absent" }
+                val presentCount = attendanceRecords.count { it.status.equals("Present", ignoreCase = true) }
+                val lateCount = attendanceRecords.count { it.status.equals("Late", ignoreCase = true) }
+                val absentCount = attendanceRecords.count { it.status.equals("Absent", ignoreCase = true) }
                 val totalAttended = presentCount + lateCount
                 val attendancePct = if (effectiveTotal > 0) ((totalAttended.toFloat() / effectiveTotal) * 100).roundToInt() else 100
 
@@ -724,10 +733,16 @@ fun CourseDetailScreen(
 
                 val thresholdColor = when {
                     effectiveTotal == 0 -> MaterialTheme.colorScheme.primary
-                    attendancePct >= 75 -> Color(0xFF10B981) // Green (>75%)
-                    attendancePct >= 50 -> Color(0xFFF59E0B) // Amber (50-75%)
-                    else -> Color(0xFFEF4444) // Red (<50%)
+                    attendancePct >= 75 -> Color(0xFF10B981) // Green (>75% Healthy)
+                    attendancePct >= 50 -> Color(0xFFF59E0B) // Amber (50-75% Caution)
+                    else -> Color(0xFFEF4444) // Red (<50% Critical)
                 }
+
+                val animatedThresholdColor by animateColorAsState(
+                    targetValue = thresholdColor,
+                    animationSpec = tween(500),
+                    label = "gauge_color"
+                )
 
                 val thresholdLabel = when {
                     effectiveTotal == 0 -> "No Classes Recorded Yet"
@@ -750,7 +765,7 @@ fun CourseDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .animateContentSize(),
-                    shape = RoundedCornerShape(26.dp)
+                    shape = RoundedCornerShape(20.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Row(
@@ -759,7 +774,7 @@ fun CourseDetailScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Icon(Icons.Rounded.EventAvailable, contentDescription = null, tint = thresholdColor)
+                                Icon(Icons.Rounded.EventAvailable, contentDescription = null, tint = animatedThresholdColor)
                                 Text("Attendance & Schedule", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
                             }
                             BouncyIconButton(onClick = { isMonthlyView = !isMonthlyView; displayMonthOffset = 0 }) {
@@ -777,13 +792,13 @@ fun CourseDetailScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(thresholdColor.copy(alpha = 0.08f), RoundedCornerShape(20.dp))
-                                .border(1.dp, thresholdColor.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                                .background(animatedThresholdColor.copy(alpha = 0.08f), RoundedCornerShape(18.dp))
+                                .border(1.dp, animatedThresholdColor.copy(alpha = 0.22f), RoundedCornerShape(18.dp))
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(18.dp)
                         ) {
-                            // Circular Gauge Box
+                            // Circular Gauge Progress Ring
                             Box(
                                 modifier = Modifier.size(104.dp),
                                 contentAlignment = Alignment.Center
@@ -791,8 +806,8 @@ fun CourseDetailScreen(
                                 CircularProgressIndicator(
                                     progress = { gaugeProgress },
                                     modifier = Modifier.fillMaxSize(),
-                                    color = thresholdColor,
-                                    trackColor = thresholdColor.copy(alpha = 0.2f),
+                                    color = animatedThresholdColor,
+                                    trackColor = animatedThresholdColor.copy(alpha = 0.15f),
                                     strokeWidth = 9.dp,
                                     strokeCap = StrokeCap.Round
                                 )
@@ -801,7 +816,7 @@ fun CourseDetailScreen(
                                         text = "$attendancePct%",
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Black,
-                                        color = thresholdColor
+                                        color = animatedThresholdColor
                                     )
                                     Text(
                                         text = "$totalAttended/$effectiveTotal",
@@ -818,7 +833,7 @@ fun CourseDetailScreen(
                                     Icon(
                                         imageVector = if (attendancePct >= 75) Icons.Rounded.CheckCircle else Icons.Rounded.Warning,
                                         contentDescription = null,
-                                        tint = thresholdColor,
+                                        tint = animatedThresholdColor,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -826,7 +841,7 @@ fun CourseDetailScreen(
                                         text = thresholdLabel,
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = thresholdColor,
+                                        color = animatedThresholdColor,
                                         maxLines = 2
                                     )
                                 }
@@ -857,7 +872,7 @@ fun CourseDetailScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             listOf("Present" to Color(0xFF10B981), "Late" to Color(0xFFF59E0B), "Absent" to Color(0xFFEF4444)).forEach { (statusOpt, col) ->
-                                val isSelected = todayRecord?.status == statusOpt
+                                val isSelected = todayRecord?.status.equals(statusOpt, ignoreCase = true)
                                 Surface(
                                     modifier = Modifier
                                         .weight(1f)
@@ -956,11 +971,11 @@ fun CourseDetailScreen(
 
                                             val renderKey = "${dateCal.get(Calendar.YEAR)}-${dateCal.get(Calendar.DAY_OF_YEAR)}"
                                             val record = attendanceByDay[renderKey]
-                                            val statusColor = when (record?.status) {
-                                                "Present" -> Color(0xFF10B981)
-                                                "Absent" -> Color(0xFFEF4444)
-                                                "Late" -> Color(0xFFF59E0B)
-                                                "Cancelled", "Holiday" -> Color.Gray
+                                            val statusColor = when (record?.status?.lowercase()) {
+                                                "present" -> Color(0xFF10B981)
+                                                "absent" -> Color(0xFFEF4444)
+                                                "late" -> Color(0xFFF59E0B)
+                                                "cancelled", "holiday" -> Color.Gray
                                                 else -> Color.Transparent
                                             }
 
@@ -1015,11 +1030,11 @@ fun CourseDetailScreen(
 
                                     val renderKey = "${dateCal.get(Calendar.YEAR)}-${dateCal.get(Calendar.DAY_OF_YEAR)}"
                                     val record = attendanceByDay[renderKey]
-                                    val statusColor = when (record?.status) {
-                                        "Present" -> Color(0xFF10B981)
-                                        "Absent" -> Color(0xFFEF4444)
-                                        "Late" -> Color(0xFFF59E0B)
-                                        "Cancelled", "Holiday" -> Color.Gray
+                                    val statusColor = when (record?.status?.lowercase()) {
+                                        "present" -> Color(0xFF10B981)
+                                        "absent" -> Color(0xFFEF4444)
+                                        "late" -> Color(0xFFF59E0B)
+                                        "cancelled", "holiday" -> Color.Gray
                                         else -> MaterialTheme.colorScheme.surfaceVariant
                                     }
                                     val isToday = i == 0
@@ -1088,7 +1103,7 @@ fun CourseDetailScreen(
                                 )
 
                                 options.forEach { (option, optColor) ->
-                                    val isSelected = record?.status == option
+                                    val isSelected = record?.status.equals(option, ignoreCase = true)
                                     Surface(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -1155,12 +1170,13 @@ fun CourseDetailScreen(
                     val completedTopics = topics.count { it.isCompleted }
                     val totalTopics = topics.size
                     val progress = if (totalTopics > 0) completedTopics.toFloat() / totalTopics else 0f
+                    val animatedChecklistProgress by animateFloatAsState(targetValue = progress, label = "curriculum_progress")
 
                     ScholarCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .animateContentSize(),
-                        shape = RoundedCornerShape(26.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Row(
@@ -1173,28 +1189,29 @@ fun CourseDetailScreen(
                                     Text("Curriculum Checklist", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
                                 }
                                 Surface(
-                                    color = courseColor.copy(alpha = 0.15f),
-                                    shape = RoundedCornerShape(12.dp)
+                                    color = if (completedTopics == totalTopics) Color(0xFF10B981).copy(alpha = 0.15f) else courseColor.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(1.dp, if (completedTopics == totalTopics) Color(0xFF10B981).copy(alpha = 0.3f) else courseColor.copy(alpha = 0.3f))
                                 ) {
                                     Text(
-                                        text = "$completedTopics / $totalTopics Done",
+                                        text = "$completedTopics / $totalTopics Done (${(progress * 100).toInt()}%)",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = courseColor,
+                                        color = if (completedTopics == totalTopics) Color(0xFF10B981) else courseColor,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                     )
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
                             LinearProgressIndicator(
-                                progress = { progress },
+                                progress = { animatedChecklistProgress },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(8.dp)
                                     .clip(CircleShape),
-                                color = courseColor,
-                                trackColor = courseColor.copy(alpha = 0.2f),
+                                color = if (completedTopics == totalTopics) Color(0xFF10B981) else courseColor,
+                                trackColor = courseColor.copy(alpha = 0.15f),
                                 strokeCap = StrokeCap.Round
                             )
 
@@ -1204,7 +1221,10 @@ fun CourseDetailScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f), RoundedCornerShape(14.dp))
+                                        .background(
+                                            if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                            RoundedCornerShape(14.dp)
+                                        )
                                         .padding(horizontal = 10.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -1215,7 +1235,7 @@ fun CourseDetailScreen(
                                         Icon(
                                             imageVector = if (topic.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
                                             contentDescription = "Toggle Complete",
-                                            tint = if (topic.isCompleted) courseColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            tint = if (topic.isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }
@@ -1229,11 +1249,21 @@ fun CourseDetailScreen(
                                             color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
                                         )
                                         if (topic.tags.isNotBlank()) {
-                                            Text(
-                                                text = "Tags: ${topic.tags}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
+                                            Row(
+                                                modifier = Modifier.padding(top = 2.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                topic.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.take(3).forEach { tag ->
+                                                    val colors = getTagColors(tag)
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(colors.first, RoundedCornerShape(6.dp))
+                                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                                    ) {
+                                                        Text(tag, style = MaterialTheme.typography.labelSmall, color = colors.second, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                     BouncyIconButton(
@@ -1285,8 +1315,8 @@ fun CourseDetailScreen(
             if (localAssignments.isEmpty()) {
                 item(key = "assignments_empty") {
                     ScholarCard(
-                        modifier = Modifier.fillMaxWidth().height(150.dp),
-                        shape = RoundedCornerShape(24.dp)
+                        modifier = Modifier.fillMaxWidth().height(140.dp),
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -1295,7 +1325,7 @@ fun CourseDetailScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(48.dp)
+                                    .size(44.dp)
                                     .background(courseColor.copy(alpha = 0.1f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -1303,10 +1333,10 @@ fun CourseDetailScreen(
                                     imageVector = Icons.AutoMirrored.Rounded.LibraryBooks,
                                     contentDescription = null,
                                     tint = courseColor,
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 "No assignments or homework yet",
                                 style = MaterialTheme.typography.titleSmall,
@@ -1332,7 +1362,7 @@ fun CourseDetailScreen(
                                 .animateItem()
                                 .fillMaxWidth()
                                 .animateContentSize(),
-                            shape = RoundedCornerShape(22.dp),
+                            shape = RoundedCornerShape(20.dp),
                             containerColor = cardColor
                         ) {
                             Row(
@@ -1733,7 +1763,7 @@ fun CourseDetailScreen(
                 item {
                     ScholarCard(
                         modifier = Modifier.fillMaxWidth().height(120.dp),
-                        shape = RoundedCornerShape(22.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -1777,7 +1807,7 @@ fun CourseDetailScreen(
 
                     ScholarCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -1983,14 +2013,16 @@ fun CourseDetailScreen(
                             value = newSubjectName,
                             onValueChange = { newSubjectName = it },
                             label = { Text("New Subject Name") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
                         )
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(
                             value = newSubjectTags,
                             onValueChange = { newSubjectTags = it },
                             label = { Text("Tags (optional)") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
                         )
                     }
                 }
@@ -2057,21 +2089,24 @@ fun CourseDetailScreen(
                         value = title,
                         onValueChange = { title = it },
                         label = { Text("Title") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = desc,
                         onValueChange = { desc = it },
                         label = { Text("Description") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = tags,
                         onValueChange = { tags = it },
                         label = { Text("Tags (Optional, comma separated)") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -2116,6 +2151,7 @@ fun CourseDetailScreen(
                             onValueChange = { category = it },
                             label = { Text("Custom Category Name") },
                             modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
                             singleLine = true
                         )
                     }
@@ -2238,21 +2274,24 @@ fun CourseDetailScreen(
                         value = title,
                         onValueChange = { title = it },
                         label = { Text("Title") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = desc,
                         onValueChange = { desc = it },
                         label = { Text("Description") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = tags,
                         onValueChange = { tags = it },
                         label = { Text("Tags (Optional, comma separated)") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -2297,6 +2336,7 @@ fun CourseDetailScreen(
                             onValueChange = { category = it },
                             label = { Text("Custom Category Name") },
                             modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
                             singleLine = true
                         )
                     }
@@ -2402,13 +2442,15 @@ fun CourseDetailScreen(
                         onValueChange = { noteText = it },
                         label = { Text("Note content") },
                         modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
                         minLines = 3
                     )
                     OutlinedTextField(
                         value = noteCustomTag,
                         onValueChange = { noteCustomTag = it },
                         label = { Text("Note Tag (e.g. Theory, Lab, Formula)") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                 }
             },
@@ -2442,11 +2484,16 @@ fun CourseDetailScreen(
         )
     }
 
-    // Add Attachment (AI Study Guide PDF) Dialog
+    // Add Attachment (AI Study Guide PDF) Dialog (Polished Export Dialog)
     if (showAddAttachmentDialog) {
         AlertDialog(
             onDismissRequest = { showAddAttachmentDialog = false },
-            title = { Text("Generate Study Guide PDF", fontWeight = FontWeight.Bold) },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Text("Generate Study Guide PDF", fontWeight = FontWeight.Bold)
+                }
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
@@ -2458,13 +2505,16 @@ fun CourseDetailScreen(
                         value = attachmentTitle,
                         onValueChange = { attachmentTitle = it },
                         label = { Text("Document Title") },
-                        modifier = Modifier.fillMaxWidth()
+                        placeholder = { Text("e.g. Midterm Study Guide - ${course.name}") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
                     OutlinedTextField(
                         value = attachmentContent,
                         onValueChange = { attachmentContent = it },
                         label = { Text("Study Guide / Lecture Material Content") },
                         modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
                         minLines = 5
                     )
                 }
@@ -2475,7 +2525,11 @@ fun CourseDetailScreen(
                         generateStudyGuidePdf(attachmentTitle, attachmentContent)
                         showAddAttachmentDialog = false
                     }
-                }) { Text("Generate PDF") }
+                }) {
+                    Icon(Icons.Rounded.PictureAsPdf, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Generate PDF", fontWeight = FontWeight.Bold)
+                }
             },
             dismissButton = {
                 BouncyTextButton(onClick = { showAddAttachmentDialog = false }) { Text("Cancel") }
@@ -2484,6 +2538,12 @@ fun CourseDetailScreen(
     }
 }
 
+@ValueScore(
+    score = 35,
+    importance = Importance.LOW,
+    description = "Metadata pill badge for course instructor, schedule and tags",
+    category = "Study"
+)
 @Composable
 private fun DetailMetaBadge(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -2506,6 +2566,12 @@ private fun DetailMetaBadge(
     }
 }
 
+@ValueScore(
+    score = 30,
+    importance = Importance.LOW,
+    description = "Attendance summary indicator metric cell",
+    category = "Study"
+)
 @Composable
 private fun AttendanceCounterItem(
     label: String,

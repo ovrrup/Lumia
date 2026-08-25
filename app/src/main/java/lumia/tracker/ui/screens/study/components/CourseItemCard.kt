@@ -21,13 +21,22 @@ import lumia.tracker.model.Course
 import lumia.tracker.model.Subject
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.util.getTagColors
 import lumia.tracker.viewmodel.ScholarViewModel
+import kotlin.math.roundToInt
 
 /**
  * CourseItemCard - Modern Academic Course Overview Card with Color Accent,
  * Attendance Health Gauge, Schedule Chips, Tag Chips, and Linked Subjects.
  */
+@ValueScore(
+    score = 88,
+    importance = Importance.HIGH,
+    description = "Course summary card with attendance health gauge, schedule chips, and linked subjects",
+    category = "Study"
+)
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CourseItemCard(
@@ -54,13 +63,16 @@ fun CourseItemCard(
         list.distinct()
     }
 
-    // Attendance calculation
+    // Attendance calculation with cancelled/holiday subtraction
     val attendedCount = remember(attendanceList) {
         attendanceList.count { it.status.equals("PRESENT", ignoreCase = true) || it.status.equals("LATE", ignoreCase = true) }
     }
-    val totalAttendance = attendanceList.size
-    val attendancePercentage = if (totalAttendance > 0) {
-        ((attendedCount.toFloat() / totalAttendance) * 100).toInt()
+    val cancelledCount = remember(attendanceList) {
+        attendanceList.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
+    }
+    val effectiveTotal = attendanceList.size - cancelledCount
+    val attendancePercentage = if (effectiveTotal > 0) {
+        ((attendedCount.toFloat() / effectiveTotal) * 100).roundToInt()
     } else null
 
     // Course assignments
@@ -215,7 +227,7 @@ fun CourseItemCard(
                 }
             }
 
-            // Badges Section: Attendance Gauge & Pending Assignments
+            // Badges Section: Attendance Health Gauge & Pending Assignments
             val hasAttendance = attendancePercentage != null
             val hasAssignments = courseAssignments.isNotEmpty()
 
@@ -229,9 +241,9 @@ fun CourseItemCard(
                     // Attendance Status Badge
                     if (attendancePercentage != null) {
                         val isGood = attendancePercentage >= 75
-                        val isWarning = attendancePercentage in 65..74
-                        val statusColor = if (isGood) MaterialTheme.colorScheme.tertiary else if (isWarning) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
-                        val containerColor = if (isGood) MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f) else if (isWarning) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                        val isWarning = attendancePercentage in 50..74
+                        val statusColor = if (isGood) Color(0xFF10B981) else if (isWarning) Color(0xFFF59E0B) else Color(0xFFEF4444)
+                        val containerColor = if (isGood) Color(0xFF10B981).copy(alpha = 0.12f) else if (isWarning) Color(0xFFF59E0B).copy(alpha = 0.12f) else Color(0xFFEF4444).copy(alpha = 0.12f)
 
                         Surface(
                             shape = RoundedCornerShape(8.dp),
@@ -249,7 +261,7 @@ fun CourseItemCard(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Text(
-                                    text = "$attendancePercentage% Attendance ($attendedCount/$totalAttendance)",
+                                    text = "$attendancePercentage% Attendance ($attendedCount/$effectiveTotal)",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = statusColor,
                                     fontWeight = FontWeight.Bold

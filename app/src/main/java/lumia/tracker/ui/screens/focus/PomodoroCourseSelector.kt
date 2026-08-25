@@ -26,13 +26,21 @@ import lumia.tracker.model.Course
 import lumia.tracker.model.Subject
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.theme.bouncyClick
 
 /**
- * PomodoroCourseSelector - Redesigned contextual linking selector for Courses and Subjects.
+ * PomodoroCourseSelector - Contextual linking selector for Courses and Subjects.
  * Displays current study context with instant quick-switch pill chips and a dedicated ModalBottomSheet
- * with search and filtering for comprehensive academic tracking.
+ * with search and filtering for academic tracking.
  */
+@ValueScore(
+    score = 85,
+    importance = Importance.HIGH,
+    description = "Academic study context selector with clean quick chips and searchable bottom sheet",
+    category = "Focus"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PomodoroCourseSelector(
@@ -211,7 +219,7 @@ fun PomodoroCourseSelector(
             }
         }
 
-        // Horizontal Quick-Access Pills for Fast 1-Tap Switching
+        // Horizontal Quick-Access Chips for Fast 1-Tap Switching
         if (courses.isNotEmpty() || subjects.isNotEmpty()) {
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -601,6 +609,12 @@ fun PomodoroCourseSelector(
     }
 }
 
+@ValueScore(
+    score = 65,
+    importance = Importance.MEDIUM,
+    description = "Context selection row for courses and subjects within the bottom sheet",
+    category = "Focus"
+)
 @Composable
 private fun ContextSelectionRow(
     title: String,
