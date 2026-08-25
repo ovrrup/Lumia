@@ -291,6 +291,7 @@ class P2PDataChannelEngine(
 
             // 8. Apply merge according to sync mode
             val report = when (mode) {
+                SyncMode.LIVE_MESH_CRDT,
                 SyncMode.SMART_MERGE -> {
                     SyncMergeEngine.mergeFullApp(context, profileManager, remoteBackup, peer.name, mode.name)
                 }
