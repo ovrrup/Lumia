@@ -142,7 +142,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val mainIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             if (typeExtra == "task") {
-                putExtra("OPEN_TAB", 3)
+                putExtra("OPEN_TAB", 2)
             } else if (courseId != null) {
                 putExtra("OPEN_SCREEN", "courseDetail/$courseId")
             } else if (subjectId != null) {
@@ -150,7 +150,7 @@ class ReminderReceiver : BroadcastReceiver() {
             } else if (typeExtra.startsWith("class")) {
                 putExtra("OPEN_TAB", 1) // Courses tab
             } else {
-                putExtra("OPEN_TAB", 3) // Self Study & Tasks tab
+                putExtra("OPEN_TAB", 2) // Self Study & Tasks tab
             }
         }
         val mainPendingIntent = PendingIntent.getActivity(

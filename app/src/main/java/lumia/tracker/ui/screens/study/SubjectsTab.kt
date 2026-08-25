@@ -1,5 +1,8 @@
 package lumia.tracker.ui.screens.study
 
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
+
 import lumia.tracker.ui.screens.study.dialogs.*
 
 import androidx.compose.foundation.background
@@ -33,6 +36,12 @@ import lumia.tracker.viewmodel.ScholarViewModel
  * SubjectsTab - Professional Academic Subject Directory.
  * Displays subject curriculum coverage, syllabus progress, and linked course associations.
  */
+@ValueScore(
+    score = 86,
+    importance = Importance.HIGH,
+    description = "Subjects directory dashboard with syllabus coverage progress, chapter breakdowns, and course linkages",
+    category = "Study"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubjectsTab(
@@ -40,7 +49,7 @@ fun SubjectsTab(
     viewModel: ScholarViewModel,
     bottomPadding: PaddingValues,
     onEditSubject: (Subject) -> Unit = {},
-    onAddSubjectClick: () -> Unit
+    onAddSubjectClick: () -> Unit = {}
 ) {
     var subjectToEdit by remember { mutableStateOf<Subject?>(null) }
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()

@@ -1,5 +1,8 @@
 package lumia.tracker.ui.screens.study
 
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
+
 import lumia.tracker.ui.screens.study.dialogs.*
 
 import androidx.compose.animation.animateContentSize
@@ -36,6 +39,12 @@ import lumia.tracker.viewmodel.ScholarViewModel
  * CoursesTab - Lists all registered university / school courses with progress,
  * attendance metrics, and quick navigation.
  */
+@ValueScore(
+    score = 88,
+    importance = Importance.HIGH,
+    description = "Courses directory dashboard with attendance statistics, enrolled cards, and management",
+    category = "Study"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CoursesTab(
@@ -43,7 +52,7 @@ fun CoursesTab(
     viewModel: ScholarViewModel,
     bottomPadding: PaddingValues,
     onEditCourse: (Course) -> Unit = {},
-    onAddCourseClick: () -> Unit
+    onAddCourseClick: () -> Unit = {}
 ) {
     var courseToEdit by remember { mutableStateOf<Course?>(null) }
     val courses by viewModel.courses.collectAsStateWithLifecycle()

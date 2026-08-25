@@ -9,9 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.GraphicEq
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +22,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -37,13 +37,13 @@ import java.util.Locale
 
 /**
  * ScholarInnovativeHeader - Modern Dynamic Island & Action Capsule Bar.
- * Unifies search capsule (42dp, 22dp radius), responsive Focus pill with live countdown,
- * aligned streak badge, and avatar capsule with instant settings navigation.
+ * Unifies context-aware tab title/search capsule (42dp, 22dp radius),
+ * responsive Focus pill with live countdown, streak widget, and iOS avatar capsule.
  */
 @ValueScore(
     score = 96,
     importance = Importance.CRITICAL,
-    description = "Dynamic Island inspired action capsule header unifying search, focus pill, streak widget, and profile avatar",
+    description = "Dynamic Island inspired action capsule header unifying tab-aware search capsule, focus pill, streak widget, and profile avatar",
     category = "Navigation"
 )
 @Composable
@@ -56,60 +56,69 @@ fun ScholarInnovativeHeader(
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
     val pomodoroState by PomodoroService.state.collectAsStateWithLifecycle()
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background,
+        tonalElevation = 0.dp
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 6.dp)
         ) {
-            // 1. Search Bar Action Capsule
-            ScholarSearchCapsule(
-                onClick = { navController.navigate("search") },
-                modifier = Modifier.weight(1f)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // 1. Search / Tab Title Action Capsule (Reflects "Academics" on Tab 1)
+                ScholarSearchCapsule(
+                    selectedTab = selectedTab,
+                    onClick = { navController.navigate("search") },
+                    modifier = Modifier.weight(1f)
+                )
 
-            // 2. Responsive Live Focus Pill
-            ScholarFocusPill(
-                isRunning = pomodoroState.isRunning,
-                timeLeft = pomodoroState.timeLeft,
-                onClick = { navController.navigate("pomodoro") }
-            )
+                // 2. Responsive Live Focus Pill
+                ScholarFocusPill(
+                    isRunning = pomodoroState.isRunning,
+                    timeLeft = pomodoroState.timeLeft,
+                    onClick = { navController.navigate("pomodoro") }
+                )
 
-            // 3. Streak Flame Badge Widget (interactive with bottom sheet)
-            StreakWidget(
-                viewModel = viewModel,
-                navController = navController,
-                modifier = Modifier.height(42.dp)
-            )
+                // 3. Streak Flame Badge Widget (interactive with bottom sheet)
+                StreakWidget(
+                    viewModel = viewModel,
+                    navController = navController,
+                    modifier = Modifier.height(42.dp)
+                )
 
-            // 4. iOS Profile Avatar Capsule
-            ScholarProfileAvatar(
-                avatarEmoji = activeProfile.avatarEmoji,
-                displayName = activeProfile.name,
-                onClick = { navController.navigate("settings") }
-            )
+                // 4. iOS Profile Avatar Capsule
+                ScholarProfileAvatar(
+                    avatarEmoji = activeProfile.avatarEmoji,
+                    displayName = activeProfile.name,
+                    onClick = { navController.navigate("settings") }
+                )
+            }
         }
     }
 }
 
 /**
- * ScholarSearchCapsule - Search bar capsule button triggering search navigation.
+ * ScholarSearchCapsule - Search bar capsule button triggering search navigation,
+ * dynamically updating title and icon based on active tab (reflects "Academics" on tab 1).
  */
 @ValueScore(
-    score = 87,
+    score = 88,
     importance = Importance.HIGH,
-    description = "Search bar action capsule button with quick trigger to search workspace",
+    description = "Tab-responsive search and title capsule button triggering search workspace with animated tab title transitions",
     category = "Navigation"
 )
 @Composable
 fun ScholarSearchCapsule(
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    selectedTab: Int = 0
 ) {
     Surface(
         shape = RoundedCornerShape(22.dp),
@@ -126,25 +135,65 @@ fun ScholarSearchCapsule(
             .bouncyClick(onClick = onClick)
             .testTag("open_search_button")
     ) {
-        Row(
+        AnimatedContent(
+            targetState = selectedTab,
+            transitionSpec = {
+                (fadeIn(animationSpec = tween(220, delayMillis = 40)) +
+                        slideInVertically(animationSpec = tween(220)) { height -> height / 2 })
+                    .togetherWith(
+                        fadeOut(animationSpec = tween(150)) +
+                                slideOutVertically(animationSpec = tween(150)) { height -> -height / 2 }
+                    )
+            },
+            label = "header_title_transition",
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Search,
-                contentDescription = "Search",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
-            Text(
-                text = "Search workspace...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                maxLines = 1
-            )
+            contentAlignment = Alignment.CenterStart
+        ) { targetTab ->
+            val (icon, title) = when (targetTab) {
+                0 -> Icons.Rounded.Search to "Search workspace..."
+                1 -> Icons.Rounded.School to "Academics"
+                2 -> Icons.Rounded.AutoStories to "Tasks"
+                3 -> Icons.Rounded.Analytics to "Analytics"
+                else -> Icons.Rounded.Search to "Search workspace..."
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = if (targetTab == 0) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = title,
+                    style = if (targetTab == 0) {
+                        MaterialTheme.typography.bodyMedium
+                    } else {
+                        MaterialTheme.typography.titleSmall
+                    },
+                    fontWeight = if (targetTab == 0) {
+                        FontWeight.Normal
+                    } else {
+                        FontWeight.SemiBold
+                    },
+                    color = if (targetTab == 0) {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -268,7 +317,7 @@ fun ScholarFocusPill(
 @ValueScore(
     score = 82,
     importance = Importance.HIGH,
-    description = "Avatar capsule displaying user profile emoji or monogram with direct settings navigation",
+    description = "Avatar capsule displaying user profile emoji, photo, or monogram with direct settings navigation",
     category = "Navigation"
 )
 @Composable

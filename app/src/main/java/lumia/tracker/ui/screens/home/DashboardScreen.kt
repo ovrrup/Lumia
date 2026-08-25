@@ -7,8 +7,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
@@ -24,27 +23,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import kotlinx.coroutines.launch
-import lumia.tracker.R
-import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.StreakWidget
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.home.HomeTab
 import lumia.tracker.ui.screens.home.components.ScholarInnovativeHeader
 import lumia.tracker.ui.screens.study.*
-import lumia.tracker.ui.theme.LocalAppAnimationMode
-import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
  * DashboardScreen - Core container hosting the top ScholarInnovativeHeader,
- * smooth HorizontalPager tabs, and adaptive navigation bar (Floating Pill or Standard M3 dock).
+ * smooth AnimatedContent tab transitions, and adaptive navigation bar (Floating Pill or Standard M3 dock).
  */
+@ValueScore(
+    score = 98,
+    importance = Importance.CRITICAL,
+    description = "Root dashboard container orchestrating responsive navigation bars and smooth 12% slide AnimatedContent tab transitions",
+    category = "Navigation"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
@@ -56,37 +57,12 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     val navBarCornerRadius by viewModel.navBarCornerRadius.collectAsStateWithLifecycle()
     val navBarLabelMode by viewModel.navBarLabelMode.collectAsStateWithLifecycle()
     val navBarIndicatorAlpha by viewModel.navBarIndicatorAlpha.collectAsStateWithLifecycle()
-    val fuseSubjectsCourses by viewModel.systemFuseSubjectsCourses.collectAsStateWithLifecycle()
 
-    val featureSubjectEnabled by viewModel.featureSubjectEnabled.collectAsStateWithLifecycle()
     val featureSelfStudyEnabled by viewModel.featureSelfStudyEnabled.collectAsStateWithLifecycle()
     val featureAnalyticsEnabled by viewModel.featureAnalyticsEnabled.collectAsStateWithLifecycle()
 
     var showAddCourseDialog by remember { mutableStateOf(false) }
     var showAddSubjectDialog by remember { mutableStateOf(false) }
-
-    val coroutineScope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(initialPage = selectedTab, pageCount = { 5 })
-
-    // Sync ViewModel tab changes into pager
-    LaunchedEffect(selectedTab) {
-        if (pagerState.currentPage != selectedTab) {
-            pagerState.animateScrollToPage(
-                page = selectedTab,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMediumLow
-                )
-            )
-        }
-    }
-
-    // Sync user swiping inside pager back to ViewModel
-    LaunchedEffect(pagerState.currentPage) {
-        if (selectedTab != pagerState.currentPage) {
-            viewModel.setSelectedDashboardTab(pagerState.currentPage)
-        }
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -129,21 +105,10 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 selectedTab = selectedTab,
                                 onSelectTab = { target ->
                                     viewModel.setSelectedDashboardTab(target)
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(
-                                            page = target,
-                                            animationSpec = spring(
-                                                dampingRatio = Spring.DampingRatioNoBouncy,
-                                                stiffness = Spring.StiffnessMediumLow
-                                            )
-                                        )
-                                    }
                                 },
                                 navItemColors = navItemColors,
                                 alwaysShowLabel = navBarLabelMode == "Always",
                                 hideLabels = navBarLabelMode == "Hidden",
-                                featureSubjectEnabled = featureSubjectEnabled,
-                                fuseSubjectsCourses = fuseSubjectsCourses,
                                 featureSelfStudyEnabled = featureSelfStudyEnabled,
                                 featureAnalyticsEnabled = featureAnalyticsEnabled
                             )
@@ -175,10 +140,30 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .padding(top = padding.calculateTopPadding())
                     .clipToBounds()
             ) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize(),
-                    key = { it }
+                AnimatedContent(
+                    targetState = selectedTab,
+                    transitionSpec = {
+                        val isForward = targetState > initialState
+                        val direction = if (isForward) 1 else -1
+                        val slideDistanceFraction = 0.12f
+                        val duration = 200
+
+                        (slideInHorizontally(
+                            animationSpec = tween(durationMillis = duration, easing = FastOutSlowInEasing),
+                            initialOffsetX = { fullWidth -> (fullWidth * slideDistanceFraction * direction).toInt() }
+                        ) + fadeIn(
+                            animationSpec = tween(durationMillis = duration, easing = LinearOutSlowInEasing)
+                        )).togetherWith(
+                            slideOutHorizontally(
+                                animationSpec = tween(durationMillis = duration, easing = FastOutSlowInEasing),
+                                targetOffsetX = { fullWidth -> (-fullWidth * slideDistanceFraction * direction).toInt() }
+                            ) + fadeOut(
+                                animationSpec = tween(durationMillis = duration, easing = FastOutLinearInEasing)
+                            )
+                        )
+                    },
+                    label = "DashboardTabContent",
+                    modifier = Modifier.fillMaxSize()
                 ) { targetTab ->
                     when (targetTab) {
                         0 -> HomeTab(
@@ -188,41 +173,35 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             onAddCourseClick = { showAddCourseDialog = true },
                             onAddSubjectClick = { showAddSubjectDialog = true },
                             onNavigateToTasks = {
-                                viewModel.setSelectedDashboardTab(3)
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(
-                                        page = 3,
-                                        animationSpec = spring(
-                                            dampingRatio = Spring.DampingRatioNoBouncy,
-                                            stiffness = Spring.StiffnessMediumLow
-                                        )
-                                    )
-                                }
+                                viewModel.setSelectedDashboardTab(2)
                             }
                         )
-                        1 -> CoursesTab(
+                        1 -> AcademicsScreen(
                             navController = navController,
                             viewModel = viewModel,
                             bottomPadding = extendedPadding,
-                            onEditCourse = { /* Handled in tab */ },
-                            onAddCourseClick = { showAddCourseDialog = true }
-                        )
-                        2 -> SubjectsTab(
-                            navController = navController,
-                            viewModel = viewModel,
-                            bottomPadding = extendedPadding,
-                            onEditSubject = { /* Handled in tab */ },
+                            onAddCourseClick = { showAddCourseDialog = true },
                             onAddSubjectClick = { showAddSubjectDialog = true }
                         )
-                        3 -> SelfStudyTab(
+                        2 -> SelfStudyTab(
                             navController = navController,
                             viewModel = viewModel,
                             bottomPadding = extendedPadding
                         )
-                        4 -> AnalyticsTab(
+                        3 -> AnalyticsTab(
                             navController = navController,
                             viewModel = viewModel,
                             paddingValues = extendedPadding
+                        )
+                        else -> HomeTab(
+                            navController = navController,
+                            viewModel = viewModel,
+                            bottomPadding = extendedPadding,
+                            onAddCourseClick = { showAddCourseDialog = true },
+                            onAddSubjectClick = { showAddSubjectDialog = true },
+                            onNavigateToTasks = {
+                                viewModel.setSelectedDashboardTab(2)
+                            }
                         )
                     }
                 }
@@ -270,21 +249,10 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                         selectedTab = selectedTab,
                         onSelectTab = { target ->
                             viewModel.setSelectedDashboardTab(target)
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(
-                                    page = target,
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioNoBouncy,
-                                        stiffness = Spring.StiffnessMediumLow
-                                    )
-                                )
-                            }
                         },
                         navItemColors = navItemColors,
                         alwaysShowLabel = navBarLabelMode == "Always",
                         hideLabels = navBarLabelMode == "Hidden",
-                        featureSubjectEnabled = featureSubjectEnabled,
-                        fuseSubjectsCourses = fuseSubjectsCourses,
                         featureSelfStudyEnabled = featureSelfStudyEnabled,
                         featureAnalyticsEnabled = featureAnalyticsEnabled
                     )
@@ -309,6 +277,12 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     }
 }
 
+@ValueScore(
+    score = 92,
+    importance = Importance.CRITICAL,
+    description = "Navigation items row supporting fluid scale physics and adaptive indicators",
+    category = "Navigation"
+)
 @Composable
 private fun RowScope.DashboardNavItems(
     selectedTab: Int,
@@ -316,8 +290,6 @@ private fun RowScope.DashboardNavItems(
     navItemColors: NavigationBarItemColors,
     alwaysShowLabel: Boolean,
     hideLabels: Boolean,
-    featureSubjectEnabled: Boolean,
-    fuseSubjectsCourses: Boolean,
     featureSelfStudyEnabled: Boolean,
     featureAnalyticsEnabled: Boolean
 ) {
@@ -346,61 +318,34 @@ private fun RowScope.DashboardNavItems(
         alwaysShowLabel = alwaysShowLabel
     )
 
-    // 1: Courses
-    val coursesSelected = selectedTab == 1
-    val coursesScale by animateFloatAsState(
-        targetValue = if (coursesSelected) 1.12f else 1.0f,
+    // 1: Academics (Courses & Subjects Unified)
+    val academicsSelected = selectedTab == 1
+    val academicsScale by animateFloatAsState(
+        targetValue = if (academicsSelected) 1.12f else 1.0f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
-        label = "courses_nav_scale"
+        label = "academics_nav_scale"
     )
     NavigationBarItem(
         icon = {
             Icon(
                 Icons.AutoMirrored.Rounded.MenuBook,
-                contentDescription = "Courses",
+                contentDescription = "Academics",
                 modifier = Modifier.graphicsLayer {
-                    scaleX = coursesScale
-                    scaleY = coursesScale
+                    scaleX = academicsScale
+                    scaleY = academicsScale
                 }
             )
         },
-        label = if (hideLabels) null else { { Text("Courses", fontWeight = if (coursesSelected) FontWeight.Bold else FontWeight.Medium) } },
-        selected = coursesSelected,
+        label = if (hideLabels) null else { { Text("Academics", fontWeight = if (academicsSelected) FontWeight.Bold else FontWeight.Medium) } },
+        selected = academicsSelected,
         onClick = { onSelectTab(1) },
         colors = navItemColors,
         alwaysShowLabel = alwaysShowLabel
     )
 
-    // 2: Subjects
-    if (featureSubjectEnabled && !fuseSubjectsCourses) {
-        val subjectsSelected = selectedTab == 2
-        val subjectsScale by animateFloatAsState(
-            targetValue = if (subjectsSelected) 1.12f else 1.0f,
-            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
-            label = "subjects_nav_scale"
-        )
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    Icons.Rounded.FolderOpen,
-                    contentDescription = "Subjects",
-                    modifier = Modifier.graphicsLayer {
-                        scaleX = subjectsScale
-                        scaleY = subjectsScale
-                    }
-                )
-            },
-            label = if (hideLabels) null else { { Text("Subjects", fontWeight = if (subjectsSelected) FontWeight.Bold else FontWeight.Medium) } },
-            selected = subjectsSelected,
-            onClick = { onSelectTab(2) },
-            colors = navItemColors,
-            alwaysShowLabel = alwaysShowLabel
-        )
-    }
-
-    // 3: Tasks (SelfStudy)
+    // 2: Tasks (SelfStudy)
     if (featureSelfStudyEnabled) {
-        val tasksSelected = selectedTab == 3
+        val tasksSelected = selectedTab == 2
         val tasksScale by animateFloatAsState(
             targetValue = if (tasksSelected) 1.12f else 1.0f,
             animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
@@ -419,15 +364,15 @@ private fun RowScope.DashboardNavItems(
             },
             label = if (hideLabels) null else { { Text("Tasks", fontWeight = if (tasksSelected) FontWeight.Bold else FontWeight.Medium) } },
             selected = tasksSelected,
-            onClick = { onSelectTab(3) },
+            onClick = { onSelectTab(2) },
             colors = navItemColors,
             alwaysShowLabel = alwaysShowLabel
         )
     }
 
-    // 4: Analytics
+    // 3: Analytics
     if (featureAnalyticsEnabled) {
-        val analyticsSelected = selectedTab == 4
+        val analyticsSelected = selectedTab == 3
         val analyticsScale by animateFloatAsState(
             targetValue = if (analyticsSelected) 1.12f else 1.0f,
             animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
@@ -446,7 +391,7 @@ private fun RowScope.DashboardNavItems(
             },
             label = if (hideLabels) null else { { Text("Analytics", fontWeight = if (analyticsSelected) FontWeight.Bold else FontWeight.Medium) } },
             selected = analyticsSelected,
-            onClick = { onSelectTab(4) },
+            onClick = { onSelectTab(3) },
             colors = navItemColors,
             alwaysShowLabel = alwaysShowLabel
         )
