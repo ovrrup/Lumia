@@ -279,16 +279,32 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         calculateTodayStreakProgress()
     }
     
+    fun updateStreakRequirementTasks(count: Int) {
+        updateStreakReqTasks(count)
+    }
+    
     fun updateStreakReqAssignments(count: Int) {
         _streakRequirementAssignments.value = count
         prefs.edit().putInt("streak_req_assignments", count).apply()
         calculateTodayStreakProgress()
     }
 
+    fun updateStreakRequirementAssignments(count: Int) {
+        updateStreakReqAssignments(count)
+    }
+
     fun updateStreakReqStudyMins(mins: Int) {
         _streakRequirementStudyMins.value = mins
         prefs.edit().putInt("streak_req_study_mins", mins).apply()
         calculateTodayStreakProgress()
+    }
+
+    fun updateStreakRequirementStudyMins(mins: Int) {
+        updateStreakReqStudyMins(mins)
+    }
+
+    fun clearUserData() {
+        clearAllData()
     }
     
     fun updateStreakPartialThreshold(thresh: Float) {

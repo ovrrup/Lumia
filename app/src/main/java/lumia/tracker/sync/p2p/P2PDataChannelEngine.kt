@@ -431,6 +431,7 @@ class P2PDataChannelEngine(
             val remoteBackup = backupAdapter.fromJson(String(decryptedBytes, Charsets.UTF_8)) ?: return@withContext
 
             val report = when (mode) {
+                SyncMode.LIVE_MESH_CRDT,
                 SyncMode.SMART_MERGE -> {
                     SyncMergeEngine.mergeFullApp(context, profileManager, remoteBackup, peerName, mode.name)
                 }
