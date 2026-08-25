@@ -1139,7 +1139,7 @@ fun SubjectDetailScreen(
                                 IconButton(onClick = { showTaskMenu = true }) {
                                     Icon(Icons.Rounded.MoreVert, contentDescription = "Task Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
-                                DropMenu(
+                                DropdownMenu(
                                     expanded = showTaskMenu,
                                     onDismissRequest = { showTaskMenu = false }
                                 ) {

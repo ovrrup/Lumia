@@ -637,7 +637,7 @@ fun CourseDetailScreen(
                                             navController.navigate("subjectDetail/${subj.id}")
                                         }
                                         .padding(4.dp)
-                               Internal) {
+                                ) {
                                     Icon(Icons.Rounded.AutoStories, contentDescription = null, tint = courseColor, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(

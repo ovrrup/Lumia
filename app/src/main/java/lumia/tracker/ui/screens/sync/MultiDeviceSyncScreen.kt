@@ -985,6 +985,7 @@ private fun PairedDeviceFleetCard(
 /**
  * Modal Bottom Sheet Content for Pairing New Devices.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PairNewDeviceBottomSheetContent(
     pairingPin: String,
