@@ -312,7 +312,8 @@ fun PomodoroScreen(
                     isAodModeActive = true
                 },
                 onOpenZenMode = { isZenModeActive = true },
-                onOpenSettings = { showSettingsSheet = true }
+                onOpenSettings = { showSettingsSheet = true },
+                viewModel = viewModel
             )
 
             // 5. Today's Focus Metrics Summary Card
