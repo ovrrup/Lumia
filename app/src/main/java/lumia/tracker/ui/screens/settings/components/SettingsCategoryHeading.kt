@@ -13,7 +13,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 
+/**
+ * SettingsCategoryHeading - Section heading with leading icon badge and optional subtitle.
+ */
+@ValueScore(
+    score = 55,
+    importance = Importance.MEDIUM,
+    description = "Section heading with leading icon badge and optional subtitle",
+    category = "Settings"
+)
 @Composable
 fun SettingsCategoryHeading(
     title: String,

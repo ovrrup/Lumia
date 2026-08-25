@@ -15,11 +15,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 
 /**
  * SettingsActionItem - Refined action item row with 34dp rounded squircle icon badge,
  * crisp title, subtle subtitle, sleek trailing chevron, and >=48dp touch target.
  */
+@ValueScore(
+    score = 80,
+    importance = Importance.HIGH,
+    description = "Configurable settings action row with icon badge, title/subtitle, and customizable trailing content",
+    category = "Settings"
+)
 @Composable
 fun SettingsActionItem(
     title: String,

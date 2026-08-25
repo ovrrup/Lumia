@@ -15,7 +15,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 
+/**
+ * SettingsToggleItem - Standardized toggle item with squircle badge, title,
+ * optional long-text info dialog trigger, and Material 3 switch.
+ */
+@ValueScore(
+    score = 84,
+    importance = Importance.HIGH,
+    description = "Interactive switch toggle item for boolean settings with info dialog support",
+    category = "Settings"
+)
 @Composable
 fun SettingsToggleItem(
     title: String,

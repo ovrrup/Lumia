@@ -1,7 +1,6 @@
 package lumia.tracker.ui.screens.study.dialogs
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoStories
@@ -17,8 +16,16 @@ import androidx.compose.ui.unit.dp
 import lumia.tracker.model.Subject
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.viewmodel.ScholarViewModel
 
+@ValueScore(
+    score = 75,
+    importance = Importance.HIGH,
+    description = "Edit subject modal for modifying subject name and metadata tags",
+    category = "Dialog"
+)
 @Composable
 fun EditSubjectDialog(
     subject: Subject,
@@ -33,38 +40,13 @@ fun EditSubjectDialog(
         shape = RoundedCornerShape(28.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    modifier = Modifier.size(42.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.Edit,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-                Column {
-                    Text(
-                        text = "Edit Subject",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Update subject name and tags",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            StudyDialogHeader(
+                icon = Icons.Rounded.Edit,
+                title = "Edit Subject",
+                subtitle = "Update subject name and tags",
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            )
         },
         text = {
             Column(

@@ -27,6 +27,9 @@ import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
+import lumia.tracker.ui.screens.study.components.MetricSummaryTile
 import lumia.tracker.ui.screens.study.components.TaskItemCard
 import lumia.tracker.ui.screens.study.dialogs.AddTaskDialog
 import lumia.tracker.ui.theme.bouncyScale
@@ -44,6 +47,12 @@ enum class TaskFilterTab {
  * SelfStudyTab - Dedicated Task & Study Goal Organizer with Clean Filter Tabs,
  * Priority Filtering, Drag-Reorderable Task List, and Metric Cards.
  */
+@ValueScore(
+    score = 90,
+    importance = Importance.CRITICAL,
+    description = "Self study task dashboard with filtering, drag-reorder, and hero metrics",
+    category = "Study"
+)
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SelfStudyTab(
@@ -138,88 +147,28 @@ fun SelfStudyTab(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     // Upcoming Assignments
-                    ScholarCard(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = upcomingAssignments.size.toString(),
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = "Upcoming",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                    MetricSummaryTile(
+                        value = upcomingAssignments.size.toString(),
+                        label = "Upcoming",
+                        valueColor = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.weight(1f)
+                    )
 
                     // Pending Tasks
-                    ScholarCard(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = pendingTasks.size.toString(),
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = "Pending",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                    MetricSummaryTile(
+                        value = pendingTasks.size.toString(),
+                        label = "Pending",
+                        valueColor = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                    // Scheduled / Completed Tasks
-                    ScholarCard(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = futureTasks.size.toString(),
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = "Scheduled",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                    // Scheduled Tasks
+                    MetricSummaryTile(
+                        value = futureTasks.size.toString(),
+                        label = "Scheduled",
+                        valueColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 

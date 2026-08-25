@@ -13,12 +13,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 
 /**
  * SettingsGroupCard - Modern Material 3 Inset Grouped Section Card for Lumia settings.
  * Features rounded 22dp corners, subtle outline border, smooth animateContentSize() transitions,
  * and unified section typography.
  */
+@ValueScore(
+    score = 88,
+    importance = Importance.HIGH,
+    description = "Categorized settings card container with unified typography and outline border",
+    category = "Settings"
+)
 @Composable
 fun SettingsGroupCard(
     title: String = "",
