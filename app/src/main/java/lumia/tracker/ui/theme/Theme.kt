@@ -409,10 +409,19 @@ fun Modifier.bouncyScale(interactionSource: androidx.compose.foundation.interact
 @Composable
 fun Modifier.bouncyClick(enabled: Boolean = true, onClick: () -> Unit = {}): Modifier {
     val animationMode = LocalAppAnimationMode.current
-    val moreRounds = LocalMoreRounds.current
-    if (!enabled) return this.clickable(enabled = false) {}
+    if (!enabled) return this
     
     val interactionSource = androidx.compose.runtime.remember { MutableInteractionSource() }
+    
+    if (animationMode == "Off" || animationMode == "None") {
+        return this.clickable(
+            interactionSource = interactionSource,
+            indication = androidx.compose.material3.ripple(),
+            enabled = enabled,
+            onClick = onClick
+        )
+    }
+
     val isPressed by interactionSource.collectIsPressedAsState()
     
     val targetScale = if (isPressed) {

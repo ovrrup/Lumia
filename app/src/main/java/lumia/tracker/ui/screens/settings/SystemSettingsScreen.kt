@@ -191,67 +191,6 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     icon = Icons.Rounded.History,
                     onCheckedChange = { viewModel.updateSystemPomodoroAutoLog(it) }
                 )
-                
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                
-                Column(modifier = Modifier.padding(16.dp)) {
-                    val workDur by viewModel.pomodoroWorkDuration.collectAsStateWithLifecycle()
-                    Text("Work Duration: $workDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    androidx.compose.material3.Slider(
-                        value = workDur.toFloat(),
-                        onValueChange = { viewModel.updatePomodoroWorkDuration(it.toInt()) },
-                        valueRange = 5f..120f,
-                        steps = 114
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    val shortDur by viewModel.pomodoroShortBreakDuration.collectAsStateWithLifecycle()
-                    Text("Short Break: $shortDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    androidx.compose.material3.Slider(
-                        value = shortDur.toFloat(),
-                        onValueChange = { viewModel.updatePomodoroShortBreakDuration(it.toInt()) },
-                        valueRange = 1f..30f,
-                        steps = 28
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    val longDur by viewModel.pomodoroLongBreakDuration.collectAsStateWithLifecycle()
-                    Text("Long Break: $longDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    androidx.compose.material3.Slider(
-                        value = longDur.toFloat(),
-                        onValueChange = { viewModel.updatePomodoroLongBreakDuration(it.toInt()) },
-                        valueRange = 5f..60f,
-                        steps = 54
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SettingsGroupCard(title = "Period Structure", icon = Icons.Rounded.List) {
-                SettingsToggleItem(
-                    title = "Enable Target Periods",
-                    subtitle = "Allows restricting pomodoro loops to a fixed target instead of infinite repetetion.",
-                    checked = viewModel.pomodoroEnablePeriodTarget.collectAsStateWithLifecycle().value,
-                    icon = Icons.Rounded.Star,
-                    onCheckedChange = { viewModel.updatePomodoroEnablePeriodTarget(it) }
-                )
-                
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                
-                Column(modifier = Modifier.padding(16.dp)) {
-                    val periodSessions by viewModel.pomodoroPeriodSessions.collectAsStateWithLifecycle()
-                    Text("Sessions per Period: $periodSessions", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text("Number of study/work sessions before a long break.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    androidx.compose.material3.Slider(
-                        value = periodSessions.toFloat(),
-                        onValueChange = { viewModel.updatePomodoroPeriodSessions(it.toInt()) },
-                        valueRange = 1f..10f,
-                        steps = 8
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

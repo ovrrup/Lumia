@@ -35,6 +35,10 @@ import lumia.tracker.ui.theme.LocalAppAnimationMode
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import kotlinx.coroutines.launch
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
@@ -55,12 +59,24 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     var showAddCourseDialog by remember { mutableStateOf(false) }
     var showAddSubjectDialog by remember { mutableStateOf(false) }
 
-    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val coroutineScope = rememberCoroutineScope()
+    val pagerState = rememberPagerState(initialPage = selectedTab, pageCount = { 5 })
+
+    LaunchedEffect(selectedTab) {
+        if (pagerState.currentPage != selectedTab) {
+            pagerState.animateScrollToPage(selectedTab)
+        }
+    }
+
+    LaunchedEffect(pagerState.currentPage) {
+        if (selectedTab != pagerState.currentPage) {
+            viewModel.setSelectedDashboardTab(pagerState.currentPage)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+            modifier = Modifier.fillMaxSize(),
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 ScholarInnovativeHeader(
@@ -85,7 +101,10 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     ) {
                         DashboardNavItems(
                             selectedTab = selectedTab,
-                            onSelectTab = { viewModel.setSelectedDashboardTab(it) },
+                            onSelectTab = { 
+                                viewModel.setSelectedDashboardTab(it)
+                                coroutineScope.launch { pagerState.animateScrollToPage(it) }
+                            },
                             navItemColors = navItemColors,
                             alwaysShowLabel = navBarLabelMode == "Always",
                             hideLabels = navBarLabelMode == "Hidden",
@@ -119,44 +138,10 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .padding(top = padding.calculateTopPadding())
                     .clipToBounds()
             ) {
-                val appAnimationMode = LocalAppAnimationMode.current
-                AnimatedContent(
-                    targetState = selectedTab,
-                    transitionSpec = {
-                        val spec = if (appAnimationMode == "Bouncy") {
-                            spring<androidx.compose.ui.unit.IntOffset>(dampingRatio = 0.45f, stiffness = 200f)
-                        } else if (appAnimationMode == "Dynamic") {
-                            spring<androidx.compose.ui.unit.IntOffset>(dampingRatio = 0.75f, stiffness = 500f)
-                        } else {
-                            tween<androidx.compose.ui.unit.IntOffset>(300, easing = LinearOutSlowInEasing)
-                        }
-                        val scaleSpec = if (appAnimationMode == "Bouncy") {
-                            spring<Float>(dampingRatio = 0.45f, stiffness = 200f)
-                        } else if (appAnimationMode == "Dynamic") {
-                            spring<Float>(dampingRatio = 0.75f, stiffness = 500f)
-                        } else {
-                            tween<Float>(300, easing = LinearOutSlowInEasing)
-                        }
-                        if (targetState > initialState) {
-                            (slideInHorizontally(animationSpec = spec) { width -> width / 3 } +
-                                    fadeIn(animationSpec = tween(220)) +
-                                    scaleIn(initialScale = 0.95f, animationSpec = scaleSpec)).togetherWith(
-                                slideOutHorizontally(animationSpec = spec) { width -> -width / 3 } +
-                                        fadeOut(animationSpec = tween(220)) +
-                                        scaleOut(targetScale = 0.95f, animationSpec = scaleSpec)
-                            )
-                        } else {
-                            (slideInHorizontally(animationSpec = spec) { width -> -width / 3 } +
-                                    fadeIn(animationSpec = tween(220)) +
-                                    scaleIn(initialScale = 0.95f, animationSpec = scaleSpec)).togetherWith(
-                                slideOutHorizontally(animationSpec = spec) { width -> width / 3 } +
-                                        fadeOut(animationSpec = tween(220)) +
-                                        scaleOut(targetScale = 0.95f, animationSpec = scaleSpec)
-                            )
-                        }
-                    },
-                    label = "TabTransition",
-                    modifier = Modifier.fillMaxSize()
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    key = { it }
                 ) { targetTab ->
                     when (targetTab) {
                         0 -> HomeTab(
@@ -165,7 +150,10 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             bottomPadding = extendedPadding,
                             onAddCourseClick = { showAddCourseDialog = true },
                             onAddSubjectClick = { showAddSubjectDialog = true },
-                            onNavigateToTasks = { viewModel.setSelectedDashboardTab(3) }
+                            onNavigateToTasks = { 
+                                viewModel.setSelectedDashboardTab(3)
+                                coroutineScope.launch { pagerState.animateScrollToPage(3) }
+                            }
                         )
                         1 -> CoursesTab(
                             navController = navController,
@@ -186,7 +174,11 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             viewModel = viewModel,
                             bottomPadding = extendedPadding
                         )
-                        4 -> AnalyticsTab(navController = navController, viewModel = viewModel, paddingValues = extendedPadding)
+                        4 -> AnalyticsTab(
+                            navController = navController,
+                            viewModel = viewModel,
+                            paddingValues = extendedPadding
+                        )
                     }
                 }
             }
@@ -222,7 +214,10 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 ) {
                     DashboardNavItems(
                         selectedTab = selectedTab,
-                        onSelectTab = { viewModel.setSelectedDashboardTab(it) },
+                        onSelectTab = { 
+                            viewModel.setSelectedDashboardTab(it)
+                            coroutineScope.launch { pagerState.animateScrollToPage(it) }
+                        },
                         navItemColors = navItemColors,
                         alwaysShowLabel = navBarLabelMode == "Always",
                         hideLabels = navBarLabelMode == "Hidden",

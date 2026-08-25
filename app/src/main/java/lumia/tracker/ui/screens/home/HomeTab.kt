@@ -128,9 +128,8 @@ fun HomeTab(
                     // Bento 1: HERO FOCUS COMMAND (Large interactive hero tile)
                     val isFocusRunning = pomodoroState.isRunning
                     ScholarCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .bouncyClick { navController.navigate("pomodoro") { launchSingleTop = true } },
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { navController.navigate("pomodoro") { launchSingleTop = true } },
                         shape = RoundedCornerShape(24.dp)
                     ) {
                         Row(
@@ -213,8 +212,8 @@ fun HomeTab(
                         ScholarCard(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(160.dp)
-                                .bouncyClick { onNavigateToTasks() },
+                                .height(160.dp),
+                            onClick = { onNavigateToTasks() },
                             shape = RoundedCornerShape(22.dp)
                         ) {
                             Column(
@@ -281,8 +280,8 @@ fun HomeTab(
                         ScholarCard(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(160.dp)
-                                .bouncyClick { viewModel.setSelectedDashboardTab(1) },
+                                .height(160.dp),
+                            onClick = { viewModel.setSelectedDashboardTab(1) },
                             shape = RoundedCornerShape(22.dp)
                         ) {
                             Column(
@@ -443,12 +442,6 @@ fun HomeTab(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // 5-Day selector row
-                        val todayCalendar = Calendar.getInstance()
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
                         // iOS-Style 5-Day Segmented selector row
                         val todayCalendar = Calendar.getInstance()
                         Surface(
@@ -579,7 +572,7 @@ fun HomeTab(
                                     }
                                 }
                             }
-                        }   }
+                        }
                     }
                 }
             }

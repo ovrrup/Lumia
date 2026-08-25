@@ -186,19 +186,6 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
 
             // 2. Display Hacks & System Settings
             SettingsGroupCard(title = "Display Settings & Hooks", icon = Icons.Rounded.Settings) {
-                val betaMinimalistMode by viewModel.betaMinimalistMode.collectAsStateWithLifecycle()
-                val betaNavBarSizeControls by viewModel.betaNavBarSizeControls.collectAsStateWithLifecycle()
-                SettingsToggleItem(
-                    title = "Advanced NavBar Size Controls",
-                    subtitle = "Expose precise custom sizing and shape sliders for the bottom navigation bar.",
-                    checked = betaNavBarSizeControls,
-                    icon = Icons.Rounded.Straighten,
-                    enabled = !betaMinimalistMode,
-                    onCheckedChange = { handleToggle(it, "Advanced NavBar Size Controls", "Reveal precise geometry and padding sliders inside the design settings.") { isChecked -> viewModel.updateBetaNavBarSizeControls(isChecked) } }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
-
                 val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
                 SettingsToggleItem(
                     title = "Display Action History",
