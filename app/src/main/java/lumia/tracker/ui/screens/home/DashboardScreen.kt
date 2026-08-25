@@ -2,10 +2,11 @@ package lumia.tracker.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
@@ -18,13 +19,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import lumia.tracker.R
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.StreakWidget
@@ -35,10 +39,10 @@ import lumia.tracker.ui.theme.LocalAppAnimationMode
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import kotlinx.coroutines.launch
-
+/**
+ * DashboardScreen - Core container hosting the top ScholarInnovativeHeader,
+ * smooth HorizontalPager tabs, and adaptive navigation bar (Floating Pill or Standard M3 dock).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
@@ -62,12 +66,20 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     val coroutineScope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage = selectedTab, pageCount = { 5 })
 
+    // Sync ViewModel tab changes into pager
     LaunchedEffect(selectedTab) {
         if (pagerState.currentPage != selectedTab) {
-            pagerState.animateScrollToPage(selectedTab)
+            pagerState.animateScrollToPage(
+                page = selectedTab,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            )
         }
     }
 
+    // Sync user swiping inside pager back to ViewModel
     LaunchedEffect(pagerState.currentPage) {
         if (selectedTab != pagerState.currentPage) {
             viewModel.setSelectedDashboardTab(pagerState.currentPage)
@@ -90,48 +102,71 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     val navItemColors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.primary,
                         selectedTextColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = navBarIndicatorAlpha.coerceAtLeast(0.5f))
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                        indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(
+                            alpha = navBarIndicatorAlpha.coerceAtLeast(0.45f)
+                        )
                     )
                     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                    NavigationBar(
-                        modifier = Modifier.height(navBarHeight.dp + bottomInset),
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    ) {
-                        DashboardNavItems(
-                            selectedTab = selectedTab,
-                            onSelectTab = { 
-                                viewModel.setSelectedDashboardTab(it)
-                                coroutineScope.launch { pagerState.animateScrollToPage(it) }
-                            },
-                            navItemColors = navItemColors,
-                            alwaysShowLabel = navBarLabelMode == "Always",
-                            hideLabels = navBarLabelMode == "Hidden",
-                            featureSubjectEnabled = featureSubjectEnabled,
-                            fuseSubjectsCourses = fuseSubjectsCourses,
-                            featureSelfStudyEnabled = featureSelfStudyEnabled,
-                            featureAnalyticsEnabled = featureAnalyticsEnabled
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        tonalElevation = 3.dp,
+                        shadowElevation = 3.dp,
+                        border = BorderStroke(
+                            0.5.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                         )
+                    ) {
+                        NavigationBar(
+                            modifier = Modifier.height(navBarHeight.dp + bottomInset),
+                            containerColor = Color.Transparent,
+                            tonalElevation = 0.dp
+                        ) {
+                            DashboardNavItems(
+                                selectedTab = selectedTab,
+                                onSelectTab = { target ->
+                                    viewModel.setSelectedDashboardTab(target)
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(
+                                            page = target,
+                                            animationSpec = spring(
+                                                dampingRatio = Spring.DampingRatioNoBouncy,
+                                                stiffness = Spring.StiffnessMediumLow
+                                            )
+                                        )
+                                    }
+                                },
+                                navItemColors = navItemColors,
+                                alwaysShowLabel = navBarLabelMode == "Always",
+                                hideLabels = navBarLabelMode == "Hidden",
+                                featureSubjectEnabled = featureSubjectEnabled,
+                                fuseSubjectsCourses = fuseSubjectsCourses,
+                                featureSelfStudyEnabled = featureSelfStudyEnabled,
+                                featureAnalyticsEnabled = featureAnalyticsEnabled
+                            )
+                        }
                     }
                 }
             }
         ) { padding ->
+            val layoutDirection = LocalLayoutDirection.current
             val extendedPadding = if (betaFloatingNav) {
                 PaddingValues(
-                    start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+                    start = padding.calculateStartPadding(layoutDirection),
                     top = 0.dp,
-                    end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+                    end = padding.calculateEndPadding(layoutDirection),
                     bottom = padding.calculateBottomPadding() + navBarHeight.dp + navBarPaddingBottom.dp + 16.dp
                 )
             } else {
                 PaddingValues(
-                    start = padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+                    start = padding.calculateStartPadding(layoutDirection),
                     top = 0.dp,
-                    end = padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+                    end = padding.calculateEndPadding(layoutDirection),
                     bottom = padding.calculateBottomPadding()
                 )
             }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -150,9 +185,17 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             bottomPadding = extendedPadding,
                             onAddCourseClick = { showAddCourseDialog = true },
                             onAddSubjectClick = { showAddSubjectDialog = true },
-                            onNavigateToTasks = { 
+                            onNavigateToTasks = {
                                 viewModel.setSelectedDashboardTab(3)
-                                coroutineScope.launch { pagerState.animateScrollToPage(3) }
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(
+                                        page = 3,
+                                        animationSpec = spring(
+                                            dampingRatio = Spring.DampingRatioNoBouncy,
+                                            stiffness = Spring.StiffnessMediumLow
+                                        )
+                                    )
+                                }
                             }
                         )
                         1 -> CoursesTab(
@@ -184,13 +227,16 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
         }
 
+        // Floating Navigation Bar Pill
         if (betaFloatingNav) {
             val navItemColors = NavigationBarItemDefaults.colors(
                 selectedIconColor = MaterialTheme.colorScheme.primary,
                 selectedTextColor = MaterialTheme.colorScheme.primary,
-                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(
+                    alpha = navBarIndicatorAlpha.coerceAtLeast(0.5f)
+                )
             )
             Surface(
                 modifier = Modifier
@@ -203,20 +249,34 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .windowInsetsPadding(WindowInsets.navigationBars),
                 shape = RoundedCornerShape(navBarCornerRadius.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shadowElevation = 8.dp,
-                tonalElevation = 4.dp
+                border = BorderStroke(
+                    0.8.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+                ),
+                shadowElevation = 10.dp,
+                tonalElevation = 6.dp
             ) {
                 NavigationBar(
-                    modifier = Modifier.fillMaxWidth().height(navBarHeight.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(navBarHeight.dp),
                     containerColor = Color.Transparent,
                     tonalElevation = 0.dp,
                     windowInsets = WindowInsets(0, 0, 0, 0)
                 ) {
                     DashboardNavItems(
                         selectedTab = selectedTab,
-                        onSelectTab = { 
-                            viewModel.setSelectedDashboardTab(it)
-                            coroutineScope.launch { pagerState.animateScrollToPage(it) }
+                        onSelectTab = { target ->
+                            viewModel.setSelectedDashboardTab(target)
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(
+                                    page = target,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioNoBouncy,
+                                        stiffness = Spring.StiffnessMediumLow
+                                    )
+                                )
+                            }
                         },
                         navItemColors = navItemColors,
                         alwaysShowLabel = navBarLabelMode == "Always",
@@ -230,6 +290,8 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
         }
     }
+
+    // Modal dialog triggers
     if (showAddCourseDialog) {
         AddCourseDialog(
             viewModel = viewModel,
@@ -257,47 +319,131 @@ private fun RowScope.DashboardNavItems(
     featureSelfStudyEnabled: Boolean,
     featureAnalyticsEnabled: Boolean
 ) {
+    // 0: Home
+    val homeSelected = selectedTab == 0
+    val homeScale by animateFloatAsState(
+        targetValue = if (homeSelected) 1.12f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        label = "home_nav_scale"
+    )
     NavigationBarItem(
-        icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
-        label = if (hideLabels) null else { { Text("Home") } },
-        selected = selectedTab == 0,
+        icon = {
+            Icon(
+                Icons.Rounded.Home,
+                contentDescription = "Home",
+                modifier = Modifier.graphicsLayer {
+                    scaleX = homeScale
+                    scaleY = homeScale
+                }
+            )
+        },
+        label = if (hideLabels) null else { { Text("Home", fontWeight = if (homeSelected) FontWeight.Bold else FontWeight.Medium) } },
+        selected = homeSelected,
         onClick = { onSelectTab(0) },
         colors = navItemColors,
         alwaysShowLabel = alwaysShowLabel
     )
+
+    // 1: Courses
+    val coursesSelected = selectedTab == 1
+    val coursesScale by animateFloatAsState(
+        targetValue = if (coursesSelected) 1.12f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        label = "courses_nav_scale"
+    )
     NavigationBarItem(
-        icon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = "Courses") },
-        label = if (hideLabels) null else { { Text("Courses") } },
-        selected = selectedTab == 1,
+        icon = {
+            Icon(
+                Icons.AutoMirrored.Rounded.MenuBook,
+                contentDescription = "Courses",
+                modifier = Modifier.graphicsLayer {
+                    scaleX = coursesScale
+                    scaleY = coursesScale
+                }
+            )
+        },
+        label = if (hideLabels) null else { { Text("Courses", fontWeight = if (coursesSelected) FontWeight.Bold else FontWeight.Medium) } },
+        selected = coursesSelected,
         onClick = { onSelectTab(1) },
         colors = navItemColors,
         alwaysShowLabel = alwaysShowLabel
     )
+
+    // 2: Subjects
     if (featureSubjectEnabled && !fuseSubjectsCourses) {
+        val subjectsSelected = selectedTab == 2
+        val subjectsScale by animateFloatAsState(
+            targetValue = if (subjectsSelected) 1.12f else 1.0f,
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+            label = "subjects_nav_scale"
+        )
         NavigationBarItem(
-            icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
-            label = if (hideLabels) null else { { Text("Subjects") } },
-            selected = selectedTab == 2,
+            icon = {
+                Icon(
+                    Icons.Rounded.FolderOpen,
+                    contentDescription = "Subjects",
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = subjectsScale
+                        scaleY = subjectsScale
+                    }
+                )
+            },
+            label = if (hideLabels) null else { { Text("Subjects", fontWeight = if (subjectsSelected) FontWeight.Bold else FontWeight.Medium) } },
+            selected = subjectsSelected,
             onClick = { onSelectTab(2) },
             colors = navItemColors,
             alwaysShowLabel = alwaysShowLabel
         )
     }
+
+    // 3: Tasks (SelfStudy)
     if (featureSelfStudyEnabled) {
+        val tasksSelected = selectedTab == 3
+        val tasksScale by animateFloatAsState(
+            targetValue = if (tasksSelected) 1.12f else 1.0f,
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+            label = "tasks_nav_scale"
+        )
         NavigationBarItem(
-            icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Tasks") },
-            label = if (hideLabels) null else { { Text("Tasks") } },
-            selected = selectedTab == 3,
+            icon = {
+                Icon(
+                    Icons.Rounded.AutoStories,
+                    contentDescription = "Tasks",
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = tasksScale
+                        scaleY = tasksScale
+                    }
+                )
+            },
+            label = if (hideLabels) null else { { Text("Tasks", fontWeight = if (tasksSelected) FontWeight.Bold else FontWeight.Medium) } },
+            selected = tasksSelected,
             onClick = { onSelectTab(3) },
             colors = navItemColors,
             alwaysShowLabel = alwaysShowLabel
         )
     }
+
+    // 4: Analytics
     if (featureAnalyticsEnabled) {
+        val analyticsSelected = selectedTab == 4
+        val analyticsScale by animateFloatAsState(
+            targetValue = if (analyticsSelected) 1.12f else 1.0f,
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+            label = "analytics_nav_scale"
+        )
         NavigationBarItem(
-            icon = { Icon(Icons.Rounded.Analytics, contentDescription = "Analytics") },
-            label = if (hideLabels) null else { { Text("Analytics") } },
-            selected = selectedTab == 4,
+            icon = {
+                Icon(
+                    Icons.Rounded.Analytics,
+                    contentDescription = "Analytics",
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = analyticsScale
+                        scaleY = analyticsScale
+                    }
+                )
+            },
+            label = if (hideLabels) null else { { Text("Analytics", fontWeight = if (analyticsSelected) FontWeight.Bold else FontWeight.Medium) } },
+            selected = analyticsSelected,
             onClick = { onSelectTab(4) },
             colors = navItemColors,
             alwaysShowLabel = alwaysShowLabel

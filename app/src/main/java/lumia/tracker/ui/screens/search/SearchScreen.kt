@@ -1,8 +1,9 @@
 package lumia.tracker.ui.screens.search
 
+import android.widget.Toast
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,28 +20,30 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import lumia.tracker.R
 import lumia.tracker.model.*
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
+import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.theme.animateItemEntry
 import lumia.tracker.ui.util.getTagColors
 import lumia.tracker.viewmodel.ScholarViewModel
 import java.text.SimpleDateFormat
@@ -56,6 +59,48 @@ data class SearchResult(
     val isCompleted: Boolean = false,
     val originalEntity: Any
 )
+
+/**
+ * Builds an AnnotatedString that highlights search query occurrences with accent styling.
+ */
+private fun buildHighlightedText(
+    text: String,
+    query: String,
+    highlightColor: Color,
+    highlightFontWeight: FontWeight = FontWeight.Bold
+): AnnotatedString {
+    val trimmedQuery = query.trim()
+    if (trimmedQuery.isEmpty() || !text.contains(trimmedQuery, ignoreCase = true)) {
+        return AnnotatedString(text)
+    }
+
+    return buildAnnotatedString {
+        var currentIndex = 0
+        val lowerText = text.lowercase(Locale.getDefault())
+        val lowerQuery = trimmedQuery.lowercase(Locale.getDefault())
+        val queryLength = trimmedQuery.length
+
+        while (currentIndex < text.length) {
+            val matchIndex = lowerText.indexOf(lowerQuery, currentIndex)
+            if (matchIndex == -1) {
+                append(text.substring(currentIndex))
+                break
+            }
+            if (matchIndex > currentIndex) {
+                append(text.substring(currentIndex, matchIndex))
+            }
+            pushStyle(
+                SpanStyle(
+                    color = highlightColor,
+                    fontWeight = highlightFontWeight
+                )
+            )
+            append(text.substring(matchIndex, matchIndex + queryLength))
+            pop()
+            currentIndex = matchIndex + queryLength
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -77,214 +122,193 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
     var selectedFilter by remember { mutableStateOf("All") }
     var selectedResultForDialog by remember { mutableStateOf<SearchResult?>(null) }
 
-    // Aggregate data and filter based on search query and category filter
-    val searchResults = remember(
-        searchQuery, selectedFilter, courses, subjects, chapters, topics, assignments, tasks, notes, testRecords
+    // Aggregate all data into a unified list
+    val allAggregatedResults = remember(
+        courses, subjects, chapters, topics, assignments, tasks, notes, testRecords
     ) {
-        val query = searchQuery.trim().lowercase()
         val list = mutableListOf<SearchResult>()
 
         // 1. Courses
-        if (selectedFilter == "All" || selectedFilter == "Courses") {
-            courses.forEach { c ->
-                if (query.isEmpty() || 
-                    c.name.lowercase().contains(query) || 
-                    c.code.lowercase().contains(query) || 
-                    c.instructor.lowercase().contains(query) || 
-                    c.description.lowercase().contains(query) || 
-                    c.tags.lowercase().contains(query)
-                ) {
-                    list.add(
-                        SearchResult(
-                            id = c.id,
-                            title = c.name,
-                            subtitle = if (c.code.isNotBlank()) "Code: ${c.code} • ${c.instructor}" else c.instructor,
-                            type = "Course",
-                            tags = c.tags,
-                            meta = c.description,
-                            originalEntity = c
-                        )
-                    )
-                }
-            }
+        courses.forEach { c ->
+            list.add(
+                SearchResult(
+                    id = c.id,
+                    title = c.name,
+                    subtitle = if (c.code.isNotBlank()) "Code: ${c.code} • ${c.instructor}" else c.instructor,
+                    type = "Course",
+                    tags = c.tags,
+                    meta = c.description,
+                    originalEntity = c
+                )
+            )
         }
 
         // 2. Subjects
-        if (selectedFilter == "All" || selectedFilter == "Subjects") {
-            subjects.forEach { s ->
-                if (query.isEmpty() || 
-                    s.name.lowercase().contains(query) || 
-                    s.tags.lowercase().contains(query)
-                ) {
-                    list.add(
-                        SearchResult(
-                            id = s.id,
-                            title = s.name,
-                            subtitle = "Subject Workspace",
-                            type = "Subject",
-                            tags = s.tags,
-                            originalEntity = s
-                        )
-                    )
-                }
-            }
+        subjects.forEach { s ->
+            list.add(
+                SearchResult(
+                    id = s.id,
+                    title = s.name,
+                    subtitle = "Subject Workspace",
+                    type = "Subject",
+                    tags = s.tags,
+                    originalEntity = s
+                )
+            )
         }
 
         // 3. Chapters
-        if (selectedFilter == "All" || selectedFilter == "Chapters") {
-            chapters.forEach { ch ->
-                val parentSubject = subjects.find { it.id == ch.subjectId }?.name ?: "Subject"
-                if (query.isEmpty() || 
-                    ch.name.lowercase().contains(query) || 
-                    ch.description.lowercase().contains(query) || 
-                    ch.tags.lowercase().contains(query)
-                ) {
-                    list.add(
-                        SearchResult(
-                            id = ch.id,
-                            title = ch.name,
-                            subtitle = "Chapter • Under: $parentSubject",
-                            type = "Chapter",
-                            tags = ch.tags,
-                            meta = ch.description,
-                            originalEntity = ch
-                        )
-                    )
-                }
-            }
+        chapters.forEach { ch ->
+            val parentSubject = subjects.find { it.id == ch.subjectId }?.name ?: "Subject"
+            list.add(
+                SearchResult(
+                    id = ch.id,
+                    title = ch.name,
+                    subtitle = "Chapter • In: $parentSubject",
+                    type = "Chapter",
+                    tags = ch.tags,
+                    meta = ch.description,
+                    originalEntity = ch
+                )
+            )
         }
 
         // 4. Topics
-        if (selectedFilter == "All" || selectedFilter == "Topics") {
-            topics.forEach { t ->
-                val parentSubject = subjects.find { it.id == t.subjectId }?.name ?: "Subject"
-                if (query.isEmpty() || 
-                    t.title.lowercase().contains(query) || 
-                    t.tags.lowercase().contains(query)
-                ) {
-                    list.add(
-                        SearchResult(
-                            id = t.id,
-                            title = t.title,
-                            subtitle = "Topic • Under: $parentSubject",
-                            type = "Topic",
-                            tags = t.tags,
-                            isCompleted = t.isCompleted,
-                            originalEntity = t
-                        )
-                    )
-                }
-            }
+        topics.forEach { t ->
+            val parentSubject = subjects.find { it.id == t.subjectId }?.name ?: "Subject"
+            list.add(
+                SearchResult(
+                    id = t.id,
+                    title = t.title,
+                    subtitle = "Topic • In: $parentSubject",
+                    type = "Topic",
+                    tags = t.tags,
+                    isCompleted = t.isCompleted,
+                    originalEntity = t
+                )
+            )
         }
 
         // 5. Assignments
-        if (selectedFilter == "All" || selectedFilter == "Assignments") {
-            assignments.forEach { a ->
-                val parentCourse = courses.find { it.id == a.courseId }?.name ?: "Course"
-                if (query.isEmpty() || 
-                    a.title.lowercase().contains(query) || 
-                    a.description.lowercase().contains(query) || 
-                    a.category.lowercase().contains(query) || 
-                    a.tags.lowercase().contains(query)
-                ) {
-                    list.add(
-                        SearchResult(
-                            id = a.id,
-                            title = a.title,
-                            subtitle = "Assignment • [${a.category}] in $parentCourse",
-                            type = "Assignment",
-                            tags = a.tags,
-                            meta = a.description,
-                            isCompleted = a.isCompleted,
-                            originalEntity = a
-                        )
-                    )
-                }
-            }
+        assignments.forEach { a ->
+            val parentCourse = courses.find { it.id == a.courseId }?.name ?: "Course"
+            list.add(
+                SearchResult(
+                    id = a.id,
+                    title = a.title,
+                    subtitle = "Assignment • [${a.category}] in $parentCourse",
+                    type = "Assignment",
+                    tags = a.tags,
+                    meta = a.description,
+                    isCompleted = a.isCompleted,
+                    originalEntity = a
+                )
+            )
         }
 
         // 6. Tasks
-        if (selectedFilter == "All" || selectedFilter == "Tasks") {
-            tasks.forEach { tk ->
-                if (query.isEmpty() || 
-                    tk.title.lowercase().contains(query) || 
-                    tk.description.lowercase().contains(query) || 
-                    tk.tags.lowercase().contains(query)
-                ) {
-                    list.add(
-                        SearchResult(
-                            id = tk.id,
-                            title = tk.title,
-                            subtitle = "Task • Due: " + (tk.dueDateMillis?.let {
-                                SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
-                            } ?: "No Deadline"),
-                            type = "Task",
-                            tags = tk.tags,
-                            meta = tk.description,
-                            isCompleted = tk.isCompleted,
-                            originalEntity = tk
-                        )
-                    )
-                }
-            }
+        tasks.forEach { tk ->
+            val dueStr = tk.dueDateMillis?.let {
+                SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+            } ?: "No Deadline"
+            list.add(
+                SearchResult(
+                    id = tk.id,
+                    title = tk.title,
+                    subtitle = "Task • Due: $dueStr",
+                    type = "Task",
+                    tags = tk.tags,
+                    meta = tk.description,
+                    isCompleted = tk.isCompleted,
+                    originalEntity = tk
+                )
+            )
         }
 
         // 7. Notes
-        if (selectedFilter == "All" || selectedFilter == "Notes") {
-            notes.forEach { n ->
-                val associatedCourse = courses.find { it.id == n.courseId }?.name
-                val associatedSubject = subjects.find { it.id == n.subjectId }?.name
-                val origin = when {
-                    associatedCourse != null -> "Course: $associatedCourse"
-                    associatedSubject != null -> "Subject: $associatedSubject"
-                    else -> "Quick Note"
-                }
-                if (query.isEmpty() || 
-                    n.content.lowercase().contains(query) || 
-                    n.tag.lowercase().contains(query)
-                ) {
-                    list.add(
-                        SearchResult(
-                            id = n.id,
-                            title = if (n.content.length > 50) n.content.take(50) + "..." else n.content,
-                            subtitle = "Quick Note • $origin",
-                            type = "Note",
-                            tags = n.tag,
-                            meta = n.content,
-                            originalEntity = n
-                        )
-                    )
-                }
+        notes.forEach { n ->
+            val associatedCourse = courses.find { it.id == n.courseId }?.name
+            val associatedSubject = subjects.find { it.id == n.subjectId }?.name
+            val origin = when {
+                associatedCourse != null -> "Course: $associatedCourse"
+                associatedSubject != null -> "Subject: $associatedSubject"
+                else -> "Quick Note"
             }
+            list.add(
+                SearchResult(
+                    id = n.id,
+                    title = if (n.content.length > 60) n.content.take(60) + "..." else n.content,
+                    subtitle = "Quick Note • $origin",
+                    type = "Note",
+                    tags = n.tag,
+                    meta = n.content,
+                    originalEntity = n
+                )
+            )
         }
 
         // 8. Test Records
-        if (selectedFilter == "All" || selectedFilter == "Test Records") {
-            testRecords.forEach { tr ->
-                val parentSubject = subjects.find { it.id == tr.subjectId }?.name
-                val parentCourse = courses.find { it.id == tr.courseId }?.name
-                val origin = parentSubject ?: parentCourse ?: "Workspace"
-                if (query.isEmpty() || 
-                    tr.title.lowercase().contains(query) || 
-                    tr.notes.lowercase().contains(query) || 
-                    tr.tags.lowercase().contains(query)
-                ) {
-                    list.add(
-                        SearchResult(
-                            id = tr.id,
-                            title = "${tr.title} • Grade: ${tr.marksObtained}/${tr.totalMarks}",
-                            subtitle = "Test Record • Under: $origin",
-                            type = "Test Record",
-                            tags = tr.tags,
-                            meta = tr.notes,
-                            originalEntity = tr
-                        )
-                    )
-                }
-            }
+        testRecords.forEach { tr ->
+            val parentSubject = subjects.find { it.id == tr.subjectId }?.name
+            val parentCourse = courses.find { it.id == tr.courseId }?.name
+            val origin = parentSubject ?: parentCourse ?: "Workspace"
+            list.add(
+                SearchResult(
+                    id = tr.id,
+                    title = "${tr.title} • Score: ${tr.marksObtained}/${tr.totalMarks}",
+                    subtitle = "Test Record • Under: $origin",
+                    type = "Test Record",
+                    tags = tr.tags,
+                    meta = tr.notes,
+                    originalEntity = tr
+                )
+            )
         }
 
         list
+    }
+
+    // Filter results based on search query and category
+    val searchResults = remember(searchQuery, selectedFilter, allAggregatedResults) {
+        val query = searchQuery.trim().lowercase(Locale.getDefault())
+
+        allAggregatedResults.filter { item ->
+            val matchesCategory = when (selectedFilter) {
+                "All" -> true
+                "Courses" -> item.type == "Course"
+                "Subjects" -> item.type == "Subject"
+                "Tasks" -> item.type == "Task"
+                "Assignments" -> item.type == "Assignment"
+                "Notes" -> item.type == "Note"
+                "Tests" -> item.type == "Test Record"
+                "Chapters" -> item.type == "Chapter"
+                "Topics" -> item.type == "Topic"
+                else -> item.type.equals(selectedFilter, ignoreCase = true)
+            }
+
+            if (!matchesCategory) return@filter false
+
+            if (query.isEmpty()) return@filter true
+
+            item.title.lowercase(Locale.getDefault()).contains(query) ||
+                    item.subtitle.lowercase(Locale.getDefault()).contains(query) ||
+                    item.meta.lowercase(Locale.getDefault()).contains(query) ||
+                    item.tags.lowercase(Locale.getDefault()).contains(query)
+        }
+    }
+
+    // Active tags extracted across workspace
+    val activeTags = remember(courses, subjects, chapters, topics, assignments, tasks, notes, testRecords) {
+        val tagsSet = linkedSetOf<String>()
+        courses.forEach { tagsSet.addAll(it.tags.split(",").map { t -> t.trim().lowercase(Locale.getDefault()) }.filter { it.isNotEmpty() }) }
+        subjects.forEach { tagsSet.addAll(it.tags.split(",").map { t -> t.trim().lowercase(Locale.getDefault()) }.filter { it.isNotEmpty() }) }
+        chapters.forEach { tagsSet.addAll(it.tags.split(",").map { t -> t.trim().lowercase(Locale.getDefault()) }.filter { it.isNotEmpty() }) }
+        topics.forEach { tagsSet.addAll(it.tags.split(",").map { t -> t.trim().lowercase(Locale.getDefault()) }.filter { it.isNotEmpty() }) }
+        assignments.forEach { tagsSet.addAll(it.tags.split(",").map { t -> t.trim().lowercase(Locale.getDefault()) }.filter { it.isNotEmpty() }) }
+        tasks.forEach { tagsSet.addAll(it.tags.split(",").map { t -> t.trim().lowercase(Locale.getDefault()) }.filter { it.isNotEmpty() }) }
+        notes.forEach { tagsSet.addAll(it.tag.split(",").map { t -> t.trim().lowercase(Locale.getDefault()) }.filter { it.isNotEmpty() }) }
+        testRecords.forEach { tagsSet.addAll(it.tags.split(",").map { t -> t.trim().lowercase(Locale.getDefault()) }.filter { it.isNotEmpty() }) }
+        tagsSet.take(8).toList()
     }
 
     Scaffold(
@@ -297,7 +321,7 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                // Header with Back button
+                // Header Bar with Back Button & Title
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -309,140 +333,168 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Global Search Hub",
-                            style = MaterialTheme.typography.headlineSmall,
+                            text = "Search Workspace",
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "Explore everything in your academic workspace",
+                            text = "Instant access to all study materials",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Search Input Box
-                val searchModifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-
-                Row(
-                    modifier = searchModifier
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // Full-width Search Input Bar
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                    ),
+                    shadowElevation = 0.5.dp
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Search,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    TextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = {
-                            Text(
-                                "Type notes, tags, titles or descriptions...",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                            )
-                        },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            disabledContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .testTag("search_text_input")
-                    )
-                    if (searchQuery.isNotEmpty()) {
-                        BouncyIconButton(
-                            onClick = { searchQuery = "" },
-                            modifier = Modifier.testTag("search_clear_button")
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = {
+                                Text(
+                                    text = "Search courses, tasks, notes, tags...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("search_text_input")
+                        )
+
+                        AnimatedVisibility(
+                            visible = searchQuery.isNotEmpty(),
+                            enter = fadeIn() + scaleIn(),
+                            exit = fadeOut() + scaleOut()
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Close,
-                                contentDescription = "Clear search query",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            BouncyIconButton(
+                                onClick = { searchQuery = "" },
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .testTag("search_clear_button")
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Close,
+                                            contentDescription = "Clear search",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Scrollable category filter row
-                val categories = listOf("All", "Courses", "Subjects", "Chapters", "Topics", "Assignments", "Tasks", "Notes", "Test Records")
+                // Horizontal Filter Chips
+                val categories = listOf(
+                    CategoryItem("All", Icons.Rounded.GridView),
+                    CategoryItem("Courses", Icons.Rounded.School),
+                    CategoryItem("Subjects", Icons.Rounded.AutoStories),
+                    CategoryItem("Tasks", Icons.Rounded.TaskAlt),
+                    CategoryItem("Assignments", Icons.Rounded.Assignment),
+                    CategoryItem("Notes", Icons.Rounded.StickyNote2),
+                    CategoryItem("Tests", Icons.Rounded.Grade),
+                    CategoryItem("Chapters", Icons.Rounded.ListAlt),
+                    CategoryItem("Topics", Icons.Rounded.BubbleChart)
+                )
+
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 4.dp)
+                    contentPadding = PaddingValues(horizontal = 2.dp)
                 ) {
-                    items(categories) { cat ->
-                        val isSelected = selectedFilter == cat
-                        val filterBg = if (isSelected) {
+                    items(categories) { catItem ->
+                        val isSelected = selectedFilter == catItem.name
+                        val chipBg = if (isSelected) {
                             MaterialTheme.colorScheme.primary
                         } else {
                             MaterialTheme.colorScheme.surfaceContainerHigh
                         }
-                        val filterContentColor = if (isSelected) {
+                        val chipContentColor = if (isSelected) {
                             MaterialTheme.colorScheme.onPrimary
                         } else {
-                            MaterialTheme.colorScheme.onSurface
+                            MaterialTheme.colorScheme.onSurfaceVariant
                         }
 
-                        Box(
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = chipBg,
+                            border = if (!isSelected) {
+                                BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            } else null,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
-                                .background(filterBg)
-                                .clickable { selectedFilter = cat }
-                                .padding(horizontal = 14.dp, vertical = 8.dp)
-                                .testTag("filter_chip_$cat"),
-                            contentAlignment = Alignment.Center
+                                .clickable { selectedFilter = catItem.name }
+                                .testTag("filter_chip_${catItem.name}")
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                val catIcon = when(cat) {
-                                    "Courses" -> Icons.Rounded.School
-                                    "Subjects" -> Icons.Rounded.AutoStories
-                                    "Chapters" -> Icons.Rounded.ListAlt
-                                    "Topics" -> Icons.Rounded.BubbleChart
-                                    "Assignments" -> Icons.Rounded.Assignment
-                                    "Tasks" -> Icons.Rounded.TaskAlt
-                                    "Notes" -> Icons.Rounded.StickyNote2
-                                    "Test Records" -> Icons.Rounded.Grade
-                                    else -> Icons.Rounded.GridView
-                                }
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
                                 Icon(
-                                    imageVector = catIcon,
+                                    imageVector = catItem.icon,
                                     contentDescription = null,
-                                    tint = filterContentColor,
+                                    tint = chipContentColor,
                                     modifier = Modifier.size(16.dp)
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = cat,
+                                    text = catItem.name,
                                     style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = filterContentColor
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = chipContentColor
                                 )
                             }
                         }
@@ -457,256 +509,57 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                 .fillMaxSize()
         ) {
             if (searchResults.isEmpty()) {
-                // Empty state or tip illustration
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    val searchIllustrationIcon = if (searchQuery.trim().isEmpty()) Icons.Rounded.TravelExplore else Icons.Rounded.SearchOff
-                    val explanationText = if (searchQuery.trim().isEmpty()) {
-                        "Explore your courses, subjects, assignments, chapters, topics, notes, and records smoothly in real-time."
-                    } else {
-                        "No results found for \"$searchQuery\". Try broadening your filters or checking spelling."
-                    }
-
-                    Icon(
-                        imageVector = searchIllustrationIcon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                        modifier = Modifier.size(120.dp)
+                // Expressive Empty State
+                if (searchQuery.trim().isEmpty()) {
+                    // "Search your workspace" default state
+                    SearchInitialWorkspaceView(
+                        activeTags = activeTags,
+                        onTagClick = { tag -> searchQuery = tag },
+                        onCategorySelect = { cat -> selectedFilter = cat }
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Text(
-                        text = if (searchQuery.trim().isEmpty()) "Global Study Explorer" else "No matching items",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                } else {
+                    // "No results found" empty state
+                    SearchNoResultsView(
+                        query = searchQuery,
+                        selectedFilter = selectedFilter,
+                        onClearSearch = { searchQuery = "" },
+                        onResetFilter = { selectedFilter = "All" }
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = explanationText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(0.85f)
-                    )
-
-                    if (searchQuery.trim().isEmpty()) {
-                        Spacer(modifier = Modifier.height(32.dp))
-                        Text(
-                            "Try searching tags like:",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        // Build unique active tags suggested row
-                        val activeTags = remember(courses, subjects, chapters, topics, assignments, tasks, testRecords) {
-                            val tagsSet = mutableSetOf<String>()
-                            courses.forEach { tagsSet.addAll(it.tags.split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }) }
-                            subjects.forEach { tagsSet.addAll(it.tags.split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }) }
-                            chapters.forEach { tagsSet.addAll(it.tags.split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }) }
-                            topics.forEach { tagsSet.addAll(it.tags.split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }) }
-                            assignments.forEach { tagsSet.addAll(it.tags.split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }) }
-                            tasks.forEach { tagsSet.addAll(it.tags.split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }) }
-                            testRecords.forEach { tagsSet.addAll(it.tags.split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }) }
-                            tagsSet.take(5)
-                        }
-
-                        if (activeTags.isNotEmpty()) {
-                            FlowRow(
-                                horizontalArrangement = Arrangement.Center,
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                maxItemsInEachRow = 3,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                activeTags.forEach { t ->
-                                    val colors = getTagColors(t)
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(horizontal = 4.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .background(colors.first)
-                                            .clickable { searchQuery = t }
-                                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                                    ) {
-                                        Text("#$t", color = colors.second, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                        } else {
-                            Text(
-                                "No tags created yet! Create them on topics or assignments.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
                 }
             } else {
+                // Results List with Staggered Animation and Highlighted Matches
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(searchResults) { result ->
-                        ScholarCard(
+                    items(
+                        items = searchResults,
+                        key = { "${it.type}_${it.id}" }
+                    ) { result ->
+                        val index = searchResults.indexOf(result)
+                        SearchResultItemCard(
+                            result = result,
+                            searchQuery = searchQuery,
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .animateItemEntry(index)
                                 .testTag("search_result_item_${result.type}_${result.id}"),
+                            onTagClick = { tag -> searchQuery = tag },
                             onClick = {
                                 when (result.type) {
                                     "Course" -> navController.navigate("courseDetail/${result.id}")
                                     "Subject" -> navController.navigate("subjectDetail/${result.id}")
-                                    else -> {
-                                        selectedResultForDialog = result
-                                    }
+                                    else -> selectedResultForDialog = result
                                 }
                             }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                            ) {
-                                // Result Type Badge and title
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    val badgeColor = when (result.type) {
-                                        "Course" -> MaterialTheme.colorScheme.primary
-                                        "Subject" -> MaterialTheme.colorScheme.secondary
-                                        "Chapter" -> MaterialTheme.colorScheme.tertiary
-                                        "Topic" -> MaterialTheme.colorScheme.error
-                                        "Assignment" -> MaterialTheme.colorScheme.primary
-                                        "Task" -> MaterialTheme.colorScheme.secondary
-                                        "Note" -> MaterialTheme.colorScheme.tertiary
-                                        else -> MaterialTheme.colorScheme.outline
-                                    }
-
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(badgeColor.copy(alpha = 0.15f))
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text(
-                                            text = result.type.uppercase(),
-                                            color = badgeColor,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 1.sp
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(8.dp))
-
-                                    if (result.isCompleted) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.CheckCircle,
-                                            contentDescription = "Completed",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                    }
-
-                                    Spacer(modifier = Modifier.weight(1f))
-
-                                    val itemIcon = when (result.type) {
-                                        "Course" -> Icons.Rounded.School
-                                        "Subject" -> Icons.Rounded.AutoStories
-                                        "Chapter" -> Icons.Rounded.ListAlt
-                                        "Topic" -> Icons.Rounded.BubbleChart
-                                        "Assignment" -> Icons.Rounded.Assignment
-                                        "Task" -> Icons.Rounded.TaskAlt
-                                        "Note" -> Icons.Rounded.StickyNote2
-                                        else -> Icons.Rounded.Grade
-                                    }
-                                    Icon(
-                                        imageVector = itemIcon,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                // Title
-                                Text(
-                                    text = result.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-
-                                if (result.subtitle.isNotBlank()) {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = result.subtitle,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
-                                if (result.meta.isNotBlank()) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = result.meta,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                        maxLines = 3,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-
-                                // Tags inside result card
-                                val tagList = remember(result.tags) {
-                                    result.tags.split(",")
-                                        .map { it.trim() }
-                                        .filter { it.isNotBlank() }
-                                }
-                                if (tagList.isNotEmpty()) {
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    FlowRow(
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        tagList.forEach { tag ->
-                                            val colors = getTagColors(tag)
-                                            Box(
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(8.dp))
-                                                    .background(colors.first)
-                                                    .clickable { searchQuery = tag } // SATISFYING INTERACTIVE FILTERING
-                                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                            ) {
-                                                Text(
-                                                    text = "#$tag",
-                                                    color = colors.second,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        )
                     }
                 }
             }
         }
     }
 
-    // Interactive details dialog
+    // Quick Action Details Modal
     selectedResultForDialog?.let { result ->
         SearchDetailDialog(
             result = result,
@@ -714,6 +567,350 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
             navController = navController,
             onDismiss = { selectedResultForDialog = null }
         )
+    }
+}
+
+private data class CategoryItem(val name: String, val icon: ImageVector)
+
+@Composable
+private fun SearchResultItemCard(
+    result: SearchResult,
+    searchQuery: String,
+    modifier: Modifier = Modifier,
+    onTagClick: (String) -> Unit,
+    onClick: () -> Unit
+) {
+    val typeConfig = getEntityTypeConfig(result.type)
+    val highlightColor = MaterialTheme.colorScheme.primary
+
+    ScholarCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Header Row: Entity Type Pill + Completion + Origin Icon
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Entity Type Pill
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = typeConfig.color.copy(alpha = 0.12f),
+                    border = BorderStroke(0.5.dp, typeConfig.color.copy(alpha = 0.25f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = typeConfig.icon,
+                            contentDescription = null,
+                            tint = typeConfig.color,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = result.type.uppercase(Locale.getDefault()),
+                            color = typeConfig.color,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                if (result.isCompleted) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.CheckCircle,
+                                contentDescription = "Completed",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = "Done",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Icon(
+                    imageVector = Icons.Rounded.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Title with Highlighted Matches
+            Text(
+                text = buildHighlightedText(result.title, searchQuery, highlightColor),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            // Subtitle
+            if (result.subtitle.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = buildHighlightedText(result.subtitle, searchQuery, highlightColor),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Description / Meta context
+            if (result.meta.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = buildHighlightedText(result.meta, searchQuery, highlightColor),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Tag Pills
+            val tagList = remember(result.tags) {
+                result.tags.split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+            }
+            if (tagList.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    tagList.forEach { tag ->
+                        val colors = getTagColors(tag)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(colors.first)
+                                .clickable { onTagClick(tag) }
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "#$tag",
+                                color = colors.second,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SearchInitialWorkspaceView(
+    activeTags: List<String>,
+    onTagClick: (String) -> Unit,
+    onCategorySelect: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+            modifier = Modifier.size(80.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Rounded.TravelExplore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Search your workspace",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = "Explore your courses, subjects, tasks, assignments, notes, and records in real-time.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(0.85f)
+        )
+
+        if (activeTags.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "POPULAR TAGS",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                letterSpacing = 1.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                maxItemsInEachRow = 4,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                activeTags.forEach { tag ->
+                    val colors = getTagColors(tag)
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(colors.first)
+                            .clickable { onTagClick(tag) }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "#$tag",
+                            color = colors.second,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchNoResultsView(
+    query: String,
+    selectedFilter: String,
+    onClearSearch: () -> Unit,
+    onResetFilter: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
+            modifier = Modifier.size(80.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Rounded.SearchOff,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "No results found",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = "We couldn't find any matches for \"$query\" in ${if (selectedFilter == "All") "your workspace" else selectedFilter}.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(0.9f)
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (selectedFilter != "All") {
+                BouncyButton(
+                    onClick = onResetFilter,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Search All Categories", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                }
+            }
+
+            BouncyButton(
+                onClick = onClearSearch,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text("Clear Query", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+private data class EntityTypeConfig(val color: Color, val icon: ImageVector)
+
+@Composable
+private fun getEntityTypeConfig(type: String): EntityTypeConfig {
+    return when (type) {
+        "Course" -> EntityTypeConfig(MaterialTheme.colorScheme.primary, Icons.Rounded.School)
+        "Subject" -> EntityTypeConfig(MaterialTheme.colorScheme.secondary, Icons.Rounded.AutoStories)
+        "Task" -> EntityTypeConfig(MaterialTheme.colorScheme.tertiary, Icons.Rounded.TaskAlt)
+        "Assignment" -> EntityTypeConfig(MaterialTheme.colorScheme.primary, Icons.Rounded.Assignment)
+        "Note" -> EntityTypeConfig(MaterialTheme.colorScheme.secondary, Icons.Rounded.StickyNote2)
+        "Test Record" -> EntityTypeConfig(MaterialTheme.colorScheme.error, Icons.Rounded.Grade)
+        "Chapter" -> EntityTypeConfig(MaterialTheme.colorScheme.tertiary, Icons.Rounded.ListAlt)
+        "Topic" -> EntityTypeConfig(MaterialTheme.colorScheme.outline, Icons.Rounded.BubbleChart)
+        else -> EntityTypeConfig(MaterialTheme.colorScheme.primary, Icons.Rounded.GridView)
     }
 }
 
@@ -727,45 +924,51 @@ fun SearchDetailDialog(
 ) {
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
+    val typeConfig = getEntityTypeConfig(result.type)
 
     Dialog(onDismissRequest = onDismiss) {
-        val cardModifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-
-        Box(modifier = cardModifier.padding(24.dp)) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            border = BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+            shadowElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Header of dialog
+                // Header with Entity Badge + Close Button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val badgeColor = when (result.type) {
-                        "Chapter" -> MaterialTheme.colorScheme.tertiary
-                        "Topic" -> MaterialTheme.colorScheme.error
-                        "Assignment" -> MaterialTheme.colorScheme.primary
-                        "Task" -> MaterialTheme.colorScheme.secondary
-                        "Note" -> MaterialTheme.colorScheme.tertiary
-                        else -> MaterialTheme.colorScheme.outline
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(badgeColor.copy(alpha = 0.15f))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = typeConfig.color.copy(alpha = 0.15f),
+                        border = BorderStroke(0.5.dp, typeConfig.color.copy(alpha = 0.3f))
                     ) {
-                        Text(
-                            text = result.type.uppercase(),
-                            color = badgeColor,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = typeConfig.icon,
+                                contentDescription = null,
+                                tint = typeConfig.color,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = result.type.uppercase(Locale.getDefault()),
+                                color = typeConfig.color,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.8.sp
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
@@ -776,7 +979,7 @@ fun SearchDetailDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
-                            contentDescription = "Close details modal",
+                            contentDescription = "Close details",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -790,12 +993,14 @@ fun SearchDetailDialog(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = result.subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (result.subtitle.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = result.subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -804,10 +1009,11 @@ fun SearchDetailDialog(
                 if (result.meta.isNotBlank()) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            "Description / Content",
+                            text = "Details",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
@@ -818,7 +1024,7 @@ fun SearchDetailDialog(
                     }
                 }
 
-                // Tags details
+                // Tags Details
                 val tagList = remember(result.tags) {
                     result.tags.split(",")
                         .map { it.trim() }
@@ -827,10 +1033,11 @@ fun SearchDetailDialog(
                 if (tagList.isNotEmpty()) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            "Associated Tags",
+                            text = "Tags",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         FlowRow(
@@ -857,35 +1064,39 @@ fun SearchDetailDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // Contextual Actions
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // 1. Copy Content action for Note
+                    // Copy Note Content action
                     if (result.type == "Note") {
                         BouncyButton(
                             onClick = {
                                 clipboardManager.setText(AnnotatedString(result.meta))
+                                Toast.makeText(context, "Note copied to clipboard", Toast.LENGTH_SHORT).show()
                                 onDismiss()
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                             ),
+                            shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Copy Note Content", style = MaterialTheme.typography.labelLarge)
+                                Text("Copy Note Content", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
 
-                    // 2. Toggle completion status action for Topic, Assignment, Task
+                    // Toggle completion status action for Topic, Assignment, Task
                     if (result.type == "Topic" || result.type == "Assignment" || result.type == "Task") {
                         val isCurrentCompleted = result.isCompleted
                         val btnText = if (isCurrentCompleted) "Mark Incomplete" else "Mark Complete"
@@ -904,17 +1115,20 @@ fun SearchDetailDialog(
                                 containerColor = if (isCurrentCompleted) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primaryContainer,
                                 contentColor = if (isCurrentCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimaryContainer
                             ),
+                            shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 Icon(btnIcon, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(btnText, style = MaterialTheme.typography.labelLarge)
+                                Text(btnText, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
 
-                    // 3. Open Pomodoro Focus timer action for Tasks and Assignments
+                    // Start Pomodoro Focus timer action
                     if (result.type == "Task" || result.type == "Assignment" || result.type == "Topic") {
                         BouncyButton(
                             onClick = {
@@ -931,23 +1145,22 @@ fun SearchDetailDialog(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary
                             ),
+                            shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 Icon(Icons.Rounded.Timer, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Start Focus Session", style = MaterialTheme.typography.labelLarge)
+                                Text("Start Focus Session", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
 
-                    // Simple back action
-                    BouncyButton(
+                    // Close action
+                    BouncyTextButton(
                         onClick = onDismiss,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Close", style = MaterialTheme.typography.labelLarge)

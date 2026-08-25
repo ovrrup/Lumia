@@ -3,67 +3,77 @@ package lumia.tracker.ui.screens.settings.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
- * Standard settings action item row with iOS squircle icon badge, title, subtitle, and chevron.
+ * SettingsActionItem - Refined action item row with 34dp rounded squircle icon badge,
+ * crisp title, subtle subtitle, sleek trailing chevron, and >=48dp touch target.
  */
 @Composable
 fun SettingsActionItem(
     title: String,
     subtitle: String = "",
     icon: ImageVector,
+    modifier: Modifier = Modifier,
     isDestructive: Boolean = false,
     inCard: Boolean = false,
-    iconBgColor: androidx.compose.ui.graphics.Color? = null,
-    iconTint: androidx.compose.ui.graphics.Color? = null,
+    iconBgColor: Color? = null,
+    iconTint: Color? = null,
+    trailingContent: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
-    val contentColor = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-    val badgeShape = RoundedCornerShape(9.dp)
-    val actualBg = iconBgColor ?: (
-        if (isDestructive) MaterialTheme.colorScheme.error
-        else MaterialTheme.colorScheme.primary
-    )
-    val actualTint = iconTint ?: (
-        if (isDestructive) androidx.compose.ui.graphics.Color.White
-        else androidx.compose.ui.graphics.Color.White
-    )
+    val titleColor = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+    val badgeShape = RoundedCornerShape(10.dp)
+
+    val badgeBg = iconBgColor ?: if (isDestructive) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.primaryContainer
+    }
+
+    val badgeTint = iconTint ?: if (iconBgColor != null) {
+        Color.White
+    } else if (isDestructive) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = 52.dp)
+            .clip(RoundedCornerShape(14.dp))
             .clickable { onClick() }
             .padding(
-                horizontal = if (inCard) 6.dp else 14.dp,
+                horizontal = if (inCard) 8.dp else 14.dp,
                 vertical = 10.dp
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(32.dp)
+                .size(34.dp)
                 .clip(badgeShape)
-                .background(actualBg),
+                .background(badgeBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = actualTint,
-                modifier = Modifier.size(18.dp)
+                tint = badgeTint,
+                modifier = Modifier.size(19.dp)
             )
         }
 
@@ -74,23 +84,29 @@ fun SettingsActionItem(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = contentColor
+                color = titleColor
             )
             if (subtitle.isNotBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        Icon(
-            imageVector = Icons.Rounded.ChevronRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-            modifier = Modifier.size(20.dp)
-        )
+        if (trailingContent != null) {
+            Spacer(modifier = Modifier.width(8.dp))
+            trailingContent()
+        } else {
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 }

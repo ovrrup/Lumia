@@ -3,8 +3,9 @@ package lumia.tracker.ui.screens.focus
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,17 +20,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.service.AodAccessibilityService
 import lumia.tracker.ui.components.BouncyButton
+import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.util.TrueAodManager
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
  * PomodoroControls - Primary tactile interaction suite for focus sessions.
- * Features start/pause/resume/skip/stop actions alongside True AOD engine selection,
- * fullscreen zen, and timer settings.
+ * Features a 64dp primary action button, secondary skip/reset/stop controls,
+ * quick utility launcher chips, and True AOD engine selection with live permission indicators.
  */
 @Composable
 fun PomodoroControls(
@@ -78,48 +82,97 @@ fun PomodoroControls(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 1. Alarm Dismiss Button (if alarm is firing)
-        if (isAlarmActive) {
-            Button(
-                onClick = onStopAlarm,
-                modifier = Modifier.fillMaxWidth(),
+        // 1. Alarm Dismiss Alert Banner (if alarm is firing)
+        AnimatedVisibility(
+            visible = isAlarmActive,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Surface(
                 shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                color = MaterialTheme.colorScheme.errorContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Rounded.NotificationsOff, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Dismiss Alarm", fontWeight = FontWeight.Bold)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.NotificationsActive,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Text(
+                            text = "Timer Interval Complete!",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+
+                    BouncyButton(
+                        onClick = onStopAlarm,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        Text("Dismiss", fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
 
-        // 2. Primary Play / Pause & Navigation Action Cluster
+        // 2. Primary 64dp Action Cluster (Start / Pause / Resume / Skip / Stop)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (!isRunning) {
-                // START BUTTON
-                Button(
+                // PRIMARY START BUTTON (64dp Height)
+                BouncyButton(
                     onClick = onStart,
                     modifier = Modifier
-                        .height(64.dp)
-                        .weight(1f),
-                    shape = RoundedCornerShape(22.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        .fillMaxWidth()
+                        .height(64.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
-                    Icon(Icons.Rounded.PlayArrow, contentDescription = "Start Timer", modifier = Modifier.size(28.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Start Focus", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Icon(
+                        imageVector = Icons.Rounded.PlayArrow,
+                        contentDescription = "Start Focus",
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Start Focus",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.5.sp
+                    )
                 }
             } else {
-                // PAUSE / RESUME BUTTON
-                Button(
+                // RUNNING STATE: 64dp Pause/Resume + 64dp Skip + 64dp Stop
+                BouncyButton(
                     onClick = onPauseResume,
                     modifier = Modifier
-                        .height(64.dp)
-                        .weight(1f),
-                    shape = RoundedCornerShape(22.dp),
+                        .weight(1.8f)
+                        .height(64.dp),
+                    shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isPaused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = if (isPaused) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
@@ -128,7 +181,7 @@ fun PomodoroControls(
                     Icon(
                         imageVector = if (isPaused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
                         contentDescription = if (isPaused) "Resume" else "Pause",
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
@@ -138,39 +191,55 @@ fun PomodoroControls(
                     )
                 }
 
-                // SKIP CYCLE BUTTON
-                FilledTonalIconButton(
-                    onClick = onSkip,
-                    modifier = Modifier.size(64.dp),
-                    shape = RoundedCornerShape(22.dp)
+                // Skip Button
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                    modifier = Modifier
+                        .size(64.dp)
+                        .bouncyClick(onClick = onSkip)
                 ) {
-                    Icon(Icons.Rounded.SkipNext, contentDescription = "Skip Cycle")
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.SkipNext,
+                            contentDescription = "Skip Cycle",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
                 }
 
-                // STOP / RESET BUTTON
-                FilledTonalIconButton(
-                    onClick = onStop,
-                    modifier = Modifier.size(64.dp),
-                    shape = RoundedCornerShape(22.dp),
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    )
+                // Stop / Reset Button
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier
+                        .size(64.dp)
+                        .bouncyClick(onClick = onStop)
                 ) {
-                    Icon(Icons.Rounded.Stop, contentDescription = "Stop Timer")
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Stop,
+                            contentDescription = "Stop Timer",
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
                 }
             }
         }
 
-        // 3. Secondary Utility Row: True AOD, Zen Fullscreen Mode, Timer Settings
+        // 3. Secondary Utility Row (True AOD, Zen Mode, Intervals)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // True AOD Low-Power Mode
-            FilterChip(
-                selected = false,
+            UtilityFilterChip(
+                icon = Icons.Rounded.BrightnessLow,
+                label = "True AOD",
                 onClick = {
                     val hasOverlay = Settings.canDrawOverlays(context)
                     val hasAccessibility = AodAccessibilityService.isServiceEnabled(context)
@@ -183,49 +252,27 @@ fun PomodoroControls(
                         showAodEngineDialog = true
                     }
                 },
-                label = { Text("True AOD", fontWeight = FontWeight.SemiBold) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Rounded.BrightnessLow,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.weight(1f)
             )
 
-            // Zen Fullscreen Immersion Mode
-            FilterChip(
-                selected = false,
+            // Zen Fullscreen Mode
+            UtilityFilterChip(
+                icon = Icons.Rounded.Fullscreen,
+                label = "Zen Mode",
                 onClick = onOpenZenMode,
-                label = { Text("Zen Mode", fontWeight = FontWeight.SemiBold) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Rounded.Fullscreen,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.weight(1f)
             )
 
-            // Timer Settings
-            FilterChip(
-                selected = false,
+            // Timer Interval Preferences
+            UtilityFilterChip(
+                icon = Icons.Rounded.Tune,
+                label = "Intervals",
                 onClick = onOpenSettings,
-                label = { Text("Intervals", fontWeight = FontWeight.SemiBold) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Rounded.Tune,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.weight(1f)
             )
         }
 
-        // Interactive True AOD Engine Selector Modal
+        // 4. Interactive True AOD Engine Selector Modal Dialog
         if (showAodEngineDialog) {
             val hasOverlay = Settings.canDrawOverlays(context)
             val hasAccessibility = AodAccessibilityService.isServiceEnabled(context)
@@ -233,213 +280,86 @@ fun PomodoroControls(
             AlertDialog(
                 onDismissRequest = { showAodEngineDialog = false },
                 icon = {
-                    Icon(
-                        Icons.Rounded.BrightnessLow,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Rounded.BrightnessLow,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 },
                 title = {
                     Text(
-                        "True AOD Engine",
-                        fontWeight = FontWeight.Bold,
+                        text = "True AOD Engine",
+                        fontWeight = FontWeight.Black,
                         style = MaterialTheme.typography.titleLarge
                     )
                 },
                 text = {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         Text(
-                            text = "Choose your preferred engine to render True Always-On Display as a physical #000000 black OLED screen with anti-burn-in protection:",
+                            text = "Choose your preferred engine to render True Always-On Display as a 100% pure #000000 black OLED screen with pixel anti-burn-in shifting:",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                        // Option 1: Display Over Other Apps (System Window Overlay)
+                        // Option 1: Display Over Other Apps
                         val isOverlaySelected = selectedEngine == "overlay"
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (isOverlaySelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                            border = if (isOverlaySelected) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
-                            else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedEngine = "overlay"
-                                    viewModel?.updateAodTrueAodMode("overlay")
-                                }
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(36.dp)
-                                                .background(if (isOverlaySelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface, CircleShape),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                Icons.Rounded.ViewQuilt,
-                                                contentDescription = null,
-                                                tint = if (isOverlaySelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                        Column {
-                                            Text(
-                                                "Display Over Apps",
-                                                fontWeight = FontWeight.Bold,
-                                                style = MaterialTheme.typography.titleSmall
-                                            )
-                                            Text(
-                                                "System Window Overlay",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
-
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = if (hasOverlay) Color(0xFF34C759).copy(alpha = 0.15f) else MaterialTheme.colorScheme.errorContainer
-                                    ) {
-                                        Text(
-                                            text = if (hasOverlay) "Granted" else "Required",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (hasOverlay) Color(0xFF34C759) else MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                        )
-                                    }
-                                }
-
-                                Spacer(Modifier.height(6.dp))
-                                Text(
-                                    text = "Renders fullscreen OLED black clock over launchers and active apps with zero battery overhead.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-
-                                if (!hasOverlay && isOverlaySelected) {
-                                    Spacer(Modifier.height(8.dp))
-                                    BouncyTextButton(
-                                        onClick = {
-                                            try {
-                                                val intent = Intent(
-                                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                                    Uri.parse("package:${context.packageName}")
-                                                )
-                                                context.startActivity(intent)
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                            }
-                                        }
-                                    ) {
-                                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                                        Spacer(Modifier.width(4.dp))
-                                        Text("Grant Overlay Permission")
-                                    }
+                        EngineSelectionCard(
+                            title = "Display Over Other Apps",
+                            subtitle = "System Window Overlay Engine",
+                            description = "Renders fullscreen OLED clock over open apps and launchers with zero battery overhead.",
+                            icon = Icons.Rounded.ViewQuilt,
+                            isSelected = isOverlaySelected,
+                            isGranted = hasOverlay,
+                            onClick = {
+                                selectedEngine = "overlay"
+                                viewModel?.updateAodTrueAodMode("overlay")
+                            },
+                            onGrantPermission = {
+                                try {
+                                    val intent = Intent(
+                                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                        Uri.parse("package:${context.packageName}")
+                                    )
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
                                 }
                             }
-                        }
+                        )
 
-                        // Option 2: Accessibility Service Overlay
+                        // Option 2: Accessibility Service
                         val isAccessSelected = selectedEngine == "accessibility"
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (isAccessSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                            border = if (isAccessSelected) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
-                            else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedEngine = "accessibility"
-                                    viewModel?.updateAodTrueAodMode("accessibility")
-                                }
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(36.dp)
-                                                .background(if (isAccessSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface, CircleShape),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                Icons.Rounded.Accessibility,
-                                                contentDescription = null,
-                                                tint = if (isAccessSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                        Column {
-                                            Text(
-                                                "Accessibility Service",
-                                                fontWeight = FontWeight.Bold,
-                                                style = MaterialTheme.typography.titleSmall
-                                            )
-                                            Text(
-                                                "System Lock Integration",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
-
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = if (hasAccessibility) Color(0xFF34C759).copy(alpha = 0.15f) else MaterialTheme.colorScheme.errorContainer
-                                    ) {
-                                        Text(
-                                            text = if (hasAccessibility) "Active" else "Required",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (hasAccessibility) Color(0xFF34C759) else MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                        )
-                                    }
-                                }
-
-                                Spacer(Modifier.height(6.dp))
-                                Text(
-                                    text = "Renders behind system lock panels and provides automated hardware screen locking when timeout triggers.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-
-                                if (!hasAccessibility && isAccessSelected) {
-                                    Spacer(Modifier.height(8.dp))
-                                    BouncyTextButton(
-                                        onClick = {
-                                            try {
-                                                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                                                context.startActivity(intent)
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                            }
-                                        }
-                                    ) {
-                                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                                        Spacer(Modifier.width(4.dp))
-                                        Text("Enable in Accessibility")
-                                    }
+                        EngineSelectionCard(
+                            title = "Accessibility Service",
+                            subtitle = "Hardware Screen Lock Integration",
+                            description = "Runs behind lock panels and provides automated hardware locking when timeout triggers.",
+                            icon = Icons.Rounded.Accessibility,
+                            isSelected = isAccessSelected,
+                            isGranted = hasAccessibility,
+                            onClick = {
+                                selectedEngine = "accessibility"
+                                viewModel?.updateAodTrueAodMode("accessibility")
+                            },
+                            onGrantPermission = {
+                                try {
+                                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
                                 }
                             }
-                        }
+                        )
                     }
                 },
                 confirmButton = {
@@ -450,9 +370,10 @@ fun PomodoroControls(
                             showAodEngineDialog = false
                             launchTrueAod(useAccessibility = selectedEngine == "accessibility")
                         },
-                        enabled = canLaunch
+                        enabled = canLaunch,
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Start True AOD")
+                        Text("Launch True AOD", fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
@@ -460,8 +381,147 @@ fun PomodoroControls(
                         Text("Cancel")
                     }
                 },
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(28.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
+        }
+    }
+}
+
+@Composable
+private fun UtilityFilterChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+        modifier = modifier.bouncyClick(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
+private fun EngineSelectionCard(
+    title: String,
+    subtitle: String,
+    description: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    isGranted: Boolean,
+    onClick: () -> Unit,
+    onGrantPermission: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+        else MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(
+            width = if (isSelected) 1.5.dp else 1.dp,
+            color = if (isSelected) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = title,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Live Permission Badge
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (isGranted) Color(0xFF34C759).copy(alpha = 0.15f) else MaterialTheme.colorScheme.errorContainer
+                ) {
+                    Text(
+                        text = if (isGranted) "Granted" else "Required",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isGranted) Color(0xFF34C759) else MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (!isGranted && isSelected) {
+                Spacer(Modifier.height(8.dp))
+                BouncyTextButton(
+                    onClick = onGrantPermission,
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(15.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Grant Permission in Settings", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }

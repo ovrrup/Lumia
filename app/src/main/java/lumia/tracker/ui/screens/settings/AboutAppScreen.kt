@@ -1,100 +1,53 @@
 package lumia.tracker.ui.screens.settings
 
-import lumia.tracker.ui.screens.settings.components.*
-import lumia.tracker.service.AodAccessibilityService
-import lumia.tracker.util.TrueAodManager
 import android.content.Intent
-import android.provider.Settings
 import android.net.Uri
-import android.widget.Toast
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.graphics.Color
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
-import androidx.compose.material.icons.rounded.Warning
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Close
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.scale
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.DarkMode
-import androidx.compose.material.icons.rounded.DeleteForever
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.Storage
-import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.CropFree
-import androidx.compose.material.icons.rounded.Upload
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.School
-import androidx.compose.material.icons.rounded.MergeType
-import androidx.compose.material.icons.rounded.DateRange
-import androidx.compose.material.icons.rounded.List
-import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.RecordVoiceOver
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.ViewQuilt
-import androidx.compose.material.icons.rounded.Accessibility
-import androidx.compose.material.icons.rounded.Speed
-import androidx.compose.material.icons.rounded.Contrast
-import androidx.compose.material.icons.rounded.Link
-import androidx.compose.material.icons.rounded.Straighten
-import androidx.compose.material.icons.rounded.BlurOn
-import androidx.compose.material.icons.rounded.InvertColors
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import lumia.tracker.viewmodel.ScholarViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import lumia.tracker.ui.components.BouncyIconButton
-import lumia.tracker.ui.components.BouncyButton
-import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.screens.settings.components.SettingsActionItemInCard
+import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
+import lumia.tracker.viewmodel.ScholarViewModel
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
-    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -126,23 +79,23 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
     fun runUpdateCheck() {
         updateState = "checking"
         updateError = ""
-        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        coroutineScope.launch(Dispatchers.IO) {
             try {
-                val url = java.net.URL("https://api.github.com/repos/ovrrup/Lumia/releases/latest")
-                val connection = url.openConnection() as java.net.HttpURLConnection
+                val url = URL("https://api.github.com/repos/ovrrup/Lumia/releases/latest")
+                val connection = url.openConnection() as HttpURLConnection
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("User-Agent", "Lumia-FOSS-App")
                 connection.connectTimeout = 8000
                 connection.readTimeout = 8000
-                
+
                 if (connection.responseCode == 200) {
                     val responseText = connection.inputStream.bufferedReader().use { it.readText() }
-                    
+
                     try {
-                        val json = org.json.JSONObject(responseText)
+                        val json = JSONObject(responseText)
                         val tagName = json.optString("tag_name", "")
                         val body = json.optString("body", "Check GitHub for release details.")
-                        
+
                         var apkUrl = ""
                         val assets = json.optJSONArray("assets")
                         if (assets != null) {
@@ -155,13 +108,13 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 }
                             }
                         }
-                        
-                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+
+                        withContext(Dispatchers.Main) {
                             if (tagName.isNotEmpty()) {
                                 updateTagName = tagName
                                 updateNotes = body
                                 updateApkUrl = apkUrl
-                                
+
                                 if (lumia.tracker.util.VersionUtils.isUpdateAvailable(currentVersion, tagName)) {
                                     updateState = "available"
                                 } else {
@@ -173,19 +126,19 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                             }
                         }
                     } catch (e: Exception) {
-                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        withContext(Dispatchers.Main) {
                             updateState = "error"
                             updateError = "Failed to parse release info."
                         }
                     }
                 } else {
-                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    withContext(Dispatchers.Main) {
                         updateState = "error"
                         updateError = "GitHub server status: ${connection.responseCode}"
                     }
                 }
             } catch (e: Exception) {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     updateState = "error"
                     updateError = e.localizedMessage ?: "No connection"
                 }
@@ -203,10 +156,20 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("About Lumia", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                title = {
+                    Text(
+                        "About Lumia",
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                },
                 navigationIcon = {
                     BouncyIconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -219,17 +182,18 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // App Logo & Brand Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
+            // 1. App Logo & Brand Hero Card
+            ScholarCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -246,15 +210,31 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                             imageVector = Icons.Rounded.School,
                             contentDescription = "Lumia Logo",
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(38.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Lumia", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-                    Text("v$currentVersion-foss", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
                     Text(
-                        text = "A beautiful, 100% offline-first academic tracker and focus cockpit built with Material 3 design, local Room databases, LogDog crash safety guard, and the True Always-On Display saving option.",
+                        "Lumia",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                    ) {
+                        Text(
+                            "v$currentVersion-foss",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                        )
+                    }
+                    Text(
+                        text = "A beautiful, 100% offline-first academic tracker and focus cockpit built with Material 3 design, local Room databases, LogDog crash safety guard, and True Always-On Display power saving.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -263,22 +243,24 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }
             }
 
-            // GitHub & Community Listings
-            SettingsGroupCard(title = "Community & Sources", icon = Icons.Rounded.Star) {
+            // 2. Community & GitHub Listings
+            SettingsGroupCard(title = "Community & Sources", icon = Icons.Rounded.Code) {
                 SettingsActionItemInCard(
                     title = "Creator GitHub Profile",
                     subtitle = "github.com/ovrrup",
-                    icon = Icons.Rounded.Edit,
+                    icon = Icons.Rounded.Person,
                     onClick = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ovrrup"))
                         try { context.startActivity(intent) } catch (e: Exception) {}
                     }
                 )
+
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
                 SettingsActionItemInCard(
                     title = "GitHub Source Repository",
-                    subtitle = "Join our development base or clone the code",
-                    icon = Icons.Rounded.School,
+                    subtitle = "github.com/ovrrup/Lumia",
+                    icon = Icons.Rounded.Code,
                     onClick = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ovrrup/Lumia"))
                         try { context.startActivity(intent) } catch (e: Exception) {}
@@ -286,16 +268,16 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                 )
             }
 
-            // Updates Manager
-            SettingsGroupCard(title = "Open Source Version Control", icon = Icons.Rounded.Download) {
+            // 3. Open Source Version Control & Updates
+            SettingsGroupCard(title = "Version Control & Updates", icon = Icons.Rounded.SystemUpdate) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Auto-Check Updates on Startup", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text("Auto-Check Updates on Startup", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                         Text("Verify latest releases from public channels", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(
@@ -309,11 +291,11 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
-                // Manual Check panel
+                // Manual Check Panel
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Button(
@@ -322,72 +304,68 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                         shape = RoundedCornerShape(12.dp),
                         enabled = updateState != "checking"
                     ) {
-                        Text(if (updateState == "checking") "Checking Repository..." else "Check for Updates Now")
+                        if (updateState == "checking") {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Checking Releases...")
+                        } else {
+                            Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Check for Updates Now", fontWeight = FontWeight.Bold)
+                        }
                     }
 
                     when (updateState) {
-                        "checking" -> {
-                            Text("Querying GitHub releases API...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                        }
                         "available" -> {
-                            Card(
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                                shape = RoundedCornerShape(12.dp),
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(16.dp),
+                                    modifier = Modifier.padding(14.dp),
                                     verticalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    Text(
-                                        text = "Update Available! ($updateTagName)",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                    Text(
-                                        text = "A new formal release is available. You can download the latest Lumia.apk directly from the GitHub Releases assets.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                    )
-                                    
-                                    // Conflict warning
-                                    Card(
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)),
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(
-                                                text = "Note: If installation fails with 'Package Conflict', please uninstall your current preview/debug version first. Official GitHub APKs are signed differently.",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onErrorContainer
-                                            )
-                                        }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Rounded.NewReleases, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            text = "New Update Available: $updateTagName",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
                                     }
+                                    Text(
+                                        text = "A new formal release is ready. You can download the latest APK asset directly from GitHub Releases.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                    )
+
                                     if (updateNotes.isNotEmpty()) {
                                         Surface(
-                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                                            shape = RoundedCornerShape(8.dp),
+                                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                            shape = RoundedCornerShape(10.dp),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Text(
                                                 text = updateNotes,
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                modifier = Modifier.padding(12.dp)
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                modifier = Modifier.padding(10.dp)
                                             )
                                         }
                                     }
+
                                     Button(
                                         onClick = {
                                             val uriString = if (updateApkUrl.isNotEmpty()) updateApkUrl else "https://github.com/ovrrup/Lumia/releases/latest"
-                                            val intent = Intent(
-                                                Intent.ACTION_VIEW,
-                                                Uri.parse(uriString)
-                                            )
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uriString))
                                             try { context.startActivity(intent) } catch (e: Exception) {}
                                         },
                                         colors = ButtonDefaults.buttonColors(
@@ -395,60 +373,98 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                                             contentColor = MaterialTheme.colorScheme.onPrimary
                                         ),
                                         modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(8.dp)
+                                        shape = RoundedCornerShape(10.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Download,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
+                                        Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Go to GitHub Releases")
+                                        Text("Download from GitHub", fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
                         }
                         "latest" -> {
-                            Text("Lumia FOSS is up-to-date (v$currentVersion) with latest release branch.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color(0xFF4BC27D).copy(alpha = 0.15f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        "Lumia FOSS is up to date (v$currentVersion)",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF2E7D32),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
                         }
                         "error" -> {
-                            Text("Code status: Offline or DNS limitation. Standard local database remains highly optimized.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = "Offline or server rate-limit. Local functionality remains 100% active.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            // Terms & Privacy policies
-            SettingsGroupCard(title = "Legal terms", icon = Icons.Rounded.Lock) {
+            // 4. Legal & Open Source Licensing
+            SettingsGroupCard(title = "Legal & Open Source", icon = Icons.Rounded.Gavel) {
                 // Terms
+                val termsRotation by animateFloatAsState(targetValue = if (showTerms) 90f else 0f, label = "termsRotate")
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { showTerms = !showTerms }
-                            .padding(16.dp),
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Terms & Conditions Agreement", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                            Text("Read our local user accountability parameters", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Terms & Conditions Agreement", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            Text("Read local user accountability parameters", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(
                             imageVector = Icons.Rounded.ChevronRight,
                             contentDescription = "Expand",
-                            modifier = Modifier.scale(1f, if (showTerms) -1f else 1f)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.rotate(termsRotation)
                         )
                     }
-                    if (showTerms) {
-                        Card(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    AnimatedVisibility(
+                        visible = showTerms,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Surface(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                         ) {
                             Text(
                                 text = "1. Open Source Framework & License\n" +
-                                       "Lumia is free software distributed under the GNU GPLv3 terms. You can modify and share code as long as your changes remain public under the same copyleft license.\n\n" +
-                                       "2. No Warranty\n" +
-                                       "Lumia is provided entirely 'as-is' without warranties of any kind. You are solely responsible for local storage backups.",
+                                        "Lumia is free software distributed under the GNU GPLv3 terms. You can modify and share code as long as your changes remain public under the same copyleft license.\n\n" +
+                                        "2. No Warranty\n" +
+                                        "Lumia is provided entirely 'as-is' without warranties of any kind. You are solely responsible for local storage backups.",
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(12.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -461,34 +477,41 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                 // Privacy
+                val privacyRotation by animateFloatAsState(targetValue = if (showPrivacy) 90f else 0f, label = "privacyRotate")
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { showPrivacy = !showPrivacy }
-                            .padding(16.dp),
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Local Privacy Policy", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                            Text("Local Privacy Policy", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                             Text("100% serverless, zero telemetry operations", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(
                             imageVector = Icons.Rounded.ChevronRight,
                             contentDescription = "Expand",
-                            modifier = Modifier.scale(1f, if (showPrivacy) -1f else 1f)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.rotate(privacyRotation)
                         )
                     }
-                    if (showPrivacy) {
-                        Card(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    AnimatedVisibility(
+                        visible = showPrivacy,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Surface(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                         ) {
                             Text(
                                 text = "1. Zero Telemetry\n" +
-                                       "Lumia operates completely offline. No tracking SDKs, no external ads, no user harvesting.\n\n" +
-                                       "2. Safe Permission Utilization\n" +
-                                       "All accessibility and overlay requests are completely handled locally on your own CPU to manage focus screen timers.",
+                                        "Lumia operates completely offline. No tracking SDKs, no external ads, no user data harvesting.\n\n" +
+                                        "2. Safe Permission Utilization\n" +
+                                        "All accessibility and overlay requests are completely handled locally on your own CPU to manage focus screen timers.",
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(12.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -501,32 +524,39 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                 // License
+                val licenseRotation by animateFloatAsState(targetValue = if (showLicense) 90f else 0f, label = "licenseRotate")
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { showLicense = !showLicense }
-                            .padding(16.dp),
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("GNU GPLv3 Open Source License", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                            Text("Verification parameters of other distributions", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("GNU GPLv3 Open Source License", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            Text("Verification parameters and open source rights", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(
                             imageVector = Icons.Rounded.ChevronRight,
                             contentDescription = "Expand",
-                            modifier = Modifier.scale(1f, if (showLicense) -1f else 1f)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.rotate(licenseRotation)
                         )
                     }
-                    if (showLicense) {
-                        Card(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    AnimatedVisibility(
+                        visible = showLicense,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Surface(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                         ) {
                             Text(
                                 text = "Lumia is powered by the GNU General Public License v3.0.\n\n" +
-                                       "This license grants you the freedom to run, study, share, and modify Lumia. Any public distribution of derivative versions must be open-source and preserve original contributor attributions.",
+                                        "This license grants you the freedom to run, study, share, and modify Lumia. Any public distribution of derivative versions must be open-source and preserve original contributor attributions.",
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(12.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -537,8 +567,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
-

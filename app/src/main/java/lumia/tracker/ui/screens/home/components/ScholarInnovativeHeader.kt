@@ -1,7 +1,7 @@
 package lumia.tracker.ui.screens.home.components
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,13 +13,13 @@ import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -35,8 +35,9 @@ import lumia.tracker.viewmodel.ScholarViewModel
 import java.util.Locale
 
 /**
- * ScholarInnovativeHeader - iOS Dynamic Island & Action Capsule.
- * Displays live Focus state, search pill, streak status, and profile capsule in a cohesive Apple-grade bar.
+ * ScholarInnovativeHeader - Modern Dynamic Island & Action Capsule Bar.
+ * Unifies search capsule (42dp, 22dp radius), responsive Focus pill with live countdown,
+ * aligned streak badge, and avatar capsule with instant settings navigation.
  */
 @Composable
 fun ScholarInnovativeHeader(
@@ -60,15 +61,20 @@ fun ScholarInnovativeHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 1. iOS Search Bar Pill
+            // 1. Search Bar Capsule (42dp height, 22dp rounded corner, subtle surface)
             Surface(
                 shape = RoundedCornerShape(22.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(
+                    0.75.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                ),
                 shadowElevation = 0.5.dp,
+                tonalElevation = 1.dp,
                 modifier = Modifier
                     .weight(1f)
-                    .height(40.dp)
+                    .height(42.dp)
+                    .clip(RoundedCornerShape(22.dp))
                     .bouncyClick(onClick = { navController.navigate("search") })
                     .testTag("open_search_button")
             ) {
@@ -83,7 +89,7 @@ fun ScholarInnovativeHeader(
                         imageVector = Icons.Rounded.Search,
                         contentDescription = "Search",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(17.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Text(
                         text = "Search workspace...",
@@ -94,26 +100,54 @@ fun ScholarInnovativeHeader(
                 }
             }
 
-            // 2. iOS Dynamic Focus Live Activity Pill
+            // 2. Responsive Focus Pill (Dynamic Island live countdown pill)
             val focusPillBg by animateColorAsState(
-                targetValue = if (isFocusRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                targetValue = if (isFocusRunning) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                },
+                animationSpec = tween(300, easing = FastOutSlowInEasing),
                 label = "focus_pill_color"
             )
             val focusPillText by animateColorAsState(
-                targetValue = if (isFocusRunning) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
+                targetValue = if (isFocusRunning) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                animationSpec = tween(300, easing = FastOutSlowInEasing),
                 label = "focus_pill_text_color"
+            )
+
+            // Equalizer wave animation when active
+            val infiniteTransition = rememberInfiniteTransition(label = "focus_pulse")
+            val eqScale by infiniteTransition.animateFloat(
+                initialValue = 0.9f,
+                targetValue = 1.15f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(800, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "eq_scale"
             )
 
             Surface(
                 shape = RoundedCornerShape(22.dp),
                 color = focusPillBg,
                 border = BorderStroke(
-                    0.6.dp,
-                    if (isFocusRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    0.75.dp,
+                    if (isFocusRunning) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+                    }
                 ),
-                shadowElevation = if (isFocusRunning) 2.dp else 0.5.dp,
+                shadowElevation = if (isFocusRunning) 2.5.dp else 0.5.dp,
+                tonalElevation = if (isFocusRunning) 4.dp else 1.dp,
                 modifier = Modifier
-                    .height(40.dp)
+                    .height(42.dp)
+                    .clip(RoundedCornerShape(22.dp))
                     .bouncyClick(onClick = { navController.navigate("pomodoro") })
                     .testTag("open_pomodoro_button")
             ) {
@@ -124,12 +158,32 @@ fun ScholarInnovativeHeader(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(
-                        imageVector = if (isFocusRunning) Icons.Rounded.GraphicEq else Icons.Rounded.Timer,
-                        contentDescription = "Focus Space",
-                        tint = focusPillText,
-                        modifier = Modifier.size(17.dp)
-                    )
+                    if (isFocusRunning) {
+                        // Pulsing dot indicator
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .graphicsLayer {
+                                    scaleX = eqScale
+                                    scaleY = eqScale
+                                }
+                                .background(Color.White, CircleShape)
+                        )
+                        Icon(
+                            imageVector = Icons.Rounded.GraphicEq,
+                            contentDescription = "Focus Active",
+                            tint = focusPillText,
+                            modifier = Modifier.size(17.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Rounded.Timer,
+                            contentDescription = "Focus Space",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
                     val mins = pomodoroState.timeLeft / 60
                     val secs = pomodoroState.timeLeft % 60
                     val timerStr = String.format(Locale.US, "%02d:%02d", mins, secs)
@@ -143,19 +197,20 @@ fun ScholarInnovativeHeader(
                 }
             }
 
-            // 3. Streak Flame Badge
+            // 3. Streak Flame Badge Widget (interactive with bottom sheet)
             StreakWidget(
                 viewModel = viewModel,
-                navController = navController
+                navController = navController,
+                modifier = Modifier.height(42.dp)
             )
 
-            // 4. iOS Profile Avatar Capsule
+            // 4. iOS Profile Avatar Capsule (42dp, border & direct settings nav)
             Box(
                 modifier = Modifier
-                    .size(38.dp)
-                    .shadow(elevation = 1.dp, shape = CircleShape)
-                    .background(MaterialTheme.colorScheme.surface, CircleShape)
-                    .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    .size(42.dp)
+                    .shadow(elevation = 1.5.dp, shape = CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape)
+                    .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.75f), CircleShape)
                     .clip(CircleShape)
                     .bouncyClick(onClick = { navController.navigate("settings") }),
                 contentAlignment = Alignment.Center

@@ -1,96 +1,23 @@
 package lumia.tracker.ui.screens.settings
 
-import lumia.tracker.service.AodAccessibilityService
-import lumia.tracker.util.TrueAodManager
-import lumia.tracker.ui.screens.settings.components.*
-import lumia.tracker.ui.components.ScholarCard
-import lumia.tracker.viewmodel.ScholarViewModel
-import android.content.Intent
-import android.provider.Settings
-import android.net.Uri
-import android.widget.Toast
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.graphics.Color
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
-import androidx.compose.material.icons.rounded.Warning
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Close
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.scale
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.DarkMode
-import androidx.compose.material.icons.rounded.DeleteForever
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.Storage
-import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.CropFree
-import androidx.compose.material.icons.rounded.Upload
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.School
-import androidx.compose.material.icons.rounded.MergeType
-import androidx.compose.material.icons.rounded.DateRange
-import androidx.compose.material.icons.rounded.List
-import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.RecordVoiceOver
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.ViewQuilt
-import androidx.compose.material.icons.rounded.Accessibility
-import androidx.compose.material.icons.rounded.Speed
-import androidx.compose.material.icons.rounded.Contrast
-import androidx.compose.material.icons.rounded.Link
-import androidx.compose.material.icons.rounded.Straighten
-import androidx.compose.material.icons.rounded.BlurOn
-import androidx.compose.material.icons.rounded.InvertColors
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.ui.components.BouncyIconButton
-import lumia.tracker.ui.components.BouncyButton
-import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
+import lumia.tracker.ui.screens.settings.components.SettingsToggleItem
+import lumia.tracker.viewmodel.ScholarViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,17 +27,26 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
     val autoCreateSubject by viewModel.systemAutoCreateSubject.collectAsStateWithLifecycle()
     val fuseSubjectsCourses by viewModel.systemFuseSubjectsCourses.collectAsStateWithLifecycle()
     val advancedTasks by viewModel.systemAdvancedTasks.collectAsStateWithLifecycle()
-
-    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
+    val pomodoroAutoLog by viewModel.systemPomodoroAutoLog.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("System Configuration", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                title = {
+                    Text(
+                        "System Configuration",
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                },
                 navigationIcon = {
                     BouncyIconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -124,76 +60,85 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            SettingsCategoryHeading(title = "Interconnections", icon = Icons.Rounded.Settings)
-
-            SettingsGroupCard(title = "Course & Subject Integration", icon = Icons.Rounded.Settings) {
+            // 1. Course & Subject Integration
+            SettingsGroupCard(title = "Course & Subject Integration", icon = Icons.Rounded.Hub) {
                 SettingsToggleItem(
                     title = "Auto-Link by Name",
-                    subtitle = "Automatically couple Courses and study Subjects together if they share the same name (case-insensitive) when no explicit association is set.",
+                    subtitle = "Automatically couple Courses and study Subjects together if they share the same name (case-insensitive)",
                     checked = autoLinkByName,
-                    icon = Icons.Rounded.Settings,
+                    icon = Icons.Rounded.Link,
                     onCheckedChange = { viewModel.updateSystemAutoLinkByName(it) }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
 
                 SettingsToggleItem(
                     title = "Course Synergy Score",
-                    subtitle = "Measure alignments between lectures and study topics using a Dynamic Synergy Gauge in details screens.",
+                    subtitle = "Measure alignments between lectures and study topics using a Dynamic Synergy Gauge",
                     checked = enableSynergy,
                     icon = Icons.Rounded.Star,
                     onCheckedChange = { viewModel.updateSystemEnableSynergy(it) }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
 
                 SettingsToggleItem(
                     title = "Auto-Create Associated Subject",
-                    subtitle = "Automatically create a matching Study Subject whenever you enroll in/add a new academic Course.",
+                    subtitle = "Automatically create a matching Study Subject whenever you enroll in/add a new academic Course",
                     checked = autoCreateSubject,
                     icon = Icons.Rounded.School,
                     onCheckedChange = { viewModel.updateSystemAutoCreateSubject(it) }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
 
                 SettingsToggleItem(
                     title = "Fuse Subjects & Courses",
-                    subtitle = "Embed subjects within courses to simplify navigation. Turn off to display 'Subjects' as a separate bottom tab.",
+                    subtitle = "Embed subjects within courses to simplify navigation. Turn off to display 'Subjects' as a separate bottom tab",
                     checked = fuseSubjectsCourses,
                     icon = Icons.Rounded.MergeType,
                     onCheckedChange = { viewModel.updateSystemFuseSubjectsCourses(it) }
                 )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
 
                 SettingsToggleItem(
                     title = "Advanced Tasks & Linkages",
-                    subtitle = "Enable complex task tracking, including multi-linking with courses and assignments, plus advanced sorting and cross-referencing.",
+                    subtitle = "Enable complex task tracking, including multi-linking with courses and assignments, plus advanced sorting",
                     checked = advancedTasks,
-                    icon = Icons.Rounded.List,
+                    icon = Icons.Rounded.ListAlt,
                     onCheckedChange = { viewModel.updateSystemAdvancedTasks(it) }
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            SettingsCategoryHeading(title = "Pomodoro Integration", icon = Icons.Rounded.Timer)
-
-            SettingsGroupCard(title = "Timer & Environment Behaviors", icon = Icons.Rounded.Timer) {
+            // 2. Pomodoro & Session Logging
+            SettingsGroupCard(title = "Timer & Productivity Log", icon = Icons.Rounded.Timer) {
                 SettingsToggleItem(
                     title = "Auto-Log Focus Sessions",
-                    subtitle = "Automatically register and log Pomodoro 'Work' sessions into the database productivity history log upon completion.",
-                    checked = viewModel.systemPomodoroAutoLog.collectAsStateWithLifecycle().value,
+                    subtitle = "Automatically register and log Pomodoro 'Work' sessions into the database productivity history log upon completion",
+                    checked = pomodoroAutoLog,
                     icon = Icons.Rounded.History,
                     onCheckedChange = { viewModel.updateSystemPomodoroAutoLog(it) }
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

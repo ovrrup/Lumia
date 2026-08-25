@@ -1,6 +1,7 @@
 package lumia.tracker.ui.screens.study.components
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -20,11 +22,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.model.Subject
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.util.getTagColors
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
- * SubjectItemCard - Professional Subject Card with Topic Coverage Progress,
- * Linked Course Indicators, and Study Navigation.
+ * SubjectItemCard - Modern Subject Card with Topic Coverage Progress,
+ * Linked Course Indicators, Syllabus Count, and Smooth Navigation.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -46,12 +49,13 @@ fun SubjectItemCard(
         subjectTopics.count { it.isCompleted }
     }
     val totalTopicsCount = subjectTopics.size
-    val topicProgress = if (totalTopicsCount > 0) completedTopicsCount.toFloat() / totalTopicsCount else 0f
+    val rawProgress = if (totalTopicsCount > 0) completedTopicsCount.toFloat() / totalTopicsCount else 0f
+    val animatedProgress by animateFloatAsState(targetValue = rawProgress, label = "topicProgress")
 
     val linkedCourses = remember(courses, subject) {
         courses.filter { course ->
             course.subjectId == subject.id ||
-                    course.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }.contains(subject.id)
+                course.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }.contains(subject.id)
         }
     }
 
@@ -60,12 +64,12 @@ fun SubjectItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize(),
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(22.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp)
+                .padding(16.dp)
         ) {
             // Header Row: Subject Avatar, Title & Tags, Menu
             Row(
@@ -74,8 +78,8 @@ fun SubjectItemCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(50.dp)
-                        .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(16.dp)),
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -86,7 +90,7 @@ fun SubjectItemCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -98,20 +102,45 @@ fun SubjectItemCard(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    if (subject.tags.isNotBlank()) {
-                        Text(
-                            text = subject.tags,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.tertiary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                    val tagsList = remember(subject.tags) {
+                        subject.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                    }
+                    if (tagsList.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            tagsList.take(2).forEach { tag ->
+                                val (bgColor, textColor) = getTagColors(tag)
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = bgColor
+                                ) {
+                                    Text(
+                                        text = tag,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = textColor,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
+                // Options Menu
                 Box {
-                    BouncyIconButton(onClick = { expanded = true }) {
-                        Icon(Icons.Rounded.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    BouncyIconButton(
+                        onClick = { expanded = true },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.MoreVert,
+                            contentDescription = "Options",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     DropdownMenu(
                         expanded = expanded,
@@ -123,7 +152,13 @@ fun SubjectItemCard(
                                 expanded = false
                                 onEdit()
                             },
-                            leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.Edit,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         )
                         DropdownMenuItem(
                             text = { Text("Delete Subject") },
@@ -131,16 +166,22 @@ fun SubjectItemCard(
                                 expanded = false
                                 viewModel.deleteSubject(subject)
                             },
-                            leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                         )
                     }
                 }
             }
 
             // Topic Coverage Progress Bar
+            Spacer(modifier = Modifier.height(14.dp))
             if (totalTopicsCount > 0) {
-                Spacer(modifier = Modifier.height(14.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -149,27 +190,62 @@ fun SubjectItemCard(
                         Text(
                             text = "Syllabus Coverage",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
                         )
-                        Text(
-                            text = "$completedTopicsCount / $totalTopicsCount Topics (${(topicProgress * 100).toInt()}%)",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                        ) {
+                            Text(
+                                text = "$completedTopicsCount / $totalTopicsCount Topics (${(rawProgress * 100).toInt()}%)",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                     LinearProgressIndicator(
-                        progress = { topicProgress },
-                        modifier = Modifier.fillMaxWidth().height(6.dp),
+                        progress = { animatedProgress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
                         color = MaterialTheme.colorScheme.tertiary,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
+                }
+            } else {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.MenuBook,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "No syllabus topics added yet",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
             // Connected Courses Chips
             if (linkedCourses.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -191,7 +267,11 @@ fun SubjectItemCard(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Box(modifier = Modifier.size(6.dp).background(courseColor, CircleShape))
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(courseColor, CircleShape)
+                                )
                                 Text(
                                     text = if (course.code.isNotBlank()) "${course.code}: ${course.name}" else course.name,
                                     style = MaterialTheme.typography.labelSmall,

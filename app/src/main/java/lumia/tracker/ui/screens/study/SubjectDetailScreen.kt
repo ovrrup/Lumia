@@ -1,18 +1,29 @@
 package lumia.tracker.ui.screens.study
 
 import android.app.DatePickerDialog
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,33 +31,38 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import lumia.tracker.model.Course
-import lumia.tracker.model.PracticeAssignment
-import lumia.tracker.model.Task
-import lumia.tracker.model.Topic
-import lumia.tracker.model.Note
-import lumia.tracker.model.Chapter
-import lumia.tracker.ui.components.BouncyIconButton
-import lumia.tracker.ui.components.BouncyTextButton
-import lumia.tracker.ui.components.BouncyFloatingActionButton
-import lumia.tracker.ui.components.ScholarCard
-import lumia.tracker.viewmodel.ScholarViewModel
+import lumia.tracker.model.*
+import lumia.tracker.ui.components.*
+import lumia.tracker.ui.screens.study.dialogs.EditSubjectDialog
+import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.ui.util.getTagColors
+import lumia.tracker.viewmodel.ScholarViewModel
+import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewModel, subjectId: Int) {
+fun SubjectDetailScreen(
+    navController: NavController,
+    viewModel: ScholarViewModel,
+    subjectId: Int
+) {
     val context = LocalContext.current
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val subject = subjects.find { it.id == subjectId }
@@ -56,6 +72,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     val allAssignments by viewModel.assignments.collectAsStateWithLifecycle()
     val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
     val subjectChapters by viewModel.getChaptersForSubject(subjectId).collectAsStateWithLifecycle()
+    val attachments by viewModel.getAttachmentsForSubject(subjectId).collectAsStateWithLifecycle(emptyList())
 
     // Filter elements
     val linkedCourses = remember(allCourses, subjectId) {
@@ -97,10 +114,167 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     var showAddAssignmentDialog by remember { mutableStateOf(false) }
     var showAddTaskDialog by remember { mutableStateOf(false) }
     var showAddChapterDialog by remember { mutableStateOf(false) }
+    var showAddAttachmentDialog by remember { mutableStateOf(false) }
+    var attachmentTitle by remember { mutableStateOf("") }
+    var attachmentContent by remember { mutableStateOf("") }
 
     var expandedMenu by remember { mutableStateOf(false) }
     val expandedChapters = remember { mutableStateMapOf<Int, Boolean>() }
     var selectedChapterForNewTopic by remember { mutableStateOf<Int?>(null) }
+
+    val contentResolver = context.contentResolver
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                var displayName = "Attachment_${System.currentTimeMillis()}"
+                var sizeBytes: Long = 0
+                val cursor = contentResolver.query(uri, null, null, null, null)
+                if (cursor != null) {
+                    try {
+                        val nameIdx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        val sizeIdx = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
+                        if (cursor.moveToFirst()) {
+                            if (nameIdx != -1) displayName = cursor.getString(nameIdx)
+                            if (sizeIdx != -1) sizeBytes = cursor.getLong(sizeIdx)
+                        }
+                    } finally {
+                        cursor.close()
+                    }
+                }
+                val extension = if (displayName.contains(".")) displayName.substringAfterLast(".").lowercase() else "bin"
+                val fileType = when (extension) {
+                    "pdf" -> "PDF Document"
+                    "doc", "docx" -> "Word Document"
+                    "xls", "xlsx" -> "Excel Spreadsheet"
+                    "ppt", "pptx" -> "PowerPoint Presentation"
+                    "txt", "md" -> "Text File"
+                    "png", "jpg", "jpeg", "gif", "webp", "bmp" -> "Image"
+                    "mp3", "wav", "aac", "flac", "ogg", "m4a" -> "Audio Recording"
+                    "mp4", "mkv", "avi", "mov", "webm" -> "Video File"
+                    "zip", "rar", "tar", "gz", "7z" -> "Archive"
+                    else -> "${extension.uppercase()} File"
+                }
+                val localFile = File(context.filesDir, "subj_attach_${System.currentTimeMillis()}.$extension")
+                val inputStream = contentResolver.openInputStream(uri)
+                if (inputStream != null) {
+                    try {
+                        val outputStream = FileOutputStream(localFile)
+                        try {
+                            inputStream.copyTo(outputStream)
+                        } finally {
+                            outputStream.close()
+                        }
+                    } finally {
+                        inputStream.close()
+                    }
+                }
+                viewModel.addAttachment(
+                    name = displayName,
+                    filePath = localFile.absolutePath,
+                    fileType = fileType,
+                    sizeBytes = if (sizeBytes > 0) sizeBytes else localFile.length(),
+                    courseId = null,
+                    subjectId = subjectId
+                )
+                Toast.makeText(context, "Attachment linked successfully", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Failed to link attachment: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val generateStudyGuidePdf: (String, String) -> Unit = { titleStr, contentStr ->
+        try {
+            val pdfDoc = PdfDocument()
+            val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+            val page = pdfDoc.startPage(pageInfo)
+            val canvas = page.canvas
+            val paint = Paint()
+
+            paint.color = android.graphics.Color.parseColor("#4F46E5")
+            canvas.drawRect(0f, 0f, 595f, 130f, paint)
+
+            paint.color = android.graphics.Color.WHITE
+            paint.textSize = 24f
+            paint.isFakeBoldText = true
+            canvas.drawText("LUMIA SUBJECT OUTLINE", 40f, 55f, paint)
+
+            paint.textSize = 14f
+            paint.isFakeBoldText = false
+            paint.color = android.graphics.Color.parseColor("#E0E7FF")
+            canvas.drawText("Subject: ${subject?.name ?: ""}", 40f, 85f, paint)
+            canvas.drawText("Linked Chapters: ${subjectChapters.size} · Topics: ${subjectTopics.size}", 40f, 108f, paint)
+
+            paint.color = android.graphics.Color.BLACK
+            paint.textSize = 18f
+            paint.isFakeBoldText = true
+            canvas.drawText(titleStr, 40f, 175f, paint)
+
+            paint.textSize = 12f
+            paint.isFakeBoldText = false
+            paint.color = android.graphics.Color.parseColor("#1F2937")
+
+            var y = 210f
+            val maxLines = 26
+            val words = contentStr.split(" ")
+            val wrappedLines = mutableListOf<String>()
+            var currentLine = StringBuilder()
+
+            for (word in words) {
+                if (word.contains("\n")) {
+                    val parts = word.split("\n")
+                    for (i in parts.indices) {
+                        if (i > 0) {
+                            wrappedLines.add(currentLine.toString())
+                            currentLine = StringBuilder()
+                        }
+                        if (currentLine.isNotEmpty()) currentLine.append(" ")
+                        currentLine.append(parts[i])
+                    }
+                } else {
+                    if (currentLine.isNotEmpty()) currentLine.append(" ")
+                    currentLine.append(word)
+                    if (currentLine.length > 68) {
+                        wrappedLines.add(currentLine.toString())
+                        currentLine = StringBuilder()
+                    }
+                }
+            }
+            if (currentLine.isNotEmpty()) {
+                wrappedLines.add(currentLine.toString())
+            }
+
+            for (line in wrappedLines.take(maxLines)) {
+                canvas.drawText(line, 40f, y, paint)
+                y += 22f
+            }
+
+            paint.color = android.graphics.Color.GRAY
+            paint.textSize = 10f
+            val dateStr = SimpleDateFormat("MMM dd, yyyy · hh:mm a", Locale.getDefault()).format(Date())
+            canvas.drawText("Generated with Lumia Scholar Tracker · $dateStr · Page 1 of 1", 40f, 810f, paint)
+
+            pdfDoc.finishPage(page)
+
+            val localFile = File(context.filesDir, "subject_guide_${System.currentTimeMillis()}.pdf")
+            pdfDoc.writeTo(localFile.outputStream())
+            pdfDoc.close()
+
+            viewModel.addAttachment(
+                name = if (titleStr.endsWith(".pdf", ignoreCase = true)) titleStr else "$titleStr.pdf",
+                filePath = localFile.absolutePath,
+                fileType = "PDF Document",
+                sizeBytes = localFile.length(),
+                courseId = null,
+                subjectId = subjectId
+            )
+            Toast.makeText(context, "Subject study guide PDF generated successfully", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Generation failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     if (subject == null) {
         Scaffold { padding ->
@@ -111,19 +285,41 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         return
     }
 
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = { Text(subject.name, fontWeight = FontWeight.Bold) },
+            LargeTopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = subject.name,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (subject.tags.isNotBlank()) {
+                            Text(
+                                text = subject.tags,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                    BouncyIconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
                     Box {
-                        IconButton(onClick = { expandedMenu = true }) {
-                            Icon(Icons.Rounded.MoreVert, contentDescription = "More")
+                        BouncyIconButton(onClick = { expandedMenu = true }) {
+                            Icon(Icons.Rounded.MoreVert, contentDescription = "Subject Actions")
                         }
                         DropdownMenu(
                             expanded = expandedMenu,
@@ -138,6 +334,15 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
                             )
                             DropdownMenuItem(
+                                text = { Text("Link Courses") },
+                                onClick = {
+                                    expandedMenu = false
+                                    showLinkCourseDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.Rounded.Link, contentDescription = null) }
+                            )
+                            HorizontalDivider()
+                            DropdownMenuItem(
                                 text = { Text("Delete Subject", color = MaterialTheme.colorScheme.error) },
                                 onClick = {
                                     expandedMenu = false
@@ -148,7 +353,11 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                )
             )
         }
     ) { padding ->
@@ -156,38 +365,71 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 120.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // Stats Banner Card
+            // 1. STATS & TOPIC PROGRESS RING HERO CARD
             item {
-                ScholarCard(
+                val completedTopics = subjectTopics.count { it.isCompleted }
+                val totalTopics = subjectTopics.size
+                val topicPct = if (totalTopics > 0) ((completedTopics.toFloat() / totalTopics) * 100).roundToInt() else 0
+                val progressFloat by animateFloatAsState(
+                    targetValue = if (totalTopics > 0) completedTopics.toFloat() / totalTopics else 0f,
+                    animationSpec = tween(700),
+                    label = "topic_ring"
+                )
+
+                val ringColor = when {
+                    totalTopics == 0 -> MaterialTheme.colorScheme.primary
+                    topicPct == 100 -> Color(0xFF10B981) // Green (Completed)
+                    topicPct >= 50 -> Color(0xFF3B82F6)  // Blue (Healthy)
+                    topicPct >= 20 -> Color(0xFFF59E0B)  // Amber (In Progress)
+                    else -> MaterialTheme.colorScheme.primary
+                }
+
+                val masteryBadge = when {
+                    totalTopics == 0 -> "No Topics Added"
+                    topicPct == 100 -> "Subject Mastered (100%)"
+                    topicPct >= 60 -> "High Progress (On Track)"
+                    topicPct > 0 -> "In Progress ($completedTopics/$totalTopics)"
+                    else -> "Ready to Learn"
+                }
+
+                ScholarHeroCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp)
+                    shape = RoundedCornerShape(26.dp),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(20.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
+                            // Subject Avatar Box
                             Box(
                                 modifier = Modifier
-                                    .size(64.dp)
-                                    .background(MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(18.dp)),
+                                    .size(56.dp)
+                                    .background(MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(18.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = subject.name.take(1).uppercase(),
-                                    style = MaterialTheme.typography.displaySmall,
+                                    style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Black,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
-                            Column {
-                                Text(subject.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = subject.name,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Black
+                                )
                                 if (subject.tags.isNotBlank()) {
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    @OptIn(ExperimentalLayoutApi::class)
                                     FlowRow(
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                                         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -203,19 +445,9 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                                             ) {
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(
-                                                        Icons.Rounded.LocalOffer,
-                                                        contentDescription = null,
-                                                        modifier = Modifier.size(10.dp),
-                                                        tint = colors.second
-                                                    )
+                                                    Icon(Icons.Rounded.Sell, contentDescription = null, modifier = Modifier.size(10.dp), tint = colors.second)
                                                     Spacer(Modifier.width(2.dp))
-                                                    Text(
-                                                        text = tag,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = colors.second,
-                                                        fontWeight = FontWeight.Bold
-                                                    )
+                                                    Text(tag, style = MaterialTheme.typography.labelSmall, color = colors.second, fontWeight = FontWeight.Bold)
                                                 }
                                             }
                                         }
@@ -223,16 +455,84 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 }
                             }
                         }
+
                         Spacer(modifier = Modifier.height(16.dp))
+
+                        // PROMINENT TOPIC PROGRESS RING GAUGE
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(ringColor.copy(alpha = 0.08f), RoundedCornerShape(20.dp))
+                                .border(1.dp, ringColor.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.size(88.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    progress = { progressFloat },
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = ringColor,
+                                    trackColor = ringColor.copy(alpha = 0.2f),
+                                    strokeWidth = 8.dp,
+                                    strokeCap = StrokeCap.Round
+                                )
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "$topicPct%",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = ringColor
+                                    )
+                                    Text(
+                                        text = "Mastery",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 9.sp
+                                    )
+                                }
+                            }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (topicPct == 100) Icons.Rounded.CheckCircle else Icons.Rounded.Stars,
+                                        contentDescription = null,
+                                        tint = ringColor,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = masteryBadge,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ringColor
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "$completedTopics of $totalTopics syllabus topics fully mastered.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // STATS ROW COUNTERS
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            StatItem(label = "Courses", count = linkedCourses.size)
-                            val completedTopics = subjectTopics.count { it.isCompleted }
+                            StatItem(label = "Chapters", count = subjectChapters.size)
                             StatItem(label = "Topics", count = subjectTopics.size, detail = "$completedTopics Done")
+                            StatItem(label = "Courses", count = linkedCourses.size)
                             val pendingAssignments = subjectAssignments.count { !it.isCompleted }
-                            StatItem(label = "Assignments", count = subjectAssignments.size, detail = "$pendingAssignments Left")
+                            StatItem(label = "Homework", count = subjectAssignments.size, detail = "$pendingAssignments Left")
                             val pendingTasks = subjectTasks.count { !it.isCompleted }
                             StatItem(label = "Tasks", count = subjectTasks.size, detail = "$pendingTasks Left")
                         }
@@ -240,7 +540,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 }
             }
 
-            // 1. Linked Courses Section
+            // 2. LINKED COURSES SECTION
             item {
                 SectionHeader(
                     title = "Linked Courses",
@@ -261,7 +561,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     val color = try { Color(android.graphics.Color.parseColor(course.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
                     ScholarCard(
                         onClick = { navController.navigate("courseDetail/${course.id}") { launchSingleTop = true } },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -275,14 +576,17 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     Text(course.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    if (course.code.isNotBlank()) {
-                                        Text(course.code, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    if (course.code.isNotBlank() || course.instructor.isNotBlank()) {
+                                        Text(
+                                            text = listOfNotNull(course.code.ifBlank { null }, course.instructor.ifBlank { null }).joinToString(" • "),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
                                 }
                             }
                             BouncyIconButton(
                                 onClick = {
-                                    // Unlink Course logic
                                     val currentIds = course.subjectIds.split(",").map { it.trim() }.filter { it.isNotEmpty() && it != subjectId.toString() }
                                     val updatedIds = currentIds.joinToString(",")
                                     val newMainId = currentIds.firstOrNull()?.toIntOrNull()
@@ -296,37 +600,27 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 }
             }
 
-            // 2. Study Outline (Chapters & Topics) Section
+            // 3. STUDY OUTLINE (CHAPTERS & TOPICS)
             item {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Rounded.List, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Text("Study Outline", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
+                        Text("Study Outline", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
                     }
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        BouncyTextButton(
-                            onClick = { showAddChapterDialog = true }
-                        ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        BouncyTextButton(onClick = { showAddChapterDialog = true }) {
                             Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Chapter", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
-                        BouncyTextButton(
-                            onClick = {
-                                selectedChapterForNewTopic = null
-                                showAddTopicDialog = true
-                            }
-                        ) {
+                        BouncyTextButton(onClick = {
+                            selectedChapterForNewTopic = null
+                            showAddTopicDialog = true
+                        }) {
                             Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Topic", fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -334,14 +628,15 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     }
                 }
             }
+
             if (subjectChapters.isEmpty() && subjectTopics.isEmpty()) {
                 item {
                     ScholarCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Column(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(20.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
@@ -349,17 +644,18 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 text = "No chapters or topics added yet. Group your learning materials under chapters and track topic completion.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                BouncyTextButton(onClick = { showAddChapterDialog = true }) {
-                                    Text("+ Add Chapter", fontWeight = FontWeight.Bold)
+                                BouncyButton(onClick = { showAddChapterDialog = true }) {
+                                    Text("+ Add Chapter")
                                 }
-                                BouncyTextButton(onClick = {
+                                BouncyOutlinedButton(onClick = {
                                     selectedChapterForNewTopic = null
                                     showAddTopicDialog = true
                                 }) {
-                                    Text("+ Add Topic", fontWeight = FontWeight.Bold)
+                                    Text("+ Add Topic")
                                 }
                             }
                         }
@@ -371,10 +667,13 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     val chapterTopics = remember(subjectTopics, chapter.id) {
                         subjectTopics.filter { it.chapterId == chapter.id }
                     }
+                    val chapterCompletedCount = chapterTopics.count { it.isCompleted }
+                    val chapterProgress = if (chapterTopics.isNotEmpty()) chapterCompletedCount.toFloat() / chapterTopics.size else 0f
                     var showChapterMenu by remember { mutableStateOf(false) }
 
                     ScholarCard(
-                        modifier = Modifier.fillMaxWidth().animateContentSize()
+                        modifier = Modifier.fillMaxWidth().animateContentSize(),
+                        shape = RoundedCornerShape(22.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(
@@ -387,7 +686,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                         expandedChapters[chapter.id] = !isExpanded
                                     },
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     Icon(
                                         imageVector = if (isExpanded) Icons.Rounded.KeyboardArrowDown else Icons.Rounded.KeyboardArrowRight,
@@ -396,15 +695,15 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                     )
                                     Box(
                                         modifier = Modifier
-                                            .size(36.dp)
-                                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f), shape = RoundedCornerShape(8.dp)),
+                                            .size(38.dp)
+                                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
                                             imageVector = Icons.Rounded.Folder,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(18.dp)
+                                            modifier = Modifier.size(20.dp)
                                         )
                                     }
                                     Column(modifier = Modifier.weight(1f)) {
@@ -414,16 +713,14 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
-                                        if (chapter.tags.isNotBlank()) {
-                                            Text(
-                                                text = "Tags: ${chapter.tags}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
+                                        Text(
+                                            text = "$chapterCompletedCount/${chapterTopics.size} Topics Complete",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
                                 }
-                                
+
                                 Box {
                                     IconButton(onClick = { showChapterMenu = true }) {
                                         Icon(Icons.Rounded.MoreVert, contentDescription = "Chapter Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -461,6 +758,17 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 }
                             }
 
+                            if (chapterTopics.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                LinearProgressIndicator(
+                                    progress = { chapterProgress },
+                                    modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                    strokeCap = StrokeCap.Round
+                                )
+                            }
+
                             if (chapter.description.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
@@ -483,17 +791,14 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 } else {
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                                        modifier = Modifier.padding(start = 24.dp)
+                                        modifier = Modifier.padding(start = 16.dp)
                                     ) {
                                         chapterTopics.forEach { topic ->
                                             var showTopicMenu by remember { mutableStateOf(false) }
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(
-                                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
-                                                        shape = RoundedCornerShape(12.dp)
-                                                    )
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                                                     .padding(horizontal = 8.dp, vertical = 6.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
@@ -565,8 +870,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                         }
                                     }
                                 }
-                                
-                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Spacer(modifier = Modifier.height(10.dp))
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.End
@@ -591,7 +896,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     item {
                         var isExpandedUnassigned by remember { mutableStateOf(true) }
                         ScholarCard(
-                            modifier = Modifier.fillMaxWidth().animateContentSize()
+                            modifier = Modifier.fillMaxWidth().animateContentSize(),
+                            shape = RoundedCornerShape(22.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(
@@ -604,7 +910,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                             isExpandedUnassigned = !isExpandedUnassigned
                                         },
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Icon(
                                             imageVector = if (isExpandedUnassigned) Icons.Rounded.KeyboardArrowDown else Icons.Rounded.KeyboardArrowRight,
@@ -613,15 +919,15 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                         )
                                         Box(
                                             modifier = Modifier
-                                                .size(36.dp)
-                                                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f), shape = RoundedCornerShape(8.dp)),
+                                                .size(38.dp)
+                                                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.HelpOutline,
                                                 contentDescription = null,
                                                 tint = MaterialTheme.colorScheme.secondary,
-                                                modifier = Modifier.size(18.dp)
+                                                modifier = Modifier.size(20.dp)
                                             )
                                         }
                                         Column(modifier = Modifier.weight(1f)) {
@@ -631,6 +937,11 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
+                                            Text(
+                                                text = "${unassignedTopics.size} Topics",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         }
                                     }
                                 }
@@ -639,17 +950,14 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                                        modifier = Modifier.padding(start = 24.dp)
+                                        modifier = Modifier.padding(start = 16.dp)
                                     ) {
                                         unassignedTopics.forEach { topic ->
                                             var showTopicMenu by remember { mutableStateOf(false) }
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(
-                                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
-                                                        shape = RoundedCornerShape(12.dp)
-                                                    )
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                                                     .padding(horizontal = 8.dp, vertical = 6.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
@@ -727,10 +1035,10 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 }
             }
 
-            // 3. Subject Tasks Section
+            // 4. TASKS CHECKLIST SECTION
             item {
                 SectionHeader(
-                    title = "Tasks",
+                    title = "Tasks Checklist",
                     icon = Icons.Rounded.Assignment,
                     onAddClick = { showAddTaskDialog = true }
                 )
@@ -747,7 +1055,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 items(subjectTasks, key = { "task_${it.id}" }) { task ->
                     var showTaskMenu by remember { mutableStateOf(false) }
                     ScholarCard(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -823,11 +1132,11 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 }
             }
 
-            // 4. Assignments & Exams Section
+            // 5. ASSIGNMENTS & HOMEWORK SECTION
             item {
                 SectionHeader(
-                    title = "Assignments & Exams",
-                    icon = Icons.Rounded.Task,
+                    title = "Assignments & Homework",
+                    icon = Icons.AutoMirrored.Rounded.LibraryBooks,
                     onAddClick = { showAddAssignmentDialog = true }
                 )
             }
@@ -843,7 +1152,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 items(subjectAssignments, key = { "assignment_${it.id}" }) { assignment ->
                     var showAssignmentMenu by remember { mutableStateOf(false) }
                     ScholarCard(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -903,7 +1213,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                         text = { Text("Start Pomodoro") },
                                         onClick = {
                                             showAssignmentMenu = false
-                                            val courseParam = assignment.courseId?.let { "&courseId=$it" } ?: ""
+                                            val courseParam = assignment.courseId.let { "&courseId=$it" }
                                             navController.navigate("pomodoro?subjectId=${subjectId}&assignmentId=${assignment.id}$courseParam")
                                         },
                                         leadingIcon = { Icon(Icons.Rounded.Timer, contentDescription = null) }
@@ -931,7 +1241,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 }
             }
 
-            // 5. Subject Notes Section
+            // 6. SUBJECT NOTES SECTION
             item {
                 SectionHeader(
                     title = "Subject Notes",
@@ -952,7 +1262,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     var isExpanded by remember { mutableStateOf(false) }
                     ScholarCard(
                         onClick = { isExpanded = !isExpanded },
-                        modifier = Modifier.fillMaxWidth().animateContentSize()
+                        modifier = Modifier.fillMaxWidth().animateContentSize(),
+                        shape = RoundedCornerShape(18.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(
@@ -1001,8 +1312,234 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 }
             }
 
+            // 7. RESOURCE HUB & ATTACHMENTS
             item {
-                Spacer(modifier = Modifier.height(80.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Rounded.AttachFile, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Text(
+                                text = "Resource Hub & Attachments",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
+                        Text(
+                            text = "Reference notes, cheat sheets & lecture documents",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    BouncyButton(
+                        onClick = {
+                            try {
+                                filePickerLauncher.launch(arrayOf("*/*"))
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "File picking not supported", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(Icons.Rounded.AttachFile, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Browse File", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    }
+
+                    BouncyButton(
+                        onClick = {
+                            attachmentTitle = "Study Guide - ${subject.name}"
+                            attachmentContent = if (subjectNotes.isNotEmpty()) {
+                                subjectNotes.joinToString("\n\n") { "• ${it.content}" }
+                            } else {
+                                "Subject syllabus outline for ${subject.name}.\n\nChapters:\n" +
+                                        subjectChapters.joinToString("\n") { "• " + it.name } +
+                                        "\n\nTopics:\n" + subjectTopics.joinToString("\n") { "[] " + it.title }
+                            }
+                            showAddAttachmentDialog = true
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("AI Auto-Guide", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            if (attachments.isEmpty()) {
+                item {
+                    ScholarCard(
+                        modifier = Modifier.fillMaxWidth().height(110.dp),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "No documents attached to this subject.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Upload PDFs or tap AI Auto-Guide to generate a subject outline.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            } else {
+                items(attachments, key = { "attachment_${it.id}" }) { attachment ->
+                    val extension = remember(attachment.filePath) {
+                        if (attachment.filePath.contains(".")) attachment.filePath.substringAfterLast(".").lowercase() else ""
+                    }
+                    val visualMeta = remember(extension) {
+                        when (extension) {
+                            "pdf" -> Triple(Icons.Rounded.Description, Color(0xFFEF4444), Color(0xFFFEE2E2))
+                            "png", "jpg", "jpeg", "gif", "webp", "bmp" -> Triple(Icons.Rounded.Photo, Color(0xFF10B981), Color(0xFFD1FAE5))
+                            "txt", "md", "doc", "docx" -> Triple(Icons.Rounded.Article, Color(0xFF3B82F6), Color(0xFFDBEAFE))
+                            "xls", "xlsx" -> Triple(Icons.Rounded.Article, Color(0xFF059669), Color(0xFFD1FAE5))
+                            "ppt", "pptx" -> Triple(Icons.Rounded.Article, Color(0xFFF59E0B), Color(0xFFFEF3C7))
+                            "mp3", "wav", "aac", "flac", "ogg", "m4a" -> Triple(Icons.Rounded.VolumeUp, Color(0xFF8B5CF6), Color(0xFFEDE9FE))
+                            "mp4", "mkv", "avi", "mov", "webm" -> Triple(Icons.Rounded.PlayArrow, Color(0xFFEC4899), Color(0xFFFCE7F3))
+                            "zip", "rar", "tar", "gz", "7z" -> Triple(Icons.Rounded.Folder, Color(0xFF6B7280), Color(0xFFE5E7EB))
+                            else -> Triple(Icons.Rounded.AttachFile, Color(0xFF4F46E5), Color(0xFFE0E7FF))
+                        }
+                    }
+
+                    ScholarCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (attachment.filePath.endsWith(".pdf", ignoreCase = true)) {
+                                        val encodedPath = Uri.encode(attachment.filePath)
+                                        val encodedName = Uri.encode(attachment.name)
+                                        navController.navigate("pdf_viewer?filePath=$encodedPath&fileName=$encodedName")
+                                    } else {
+                                        try {
+                                            val file = File(attachment.filePath)
+                                            if (!file.exists()) {
+                                                Toast.makeText(context, "File does not exist or was deleted", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                val authority = "${context.packageName}.provider"
+                                                val uri = androidx.core.content.FileProvider.getUriForFile(context, authority, file)
+                                                val mimeType = when (extension) {
+                                                    "txt" -> "text/plain"
+                                                    "md" -> "text/markdown"
+                                                    "png" -> "image/png"
+                                                    "jpg", "jpeg" -> "image/jpeg"
+                                                    "gif" -> "image/gif"
+                                                    "webp" -> "image/webp"
+                                                    "bmp" -> "image/bmp"
+                                                    "mp3" -> "audio/mpeg"
+                                                    "wav" -> "audio/wav"
+                                                    "ogg" -> "audio/ogg"
+                                                    "m4a" -> "audio/mp4"
+                                                    "mp4" -> "video/mp4"
+                                                    "mkv" -> "video/x-matroska"
+                                                    "doc", "docx" -> "application/msword"
+                                                    "xls", "xlsx" -> "application/vnd.ms-excel"
+                                                    "ppt", "pptx" -> "application/vnd.ms-powerpoint"
+                                                    "zip" -> "application/zip"
+                                                    "rar" -> "application/x-rar-compressed"
+                                                    else -> "*/*"
+                                                }
+                                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                                    setDataAndType(uri, mimeType)
+                                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                }
+                                                context.startActivity(android.content.Intent.createChooser(intent, "Open file with"))
+                                            }
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Could not open file: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .background(visualMeta.third, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = visualMeta.first,
+                                    contentDescription = null,
+                                    tint = visualMeta.second,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = attachment.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                val sizeFormatted = remember(attachment.sizeBytes) {
+                                    if (attachment.sizeBytes < 1024) "${attachment.sizeBytes} B"
+                                    else if (attachment.sizeBytes < 1024 * 1024) "${attachment.sizeBytes / 1024} KB"
+                                    else String.format(Locale.getDefault(), "%.2f MB", attachment.sizeBytes.toFloat() / (1024 * 1024))
+                                }
+                                Text(
+                                    text = "$sizeFormatted • ${attachment.fileType.uppercase()}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            IconButton(
+                                onClick = { viewModel.deleteAttachment(attachment) },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Delete,
+                                    contentDescription = "Delete Attachment",
+                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -1044,7 +1581,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         )
     }
 
-    // Link Course Dialog (Multi-select list)
+    // Link Course Dialog
     if (showLinkCourseDialog) {
         AlertDialog(
             onDismissRequest = { showLinkCourseDialog = false },
@@ -1118,7 +1655,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
     if (showAddTopicDialog || currentTopic != null) {
         var topicTitle by remember(currentTopic) { mutableStateOf(currentTopic?.title ?: "") }
         var topicTags by remember(currentTopic) { mutableStateOf(currentTopic?.tags ?: "") }
-        
+
         var chapterDropdownExpanded by remember { mutableStateOf(false) }
         val currentSelectedChapterId = remember(currentTopic, selectedChapterForNewTopic) {
             currentTopic?.chapterId ?: selectedChapterForNewTopic
@@ -1134,7 +1671,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 showAddTopicDialog = false
                 topicToEdit = null
             },
-            title = { Text(if (currentTopic == null) "Add Topic" else "Edit Topic") },
+            title = { Text(if (currentTopic == null) "Add Topic" else "Edit Topic", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -1149,7 +1686,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         label = { Text("Tags (comma separated, optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    
+
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("Assign to Chapter", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -1232,13 +1769,13 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         var chapterName by remember(currentChapter) { mutableStateOf(currentChapter?.name ?: "") }
         var chapterDesc by remember(currentChapter) { mutableStateOf(currentChapter?.description ?: "") }
         var chapterTags by remember(currentChapter) { mutableStateOf(currentChapter?.tags ?: "") }
-        
+
         AlertDialog(
             onDismissRequest = {
                 showAddChapterDialog = false
                 chapterToEdit = null
             },
-            title = { Text(if (currentChapter == null) "Add Chapter" else "Edit Chapter") },
+            title = { Text(if (currentChapter == null) "Add Chapter" else "Edit Chapter", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -1303,7 +1840,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 showAddNoteDialog = false
                 noteToEdit = null
             },
-            title = { Text(if (currentNote == null) "Add Note" else "Edit Note") },
+            title = { Text(if (currentNote == null) "Add Note" else "Edit Note", fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = noteContent,
@@ -1348,13 +1885,13 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         var taskTitle by remember(currentTask) { mutableStateOf(currentTask?.title ?: "") }
         var taskDescription by remember(currentTask) { mutableStateOf(currentTask?.description ?: "") }
         var taskDueDate by remember(currentTask) { mutableStateOf(currentTask?.dueDateMillis) }
-        
+
         AlertDialog(
             onDismissRequest = {
                 showAddTaskDialog = false
                 taskToEdit = null
             },
-            title = { Text(if (currentTask == null) "Add Task" else "Edit Task") },
+            title = { Text(if (currentTask == null) "Add Task" else "Edit Task", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -1369,19 +1906,19 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    
+
                     Spacer(modifier = Modifier.height(4.dp))
-                    
+
                     val dateLabel = if (taskDueDate != null) {
                         SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(taskDueDate!!)
                     } else {
                         "No Due Date"
                     }
-                    
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable {
                                 val cal = Calendar.getInstance()
@@ -1462,7 +1999,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 showAddAssignmentDialog = false
                 assignmentToEdit = null
             },
-            title = { Text(if (currentAssignment == null) "Add Assignment" else "Edit Assignment") },
+            title = { Text(if (currentAssignment == null) "Add Assignment" else "Edit Assignment", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -1523,7 +2060,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable {
                                 val cal = Calendar.getInstance()
@@ -1562,7 +2099,6 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             "Exam" -> "#FF5722"
                             else -> "#9C27B0"
                         }
-                        // Default to first linked course, or 0 if none
                         val courseId = linkedCourses.firstOrNull()?.id ?: 0
 
                         if (currentAssignment == null) {
@@ -1602,6 +2138,47 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             }
         )
     }
+
+    // Add Attachment (AI Study Guide PDF) Dialog
+    if (showAddAttachmentDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddAttachmentDialog = false },
+            title = { Text("Generate Study Guide PDF", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Review or customize the automatic study booklet content. This will compile a PDF document linked to this subject.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = attachmentTitle,
+                        onValueChange = { attachmentTitle = it },
+                        label = { Text("Document Title") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = attachmentContent,
+                        onValueChange = { attachmentContent = it },
+                        label = { Text("Study Guide / Syllabus Material Content") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 5
+                    )
+                }
+            },
+            confirmButton = {
+                BouncyTextButton(onClick = {
+                    if (attachmentTitle.isNotBlank() && attachmentContent.isNotBlank()) {
+                        generateStudyGuidePdf(attachmentTitle, attachmentContent)
+                        showAddAttachmentDialog = false
+                    }
+                }) { Text("Generate PDF") }
+            },
+            dismissButton = {
+                BouncyTextButton(onClick = { showAddAttachmentDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
 }
 
 @Composable
@@ -1620,7 +2197,7 @@ fun SectionHeader(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
+            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
         }
         BouncyIconButton(
             onClick = onAddClick,
@@ -1650,8 +2227,9 @@ fun StatItem(label: String, count: Int, detail: String? = null) {
             Text(
                 text = detail,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                fontSize = 10.sp
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -1665,7 +2243,7 @@ fun EmptySectionCard(
 ) {
     ScholarCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(18.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -1676,6 +2254,7 @@ fun EmptySectionCard(
                 text = text,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
             BouncyTextButton(onClick = onClick) {
