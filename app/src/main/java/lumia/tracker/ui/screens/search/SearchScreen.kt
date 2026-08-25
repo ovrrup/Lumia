@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
 import lumia.tracker.model.*
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
@@ -102,7 +104,7 @@ private fun buildHighlightedText(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, FlowPreview::class)
 @Composable
 fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
     val focusManager = LocalFocusManager.current
@@ -119,6 +121,13 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
     val testRecords by viewModel.allTestRecords.collectAsStateWithLifecycle()
 
     var searchQuery by remember { mutableStateOf("") }
+    var debouncedSearchQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { searchQuery }
+            .debounce(300)
+            .collect { debouncedSearchQuery = it }
+    }
     var selectedFilter by remember { mutableStateOf("All") }
     var selectedResultForDialog by remember { mutableStateOf<SearchResult?>(null) }
 
@@ -269,8 +278,8 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
     }
 
     // Filter results based on search query and category
-    val searchResults = remember(searchQuery, selectedFilter, allAggregatedResults) {
-        val query = searchQuery.trim().lowercase(Locale.getDefault())
+    val searchResults = remember(debouncedSearchQuery, selectedFilter, allAggregatedResults) {
+        val query = debouncedSearchQuery.trim().lowercase(Locale.getDefault())
 
         allAggregatedResults.filter { item ->
             val matchesCategory = when (selectedFilter) {

@@ -1,5 +1,17 @@
 package lumia.tracker.util
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
 object StreakNotifications {
     val motivational = listOf(
         "You're doing great! Keep up the good work.",
@@ -86,4 +98,133 @@ object StreakNotifications {
         "If you quit, you're just like everyone else.",
         "Maintain the streak. At all costs."
     )
+
+    val preservationMotivational = listOf(
+        "Don't let your streak slip away! Complete your daily goals tonight.",
+        "Keep your momentum alive! Spend a few minutes studying tonight to save your streak.",
+        "Your streak is on the line! Finish today's targets before midnight.",
+        "A few minutes of focus tonight will protect your hard-earned streak.",
+        "Stay dedicated! Take a quick study session to keep your streak glowing.",
+        "Almost there! Check off today's tasks and secure your streak.",
+        "Consistency is power. Keep the fire burning before the day ends!"
+    )
+
+    val preservationAggressive = listOf(
+        "Your streak is about to die. Get to work before midnight.",
+        "Clock is ticking. Don't lose your streak to laziness.",
+        "Midnight is approaching. Save your streak or start over from zero tomorrow.",
+        "You haven't finished your streak requirements today. Fix it now.",
+        "Excuses won't save your streak tonight. Put the work in.",
+        "Are you really going to let your flame burn out today? Open the app.",
+        "Discipline is doing it even when you don't feel like it. Keep the streak alive."
+    )
+
+    fun getCompletionMessage(tone: String): String {
+        return if (tone == "Motivational") motivational.random() else aggressive.random()
+    }
+
+    fun getPreservationMessage(tone: String): String {
+        return if (tone == "Motivational") preservationMotivational.random() else preservationAggressive.random()
+    }
+
+    fun scheduleEveningPreservationReminder(context: Context) {
+        try {
+            val profMgr = lumia.tracker.data.ProfileManager(context)
+            val prefs = profMgr.getProfilePrefs()
+
+            val now = System.currentTimeMillis()
+            val calendar = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 20)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            var triggerTime = calendar.timeInMillis
+            if (triggerTime <= now) {
+                triggerTime += 86400000L
+            }
+
+            val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            val alreadySentToday = prefs.getBoolean("streak_preservation_notif_sent_$todayStr", false)
+            val isCompleteToday = prefs.getString("streak_status_$todayStr", "none") != "none"
+            if (alreadySentToday || isCompleteToday) return
+
+            ReminderScheduler.scheduleReminderExact(
+                context = context,
+                assignmentId = 77777,
+                title = "Protect Your Streak! 🔥",
+                desc = "Don't lose your streak! Complete your goals tonight.",
+                interconnections = "",
+                triggerTime = triggerTime,
+                type = "streak_preservation"
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("StreakNotifications", "Error scheduling evening preservation reminder", e)
+        }
+    }
+
+    fun sendPreservationNotificationIfDue(context: Context) {
+        try {
+            val profMgr = lumia.tracker.data.ProfileManager(context)
+            val prefs = profMgr.getProfilePrefs()
+            val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+            val statusToday = prefs.getString("streak_status_$todayStr", "none")
+            val alreadySent = prefs.getBoolean("streak_preservation_notif_sent_$todayStr", false)
+
+            if (statusToday != "none" || alreadySent) return
+
+            val tone = prefs.getString("streak_notif_tone", "Motivational") ?: "Motivational"
+            val message = getPreservationMessage(tone)
+            val colorHex = prefs.getString("streak_progress_color", "#FF5722") ?: "#FF5722"
+            val iconRes = NotificationHelper.getSmallIcon()
+            val notifColor = try {
+                if (colorHex == "Theme") NotificationHelper.getColor(context)
+                else android.graphics.Color.parseColor(colorHex)
+            } catch (e: Exception) {
+                NotificationHelper.getColor(context)
+            }
+
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    "scholar_streak_channel",
+                    "Streak & Milestone Alerts",
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = "Daily streak continuity and milestone notifications"
+                    enableLights(true)
+                    lightColor = notifColor
+                }
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            val intent = Intent(context, lumia.tracker.MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("OPEN_SCREEN", "settings/streaks")
+            }
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                77777,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val notification = NotificationCompat.Builder(context, "scholar_streak_channel")
+                .setSmallIcon(iconRes)
+                .setContentTitle("Protect Your Streak! 🔥")
+                .setContentText(message)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+                .setColor(notifColor)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .build()
+
+            notificationManager.notify(77777, notification)
+            prefs.edit().putBoolean("streak_preservation_notif_sent_$todayStr", true).apply()
+        } catch (e: Exception) {
+            android.util.Log.e("StreakNotifications", "Error sending preservation notification", e)
+        }
+    }
 }

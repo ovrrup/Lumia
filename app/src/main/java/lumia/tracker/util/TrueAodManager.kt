@@ -1,16 +1,22 @@
 package lumia.tracker.util
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.PixelFormat
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.os.BatteryManager
 import android.os.Build
-import android.provider.Settings
 import android.view.Gravity
 import android.view.WindowManager
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,23 +38,28 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
-import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.delay
-import lumia.tracker.service.PomodoroService
 import lumia.tracker.service.AodAccessibilityService
+import lumia.tracker.service.PomodoroService
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.cos
+import kotlin.math.sin
 
 @SuppressLint("StaticFieldLeak")
 object TrueAodManager {
+    @Volatile
     private var windowManager: WindowManager? = null
+    @Volatile
     private var composeView: ComposeView? = null
+    @Volatile
     private var lifecycleOwner: OverlayLifecycleOwner? = null
 
     class OverlayLifecycleOwner : LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner {
@@ -87,33 +98,32 @@ object TrueAodManager {
         return composeView != null
     }
 
+    @Synchronized
     @SuppressLint("ClickableViewAccessibility")
     fun showAodOverlay(
         context: Context,
         useAccessibility: Boolean,
-        dimnessLevel: Float, // e.g., 0.95f
-        sensitivity: String, // "highest", "medium", "secure", "motion"
+        dimnessLevel: Float,
+        sensitivity: String,
         motionSensitivity: Float = 1.2f,
-        lockTimeoutSeconds: Int = 0, // 30 seconds
+        lockTimeoutSeconds: Int = 0,
         burnInShiftIntervalSeconds: Int = 10,
         onExit: () -> Unit
     ) {
         if (composeView != null) return
 
         val overlayContext = if (useAccessibility) {
-            lumia.tracker.service.AodAccessibilityService.instance ?: context
+            AodAccessibilityService.instance ?: context
         } else {
             context
         }
 
-        val wm = overlayContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        windowManager = wm
+        val wm = overlayContext.getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return
 
         val localLifecycle = OverlayLifecycleOwner()
         localLifecycle.onCreate()
         localLifecycle.onStart()
         localLifecycle.onResume()
-        lifecycleOwner = localLifecycle
 
         val layoutParams = WindowManager.LayoutParams().apply {
             width = WindowManager.LayoutParams.MATCH_PARENT
@@ -124,6 +134,7 @@ object TrueAodManager {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                 } else {
+                    @Suppress("DEPRECATION")
                     WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
                 }
             }
@@ -137,7 +148,7 @@ object TrueAodManager {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
             }
-            screenBrightness = 0.005f // force minimum hardware backlight
+            screenBrightness = 0.005f
             format = PixelFormat.TRANSLUCENT
             gravity = Gravity.FILL
         }
@@ -146,7 +157,7 @@ object TrueAodManager {
             setViewTreeLifecycleOwner(localLifecycle)
             setViewTreeViewModelStoreOwner(localLifecycle)
             setViewTreeSavedStateRegistryOwner(localLifecycle)
-            
+
             setContent {
                 TrueAodOverlayUi(
                     dimnessLevel = dimnessLevel,
@@ -165,23 +176,48 @@ object TrueAodManager {
         try {
             wm.addView(view, layoutParams)
             composeView = view
+            windowManager = wm
+            lifecycleOwner = localLifecycle
         } catch (e: Exception) {
             e.printStackTrace()
+            try {
+                localLifecycle.onDestroy()
+            } catch (ignored: Exception) {}
+            composeView = null
+            windowManager = null
+            lifecycleOwner = null
         }
     }
 
+    @Synchronized
     fun dismissAodOverlay() {
-        val wm = windowManager ?: return
         val view = composeView ?: return
+        val wm = windowManager
+        val lifecycle = lifecycleOwner
+
+        composeView = null
+        windowManager = null
+        lifecycleOwner = null
+
+        if (wm != null) {
+            try {
+                if (view.isAttachedToWindow) {
+                    wm.removeViewImmediate(view)
+                } else {
+                    wm.removeView(view)
+                }
+            } catch (e: IllegalArgumentException) {
+                // View was not attached
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         try {
-            wm.removeView(view)
+            lifecycle?.onDestroy()
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        composeView = null
-        windowManager = null
-        lifecycleOwner?.onDestroy()
-        lifecycleOwner = null
     }
 }
 
@@ -215,24 +251,24 @@ fun TrueAodOverlayUi(
     var batteryLevel by remember { mutableIntStateOf(100) }
     var isCharging by remember { mutableStateOf(false) }
     DisposableEffect(context) {
-        val receiver = object : android.content.BroadcastReceiver() {
-            override fun onReceive(c: Context?, intent: android.content.Intent?) {
-                val level = intent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
-                val scale = intent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
-                val status = intent?.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1) ?: -1
-                isCharging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING ||
-                             status == android.os.BatteryManager.BATTERY_STATUS_FULL
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context?, intent: Intent?) {
+                val level = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+                val status = intent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+                isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                             status == BatteryManager.BATTERY_STATUS_FULL
                 batteryLevel = if (level >= 0 && scale > 0) (level * 100 / scale) else 100
             }
         }
-        val filter = android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
+        val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
         val initialIntent = context.registerReceiver(receiver, filter)
         if (initialIntent != null) {
-            val level = initialIntent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
-            val scale = initialIntent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)
-            val status = initialIntent.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1)
-            isCharging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING ||
-                         status == android.os.BatteryManager.BATTERY_STATUS_FULL
+            val level = initialIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale = initialIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+            val status = initialIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+            isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                         status == BatteryManager.BATTERY_STATUS_FULL
             batteryLevel = if (level >= 0 && scale > 0) (level * 100 / scale) else 100
         }
         onDispose {
@@ -252,7 +288,7 @@ fun TrueAodOverlayUi(
 
     // Touch holding stats for Secure Hold Sensitivity
     var isHolding by remember { mutableStateOf(false) }
-    var holdProgress by remember { mutableStateOf(0f) }
+    var holdProgress by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(isHolding) {
         if (isHolding) {
@@ -271,7 +307,6 @@ fun TrueAodOverlayUi(
         }
     }
 
-    // Modifiers matching sensitivity mode
     val sensitivityModifier = remember(sensitivity) {
         when (sensitivity) {
             "motion", "highest" -> {
@@ -284,7 +319,7 @@ fun TrueAodOverlayUi(
                     detectTapGestures(onDoubleTap = { onExitRequest() })
                 }
             }
-            else -> { // secure (hold for 1s)
+            else -> {
                 Modifier.pointerInput(Unit) {
                     awaitPointerEventScope {
                         while (true) {
@@ -299,58 +334,101 @@ fun TrueAodOverlayUi(
         }
     }
 
-    if (sensitivity == "motion" && motionSensitivity > 0f) {
-        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as android.hardware.SensorManager
-        val linearSensor = remember { sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_LINEAR_ACCELERATION) }
-        val accelSensor = remember { if (linearSensor == null) sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER) else null }
-        
-        DisposableEffect(sensorManager, linearSensor, accelSensor, motionSensitivity) {
+    // Sensor listeners: Proximity and Motion
+    if (sensitivity == "motion") {
+        val sensorManager = remember {
+            context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+        }
+
+        DisposableEffect(sensorManager, motionSensitivity) {
+            val sm = sensorManager ?: return@DisposableEffect onDispose {}
+
+            val linearSensor = sm.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+            val accelSensor = if (linearSensor == null) sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) else null
+            val proximitySensor = sm.getDefaultSensor(Sensor.TYPE_PROXIMITY)
+
             var lastX = 0f
             var lastY = 0f
             var lastZ = 0f
-            var isFirstValue = true
-            
-            val listener = object : android.hardware.SensorEventListener {
-                override fun onSensorChanged(event: android.hardware.SensorEvent) {
-                    if (event.sensor.type == android.hardware.Sensor.TYPE_LINEAR_ACCELERATION) {
-                        val x = event.values[0]
-                        val y = event.values[1]
-                        val z = event.values[2]
-                        val acceleration = Math.sqrt((x * x + y * y + z * z).toDouble()).toFloat()
-                        if (acceleration > motionSensitivity) {
-                            onExitRequest()
+            var isFirstAccelValue = true
+            var initialProximityRecorded = false
+            var lastProximityNear = false
+
+            val thresholdSq = motionSensitivity * motionSensitivity
+            val accelThreshold = motionSensitivity * 0.375f
+            val accelThresholdSq = accelThreshold * accelThreshold
+
+            val listener = object : SensorEventListener {
+                override fun onSensorChanged(event: SensorEvent) {
+                    when (event.sensor.type) {
+                        Sensor.TYPE_LINEAR_ACCELERATION -> {
+                            if (motionSensitivity > 0f) {
+                                val x = event.values[0]
+                                val y = event.values[1]
+                                val z = event.values[2]
+                                val magSq = x * x + y * y + z * z
+                                if (magSq > thresholdSq) {
+                                    onExitRequest()
+                                }
+                            }
                         }
-                    } else if (event.sensor.type == android.hardware.Sensor.TYPE_ACCELEROMETER) {
-                        val x = event.values[0]
-                        val y = event.values[1]
-                        val z = event.values[2]
-                        if (!isFirstValue) {
-                            val dx = x - lastX
-                            val dy = y - lastY
-                            val dz = z - lastZ
-                            val delta = Math.sqrt((dx * dx + dy * dy + dz * dz).toDouble()).toFloat()
-                            val accelThreshold = motionSensitivity * 0.375f
-                            if (delta > accelThreshold) {
+                        Sensor.TYPE_ACCELEROMETER -> {
+                            if (motionSensitivity > 0f) {
+                                val x = event.values[0]
+                                val y = event.values[1]
+                                val z = event.values[2]
+                                if (!isFirstAccelValue) {
+                                    val dx = x - lastX
+                                    val dy = y - lastY
+                                    val dz = z - lastZ
+                                    val deltaSq = dx * dx + dy * dy + dz * dz
+                                    if (deltaSq > accelThresholdSq) {
+                                        onExitRequest()
+                                    }
+                                }
+                                lastX = x
+                                lastY = y
+                                lastZ = z
+                                isFirstAccelValue = false
+                            }
+                        }
+                        Sensor.TYPE_PROXIMITY -> {
+                            val distance = event.values.getOrNull(0) ?: return
+                            val maxRange = event.sensor.maximumRange
+                            val isNear = distance < minOf(maxRange, 5f)
+                            if (!initialProximityRecorded) {
+                                initialProximityRecorded = true
+                                lastProximityNear = isNear
+                            } else if (isNear != lastProximityNear) {
+                                lastProximityNear = isNear
                                 onExitRequest()
                             }
                         }
-                        lastX = x
-                        lastY = y
-                        lastZ = z
-                        isFirstValue = false
                     }
                 }
-                override fun onAccuracyChanged(s: android.hardware.Sensor?, accuracy: Int) {}
+
+                override fun onAccuracyChanged(s: Sensor?, accuracy: Int) {}
             }
-            
-            if (linearSensor != null) {
-                sensorManager.registerListener(listener, linearSensor, android.hardware.SensorManager.SENSOR_DELAY_UI)
-            } else if (accelSensor != null) {
-                sensorManager.registerListener(listener, accelSensor, android.hardware.SensorManager.SENSOR_DELAY_UI)
+
+            try {
+                if (linearSensor != null && motionSensitivity > 0f) {
+                    sm.registerListener(listener, linearSensor, SensorManager.SENSOR_DELAY_UI)
+                } else if (accelSensor != null && motionSensitivity > 0f) {
+                    sm.registerListener(listener, accelSensor, SensorManager.SENSOR_DELAY_UI)
+                }
+                if (proximitySensor != null) {
+                    sm.registerListener(listener, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            
+
             onDispose {
-                sensorManager.unregisterListener(listener)
+                try {
+                    sm.unregisterListener(listener)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }
@@ -358,19 +436,14 @@ fun TrueAodOverlayUi(
     // Dynamic Pixel Burn-in Orbital Shifter
     val shiftSpeed = if (burnInShiftIntervalSeconds > 0) burnInShiftIntervalSeconds else 10
     val burnInOffset = remember(serviceState.timeLeft, shiftSpeed) {
-        val tick = ((serviceState.timeLeft / shiftSpeed) % 8)
-        val x = when (tick) {
-            0 -> 0.dp; 1 -> 4.dp; 2 -> 0.dp; 3 -> (-4).dp
-            4 -> 3.dp; 5 -> (-3).dp; 6 -> 5.dp; else -> (-5).dp
-        }
-        val y = when (tick) {
-            0 -> 0.dp; 1 -> (-4).dp; 2 -> 4.dp; 3 -> 0.dp
-            4 -> (-3).dp; 5 -> 3.dp; 6 -> (-5).dp; else -> 5.dp
-        }
+        val orbitRadiusDp = 6.0
+        val step = (serviceState.timeLeft / shiftSpeed)
+        val angleRad = (step % 12) * (2.0 * Math.PI / 12.0)
+        val x = (orbitRadiusDp * cos(angleRad)).toFloat().dp
+        val y = (orbitRadiusDp * sin(angleRad)).toFloat().dp
         Pair(x, y)
     }
 
-    // Dimness scaling
     val textAlpha = (1.0f - dimnessLevel).coerceIn(0.02f, 0.40f)
 
     Box(
@@ -380,7 +453,6 @@ fun TrueAodOverlayUi(
             .then(sensitivityModifier),
         contentAlignment = Alignment.Center
     ) {
-        // Main Focus/Time Center Layout
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -388,7 +460,6 @@ fun TrueAodOverlayUi(
                 .padding(24.dp)
                 .offset(x = burnInOffset.first, y = burnInOffset.second)
         ) {
-            // Live Battery & Real-time Date Bar
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -425,7 +496,6 @@ fun TrueAodOverlayUi(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Real-time Clock
             Text(
                 text = currentTimeStr,
                 style = MaterialTheme.typography.displayLarge.copy(fontSize = 68.sp),
@@ -436,11 +506,10 @@ fun TrueAodOverlayUi(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Pomodoro Countdown Clock
             val m = serviceState.timeLeft / 60
             val s = serviceState.timeLeft % 60
             Text(
-                text = String.format("%02d:%02d", m, s),
+                text = String.format(Locale.getDefault(), "%02d:%02d", m, s),
                 style = MaterialTheme.typography.displayLarge.copy(fontSize = 96.sp),
                 fontWeight = FontWeight.Light,
                 color = Color.White.copy(alpha = textAlpha * 2.8f),
@@ -449,7 +518,6 @@ fun TrueAodOverlayUi(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Session Mode Pill
             Surface(
                 color = Color.White.copy(alpha = 0.05f),
                 shape = RoundedCornerShape(14.dp),
@@ -499,7 +567,6 @@ fun TrueAodOverlayUi(
                 textAlign = TextAlign.Center
             )
 
-            // Dynamic progress bar when secure long-pressing to exit
             if (sensitivity == "secure" && isHolding) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Box(

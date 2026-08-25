@@ -40,6 +40,11 @@ import lumia.tracker.ui.util.getTagColors
 import java.text.SimpleDateFormat
 import java.util.*
 
+data class TagSummary(
+    val name: String,
+    val totalCount: Int
+)
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, initialTag: String = "") {

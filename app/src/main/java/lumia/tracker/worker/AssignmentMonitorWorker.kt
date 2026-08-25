@@ -12,7 +12,15 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import lumia.tracker.MainActivity
 import lumia.tracker.data.AppDatabase
+import lumia.tracker.data.ProfileManager
 import lumia.tracker.model.PracticeAssignment
+import lumia.tracker.model.Task
+import lumia.tracker.util.NotificationContent
+import lumia.tracker.util.NotificationHelper
+import lumia.tracker.util.ReminderScheduler
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 class AssignmentMonitorWorker(
@@ -21,141 +29,164 @@ class AssignmentMonitorWorker(
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
-        Log.d("AppMonitor", "Running AppMonitorWorker...")
-        
+        Log.d("AssignmentMonitorWorker", "Running AssignmentMonitorWorker...")
+
         try {
-            val database = AppDatabase.getDatabase(context)
-            val profMgr = lumia.tracker.data.ProfileManager(context)
-            val activeProfile = profMgr.getActiveProfile()
+            val profMgr = ProfileManager(context)
             val prefs = profMgr.getProfilePrefs()
 
             val enableDailyDigest = prefs.getBoolean("notif_enable_daily_digest", true)
+            val enableClasses = prefs.getBoolean("notif_enable_classes", true)
             val formalTone = prefs.getBoolean("notif_formal_tone", true)
 
-            // Daily digest (Deadlines for Assignments and Tasks)
+            // Fast exit if all features handled by worker are disabled
+            if (!enableDailyDigest && !enableClasses) {
+                return Result.success()
+            }
+
+            val database = AppDatabase.getDatabase(context)
+            val currentTime = System.currentTimeMillis()
+            val next24h = currentTime + TimeUnit.HOURS.toMillis(24)
+
+            // 1. Daily digest (Deadlines for approaching Assignments and Tasks)
             if (enableDailyDigest) {
                 val allAssignments = database.scholarDao().exportAllAssignments()
                 val allTasks = database.scholarDao().exportAllTasks()
-                
-                val currentTime = System.currentTimeMillis()
-                val approachTimeLimit = currentTime + TimeUnit.HOURS.toMillis(24)
-                
+
                 val approachingAssignments = allAssignments.filter {
-                    !it.isCompleted && it.dueDateMillis > currentTime && it.dueDateMillis <= approachTimeLimit
+                    !it.isCompleted && it.dueDateMillis in (currentTime + 1)..next24h
                 }
                 val approachingTasks = allTasks.filter {
-                    !it.isCompleted && it.dueDateMillis != null && it.dueDateMillis > currentTime && it.dueDateMillis <= approachTimeLimit
+                    val due = it.dueDateMillis
+                    !it.isCompleted && due != null && due in (currentTime + 1)..next24h
                 }
-                
+
                 if (approachingAssignments.isNotEmpty() || approachingTasks.isNotEmpty()) {
                     showDigestNotification(approachingAssignments, approachingTasks, formalTone)
                 }
             }
 
-            // 3. Classes & Attendance Reminder
-            val enableClasses = prefs.getBoolean("notif_enable_classes", true)
+            // 2. Classes & Attendance Reminders for Today
             if (enableClasses) {
-                // Get today's day string (e.g. "Monday")
-                val calendar = java.util.Calendar.getInstance()
-                val currentDayOfWeekStr = java.text.SimpleDateFormat("EEEE", java.util.Locale.getDefault()).format(calendar.time)
-                
+                val calendar = Calendar.getInstance()
+                val todayFull = SimpleDateFormat("EEEE", Locale.US).format(calendar.time)
+                val todayShort = SimpleDateFormat("EEE", Locale.US).format(calendar.time)
+
                 val allCourses = database.scholarDao().exportAllCourses()
-                val todaysCourses = allCourses.filter {
-                    it.scheduleDays.contains(currentDayOfWeekStr, ignoreCase = true)
+                val todaysCourses = allCourses.filter { course ->
+                    course.scheduleDays.isNotBlank() && (
+                        course.scheduleDays.contains(todayFull, ignoreCase = true) ||
+                        course.scheduleDays.contains(todayShort, ignoreCase = true)
+                    )
                 }
 
-                if (todaysCourses.isEmpty()) {
-                    // Generic daily reminder if no classes but we want them to open the app? Actually just skip.
-                } else {
-                    todaysCourses.forEach { course ->
-                        try {
-                            if (course.scheduleStartTime.isNotBlank()) {
-                                // parse time and create calendar for today at that time
-                                val sdfTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
-                                val startCal = java.util.Calendar.getInstance()
-                                val parsedStart = sdfTime.parse(course.scheduleStartTime.uppercase())
-                                if (parsedStart != null) {
-                                    val timeCal = java.util.Calendar.getInstance()
-                                    timeCal.time = parsedStart
-                                    startCal.set(java.util.Calendar.HOUR_OF_DAY, timeCal.get(java.util.Calendar.HOUR_OF_DAY))
-                                    startCal.set(java.util.Calendar.MINUTE, timeCal.get(java.util.Calendar.MINUTE))
-                                    startCal.set(java.util.Calendar.SECOND, 0)
-                                    // schedule 10 minutes before
-                                    lumia.tracker.util.ReminderScheduler.scheduleClassReminder(
-                                        context, course.id, course.name, "Starts at ${course.scheduleStartTime}",
-                                        startCal.timeInMillis - (10 * 60 * 1000), "class_start"
+                for (course in todaysCourses) {
+                    try {
+                        if (course.scheduleStartTime.isNotBlank()) {
+                            val startMillis = parseTimeToTodayMillis(course.scheduleStartTime, calendar)
+                            if (startMillis != null) {
+                                val reminderTime = startMillis - (10 * 60 * 1000L)
+                                if (reminderTime > System.currentTimeMillis()) {
+                                    ReminderScheduler.scheduleClassReminder(
+                                        context = context,
+                                        classId = course.id,
+                                        title = course.name,
+                                        desc = "Starts at ${course.scheduleStartTime}",
+                                        timestamp = reminderTime,
+                                        type = "class_start",
+                                        courseId = course.id
                                     )
                                 }
                             }
-                            if (course.scheduleEndTime.isNotBlank()) {
-                                val sdfTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
-                                val endCal = java.util.Calendar.getInstance()
-                                val parsedEnd = sdfTime.parse(course.scheduleEndTime.uppercase())
-                                if (parsedEnd != null) {
-                                    val timeCal = java.util.Calendar.getInstance()
-                                    timeCal.time = parsedEnd
-                                    endCal.set(java.util.Calendar.HOUR_OF_DAY, timeCal.get(java.util.Calendar.HOUR_OF_DAY))
-                                    endCal.set(java.util.Calendar.MINUTE, timeCal.get(java.util.Calendar.MINUTE))
-                                    endCal.set(java.util.Calendar.SECOND, 0)
-                                    // schedule at the exact end time
-                                    lumia.tracker.util.ReminderScheduler.scheduleClassReminder(
-                                        context, course.id, course.name, "Class finished. Don't forget to mark your attendance!",
-                                        endCal.timeInMillis, "class_end"
-                                    )
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Log.e("AppMonitor", "Error parsing time for course ${course.name}", e)
                         }
+
+                        if (course.scheduleEndTime.isNotBlank()) {
+                            val endMillis = parseTimeToTodayMillis(course.scheduleEndTime, calendar)
+                            if (endMillis != null && endMillis > System.currentTimeMillis()) {
+                                ReminderScheduler.scheduleClassReminder(
+                                    context = context,
+                                    classId = course.id,
+                                    title = course.name,
+                                    desc = "Class finished. Don't forget to mark your attendance!",
+                                    timestamp = endMillis,
+                                    type = "class_end",
+                                    courseId = course.id
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("AssignmentMonitorWorker", "Error scheduling reminders for course: ${course.name}", e)
                     }
                 }
             }
-            
+
             return Result.success()
         } catch (e: Exception) {
-            Log.e("AppMonitor", "Error monitoring app stats", e)
+            Log.e("AssignmentMonitorWorker", "Error running AssignmentMonitorWorker", e)
             return Result.failure()
         }
     }
-    
-    private fun sendNotification(channelId: String, notifId: Int, title: String, text: String, iconRes: Int, color: Int) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Scholar System Alerts", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                enableLights(true)
-                lightColor = color
-            }
-            notificationManager.createNotificationChannel(channel)
-        }
-        val intent = Intent(context, MainActivity::class.java).apply { 
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP 
-            putExtra("OPEN_TAB", 3)
-        }
-        val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(iconRes)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-            .setColor(color)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
-        notificationManager.notify(notifId, notification)
+    private fun parseTimeToTodayMillis(timeStr: String, baseCal: Calendar): Long? {
+        if (timeStr.isBlank()) return null
+        val trimmed = timeStr.trim().uppercase(Locale.US)
+
+        val formats = listOf("hh:mm a", "h:mm a", "HH:mm", "H:mm")
+        for (format in formats) {
+            try {
+                val sdf = SimpleDateFormat(format, Locale.US)
+                sdf.isLenient = true
+                val date = sdf.parse(trimmed)
+                if (date != null) {
+                    val timeCal = Calendar.getInstance().apply { time = date }
+                    return (baseCal.clone() as Calendar).apply {
+                        set(Calendar.HOUR_OF_DAY, timeCal.get(Calendar.HOUR_OF_DAY))
+                        set(Calendar.MINUTE, timeCal.get(Calendar.MINUTE))
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                }
+            } catch (ignored: Exception) {}
+        }
+
+        // Fallback manual parser for non-standard time strings
+        try {
+            val isPm = trimmed.contains("PM")
+            val isAm = trimmed.contains("AM")
+            val clean = trimmed.replace("AM", "").replace("PM", "").trim()
+            val parts = clean.split(":")
+            if (parts.size >= 2) {
+                var hour = parts[0].trim().toInt()
+                val minute = parts[1].trim().take(2).toInt()
+                if (isPm && hour < 12) hour += 12
+                if (isAm && hour == 12) hour = 0
+                return (baseCal.clone() as Calendar).apply {
+                    set(Calendar.HOUR_OF_DAY, hour)
+                    set(Calendar.MINUTE, minute)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+            }
+        } catch (ignored: Exception) {}
+
+        return null
     }
 
-    private fun showDigestNotification(assignments: List<PracticeAssignment>, tasks: List<lumia.tracker.model.Task>, formalTone: Boolean) {
+    private fun showDigestNotification(
+        assignments: List<PracticeAssignment>,
+        tasks: List<Task>,
+        formalTone: Boolean
+    ) {
         val assignmentCount = assignments.size
         val taskCount = tasks.size
         val totalCount = assignmentCount + taskCount
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+
+        val channelId = "scholar_monitor_channel"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                "scholar_monitor_channel", 
-                "ScholarSync Monitor", 
+                channelId,
+                "ScholarSync Monitor",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Daily digest of upcoming deadlines"
@@ -164,7 +195,7 @@ class AssignmentMonitorWorker(
             }
             notificationManager.createNotificationChannel(channel)
         }
-        
+
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("OPEN_TAB", 3)
@@ -175,21 +206,21 @@ class AssignmentMonitorWorker(
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        
+
         val baseTitle = "$totalCount items approaching"
         val baseDesc = "You have $assignmentCount assignment(s) and $taskCount task(s) due within the next 24 hours."
-        
-        val (finalTitle, finalDesc) = lumia.tracker.util.NotificationContent.getPersonalizedContent(
+
+        val (finalTitle, finalDesc) = NotificationContent.getPersonalizedContent(
             type = "daily_digest",
             title = baseTitle,
             desc = baseDesc,
             tone = if (formalTone) "Formal" else "Aggressive"
         )
-        
+
         val inboxStyle = NotificationCompat.InboxStyle()
             .setBigContentTitle(finalTitle)
             .setSummaryText("Daily Summary")
-        
+
         var shown = 0
         assignments.take(3).forEach { assignment ->
             inboxStyle.addLine("[Assignment] ${assignment.title}")
@@ -203,20 +234,19 @@ class AssignmentMonitorWorker(
             inboxStyle.addLine("...and ${totalCount - shown} more")
         }
 
-        val notification = NotificationCompat.Builder(context, "scholar_monitor_channel")
-            .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(NotificationHelper.getSmallIcon())
             .setContentTitle(finalTitle)
             .setContentText(finalDesc)
             .setStyle(inboxStyle)
-            .setColor(lumia.tracker.util.NotificationHelper.getColor(context))
+            .setColor(NotificationHelper.getColor(context))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setGroup("assignments_group")
             .setGroupSummary(true)
             .build()
-            
-        // Use a fixed ID so it just updates the existing notification if it's still there
+
         notificationManager.notify(1001, notification)
     }
 }

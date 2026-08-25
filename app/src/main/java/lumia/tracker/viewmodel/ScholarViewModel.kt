@@ -24,8 +24,41 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
+import java.util.concurrent.ConcurrentHashMap
 
 class ScholarViewModel(application: Application) : AndroidViewModel(application) {
+
+    companion object {
+        private val BOOLEAN_KEYS = setOf(
+            "onboarding_completed", "was_installed_before", "pure_black_mode", "beta_floating_nav",
+            "nav_bar_glass_force_enabled", "beta_notes", "more_rounds", "beta_glass_ui", "beta_glass_dynamic",
+            "beta_frost_glass", "beta_nav_bar_size_controls", "nav_bar_glass_linked_to_main", "nav_bar_glass_dynamic",
+            "beta_enhanced_header", "beta_minimalist_mode", "beta_dynamic_background", "system_auto_link_by_name",
+            "system_enable_synergy", "system_auto_create_subject", "system_fuse_subjects_courses", "system_advanced_tasks",
+            "system_pomodoro_auto_log", "feature_subject_enabled", "feature_self_study_enabled", "feature_analytics_enabled",
+            "feature_calendar_enabled", "feature_quick_notes_enabled", "pomodoro_enable_period_target", "notif_formal_tone",
+            "notif_enable_deadlines", "notif_enable_classes", "notif_enable_daily_digest", "aod_true_black_oled",
+            "aod_auto_deactivate_true_black", "aod_lock_screen_support", "aod_true_aod_enabled", "dynamic_app_icon",
+            "beta_better_texts", "beta_better_texts_palette", "safety_pin_enabled", "safety_pin_conflict_warning",
+            "safety_pin_recommendations", "show_action_history", "streak_is_complete_today"
+        )
+
+        private val FLOAT_KEYS = setOf(
+            "nav_bar_height", "nav_bar_padding_horizontal", "nav_bar_padding_bottom", "nav_bar_corner_radius",
+            "nav_bar_indicator_alpha", "glass_opacity_value", "nav_bar_glass_opacity_value", "aod_motion_sensitivity",
+            "aod_dimness_level", "streak_partial_threshold", "streak_brightness",
+            "dynamic_bg_light_brightness", "dynamic_bg_dark_brightness"
+        )
+
+        private val INT_KEYS = setOf(
+            "pomodoro_work_duration", "pomodoro_short_break_duration", "pomodoro_long_break_duration",
+            "pomodoro_period_sessions", "aod_burn_in_shift_speed", "aod_lock_timeout", "streak_total_normal",
+            "streak_total_complete", "streak_current", "streak_longest", "streak_req_tasks", "streak_req_assignments",
+            "streak_req_study_mins"
+        )
+
+        private val LONG_KEYS = setOf("streak_last_date", "last_recorded_monotonic_time")
+    }
 
     val profileManager = lumia.tracker.data.ProfileManager(application)
     val activeProfile = MutableStateFlow(profileManager.getActiveProfile())
@@ -105,8 +138,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         allProfiles.value = profileManager.getAllProfiles()
     }
 
-
-
     // Advanced Data Management flow states
     private val _dbStatistics = MutableStateFlow<Map<String, Int>>(emptyMap())
     val dbStatistics = _dbStatistics.asStateFlow()
@@ -115,17 +146,21 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     val defragStatus = _defragStatus.asStateFlow()
 
     fun loadDBStatistics() {
-        viewModelScope.launch {
-            val stats = mutableMapOf<String, Int>()
-            stats["Courses"] = repository.dao.exportAllCourses().size
-            stats["Subjects"] = repository.dao.exportAllSubjects().size
-            stats["Exercises"] = repository.dao.exportAllAssignments().size
-            stats["Notes"] = repository.dao.exportAllNotes().size
-            stats["Tasks"] = repository.dao.exportAllTasks().size
-            stats["Focus Sessions"] = repository.dao.exportAllPomodoro().size
-            stats["Total Attachments"] = repository.dao.exportAllAttachments().size
-            stats["Tag Customizations"] = repository.dao.exportAllTagCustomizations().size
-            _dbStatistics.value = stats
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val stats = mutableMapOf<String, Int>()
+                stats["Courses"] = repository.dao.exportAllCourses().size
+                stats["Subjects"] = repository.dao.exportAllSubjects().size
+                stats["Exercises"] = repository.dao.exportAllAssignments().size
+                stats["Notes"] = repository.dao.exportAllNotes().size
+                stats["Tasks"] = repository.dao.exportAllTasks().size
+                stats["Focus Sessions"] = repository.dao.exportAllPomodoro().size
+                stats["Total Attachments"] = repository.dao.exportAllAttachments().size
+                stats["Tag Customizations"] = repository.dao.exportAllTagCustomizations().size
+                _dbStatistics.value = stats
+            } catch (e: Exception) {
+                android.util.Log.e("ScholarViewModel", "Failed to load DB stats", e)
+            }
         }
     }
 
@@ -184,8 +219,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("onboarding_completed", true).apply()
     }
 
-    
-        private val _streakTotalNormal = MutableStateFlow(prefs.getInt("streak_total_normal", 0))
+    private val _streakTotalNormal = MutableStateFlow(prefs.getInt("streak_total_normal", 0))
     val streakTotalNormal = _streakTotalNormal.asStateFlow()
 
     private val _streakTotalComplete = MutableStateFlow(prefs.getInt("streak_total_complete", 0))
@@ -194,7 +228,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _streakIsCompleteToday = MutableStateFlow(false)
     val streakIsCompleteToday = _streakIsCompleteToday.asStateFlow()
 
-private val _streakPercentage = MutableStateFlow(0f)
+    private val _streakPercentage = MutableStateFlow(0f)
     val streakPercentage = _streakPercentage.asStateFlow()
 
     private val _streakCurrent = MutableStateFlow(prefs.getInt("streak_current", 0))
@@ -290,11 +324,11 @@ private val _streakPercentage = MutableStateFlow(0f)
                 prefs.edit().putLong("last_recorded_monotonic_time", now).apply()
             }
 
-            val todayStart = java.util.Calendar.getInstance().apply {
-                set(java.util.Calendar.HOUR_OF_DAY, 0)
-                set(java.util.Calendar.MINUTE, 0)
-                set(java.util.Calendar.SECOND, 0)
-                set(java.util.Calendar.MILLISECOND, 0)
+            val todayStart = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
             }.timeInMillis
             val todayEnd = todayStart + 86400000L
 
@@ -317,23 +351,17 @@ private val _streakPercentage = MutableStateFlow(0f)
             
             val actionLogs = dao.exportAllActionLogs()
             
-            // To prevent exploits (completing deleted, empty, or past tasks/assignments):
-            // 1. Get currently existing completed tasks and assignments with valid content
+            // Valid content completed entities
             val existingCompletedTasks = tasks.filter { it.isCompleted && it.title.trim().length >= 2 }
             val existingCompletedAssignments = assignments.filter { it.isCompleted && it.title.trim().length >= 2 }
 
-            // 2. Filter existing completed elements that are NOT old and not spam-completed:
-            // - A task is not old if its due date is today or in the future, OR if it has no due date and was created today or later.
             val eligibleTasksCompletedTodayTitles = existingCompletedTasks.filter { task ->
-                val isNotOld = (task.dueDateMillis != null && task.dueDateMillis >= todayStart) || 
-                               (task.dueDateMillis == null && task.createdAt >= todayStart)
-                isNotOld
+                (task.dueDateMillis != null && task.dueDateMillis >= todayStart) || 
+                (task.dueDateMillis == null && task.createdAt >= todayStart)
             }.map { it.title }.toSet()
 
-            // - An assignment is not old if its due date is today or in the future.
             val eligibleAssignmentsCompletedTodayTitles = existingCompletedAssignments.filter { assignment ->
-                val isNotOld = assignment.dueDateMillis >= todayStart
-                isNotOld
+                assignment.dueDateMillis >= todayStart
             }.map { it.title }.toSet()
 
             val completedTasksToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed task:") }
@@ -405,7 +433,6 @@ private val _streakPercentage = MutableStateFlow(0f)
             withContext(Dispatchers.Main) {
                 _streakPercentage.value = percentage
                 
-                // Check if streak applies
                 val lastStreakDate = prefs.getLong("streak_last_date", 0L)
                 val threshold = _streakPartialThreshold.value
                 
@@ -438,6 +465,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                     )
                 }
 
+                val editor = prefs.edit()
                 if (percentage >= threshold) {
                     if (statusToday == "none") {
                         val isConsecutive = (todayStart - lastStreakDate) <= 86400000L * 2
@@ -446,36 +474,36 @@ private val _streakPercentage = MutableStateFlow(0f)
                         _streakCurrent.value = newCurrent
                         if (newCurrent > _streakLongest.value) {
                             _streakLongest.value = newCurrent
-                            prefs.edit().putInt("streak_longest", newCurrent).apply()
+                            editor.putInt("streak_longest", newCurrent)
                         }
                         
                         if (isComplete) {
-                            prefs.edit().putString("streak_status_$todayStr", "complete").apply()
+                            editor.putString("streak_status_$todayStr", "complete")
                             _streakTotalComplete.value += 1
                         } else {
-                            prefs.edit().putString("streak_status_$todayStr", "normal").apply()
+                            editor.putString("streak_status_$todayStr", "normal")
                             _streakTotalNormal.value += 1
                         }
                         
-                        prefs.edit()
+                        editor
                             .putInt("streak_current", newCurrent)
                             .putLong("streak_last_date", todayStart)
                             .putInt("streak_total_normal", _streakTotalNormal.value)
                             .putInt("streak_total_complete", _streakTotalComplete.value)
                             .apply()
                     } else if (statusToday == "normal" && isComplete) {
-                        prefs.edit().putString("streak_status_$todayStr", "complete").apply()
                         _streakTotalNormal.value -= 1
                         _streakTotalComplete.value += 1
-                        prefs.edit()
+                        editor
+                            .putString("streak_status_$todayStr", "complete")
                             .putInt("streak_total_normal", _streakTotalNormal.value)
                             .putInt("streak_total_complete", _streakTotalComplete.value)
                             .apply()
                     } else if (statusToday == "complete" && !isComplete) {
-                        prefs.edit().putString("streak_status_$todayStr", "normal").apply()
                         _streakTotalComplete.value -= 1
                         _streakTotalNormal.value += 1
-                        prefs.edit()
+                        editor
+                            .putString("streak_status_$todayStr", "normal")
                             .putInt("streak_total_normal", _streakTotalNormal.value)
                             .putInt("streak_total_complete", _streakTotalComplete.value)
                             .apply()
@@ -491,7 +519,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                             _streakTotalNormal.value -= 1
                         }
                         
-                        prefs.edit()
+                        editor
                             .putString("streak_status_$todayStr", "none")
                             .putInt("streak_current", newCurrent)
                             .putInt("streak_total_normal", _streakTotalNormal.value)
@@ -504,7 +532,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                     val yesterday = todayStart - 86400000L
                     if (currentLastDate < yesterday) {
                         _streakCurrent.value = 0
-                        prefs.edit().putInt("streak_current", 0).apply()
+                        editor.putInt("streak_current", 0).apply()
                     }
                 }
             }
@@ -548,7 +576,7 @@ private val _streakPercentage = MutableStateFlow(0f)
         try {
             val colorInt = android.graphics.Color.parseColor(cleanHex)
             val hsv = FloatArray(3)
-            android.graphics.Color.colorToHSV(colorInt, hsv) // Hue: 0-360, Sat: 0-1, Val: 0-1
+            android.graphics.Color.colorToHSV(colorInt, hsv)
             
             // 1. Primary is already set
             updateCustomColor("primary", cleanHex)
@@ -579,9 +607,8 @@ private val _streakPercentage = MutableStateFlow(0f)
 
             // Auto-select "Custom" theme color
             updateThemeColor("Custom")
-            
         } catch(e: Exception) {
-            // Safe fallback so formatting typos while editing the input field do not cause crashes
+            // Safe fallback for formatting typos while editing input
         }
     }
 
@@ -622,46 +649,30 @@ private val _streakPercentage = MutableStateFlow(0f)
     val moreRoundsMode = _moreRoundsMode.asStateFlow()
 
     fun updateAppAnimationMode(mode: String) {
-        if (mode == "Bouncy" && safetyPinEnabled.value && safetyPinConflictWarning.value && (_displayLayoutMode.value != "Immersive" || !_moreRounds.value)) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Bouncy Animations Warning",
-                description = "Bouncy animations require 'Immersive' layout mode and 'More Rounds' feature to be enabled. Proceed with enabling these requirements automatically?",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    updateDisplayLayoutMode("Immersive")
-                    updateMoreRounds(true)
-                    _appAnimationMode.value = "Bouncy"
-                    prefs.edit().putString("app_animation_mode", "Bouncy").apply()
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
         _appAnimationMode.value = mode
-        prefs.edit().putString("app_animation_mode", mode).apply()
+        if (mode == "Bouncy") {
+            _displayLayoutMode.value = "Immersive"
+            _moreRounds.value = true
+            prefs.edit()
+                .putString("app_animation_mode", mode)
+                .putString("display_layout_mode", "Immersive")
+                .putBoolean("more_rounds", true)
+                .apply()
+        } else {
+            prefs.edit().putString("app_animation_mode", mode).apply()
+        }
     }
 
     fun updateMoreRounds(enabled: Boolean) {
-        if (!enabled && _appAnimationMode.value == "Bouncy" && safetyPinEnabled.value && safetyPinConflictWarning.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Required by Bouncy Animations",
-                description = "Disabling 'More Rounds' will also disable 'Bouncy' animations and revert to 'Dynamic'. Proceed?",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _moreRounds.value = false
-                    prefs.edit().putBoolean("more_rounds", false).apply()
-                    updateAppAnimationMode("Dynamic")
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
         _moreRounds.value = enabled
-        prefs.edit().putBoolean("more_rounds", enabled).apply()
         if (!enabled && _appAnimationMode.value == "Bouncy") {
-            updateAppAnimationMode("Dynamic")
+            _appAnimationMode.value = "Dynamic"
+            prefs.edit()
+                .putBoolean("more_rounds", enabled)
+                .putString("app_animation_mode", "Dynamic")
+                .apply()
+        } else {
+            prefs.edit().putBoolean("more_rounds", enabled).apply()
         }
     }
 
@@ -703,10 +714,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     private val _systemPomodoroAutoLog = MutableStateFlow(prefs.getBoolean("system_pomodoro_auto_log", true))
     val systemPomodoroAutoLog = _systemPomodoroAutoLog.asStateFlow()
 
-
     fun submitRecommendationFeedback(recommendationId: String, rating: Int) {
-        // rating: 1 for positive, -1 for negative
-        // In a complete implementation, this would adjust the FocusPredictor model weights
         logAction("User rated recommendation $recommendationId with $rating")
     }
 
@@ -913,20 +921,6 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun updateAodTrueBlackOled(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_themeMode.value == "Light" || _betaDynamicBackground.value)) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "AOD Style Warning",
-                description = "Enabling 'True Black OLED' mode during Light theme or Dynamic background lighting can lead to high contrast transitions when AOD opens or exits.",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _aodTrueBlackOled.value = true
-                    prefs.edit().putBoolean("aod_true_black_oled", true).apply()
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
         _aodTrueBlackOled.value = enabled
         prefs.edit().putBoolean("aod_true_black_oled", enabled).apply()
     }
@@ -1093,30 +1087,8 @@ private val _streakPercentage = MutableStateFlow(0f)
         val onIgnore: () -> Unit
     )
 
-    private val _safetyPinDialogData = run {
-        val delegate = MutableStateFlow<SafetyPinDialogData?>(null)
-        object : MutableStateFlow<SafetyPinDialogData?> by delegate {
-            override var value: SafetyPinDialogData?
-                get() = delegate.value
-                set(v) {
-                    if (v != null && delegate.value != null) return
-                    delegate.value = v
-                }
-            override fun compareAndSet(expect: SafetyPinDialogData?, update: SafetyPinDialogData?): Boolean {
-                if (update != null && delegate.value != null) return false
-                return delegate.compareAndSet(expect, update)
-            }
-            override fun tryEmit(value: SafetyPinDialogData?): Boolean {
-                if (value != null && delegate.value != null) return false
-                return delegate.tryEmit(value)
-            }
-            override suspend fun emit(value: SafetyPinDialogData?) {
-                if (value != null && delegate.value != null) return
-                delegate.emit(value)
-            }
-        }
-    }
-    val safetyPinDialogData = _safetyPinDialogData.asStateFlow()
+    private val _safetyPinDialogData = MutableStateFlow<SafetyPinDialogData?>(null)
+    val safetyPinDialogData: StateFlow<SafetyPinDialogData?> = _safetyPinDialogData.asStateFlow()
 
     fun dismissSafetyPinDialog() {
         _safetyPinDialogData.value = null
@@ -1126,8 +1098,6 @@ private val _streakPercentage = MutableStateFlow(0f)
     val showActionHistory = _showActionHistory.asStateFlow()
 
     init {
-        val database = AppDatabase.getDatabase(application)
-        
         refreshThemeBrightness()
         verifyFeatureEntitlements()
     }
@@ -1212,7 +1182,7 @@ private val _streakPercentage = MutableStateFlow(0f)
         initialValue = emptyList()
     )
 
-    private val topicFlowCache = HashMap<Int, StateFlow<List<Topic>>>()
+    private val topicFlowCache = ConcurrentHashMap<Int, StateFlow<List<Topic>>>()
     
     fun getTopicsForSubject(subjectId: Int): StateFlow<List<Topic>> {
         return topicFlowCache.getOrPut(subjectId) {
@@ -1224,8 +1194,8 @@ private val _streakPercentage = MutableStateFlow(0f)
         }
     }
 
-    private val assignmentsFlowCache = HashMap<Int, StateFlow<List<PracticeAssignment>>>()
-    private val chaptersFlowCache = HashMap<Int, StateFlow<List<Chapter>>>()
+    private val assignmentsFlowCache = ConcurrentHashMap<Int, StateFlow<List<PracticeAssignment>>>()
+    private val chaptersFlowCache = ConcurrentHashMap<Int, StateFlow<List<Chapter>>>()
 
     fun getChaptersForSubject(subjectId: Int): StateFlow<List<Chapter>> {
         return chaptersFlowCache.getOrPut(subjectId) {
@@ -1245,13 +1215,15 @@ private val _streakPercentage = MutableStateFlow(0f)
                 initialValue = emptyList()
             )
         }
+    }
+
     val allAttendanceRecords: StateFlow<List<lumia.tracker.model.AttendanceRecord>> = repository.allAttendanceRecords.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
-    private val attendanceFlowCache = HashMap<Int, StateFlow<List<lumia.tracker.model.AttendanceRecord>>>()
+    private val attendanceFlowCache = ConcurrentHashMap<Int, StateFlow<List<lumia.tracker.model.AttendanceRecord>>>()
 
     fun getAttendanceForCourse(courseId: Int): StateFlow<List<lumia.tracker.model.AttendanceRecord>> {
         return attendanceFlowCache.getOrPut(courseId) {
@@ -1265,12 +1237,12 @@ private val _streakPercentage = MutableStateFlow(0f)
 
     fun addAttendanceRecord(courseId: Int, dateMillis: Long, status: String) {
         viewModelScope.launch {
-            val normalized = java.util.Calendar.getInstance().apply {
+            val normalized = Calendar.getInstance().apply {
                 timeInMillis = dateMillis
-                set(java.util.Calendar.HOUR_OF_DAY, 0)
-                set(java.util.Calendar.MINUTE, 0)
-                set(java.util.Calendar.SECOND, 0)
-                set(java.util.Calendar.MILLISECOND, 0)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
             }.timeInMillis
             repository.insertAttendanceRecord(lumia.tracker.model.AttendanceRecord(courseId = courseId, dateMillis = normalized, status = status))
         }
@@ -1331,8 +1303,8 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
     
     // --- Test Records ---
-    private val testRecordsFlowCache = HashMap<Int, StateFlow<List<lumia.tracker.model.TestRecord>>>()
-    private val subjectTestRecordsFlowCache = HashMap<Int, StateFlow<List<lumia.tracker.model.TestRecord>>>()
+    private val testRecordsFlowCache = ConcurrentHashMap<Int, StateFlow<List<lumia.tracker.model.TestRecord>>>()
+    private val subjectTestRecordsFlowCache = ConcurrentHashMap<Int, StateFlow<List<lumia.tracker.model.TestRecord>>>()
 
     fun getTestRecordsForCourse(courseId: Int): StateFlow<List<lumia.tracker.model.TestRecord>> {
         return testRecordsFlowCache.getOrPut(courseId) {
@@ -1418,7 +1390,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun deleteCourse(course: Course) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             repository.dao.deleteAssignmentsForCourse(course.id)
             repository.dao.deleteAttendanceForCourse(course.id)
             repository.deleteCourse(course)
@@ -1438,7 +1410,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun renameTagGlobally(oldTag: String, newTag: String) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             val oldLower = oldTag.trim().lowercase()
             val cleanNew = newTag.trim()
             if (oldLower.isBlank() || cleanNew.isBlank()) return@launch
@@ -1518,7 +1490,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun deleteTagGlobally(tagToDelete: String) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             val lower = tagToDelete.trim().lowercase()
             if (lower.isBlank()) return@launch
 
@@ -1596,7 +1568,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun insertTagCustomization(tagName: String, colorHex: String, description: String, isFavorite: Boolean = false) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             val normalized = tagName.trim().lowercase()
             if (normalized.isNotBlank()) {
                 val custom = TagCustomization(
@@ -1612,7 +1584,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun deleteTagCustomization(tagName: String) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             val normalized = tagName.trim().lowercase()
             if (normalized.isNotBlank()) {
                 val custom = TagCustomization(tagName = normalized)
@@ -1642,7 +1614,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun deleteSubject(subject: Subject) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             repository.dao.deleteTopicsForSubject(subject.id)
             repository.dao.deleteChaptersForSubject(subject.id)
             repository.deleteSubject(subject)
@@ -1841,8 +1813,6 @@ private val _streakPercentage = MutableStateFlow(0f)
         java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
             .format(java.util.Date())
 
-
-
     private fun sendInstantNotification(channelId: String, notifId: Int, title: String, text: String, iconRes: Int, color: Int, openScreen: String? = null, openTab: Int = -1) {
         val application = getApplication<Application>()
         val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
@@ -1880,58 +1850,31 @@ private val _streakPercentage = MutableStateFlow(0f)
     private fun gatherSettings(pref: android.content.SharedPreferences = prefs): Map<String, String> {
         val map = mutableMapOf<String, String>()
         pref.all.forEach { (key, value) ->
-            map[key] = value.toString()
+            if (value != null) {
+                map[key] = value.toString()
+            }
         }
         return map
     }
 
     private fun restoreProfileSettings(pref: android.content.SharedPreferences, settings: Map<String, String>) {
         val editor = pref.edit()
-        val booleanKeys = setOf(
-            "onboarding_completed", "was_installed_before", "pure_black_mode", "beta_floating_nav",
-            "nav_bar_glass_force_enabled", "beta_notes", "more_rounds", "beta_glass_ui", "beta_glass_dynamic",
-            "beta_frost_glass", "beta_nav_bar_size_controls", "nav_bar_glass_linked_to_main", "nav_bar_glass_dynamic",
-            "beta_enhanced_header", "beta_minimalist_mode", "beta_dynamic_background", "system_auto_link_by_name",
-            "system_enable_synergy", "system_auto_create_subject", "system_fuse_subjects_courses", "system_advanced_tasks",
-            "system_pomodoro_auto_log", "feature_subject_enabled", "feature_self_study_enabled", "feature_analytics_enabled",
-            "feature_calendar_enabled", "feature_quick_notes_enabled", "pomodoro_enable_period_target", "notif_formal_tone",
-            "notif_enable_deadlines", "notif_enable_classes", "notif_enable_daily_digest", "aod_true_black_oled",
-            "aod_auto_deactivate_true_black", "aod_lock_screen_support", "aod_true_aod_enabled", "dynamic_app_icon",
-            "beta_better_texts", "beta_better_texts_palette", "safety_pin_enabled", "safety_pin_conflict_warning",
-            "safety_pin_recommendations", "show_action_history", "streak_is_complete_today"
-        )
-
-        val floatKeys = setOf(
-            "nav_bar_height", "nav_bar_padding_horizontal", "nav_bar_padding_bottom", "nav_bar_corner_radius",
-            "nav_bar_indicator_alpha", "glass_opacity_value", "nav_bar_glass_opacity_value", "aod_motion_sensitivity",
-            "aod_dimness_level", "streak_partial_threshold", "streak_brightness"
-        )
-
-        val intKeys = setOf(
-            "pomodoro_work_duration", "pomodoro_short_break_duration", "pomodoro_long_break_duration",
-            "pomodoro_period_sessions", "aod_burn_in_shift_speed", "aod_lock_timeout", "streak_total_normal",
-            "streak_total_complete", "streak_current", "streak_longest", "streak_req_tasks", "streak_req_assignments",
-            "streak_req_study_mins"
-        )
-
-        val longKeys = setOf("streak_last_date")
-
         settings.forEach { (key, value) ->
             try {
                 when {
-                    booleanKeys.contains(key) -> {
+                    BOOLEAN_KEYS.contains(key) -> {
                         val boolVal = value.toBooleanStrictOrNull() ?: (value == "1" || value.lowercase() == "true")
                         editor.putBoolean(key, boolVal)
                     }
-                    floatKeys.contains(key) || key.startsWith("dynamic_bg_light_brightness_") || key.startsWith("dynamic_bg_dark_brightness_") -> {
+                    FLOAT_KEYS.contains(key) || key.startsWith("dynamic_bg_light_brightness_") || key.startsWith("dynamic_bg_dark_brightness_") -> {
                         val floatVal = value.toFloatOrNull() ?: 0f
                         editor.putFloat(key, floatVal)
                     }
-                    intKeys.contains(key) -> {
+                    INT_KEYS.contains(key) -> {
                         val intVal = value.toIntOrNull() ?: 0
                         editor.putInt(key, intVal)
                     }
-                    longKeys.contains(key) -> {
+                    LONG_KEYS.contains(key) -> {
                         val longVal = value.toLongOrNull() ?: 0L
                         editor.putLong(key, longVal)
                     }
@@ -1943,44 +1886,17 @@ private val _streakPercentage = MutableStateFlow(0f)
                 editor.putString(key, value)
             }
         }
-        editor.commit()
+        editor.apply()
     }
 
     private fun loadSettings(settings: Map<String, String>?) {
         if (settings == null) return
         val editor = prefs.edit()
-        val booleanKeys = setOf(
-            "onboarding_completed", "was_installed_before", "pure_black_mode", "beta_floating_nav",
-            "beta_notes", "more_rounds", "beta_nav_bar_size_controls",
-            "beta_enhanced_header", "beta_minimalist_mode", "beta_dynamic_background", "system_auto_link_by_name",
-            "system_enable_synergy", "system_auto_create_subject", "system_fuse_subjects_courses", "system_advanced_tasks",
-            "system_pomodoro_auto_log", "feature_subject_enabled", "feature_self_study_enabled", "feature_analytics_enabled",
-            "feature_calendar_enabled", "feature_quick_notes_enabled", "pomodoro_enable_period_target", "notif_formal_tone",
-            "notif_enable_deadlines", "notif_enable_classes", "notif_enable_daily_digest", "aod_true_black_oled",
-            "aod_auto_deactivate_true_black", "aod_lock_screen_support", "aod_true_aod_enabled", "dynamic_app_icon",
-            "beta_better_texts", "beta_better_texts_palette", "safety_pin_enabled", "safety_pin_conflict_warning",
-            "safety_pin_recommendations", "show_action_history", "streak_is_complete_today"
-        )
-
-        val floatKeys = setOf(
-            "nav_bar_height", "nav_bar_padding_horizontal", "nav_bar_padding_bottom", "nav_bar_corner_radius",
-            "nav_bar_indicator_alpha", "aod_motion_sensitivity",
-            "aod_dimness_level", "streak_partial_threshold", "streak_brightness"
-        )
-
-        val intKeys = setOf(
-            "pomodoro_work_duration", "pomodoro_short_break_duration", "pomodoro_long_break_duration",
-            "pomodoro_period_sessions", "aod_burn_in_shift_speed", "aod_lock_timeout", "streak_total_normal",
-            "streak_total_complete", "streak_current", "streak_longest", "streak_req_tasks", "streak_req_assignments",
-            "streak_req_study_mins"
-        )
-
-        val longKeys = setOf("streak_last_date")
 
         settings.forEach { (key, value) ->
             try {
                 when {
-                    booleanKeys.contains(key) -> {
+                    BOOLEAN_KEYS.contains(key) -> {
                         val boolVal = value.toBooleanStrictOrNull() ?: (value == "1" || value.lowercase() == "true")
                         editor.putBoolean(key, boolVal)
                         when (key) {
@@ -2008,7 +1924,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "streak_is_complete_today" -> _streakIsCompleteToday.value = boolVal
                         }
                     }
-                    floatKeys.contains(key) || key.startsWith("dynamic_bg_light_brightness_") || key.startsWith("dynamic_bg_dark_brightness_") -> {
+                    FLOAT_KEYS.contains(key) || key.startsWith("dynamic_bg_light_brightness_") || key.startsWith("dynamic_bg_dark_brightness_") -> {
                         val floatVal = value.toFloatOrNull() ?: 0f
                         editor.putFloat(key, floatVal)
                         when (key) {
@@ -2025,7 +1941,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "dynamic_bg_dark_brightness" -> _dynamicBgDarkBrightness.value = floatVal
                         }
                     }
-                    intKeys.contains(key) -> {
+                    INT_KEYS.contains(key) -> {
                         val intVal = value.toIntOrNull() ?: 0
                         editor.putInt(key, intVal)
                         when (key) {
@@ -2044,7 +1960,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                             "streak_req_study_mins" -> _streakRequirementStudyMins.value = intVal
                         }
                     }
-                    longKeys.contains(key) -> {
+                    LONG_KEYS.contains(key) -> {
                         val longVal = value.toLongOrNull() ?: 0L
                         editor.putLong(key, longVal)
                     }
@@ -2075,7 +1991,7 @@ private val _streakPercentage = MutableStateFlow(0f)
         refreshThemeBrightness()
     }
 
-        fun exportData(uri: Uri, exportAll: Boolean = false) {
+    fun exportData(uri: Uri, exportAll: Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val moshi = com.squareup.moshi.Moshi.Builder().add(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory()).build()
@@ -2227,8 +2143,8 @@ private val _streakPercentage = MutableStateFlow(0f)
                     }
 
                     val profListJson = moshi.adapter<List<lumia.tracker.model.UserProfile>>(com.squareup.moshi.Types.newParameterizedType(List::class.java, lumia.tracker.model.UserProfile::class.java)).toJson(restoredProfiles)
-                    val globalPrefs = getApplication<Application>().getSharedPreferences("global_profiles", android.content.Context.MODE_PRIVATE)
-                    globalPrefs.edit().putString("profiles_json", profListJson).commit()
+                    val globalPrefs = getApplication<Application>().getSharedPreferences("global_profiles", Context.MODE_PRIVATE)
+                    globalPrefs.edit().putString("profiles_json", profListJson).apply()
                     profileManager.setActiveProfileId(fullBackup.activeProfileId)
                     
                     // Restore each profile's database & settings
@@ -2238,14 +2154,13 @@ private val _streakPercentage = MutableStateFlow(0f)
                         val pDao = db.scholarDao()
                         repository.restoreBackupToDao(pBackup, pDao)
                         
-                        // Restore settings with exact, type-safe matching
                         pBackup.settings?.let { sets ->
                             val pref = profileManager.getProfilePrefs(profId)
                             restoreProfileSettings(pref, sets)
                         }
                     }
                     
-                    // Refresh current active UI with the restored settings of the active profile
+                    // Refresh current active UI with restored settings
                     val activeId = fullBackup.activeProfileId
                     val activeBackupJson = fullBackup.profileBackupsJson[activeId]
                     if (activeBackupJson != null) {
@@ -2254,7 +2169,6 @@ private val _streakPercentage = MutableStateFlow(0f)
                             loadSettings(activeBackup.settings)
                         }
                     }
-                    
                 } else {
                     // Single profile restore
                     repository.restoreBackupToDao(mainBackup!!, repository.dao)
@@ -2272,11 +2186,9 @@ private val _streakPercentage = MutableStateFlow(0f)
                     }
                 }
 
-                // Make sure cache instances are completely cleared and reset to target the updated SQLite tables
                 lumia.tracker.data.AppDatabase.clearInstances()
 
                 verifyFeatureEntitlements()
-                calculateTodayStreakProgress()
                 _importExportStatus.value = "Secure backup package imported and restored successfully"
                 activeProfile.value = profileManager.getActiveProfile()
                 allProfiles.value = profileManager.getAllProfiles()
@@ -2298,7 +2210,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     private fun verifyFeatureEntitlements() {
-        
+        // Intentionally left extensible for entitlement verification
     }
 
     fun clearStatus() {
@@ -2321,95 +2233,57 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun updateThemeMode(mode: String) {
-        if (safetyPinEnabled.value && safetyPinConflictWarning.value && mode == "Light" && _pureBlackMode.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Feature Conflict Detected",
-                description = "Switching to 'Light' theme conflicts with 'Pure Black Mode', which requires a dark theme to function. Proceeding will automatically disable 'Pure Black Mode'.",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _themeMode.value = mode
-                    prefs.edit().putString("theme_mode", mode).apply()
-                    updatePureBlackMode(false)
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
-
-        if (mode == "Dark" && safetyPinEnabled.value && safetyPinRecommendations.value && !_pureBlackMode.value) {
+        _themeMode.value = mode
+        if (mode == "Light" && _pureBlackMode.value) {
+            _pureBlackMode.value = false
+            prefs.edit().putString("theme_mode", mode).putBoolean("pure_black_mode", false).apply()
+        } else if (mode == "Dark" && !_pureBlackMode.value && safetyPinEnabled.value && safetyPinRecommendations.value) {
+            prefs.edit().putString("theme_mode", mode).apply()
             _safetyPinDialogData.value = SafetyPinDialogData(
                 title = "Optimization Recommendation",
                 description = "For the deepest contrast and battery savings on OLED screens, it is recommended to enable 'Pure Black Mode' with the Dark theme. Would you like to enable it?",
                 isConflict = false,
                 onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _themeMode.value = mode
-                    prefs.edit().putString("theme_mode", mode).apply()
-                    updatePureBlackMode(true)
+                    dismissSafetyPinDialog()
+                    _pureBlackMode.value = true
+                    prefs.edit().putBoolean("pure_black_mode", true).apply()
                 },
-                onIgnore = {
-                    _safetyPinDialogData.value = null
-                    _themeMode.value = mode
-                    prefs.edit().putString("theme_mode", mode).apply()
-                }
+                onIgnore = { dismissSafetyPinDialog() }
             )
-            return
+        } else {
+            prefs.edit().putString("theme_mode", mode).apply()
         }
-
-        _themeMode.value = mode
-        prefs.edit().putString("theme_mode", mode).apply()
     }
 
     fun updatePureBlackMode(enabled: Boolean) {
-        val conflictsWithDynamicBg = _betaDynamicBackground.value
-        val conflictsWithPalette = _betaBetterTextsPalette.value
-        val conflictsWithEnhancedHeader = _betaEnhancedHeader.value
-
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (conflictsWithDynamicBg || conflictsWithPalette || conflictsWithEnhancedHeader)) {
-            val opposingFeatures = mutableListOf<String>()
-            if (conflictsWithDynamicBg) opposingFeatures.add("'Dynamic Lighting Background'")
-            if (conflictsWithPalette) opposingFeatures.add("'Use Palette Shades for Text'")
-            if (conflictsWithEnhancedHeader) opposingFeatures.add("'Enhanced Header'")
-            
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Feature Conflict Detected",
-                description = "The activation of 'Pure Black Mode' directly opposes the functionality of ${opposingFeatures.joinToString(" and ")}. Proceeding will automatically deactivate these opposing settings to maintain visual consistency and readability.",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _pureBlackMode.value = true
-                    prefs.edit().putBoolean("pure_black_mode", true).apply()
-                    if (conflictsWithDynamicBg) updateBetaDynamicBackground(false)
-                    if (conflictsWithPalette) updateBetaBetterTextsPalette(false)
-                    if (conflictsWithEnhancedHeader) updateBetaEnhancedHeader(false)
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
-
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && _themeMode.value != "Dark") {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "For the optimal experience of 'Pure Black Mode', it is highly recommended to switch your system theme to 'Dark'. The current setting limits the effectiveness of the pure black backgrounds.",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _pureBlackMode.value = true
-                    prefs.edit().putBoolean("pure_black_mode", true).apply()
-                    updateThemeMode("Dark")
-                },
-                onIgnore = {
-                    _safetyPinDialogData.value = null
-                    _pureBlackMode.value = true
-                    prefs.edit().putBoolean("pure_black_mode", true).apply()
-                }
-            )
-            return
-        }
         _pureBlackMode.value = enabled
-        prefs.edit().putBoolean("pure_black_mode", enabled).apply()
+        if (enabled) {
+            _betaDynamicBackground.value = false
+            _betaBetterTextsPalette.value = false
+            _betaEnhancedHeader.value = false
+            prefs.edit()
+                .putBoolean("pure_black_mode", true)
+                .putBoolean("beta_dynamic_background", false)
+                .putBoolean("beta_better_texts_palette", false)
+                .putBoolean("beta_enhanced_header", false)
+                .apply()
+
+            if (_themeMode.value != "Dark" && safetyPinEnabled.value && safetyPinRecommendations.value) {
+                _safetyPinDialogData.value = SafetyPinDialogData(
+                    title = "Optimization Recommendation",
+                    description = "For the optimal experience of 'Pure Black Mode', it is recommended to switch your theme to 'Dark'. Would you like to switch now?",
+                    isConflict = false,
+                    onConfirm = {
+                        dismissSafetyPinDialog()
+                        _themeMode.value = "Dark"
+                        prefs.edit().putString("theme_mode", "Dark").apply()
+                    },
+                    onIgnore = { dismissSafetyPinDialog() }
+                )
+            }
+        } else {
+            prefs.edit().putBoolean("pure_black_mode", false).apply()
+        }
     }
 
     fun updateThemeColor(color: String) {
@@ -2474,105 +2348,78 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun updateDisplayLayoutMode(mode: String) {
-        if (mode != "Immersive" && _appAnimationMode.value == "Bouncy" && safetyPinEnabled.value && safetyPinConflictWarning.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Required by Bouncy Animations",
-                description = "Changing from 'Immersive' mode will also disable 'Bouncy' animations and revert to 'Dynamic'. Proceed?",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _displayLayoutMode.value = mode
-                    prefs.edit().putString("display_layout_mode", mode).apply()
-                    updateAppAnimationMode("Dynamic")
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
         _displayLayoutMode.value = mode
-        prefs.edit().putString("display_layout_mode", mode).apply()
         if (mode != "Immersive" && _appAnimationMode.value == "Bouncy") {
-            updateAppAnimationMode("Dynamic")
+            _appAnimationMode.value = "Dynamic"
+            prefs.edit()
+                .putString("display_layout_mode", mode)
+                .putString("app_animation_mode", "Dynamic")
+                .apply()
+        } else {
+            prefs.edit().putString("display_layout_mode", mode).apply()
         }
     }
 
     fun updateBetaMinimalistMode(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && (_betaDynamicBackground.value || _betaEnhancedHeader.value || _betaFloatingNav.value || _betaBetterTexts.value || _displayLayoutMode.value != "Immersive" || _appAnimationMode.value != "Minimal" || _moreRounds.value)) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Feature Conflict Detected",
-                description = "Activating 'Minimalist Mode' will lock complex visuals for high focus. Dynamic Lighting, Enhanced Header, Floating Action Bar, Better Texts, and animations will be simplified. Proceed?",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaMinimalistMode.value = true
-                    prefs.edit().putBoolean("beta_minimalist_mode", true).apply()
-                    if (_betaDynamicBackground.value) updateBetaDynamicBackground(false)
-                    if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
-                    if (_betaFloatingNav.value) updateBetaFloatingNav(false)
-                    if (_betaBetterTexts.value) updateBetaBetterTexts(false)
-                    if (_moreRounds.value) updateMoreRounds(false)
-                    if (_displayLayoutMode.value != "Immersive") updateDisplayLayoutMode("Immersive")
-                    if (_appAnimationMode.value != "Minimal") updateAppAnimationMode("Minimal")
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
-        
         _betaMinimalistMode.value = enabled
-        prefs.edit().putBoolean("beta_minimalist_mode", enabled).apply()
-        
         if (enabled) {
-            if (_betaDynamicBackground.value) updateBetaDynamicBackground(false)
-            if (_betaEnhancedHeader.value) updateBetaEnhancedHeader(false)
-            if (_betaFloatingNav.value) updateBetaFloatingNav(false)
-            if (_betaBetterTexts.value) updateBetaBetterTexts(false)
-            if (_moreRounds.value) updateMoreRounds(false)
-            if (_displayLayoutMode.value != "Immersive") updateDisplayLayoutMode("Immersive")
-            if (_appAnimationMode.value != "Minimal") updateAppAnimationMode("Minimal")
+            _betaDynamicBackground.value = false
+            _betaEnhancedHeader.value = false
+            _betaFloatingNav.value = false
+            _betaBetterTexts.value = false
+            _moreRounds.value = false
+            _displayLayoutMode.value = "Immersive"
+            _appAnimationMode.value = "Minimal"
+
+            prefs.edit()
+                .putBoolean("beta_minimalist_mode", true)
+                .putBoolean("beta_dynamic_background", false)
+                .putBoolean("beta_enhanced_header", false)
+                .putBoolean("beta_floating_nav", false)
+                .putBoolean("beta_better_texts", false)
+                .putBoolean("more_rounds", false)
+                .putString("display_layout_mode", "Immersive")
+                .putString("app_animation_mode", "Minimal")
+                .apply()
+
+            if (safetyPinEnabled.value && safetyPinConflictWarning.value) {
+                _safetyPinDialogData.value = SafetyPinDialogData(
+                    title = "Minimalist Mode Active",
+                    description = "Dynamic background, enhanced header, floating bar, and bouncy animations have been streamlined for focused study.",
+                    isConflict = false,
+                    onConfirm = { dismissSafetyPinDialog() },
+                    onIgnore = { dismissSafetyPinDialog() }
+                )
+            }
+        } else {
+            prefs.edit().putBoolean("beta_minimalist_mode", false).apply()
         }
     }
 
     fun updateBetaEnhancedHeader(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Feature Conflict Detected",
-                description = "The activation of 'Enhanced Header' directly opposes the functionality of 'Pure Black Mode'. Enhanced Header requires background colors to create frosted translucency. Proceeding will automatically deactivate 'Pure Black Mode'.",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaEnhancedHeader.value = true
-                    prefs.edit().putBoolean("beta_enhanced_header", true).apply()
-                    updatePureBlackMode(false)
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
-        
         _betaEnhancedHeader.value = enabled
-        prefs.edit().putBoolean("beta_enhanced_header", enabled).apply()
+        if (enabled && _pureBlackMode.value) {
+            _pureBlackMode.value = false
+            prefs.edit()
+                .putBoolean("beta_enhanced_header", true)
+                .putBoolean("pure_black_mode", false)
+                .apply()
+        } else {
+            prefs.edit().putBoolean("beta_enhanced_header", enabled).apply()
+        }
     }
 
     fun updateBetaDynamicBackground(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Feature Conflict Detected",
-                description = "The activation of 'Dynamic Lighting Background' contradicts the core purpose of 'Pure Black Mode' by introducing lit pixels and gradients. Proceeding will automatically deactivate 'Pure Black Mode' to maintain visual consistency.",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaDynamicBackground.value = true
-                    prefs.edit().putBoolean("beta_dynamic_background", true).apply()
-                    updatePureBlackMode(false)
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
-
         _betaDynamicBackground.value = enabled
-        prefs.edit().putBoolean("beta_dynamic_background", enabled).apply()
+        if (enabled && _pureBlackMode.value) {
+            _pureBlackMode.value = false
+            prefs.edit()
+                .putBoolean("beta_dynamic_background", true)
+                .putBoolean("pure_black_mode", false)
+                .apply()
+        } else {
+            prefs.edit().putBoolean("beta_dynamic_background", enabled).apply()
+        }
     }
 
     fun updateDynamicBgLightBrightness(value: Float) {
@@ -2588,150 +2435,152 @@ private val _streakPercentage = MutableStateFlow(0f)
     }
 
     fun updateBetaBetterTexts(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinRecommendations.value && !_betaBetterTextsPalette.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Optimization Recommendation",
-                description = "To fully experience 'Better Texts', it is recommended to also enable 'Use Palette Shades for Text'. This provides a softer, more cohesive look matching your selected theme color. Would you like to enable it?",
-                isConflict = false,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaBetterTexts.value = true
-                    prefs.edit().putBoolean("beta_better_texts", true).apply()
-                    updateBetaBetterTextsPalette(true)
-                },
-                onIgnore = {
-                    _safetyPinDialogData.value = null
-                    _betaBetterTexts.value = true
-                    prefs.edit().putBoolean("beta_better_texts", true).apply()
-                 }
-            )
-            return
-        }
         _betaBetterTexts.value = enabled
         prefs.edit().putBoolean("beta_better_texts", enabled).apply()
+        if (enabled && !_betaBetterTextsPalette.value && safetyPinEnabled.value && safetyPinRecommendations.value) {
+            _safetyPinDialogData.value = SafetyPinDialogData(
+                title = "Optimization Recommendation",
+                description = "To fully experience 'Better Texts', it is recommended to enable 'Use Palette Shades for Text'. Would you like to enable it?",
+                isConflict = false,
+                onConfirm = {
+                    dismissSafetyPinDialog()
+                    _betaBetterTextsPalette.value = true
+                    prefs.edit().putBoolean("beta_better_texts_palette", true).apply()
+                },
+                onIgnore = { dismissSafetyPinDialog() }
+            )
+        }
     }
 
     fun updateBetaBetterTextsPalette(enabled: Boolean) {
-        if (enabled && safetyPinEnabled.value && safetyPinConflictWarning.value && _pureBlackMode.value) {
-            _safetyPinDialogData.value = SafetyPinDialogData(
-                title = "Feature Conflict Detected",
-                description = "The activation of 'Use Palette Shades for Text' directly opposes the high contrast functionality required by 'Pure Black Mode'. Proceeding will automatically deactivate 'Pure Black Mode' to maintain text readability.",
-                isConflict = true,
-                onConfirm = {
-                    _safetyPinDialogData.value = null
-                    _betaBetterTextsPalette.value = true
-                    prefs.edit().putBoolean("beta_better_texts_palette", true).apply()
-                    updatePureBlackMode(false)
-                },
-                onIgnore = { _safetyPinDialogData.value = null }
-            )
-            return
-        }
         _betaBetterTextsPalette.value = enabled
-        prefs.edit().putBoolean("beta_better_texts_palette", enabled).apply()
+        if (enabled && _pureBlackMode.value) {
+            _pureBlackMode.value = false
+            prefs.edit()
+                .putBoolean("beta_better_texts_palette", true)
+                .putBoolean("pure_black_mode", false)
+                .apply()
+        } else {
+            prefs.edit().putBoolean("beta_better_texts_palette", enabled).apply()
+        }
     }
 
     fun updateShowActionHistory(enabled: Boolean) {
         _showActionHistory.value = enabled
         prefs.edit().putBoolean("show_action_history", enabled).apply()
     }
-
         
     fun switchMainAccountAndDeleteCurrent(successorId: String, createNew: Boolean = false, newName: String = "", newAvatar: String = "") {
         viewModelScope.launch(Dispatchers.IO) {
-            val prof = activeProfile.value
-            if (prof.isDefault) {
-                var newMainId = successorId
-                if (createNew) {
-                    newMainId = profileManager.addProfile(newName, newAvatar)
+            try {
+                val prof = activeProfile.value
+                if (prof.isDefault) {
+                    var newMainId = successorId
+                    if (createNew) {
+                        newMainId = profileManager.addProfile(newName, newAvatar)
+                    }
+                    
+                    // Update the successor to be default
+                    val allProfs = profileManager.getAllProfiles()
+                    val successor = allProfs.find { it.id == newMainId }
+                    if (successor != null) {
+                        successor.isDefault = true
+                        profileManager.updateProfile(successor)
+                    }
+                    
+                    // Clear this user's data
+                    val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), prof.id)
+                    db.clearAllTables()
+                    profileManager.getProfilePrefs(prof.id).edit().clear().apply()
+                    profileManager.deleteProfile(prof.id)
+                    
+                    withContext(Dispatchers.Main) {
+                        switchProfileAndRestart(getApplication(), newMainId)
+                    }
                 }
-                
-                // Update the successor to be default
-                val allProfs = profileManager.getAllProfiles()
-                val successor = allProfs.find { it.id == newMainId }
-                if (successor != null) {
-                    successor.isDefault = true
-                    profileManager.updateProfile(successor)
-                }
-                
-                // Clear this user's data
-                val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), prof.id)
-                db.clearAllTables()
-                profileManager.getProfilePrefs(prof.id).edit().clear().apply()
-                profileManager.deleteProfile(prof.id)
-                
-                switchProfileAndRestart(getApplication(), newMainId)
+            } catch (e: Exception) {
+                android.util.Log.e("ScholarViewModel", "Failed to switch main account and delete current", e)
+                _importExportStatus.value = "Operation failed: ${e.message}"
             }
         }
     }
 
     fun eraseMyDataAndAccount() {
         viewModelScope.launch(Dispatchers.IO) {
-            val prof = activeProfile.value
-            if (!prof.isDefault) {
-                val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), prof.id)
-                db.clearAllTables()
-                profileManager.getProfilePrefs(prof.id).edit().clear().apply()
-                profileManager.deleteProfile(prof.id)
-                switchProfileAndRestart(getApplication(), "DEFAULT") // Switch to a safe account
-            }
-        }
-    }
-fun clearAllData() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val prof = activeProfile.value
-            if (prof.isDefault) {
-                // Main user: Erase all users' data. Delete secondary users entirely.
-                val allProfs = profileManager.getAllProfiles()
-                for (p in allProfs) {
-                    if (!p.isDefault) {
-                        // Clear their db and prefs
-                        val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), p.id)
-                        db.clearAllTables()
-                        profileManager.getProfilePrefs(p.id).edit().clear().apply()
-                        profileManager.deleteProfile(p.id)
-                    } else {
-                        // Clear main user data
-                        val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), p.id)
-                        db.clearAllTables()
-                        profileManager.getProfilePrefs(p.id).edit().clear().apply()
+            try {
+                val prof = activeProfile.value
+                if (!prof.isDefault) {
+                    val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), prof.id)
+                    db.clearAllTables()
+                    profileManager.getProfilePrefs(prof.id).edit().clear().apply()
+                    profileManager.deleteProfile(prof.id)
+                    withContext(Dispatchers.Main) {
+                        switchProfileAndRestart(getApplication(), "DEFAULT")
                     }
                 }
-                allProfiles.value = profileManager.getAllProfiles()
-            } else {
-                // Secondary user: Erase their own data and delete their account
-                val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), prof.id)
-                db.clearAllTables()
-                profileManager.getProfilePrefs(prof.id).edit().clear().apply()
-                profileManager.deleteProfile(prof.id)
-                switchProfileAndRestart(getApplication(), "DEFAULT")
-                return@launch
+            } catch (e: Exception) {
+                android.util.Log.e("ScholarViewModel", "Failed to erase data and account", e)
+                _importExportStatus.value = "Erase failed: ${e.message}"
             }
-
-            _themeMode.value = "System"
-            _themeColor.value = "Ocean"
-            _customPrimary.value = "#3197D6"
-            _customPrimaryContainer.value = "#DAF1FF"
-            _customBackground.value = "#FAFAFA"
-            _customSurface.value = "#FFFFFF"
-            _customText.value = "#1A1C1A"
-            _pureBlackMode.value = false
-            _betaFloatingNav.value = false
-            _betaNotes.value = false
-            _displayLayoutMode.value = "Immersive"
-            
-            _aodTrueAodEnabled.value = false
-            _aodTrueAodMode.value = "Clock"
-            _aodDimnessLevel.value = 0.95f
-            _aodSensitivity.value = "highest"
-            _aodLockTimeout.value = 30
-            _aodMotionSensitivity.value = 3.0f
-            
-
-            _importExportStatus.value = "All data and settings erased successfully" 
-            lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
-            calculateTodayStreakProgress()
         }
     }
-}
+
+    fun clearAllData() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val prof = activeProfile.value
+                if (prof.isDefault) {
+                    val allProfs = profileManager.getAllProfiles()
+                    for (p in allProfs) {
+                        val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), p.id)
+                        db.clearAllTables()
+                        profileManager.getProfilePrefs(p.id).edit().clear().apply()
+                        if (!p.isDefault) {
+                            profileManager.deleteProfile(p.id)
+                        }
+                    }
+                    allProfiles.value = profileManager.getAllProfiles()
+                } else {
+                    val db = lumia.tracker.data.AppDatabase.getDatabase(getApplication(), prof.id)
+                    db.clearAllTables()
+                    profileManager.getProfilePrefs(prof.id).edit().clear().apply()
+                    profileManager.deleteProfile(prof.id)
+                    withContext(Dispatchers.Main) {
+                        switchProfileAndRestart(getApplication(), "DEFAULT")
+                    }
+                    return@launch
+                }
+
+                lumia.tracker.data.AppDatabase.clearInstances()
+
+                withContext(Dispatchers.Main) {
+                    _themeMode.value = "System"
+                    _themeColor.value = "Ocean"
+                    _customPrimary.value = "#3197D6"
+                    _customPrimaryContainer.value = "#DAF1FF"
+                    _customBackground.value = "#FAFAFA"
+                    _customSurface.value = "#FFFFFF"
+                    _customText.value = "#1A1C1A"
+                    _pureBlackMode.value = false
+                    _betaFloatingNav.value = false
+                    _betaNotes.value = false
+                    _displayLayoutMode.value = "Immersive"
+                    
+                    _aodTrueAodEnabled.value = false
+                    _aodTrueAodMode.value = "Clock"
+                    _aodDimnessLevel.value = 0.95f
+                    _aodSensitivity.value = "highest"
+                    _aodLockTimeout.value = 30
+                    _aodMotionSensitivity.value = 3.0f
+
+                    _importExportStatus.value = "All data and settings erased successfully" 
+                    lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
+                    calculateTodayStreakProgress()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ScholarViewModel", "Failed to clear all data", e)
+                _importExportStatus.value = "Failed to clear data: ${e.message}"
+            }
+        }
+    }
 }
