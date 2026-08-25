@@ -1195,7 +1195,7 @@ fun HomeTab(
                                                 ),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            AnimatedVisibility(
+                                            androidx.compose.animation.AnimatedVisibility(
                                                 visible = task.isCompleted,
                                                 enter = fadeIn() + scaleIn(),
                                                 exit = fadeOut() + scaleOut()

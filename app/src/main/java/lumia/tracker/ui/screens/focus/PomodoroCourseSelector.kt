@@ -46,11 +46,12 @@ fun PomodoroCourseSelector(
 ) {
     var showSheet by remember { mutableStateOf(false) }
 
+    val defaultColor = MaterialTheme.colorScheme.primary
     // Active color derived from selected course or subject
-    val activeColor = remember(selectedCourse, selectedSubject) {
+    val activeColor = remember(selectedCourse, selectedSubject, defaultColor) {
         selectedCourse?.colorHex?.let {
             try { Color(android.graphics.Color.parseColor(it)) } catch (e: Exception) { null }
-        } ?: MaterialTheme.colorScheme.primary
+        } ?: defaultColor
     }
 
     val contextTitle = when {

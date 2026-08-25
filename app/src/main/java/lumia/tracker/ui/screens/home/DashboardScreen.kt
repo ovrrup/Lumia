@@ -1,5 +1,7 @@
 package lumia.tracker.ui.screens
 
+import lumia.tracker.ui.screens.study.dialogs.*
+
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
