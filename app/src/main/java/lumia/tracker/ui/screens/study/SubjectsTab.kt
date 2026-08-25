@@ -1,5 +1,7 @@
 package lumia.tracker.ui.screens.study
 
+import lumia.tracker.ui.screens.study.dialogs.*
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

@@ -1,4 +1,4 @@
-package lumia.tracker.ui.screens.study
+package lumia.tracker.ui.screens.study.dialogs
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke

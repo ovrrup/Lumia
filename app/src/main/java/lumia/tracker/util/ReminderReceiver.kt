@@ -15,7 +15,6 @@ import kotlinx.coroutines.launch
 import lumia.tracker.MainActivity
 import lumia.tracker.data.AppDatabase
 import lumia.tracker.data.ProfileManager
-import lumia.tracker.util.widget.WidgetUpdateHelper
 
 class ReminderReceiver : BroadcastReceiver() {
 
@@ -162,7 +161,7 @@ class ReminderReceiver : BroadcastReceiver() {
         )
 
         val doneIntent = Intent(context, ReminderReceiver::class.java).apply {
-            action = "ACTION_MARK_DONE"
+            this.action = "ACTION_MARK_DONE"
             putExtra("assignment_id", assignmentId)
             putExtra("type", typeExtra)
         }
@@ -174,7 +173,7 @@ class ReminderReceiver : BroadcastReceiver() {
         )
 
         val snoozeIntent = Intent(context, ReminderReceiver::class.java).apply {
-            action = "ACTION_SNOOZE"
+            this.action = "ACTION_SNOOZE"
             putExtra("assignment_id", assignmentId)
             putExtra("title", titleExtra)
             putExtra("desc", descExtra)

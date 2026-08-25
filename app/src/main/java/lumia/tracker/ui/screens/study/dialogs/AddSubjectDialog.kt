@@ -1,4 +1,4 @@
-package lumia.tracker.ui.screens.study
+package lumia.tracker.ui.screens.study.dialogs
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape

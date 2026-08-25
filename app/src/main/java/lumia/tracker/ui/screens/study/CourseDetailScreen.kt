@@ -1,5 +1,7 @@
 package lumia.tracker.ui.screens.study
 
+import lumia.tracker.ui.screens.study.dialogs.*
+
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
@@ -220,7 +222,7 @@ fun CourseDetailScreen(
             paint.isFakeBoldText = false
             paint.color = android.graphics.Color.parseColor("#F1F5F9")
             canvas.drawText("Course: ${course?.name ?: ""} · Code: ${course?.code ?: "N/A"}", 40f, 85f, paint)
-            canvas.drawText("Instructor: ${course?.instructor.ifBlank { "Unassigned" }}", 40f, 108f, paint)
+            canvas.drawText("Instructor: ${course?.instructor?.ifBlank { "Unassigned" } ?: "Unassigned"}", 40f, 108f, paint)
 
             paint.color = android.graphics.Color.BLACK
             paint.textSize = 18f

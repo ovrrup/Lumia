@@ -1,5 +1,7 @@
 package lumia.tracker.ui.screens.study
 
+import lumia.tracker.ui.screens.study.dialogs.*
+
 import android.app.DatePickerDialog
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument

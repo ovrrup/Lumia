@@ -1,4 +1,4 @@
-package lumia.tracker.ui.screens.study
+package lumia.tracker.ui.screens.study.dialogs
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
