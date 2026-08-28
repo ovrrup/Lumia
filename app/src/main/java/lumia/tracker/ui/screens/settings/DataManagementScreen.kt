@@ -126,14 +126,14 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(20.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(38.dp)
+                                .size(40.dp)
                                 .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
@@ -141,26 +141,68 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                 imageVector = Icons.Rounded.Storage,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    "Active Workspace",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = Color(0xFF4CAF50).copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = "Healthy",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2E7D32),
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
                             Text(
-                                "Active Workspace",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                "${activeProfile.name} • Status Healthy",
+                                "${activeProfile.name} • SQLite Engine v3.45",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    // Storage Distribution Breakdown Bar
+                    val totalRecords = coursesCount.size + subjectsCount.size + assignmentsCount.size + pomodoroSessionsCount.size
+                    if (totalRecords > 0) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Storage Distribution", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("$totalRecords Total Entities", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                            ) {
+                                val cWeight = (coursesCount.size.toFloat() / totalRecords).coerceAtLeast(0.02f)
+                                val sWeight = (subjectsCount.size.toFloat() / totalRecords).coerceAtLeast(0.02f)
+                                val aWeight = (assignmentsCount.size.toFloat() / totalRecords).coerceAtLeast(0.02f)
+                                val pWeight = (pomodoroSessionsCount.size.toFloat() / totalRecords).coerceAtLeast(0.02f)
+
+                                Box(modifier = Modifier.weight(cWeight).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
+                                Box(modifier = Modifier.weight(sWeight).fillMaxHeight().background(MaterialTheme.colorScheme.secondary))
+                                Box(modifier = Modifier.weight(aWeight).fillMaxHeight().background(MaterialTheme.colorScheme.tertiary))
+                                Box(modifier = Modifier.weight(pWeight).fillMaxHeight().background(Color(0xFFFF9800)))
+                            }
+                        }
+                    }
 
                     // Metrics Grid
                     Row(
@@ -203,7 +245,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                         ) {
                             Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${pomodoroSessionsCount.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                                Text("${pomodoroSessionsCount.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = Color(0xFFFF9800))
                                 Text("Sessions", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
@@ -215,7 +257,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             SettingsGroupCard(title = "Backup & Portability", icon = Icons.Rounded.SaveAlt) {
                 SettingsActionItemInCard(
                     title = "Export Workspace Backup",
-                    subtitle = "Export courses, tasks, and settings",
+                    subtitle = "Export encrypted snapshot (.lumia)",
                     icon = Icons.Rounded.UploadFile,
                     iconBgColor = Color(0xFF007AFF),
                     onClick = { showExportDialog = true }
@@ -228,7 +270,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
                 SettingsActionItemInCard(
                     title = "Import & Restore Snapshot",
-                    subtitle = "Restore data from a backup file",
+                    subtitle = "Restore database from backup file",
                     icon = Icons.Rounded.FileDownload,
                     iconBgColor = Color(0xFF34C759),
                     onClick = { openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*")) }
@@ -236,10 +278,10 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             }
 
             // 3. Maintenance & Optimizations
-            SettingsGroupCard(title = "Maintenance", icon = Icons.Rounded.Build) {
+            SettingsGroupCard(title = "Maintenance & Optimization", icon = Icons.Rounded.Build) {
                 SettingsActionItemInCard(
-                    title = "Defragment Database",
-                    subtitle = if (defragText.isNotBlank()) defragText else "Optimize SQLite indexes and vacuum storage",
+                    title = "Optimize & Defragment Database",
+                    subtitle = if (defragText.isNotBlank()) defragText else "Rebuild SQLite indexes, vacuum tables, and reclaim free pages",
                     icon = Icons.Rounded.CleaningServices,
                     iconBgColor = Color(0xFFFF9500),
                     onClick = { viewModel.defragmentDatabase() }
@@ -252,7 +294,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
                 SettingsActionItemInCard(
                     title = "Reset Workspace Data",
-                    subtitle = "Clear workspace records or reset database",
+                    subtitle = "Clear records or reset database",
                     icon = Icons.Rounded.DeleteForever,
                     isDestructive = true,
                     onClick = { showResetDialog = true }

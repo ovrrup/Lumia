@@ -270,6 +270,51 @@ fun PomodoroScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // Quick Preset Switcher (Active when timer is idle)
+                if (!pomodoroState.isRunning) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val presets = listOf(
+                            Triple("Standard", 25, 5),
+                            Triple("Deep Work", 50, 10),
+                            Triple("Sprint", 15, 3)
+                        )
+                        presets.forEach { (name, work, brk) ->
+                            val isSelected = workDurationMin == work && shortBreakDurationMin == brk
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) ringColor.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, ringColor) else null,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        viewModel.updatePomodoroWorkDuration(work)
+                                        viewModel.updatePomodoroShortBreakDuration(brk)
+                                    }
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(vertical = 6.dp, horizontal = 4.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = name,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) ringColor else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "${work}m / ${brk}m",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // 2. Centered Sweeping Timer Arc Gauge
                 val defaultDurationSec = when (currentMode) {
                     PomodoroMode.WORK -> workDurationMin * 60
