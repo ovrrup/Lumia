@@ -16,6 +16,7 @@ import lumia.tracker.sync.crypto.SyncCryptoManager
 import lumia.tracker.sync.discovery.P2PDiscoveryManager
 import lumia.tracker.sync.merge.SyncMergeEngine
 import lumia.tracker.sync.model.*
+import lumia.tracker.sync.p2p.P2PDataChannelEngine
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import java.io.DataInputStream
@@ -31,15 +32,17 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Main coordinator for Lumia's Persistent Background Live Mesh Sync Engine.
  * Supports:
  * 1. One-Time Pairing with persistent cryptographic relationships (channelId + AES-GCM session key).
- * 2. Real-time differential CRDT Delta Sync with Last-Write-Wins and natural keys.
- * 3. Offline Buffer Queue (Outbox) with automatic replay upon peer discovery/reconnection.
- * 4. Silent, zero-interaction background synchronization across local Wi-Fi / Hotspot.
- * 5. Clean, reactive StateFlows for UI status, connectivity, and mesh topology.
+ * 2. Zero-Cloud, Non-Database Passphrase Relay Sync: Anonymous multi-device rooms keyed by memorable
+ *    passphrases with deterministic 32-char hex channels and 256-bit AES-GCM encryption.
+ * 3. Real-time differential CRDT Delta Sync with Last-Write-Wins and natural keys.
+ * 4. Offline Buffer Queue (Outbox) with automatic replay upon peer discovery/reconnection.
+ * 5. Silent, zero-interaction background synchronization across local Wi-Fi / Hotspot.
+ * 6. Clean, reactive StateFlows for UI status, connectivity, passphrase room state, and mesh topology.
  */
 @ValueScore(
     score = 99,
     importance = Importance.CRITICAL,
-    description = "Persistent Background Live Mesh Sync Coordinator and CRDT transport manager",
+    description = "Persistent Background Live Mesh Sync Coordinator, Passphrase Relay Room Engine, and CRDT transport manager",
     category = "SYNC"
 )
 class SyncManager(private val context: Context) {
@@ -117,6 +120,43 @@ class SyncManager(private val context: Context) {
     private val _outboxQueue = MutableStateFlow<List<OfflineMutationEntry>>(loadOutbox())
     val pendingOutboxCount: StateFlow<Int> = _outboxQueue.map { it.size }.stateIn(scope, SharingStarted.Eagerly, 0)
 
+    // --- Passphrase Relay Sync Engine StateFlows ---
+
+    private val _syncPassphrase = MutableStateFlow<String?>(prefs.getString("sync_passphrase", null))
+    val syncPassphrase: StateFlow<String?> = _syncPassphrase.asStateFlow()
+
+    private val _passphraseChannelId = MutableStateFlow<String?>(_syncPassphrase.value?.let { SyncCryptoManager.derivePassphraseChannelId(it) })
+    val passphraseChannelId: StateFlow<String?> = _passphraseChannelId.asStateFlow()
+
+    private val _isPassphraseRoomActive = MutableStateFlow<Boolean>(_syncPassphrase.value != null)
+    val isPassphraseRoomActive: StateFlow<Boolean> = _isPassphraseRoomActive.asStateFlow()
+
+    // --- Dual Transport DataChannel Engine ---
+
+    val dataChannelEngine: P2PDataChannelEngine by lazy {
+        P2PDataChannelEngine(
+            context = context,
+            profileManager = profileManager,
+            trustedPeerProvider = { targetDeviceId -> getTrustedPeer(targetDeviceId) },
+            onPeerPaired = { peer -> saveTrustedPeer(peer) },
+            onPeerSynced = { targetDeviceId -> updateTrustedPeerSyncTime(targetDeviceId) },
+            onStateChanged = { state -> _syncState.value = state }
+        ).apply {
+            onPassphraseRoomMerged = { report ->
+                val now = System.currentTimeMillis()
+                _lastSyncedTimestamp.value = now
+                prefs.edit().putLong("last_synced_timestamp", now).apply()
+                addHistoryRecord(
+                    SyncHistoryRecord(
+                        peerDeviceName = report.peerDeviceName.ifBlank { "Passphrase Room" },
+                        summary = "Passphrase Relay Sync: +${if (report.deltasApplied > 0) report.deltasApplied else report.coursesMerged + report.tasksMerged} items merged",
+                        isSuccess = true
+                    )
+                )
+            }
+        }
+    }
+
     // --- Mesh Networking & Sessions ---
 
     var activePort: Int = DEFAULT_PORT
@@ -161,6 +201,10 @@ class SyncManager(private val context: Context) {
         if (_continuousAutoSyncEnabled.value) {
             startDiscovery()
         }
+        // Initialize Passphrase Relay Room if previously configured
+        _syncPassphrase.value?.let { savedPass ->
+            dataChannelEngine.setPassphraseMeshRoom(savedPass, getLocalDevice())
+        }
         startDatabaseObservation()
     }
 
@@ -171,6 +215,9 @@ class SyncManager(private val context: Context) {
                 if (_continuousAutoSyncEnabled.value) {
                     startDiscovery()
                     triggerAutoSyncToAllTrustedPeers()
+                }
+                _syncPassphrase.value?.let { pass ->
+                    dataChannelEngine.setPassphraseMeshRoom(pass, getLocalDevice())
                 }
             }
         }
@@ -186,6 +233,71 @@ class SyncManager(private val context: Context) {
             avatarEmoji = if (activeProfile.avatarEmoji.length <= 3 && !activeProfile.avatarEmoji.startsWith("/")) activeProfile.avatarEmoji else "DEV",
             isConnected = _connectedDevicesCount.value > 0
         )
+    }
+
+    // --- Passphrase Relay Sync Engine Configuration ---
+
+    /**
+     * Configures the zero-cloud, non-database Passphrase Relay Mesh Room.
+     * Computes deterministic 32-char hex channel ID and 256-bit AES symmetric key,
+     * persists preference in lumia_sync_prefs, and joins the relay WebSocket room.
+     */
+    fun setPassphraseMeshRoom(passphrase: String?) {
+        val trimmed = passphrase?.trim()?.takeIf { it.isNotBlank() }
+        if (trimmed != null) {
+            prefs.edit().putString("sync_passphrase", trimmed).apply()
+            _syncPassphrase.value = trimmed
+            val channelId = SyncCryptoManager.derivePassphraseChannelId(trimmed)
+            _passphraseChannelId.value = channelId
+            _isPassphraseRoomActive.value = true
+            dataChannelEngine.setPassphraseMeshRoom(trimmed, getLocalDevice())
+            Log.i(TAG, "Passphrase mesh room configured: '$trimmed' (channel: $channelId)")
+        } else {
+            prefs.edit().remove("sync_passphrase").apply()
+            _syncPassphrase.value = null
+            _passphraseChannelId.value = null
+            _isPassphraseRoomActive.value = false
+            dataChannelEngine.setPassphraseMeshRoom(null, getLocalDevice())
+            Log.i(TAG, "Passphrase mesh room cleared")
+        }
+    }
+
+    /**
+     * Generates a new memorable passphrase and sets it as the active mesh room.
+     */
+    fun generateAndSetNewPassphraseRoom(): String {
+        val phrase = SyncCryptoManager.generateMemorablePassphrase()
+        setPassphraseMeshRoom(phrase)
+        return phrase
+    }
+
+    /**
+     * Triggers an immediate full database snapshot sync to the active Passphrase Relay Room.
+     */
+    fun syncPassphraseRoomNow(onComplete: ((SyncMergeReport?) -> Unit)? = null) {
+        val currentPassphrase = _syncPassphrase.value
+        if (currentPassphrase.isNullOrBlank()) {
+            _syncState.value = SyncState.Error("No passphrase sync room configured")
+            onComplete?.invoke(null)
+            return
+        }
+        _isSyncing.value = true
+        dataChannelEngine.syncPassphraseRoomNow(getLocalDevice(), SyncMode.SMART_MERGE) { report ->
+            _isSyncing.value = false
+            if (report != null) {
+                val now = System.currentTimeMillis()
+                _lastSyncedTimestamp.value = now
+                prefs.edit().putLong("last_synced_timestamp", now).apply()
+                addHistoryRecord(
+                    SyncHistoryRecord(
+                        peerDeviceName = "Passphrase Room: $currentPassphrase",
+                        summary = "Manual Room Sync: +${report.coursesMerged} courses, +${report.tasksMerged} tasks",
+                        isSuccess = true
+                    )
+                )
+            }
+            onComplete?.invoke(report)
+        }
     }
 
     /**
@@ -679,8 +791,8 @@ class SyncManager(private val context: Context) {
     // --- Real-Time CRDT Delta Dispatch & Offline Outbox Queue ---
 
     /**
-     * Broadcasts a local entity mutation in real-time to all paired peers in the live mesh.
-     * If a paired peer is offline, queues the mutation in the persistent outbox buffer.
+     * Broadcasts a local entity mutation in real-time to all paired peers in the live mesh
+     * and to the active Passphrase Relay Room.
      */
     fun broadcastEntityMutation(entityType: SyncEntityType, operation: SyncOperation, entity: Any, entityId: String) {
         if (isApplyingRemoteMerge.get()) return
@@ -696,12 +808,12 @@ class SyncManager(private val context: Context) {
     }
 
     /**
-     * Dispatches a SyncDelta to active sessions or queues in outbox for offline peers.
+     * Dispatches a SyncDelta to active sessions, queues in outbox for offline peers,
+     * and broadcasts encrypted payload to the Passphrase Relay Room channel.
      */
     fun broadcastDelta(delta: SyncDelta) {
+        // 1. Broadcast to local TCP mesh active sessions or queue in outbox for offline peers
         val peers = _pairedDevices.value
-        if (peers.isEmpty()) return
-
         for (peer in peers) {
             val session = activeSessions[peer.deviceId]
             if (session != null) {
@@ -715,6 +827,13 @@ class SyncManager(private val context: Context) {
                 }
             } else {
                 queueOutboxEntry(peer.deviceId, delta)
+            }
+        }
+
+        // 2. Zero-cloud Passphrase Relay Room broadcast
+        if (_syncPassphrase.value != null && _passphraseChannelId.value != null) {
+            scope.launch {
+                dataChannelEngine.broadcastDeltaToPassphraseRoom(delta, getLocalDevice())
             }
         }
     }
@@ -1290,6 +1409,7 @@ class SyncManager(private val context: Context) {
         try { serverSocket?.close() } catch (ignored: Exception) {}
         serverSocket = null
         _isServerRunning.value = false
+        dataChannelEngine.stop()
         updateConnectedDevicesCount()
     }
 }

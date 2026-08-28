@@ -108,9 +108,12 @@ fun MultiDeviceSyncScreen(
     val isServerRunning by syncManager.isServerRunning.collectAsStateWithLifecycle()
     val isSyncing by syncManager.isSyncing.collectAsStateWithLifecycle()
     val pendingOutboxCount by syncManager.pendingOutboxCount.collectAsStateWithLifecycle()
+    val activePassphraseRoom by syncManager.syncPassphrase.collectAsStateWithLifecycle()
+    val isPassphraseRoomActive by syncManager.isPassphraseRoomActive.collectAsStateWithLifecycle()
 
     var wifiOnlySync by remember { mutableStateOf(prefs.getBoolean("wifi_only_sync", true)) }
     var showPairNewSheet by remember { mutableStateOf(false) }
+    var showPassphraseSheet by remember { mutableStateOf(false) }
     var showPinDialogForPeer by remember { mutableStateOf<SyncDevice?>(null) }
     var showHelpDialog by remember { mutableStateOf(false) }
     var peerToUnpair by remember { mutableStateOf<TrustedPeer?>(null) }
@@ -189,6 +192,29 @@ fun MultiDeviceSyncScreen(
                     isSyncing = isSyncing,
                     syncManager = syncManager,
                     onOpenPairSheet = { showPairNewSheet = true }
+                )
+            }
+
+            // 1.5. Zero-Cloud Passphrase Relay Mesh Room Card
+            item {
+                PassphraseMeshRoomCard(
+                    activeRoom = activePassphraseRoom ?: "",
+                    onlinePeersCount = onlineTrustedCount,
+                    isSyncing = isSyncing,
+                    onOpenRoomSheet = { showPassphraseSheet = true },
+                    onSyncNow = {
+                        syncManager.syncPassphraseRoomNow()
+                        Toast.makeText(context, "Broadcasting sync across passphrase room...", Toast.LENGTH_SHORT).show()
+                    },
+                    onCopyPassphrase = { room ->
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("Lumia Passphrase", room))
+                        Toast.makeText(context, "Passphrase copied to clipboard!", Toast.LENGTH_SHORT).show()
+                    },
+                    onLeaveRoom = {
+                        syncManager.setPassphraseMeshRoom(null)
+                        Toast.makeText(context, "Disconnected from passphrase room.", Toast.LENGTH_SHORT).show()
+                    }
                 )
             }
 
@@ -676,6 +702,41 @@ fun MultiDeviceSyncScreen(
                     val peer = SyncDevice(id = "manual_$ip", name = "Manual Peer ($ip)", ipAddress = ip, port = port)
                     syncManager.connectToPeer(peer, pin, mode)
                 }
+            )
+        }
+    }
+
+    // Modal Bottom Sheet for "Join / Create Passphrase Room"
+    if (showPassphraseSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showPassphraseSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            PassphraseRoomBottomSheetContent(
+                activeRoom = activePassphraseRoom ?: "",
+                onJoinRoom = { newRoom ->
+                    syncManager.setPassphraseMeshRoom(newRoom)
+                    showPassphraseSheet = false
+                    Toast.makeText(context, "Joined Passphrase Room: $newRoom", Toast.LENGTH_SHORT).show()
+                },
+                onGenerateRandomRoom = {
+                    val generated = syncManager.generateAndSetNewPassphraseRoom()
+                    Toast.makeText(context, "Generated room: $generated", Toast.LENGTH_SHORT).show()
+                    generated
+                },
+                onLeaveRoom = {
+                    syncManager.setPassphraseMeshRoom(null)
+                    showPassphraseSheet = false
+                    Toast.makeText(context, "Disconnected from passphrase room.", Toast.LENGTH_SHORT).show()
+                },
+                onCopyText = { label, text ->
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
+                    Toast.makeText(context, "$label copied to clipboard!", Toast.LENGTH_SHORT).show()
+                },
+                onDismiss = { showPassphraseSheet = false }
             )
         }
     }
@@ -1662,5 +1723,589 @@ private fun formatRelativeTime(timeMillis: Long): String {
         diff < 3600_000 -> "${diff / 60_000}m ago"
         diff < 86400_000 -> "${diff / 3600_000}h ago"
         else -> "${diff / 86400_000}d ago"
+    }
+}
+
+/**
+ * Passphrase Relay Mesh Room Cockpit Card.
+ */
+@ValueScore(
+    score = 96,
+    importance = Importance.HIGH,
+    description = "Passphrase Relay Mesh room card displaying active room badge, E2EE zero-cloud relay indicator, connected peers, and 1-tap actions",
+    category = "UI"
+)
+@Composable
+private fun PassphraseMeshRoomCard(
+    activeRoom: String,
+    onlinePeersCount: Int,
+    isSyncing: Boolean,
+    onOpenRoomSheet: () -> Unit,
+    onSyncNow: () -> Unit,
+    onCopyPassphrase: (String) -> Unit,
+    onLeaveRoom: () -> Unit
+) {
+    val hasActiveRoom = activeRoom.isNotBlank()
+
+    ScholarCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Top Row: Title + E2EE Indicator Badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(
+                                if (hasActiveRoom) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (hasActiveRoom) Icons.Rounded.Hub else Icons.Rounded.VpnKey,
+                            contentDescription = null,
+                            tint = if (hasActiveRoom) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = "Passphrase Relay Mesh",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (hasActiveRoom) "E2EE Room Connected" else "Zero-Cloud Relay Standby",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // E2EE Zero-Cloud Relay Indicator Pill
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (hasActiveRoom) Color(0xFF4CAF50).copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Security,
+                            contentDescription = null,
+                            tint = if (hasActiveRoom) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = "E2EE Relay",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (hasActiveRoom) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Room Badge Container
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = if (hasActiveRoom) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                border = BorderStroke(
+                    1.dp,
+                    if (hasActiveRoom) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(
+                                        if (hasActiveRoom) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                        CircleShape
+                                    )
+                            )
+                            Text(
+                                text = if (hasActiveRoom) "ACTIVE ROOM" else "STATUS",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontSize = 9.sp,
+                                letterSpacing = 1.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (hasActiveRoom) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        if (hasActiveRoom) {
+                            Text(
+                                text = if (onlinePeersCount > 0) "$onlinePeersCount Peer${if (onlinePeersCount > 1) "s" else ""} Online" else "Relay Active (0 Peers)",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (onlinePeersCount > 0) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    if (hasActiveRoom) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = activeRoom,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            BouncyIconButton(
+                                onClick = { onCopyPassphrase(activeRoom) },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.ContentCopy,
+                                    contentDescription = "Copy Passphrase",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = "No Passphrase Room Joined",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Join or create a room to sync with devices across mobile data or remote Wi-Fi.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+            }
+
+            // Actions Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Action 1: Join / Change Room
+                BouncyButton(
+                    onClick = onOpenRoomSheet,
+                    modifier = Modifier.weight(1.2f)
+                ) {
+                    Icon(
+                        imageVector = if (hasActiveRoom) Icons.Rounded.Edit else Icons.Rounded.AddLink,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(if (hasActiveRoom) "Change Room" else "Join Room")
+                }
+
+                // Action 2: Sync Room Now
+                BouncyOutlinedButton(
+                    onClick = onSyncNow,
+                    modifier = Modifier.weight(1.1f),
+                    enabled = hasActiveRoom
+                ) {
+                    Icon(
+                        imageVector = if (isSyncing) Icons.Rounded.Autorenew else Icons.Rounded.Sync,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(if (isSyncing) "Syncing..." else "Sync Room")
+                }
+
+                // Action 3: 1-Tap Copy / Share
+                if (hasActiveRoom) {
+                    BouncyIconButton(
+                        onClick = { onCopyPassphrase(activeRoom) },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Share,
+                            contentDescription = "Share Room",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Join / Create Passphrase Room Modal Bottom Sheet Content.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PassphraseRoomBottomSheetContent(
+    activeRoom: String,
+    onJoinRoom: (String) -> Unit,
+    onGenerateRandomRoom: () -> String,
+    onLeaveRoom: () -> Unit,
+    onCopyText: (String, String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    var tabIndex by remember { mutableIntStateOf(0) } // 0: Enter or Generate, 1: Share via QR
+    var passphraseInput by remember { mutableStateOf(activeRoom) }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 36.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Sheet Header
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    text = "Passphrase Relay Mesh",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Zero-Cloud E2EE Sync Room",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(Icons.Rounded.Lock, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.primary)
+                    Text(
+                        text = "AES-256-GCM",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
+        // Primary Tab Row
+        PrimaryTabRow(selectedTabIndex = tabIndex) {
+            Tab(
+                selected = tabIndex == 0,
+                onClick = { tabIndex = 0 },
+                text = { Text("Enter / Generate") },
+                icon = { Icon(Icons.Rounded.Key, contentDescription = null) }
+            )
+            Tab(
+                selected = tabIndex == 1,
+                onClick = { tabIndex = 1 },
+                text = { Text("Share via QR") },
+                icon = { Icon(Icons.Rounded.QrCode2, contentDescription = null) }
+            )
+        }
+
+        when (tabIndex) {
+            0 -> {
+                // Tab 1: Enter or Generate Passphrase
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "Enter a shared secret passphrase or generate a random one to connect devices across any network:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Text field with Paste & Clear actions
+                    OutlinedTextField(
+                        value = passphraseInput,
+                        onValueChange = { passphraseInput = it.lowercase().replace(" ", "-") },
+                        label = { Text("Passphrase Room Key") },
+                        placeholder = { Text("e.g. zen-falcon-atlas-88") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        leadingIcon = {
+                            Icon(
+                                Icons.Rounded.VpnKey,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        trailingIcon = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(end = 4.dp)
+                            ) {
+                                if (passphraseInput.isNotBlank()) {
+                                    IconButton(onClick = { passphraseInput = "" }) {
+                                        Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                                    }
+                                }
+                                IconButton(
+                                    onClick = {
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        val clipText = clipboard.primaryClip?.getItemAt(0)?.text?.toString()?.trim()
+                                        if (!clipText.isNullOrBlank()) {
+                                            // Handle if pasted string is a URI like lumia-sync://mesh?passphrase=...
+                                            val extracted = if (clipText.contains("passphrase=")) {
+                                                clipText.substringAfter("passphrase=").substringBefore("&")
+                                            } else {
+                                                clipText
+                                            }
+                                            passphraseInput = extracted.lowercase().replace(" ", "-")
+                                            Toast.makeText(context, "Pasted from clipboard", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                ) {
+                                    Icon(Icons.Rounded.ContentPaste, contentDescription = "Paste from Clipboard", tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Done
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Generate Random Passphrase Button
+                    BouncyOutlinedButton(
+                        onClick = {
+                            val generated = onGenerateRandomRoom()
+                            passphraseInput = generated
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Generate Random Passphrase")
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+
+                    // 1-Tap Join Mesh Room Button
+                    BouncyButton(
+                        onClick = {
+                            if (passphraseInput.isNotBlank()) {
+                                keyboardController?.hide()
+                                onJoinRoom(passphraseInput.trim())
+                            }
+                        },
+                        enabled = passphraseInput.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Rounded.Hub, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (passphraseInput.trim() == activeRoom && activeRoom.isNotBlank()) "Room Active • Re-Sync Now"
+                            else "Join Mesh Room"
+                        )
+                    }
+
+                    // Leave Room option if active
+                    if (activeRoom.isNotBlank()) {
+                        BouncyTextButton(
+                            onClick = {
+                                onLeaveRoom()
+                                passphraseInput = ""
+                            },
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Icon(Icons.Rounded.LinkOff, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Disconnect from Current Room")
+                        }
+                    }
+
+                    // Explanatory footnote
+                    Text(
+                        text = "Zero-Cloud Relay: All payloads are encrypted client-side with AES-256-GCM. The relay server routes blinded packets and cannot read your data.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+            1 -> {
+                // Tab 2: Share via QR Code
+                val targetPassphrase = passphraseInput.trim().ifBlank { activeRoom.trim() }
+                val shareUri = if (targetPassphrase.isNotBlank()) "lumia-sync://mesh?passphrase=$targetPassphrase" else ""
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    if (targetPassphrase.isNotBlank()) {
+                        Text(
+                            text = "Scan this QR code from Lumia on another device to instantly join this encrypted mesh room:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+
+                        // High-Contrast Crisp QR Code Card
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color.White,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier.size(220.dp)
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+                                QrCodeCanvas(
+                                    content = shareUri,
+                                    darkColor = Color.Black,
+                                    lightColor = Color.White
+                                )
+                            }
+                        }
+
+                        // Monospace Passphrase Pill
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "ROOM PASSPHRASE",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    text = targetPassphrase,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+
+                        // 1-Tap Copy Link & Copy Passphrase Buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            BouncyButton(
+                                onClick = { onCopyText("Lumia Mesh Link", shareUri) },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Rounded.Link, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Copy Link")
+                            }
+
+                            BouncyOutlinedButton(
+                                onClick = { onCopyText("Lumia Passphrase", targetPassphrase) },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Copy Key")
+                            }
+                        }
+
+                        Text(
+                            text = "URI Scheme: lumia-sync://mesh?passphrase=...",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        // Empty state when no passphrase entered
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.QrCodeScanner,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        Text(
+                            text = "No Passphrase Available",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Enter or generate a passphrase in the first tab to view and share its QR code.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        BouncyButton(onClick = {
+                            val gen = onGenerateRandomRoom()
+                            passphraseInput = gen
+                            tabIndex = 0
+                        }) {
+                            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Generate Passphrase")
+                        }
+                    }
+                }
+            }
+        }
     }
 }

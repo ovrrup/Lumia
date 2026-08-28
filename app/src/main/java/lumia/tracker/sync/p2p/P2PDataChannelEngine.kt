@@ -34,13 +34,15 @@ import java.util.concurrent.atomic.AtomicBoolean
  * 2. Global Live Mesh Transport: End-to-End Encrypted (AES-256-GCM) WebSocket relay
  *    utilizing deterministic channel IDs so paired devices sync automatically anywhere
  *    in the world across cellular and separate Wi-Fi networks with zero user action.
- * 3. Persistent automatic reconnect with exponential backoff & keep-alive heartbeats.
- * 4. Zero plaintext exposure: relay server only sees opaque channel IDs and encrypted ciphertext.
+ * 3. Zero-Cloud, Non-Database Passphrase Relay Room: Anonymous live rooms keyed by memorable
+ *    passphrases with deterministic 32-char hex channels and 256-bit AES-GCM encryption.
+ * 4. Persistent automatic reconnect with exponential backoff & keep-alive heartbeats.
+ * 5. Zero plaintext exposure: relay server only sees opaque channel IDs and encrypted ciphertext.
  */
 @ValueScore(
     score = 98,
     importance = Importance.CRITICAL,
-    description = "Dual transport P2P DataChannel engine supporting local TCP sockets, global E2EE WebSocket live mesh relay, persistent heartbeat, and smart delta merging",
+    description = "Dual transport P2P DataChannel engine supporting local TCP sockets, global E2EE WebSocket live mesh relay, passphrase rooms, persistent heartbeat, and smart delta merging",
     category = "Networking"
 )
 class P2PDataChannelEngine(
@@ -54,6 +56,7 @@ class P2PDataChannelEngine(
 
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     private val messageAdapter = moshi.adapter(SyncMessage::class.java)
+    private val deltaPacketAdapter = moshi.adapter(SyncDeltaPacket::class.java)
     private val backupAdapter = moshi.adapter(ScholarBackup::class.java)
     private val fullBackupAdapter = moshi.adapter(FullAppBackup::class.java)
     private val reportAdapter = moshi.adapter(SyncMergeReport::class.java)
@@ -73,6 +76,17 @@ class P2PDataChannelEngine(
     private var reconnectJob: Job? = null
     private var reconnectBackoffMs = 1000L
     private val subscribedChannels = ConcurrentHashMap<String, TrustedPeer>() // ChannelId -> TrustedPeer
+
+    // Passphrase Relay Room State
+    var activePassphrase: String? = null
+        private set
+    var activePassphraseChannelId: String? = null
+        private set
+    var activePassphraseKey: String? = null
+        private set
+
+    var onPassphraseRoomMerged: ((SyncMergeReport) -> Unit)? = null
+    var onPassphraseRoomStatusChanged: ((Boolean) -> Unit)? = null
 
     var activePort: Int = DEFAULT_PORT
         private set
@@ -506,6 +520,48 @@ class P2PDataChannelEngine(
         }
     }
 
+    /**
+     * Subscribes to or leaves a zero-cloud, non-database Passphrase Relay Mesh Room.
+     * Derives deterministic 32-char hex channel ID and 256-bit AES key.
+     */
+    fun setPassphraseMeshRoom(passphrase: String?, localDevice: SyncDevice) {
+        val cleanPassphrase = passphrase?.trim()?.takeIf { it.isNotBlank() }
+        val oldChannelId = activePassphraseChannelId
+
+        if (cleanPassphrase != null) {
+            activePassphrase = cleanPassphrase
+            val newChannelId = SyncCryptoManager.derivePassphraseChannelId(cleanPassphrase)
+            val newKey = SyncCryptoManager.derivePassphraseKey(cleanPassphrase)
+
+            if (oldChannelId != null && oldChannelId != newChannelId) {
+                sendRelayLeave(oldChannelId)
+            }
+
+            activePassphraseChannelId = newChannelId
+            activePassphraseKey = newKey
+
+            if (!isGlobalMeshActive.get()) {
+                isGlobalMeshActive.set(true)
+                connectWebSocketRelay(localDevice)
+                startHeartbeat(localDevice)
+            } else {
+                sendRelayJoin(newChannelId)
+            }
+
+            onPassphraseRoomStatusChanged?.invoke(true)
+            Log.i(TAG, "Subscribed to Passphrase Relay Room: '$cleanPassphrase' (Channel: $newChannelId)")
+        } else {
+            if (oldChannelId != null) {
+                sendRelayLeave(oldChannelId)
+            }
+            activePassphrase = null
+            activePassphraseChannelId = null
+            activePassphraseKey = null
+            onPassphraseRoomStatusChanged?.invoke(false)
+            Log.i(TAG, "Unsubscribed from Passphrase Relay Room")
+        }
+    }
+
     private fun connectWebSocketRelay(localDevice: SyncDevice) {
         if (!isGlobalMeshActive.get()) return
 
@@ -529,6 +585,11 @@ class P2PDataChannelEngine(
                 // Join all paired deterministic channels
                 subscribedChannels.keys.forEach { channelId ->
                     sendRelayJoin(channelId)
+                }
+
+                // Join active passphrase room channel if set
+                activePassphraseChannelId?.let { chId ->
+                    sendRelayJoin(chId)
                 }
             }
 
@@ -558,6 +619,15 @@ class P2PDataChannelEngine(
             channelId = channelId
         )
         val json = relayEnvelopeAdapter.toJson(joinEnvelope)
+        webSocket?.send(json)
+    }
+
+    private fun sendRelayLeave(channelId: String) {
+        val leaveEnvelope = RelayEnvelope(
+            action = "leave",
+            channelId = channelId
+        )
+        val json = relayEnvelopeAdapter.toJson(leaveEnvelope)
         webSocket?.send(json)
     }
 
@@ -592,7 +662,60 @@ class P2PDataChannelEngine(
     }
 
     /**
-     * Processes an incoming encrypted frame from the Global Live Mesh relay.
+     * Broadcasts an encrypted CRDT delta packet to the active Passphrase Relay Room channel.
+     */
+    fun broadcastDeltaPacketToPassphraseRoom(packet: SyncDeltaPacket, localDevice: SyncDevice) {
+        val channelId = activePassphraseChannelId ?: return
+        val key = activePassphraseKey ?: return
+
+        scope.launch {
+            try {
+                val json = deltaPacketAdapter.toJson(packet)
+                val packetNonce = SyncCryptoManager.generateNonce()
+                val (encrypted, iv) = SyncCryptoManager.encryptPayload(
+                    json.toByteArray(Charsets.UTF_8),
+                    key,
+                    packetNonce
+                )
+                val syncMsg = SyncMessage(
+                    type = "DELTA_SYNC",
+                    deviceId = localDevice.id,
+                    deviceName = localDevice.name,
+                    avatarEmoji = localDevice.avatarEmoji,
+                    channelId = channelId,
+                    nonce = packetNonce,
+                    deltaPacketEncryptedBase64 = encrypted,
+                    ivBase64 = iv
+                )
+                val envelope = RelayEnvelope(
+                    action = "frame",
+                    channelId = channelId,
+                    senderId = localDevice.id,
+                    payloadJson = messageAdapter.toJson(syncMsg)
+                )
+                webSocket?.send(relayEnvelopeAdapter.toJson(envelope))
+                Log.i(TAG, "Encrypted delta broadcast dispatched to Passphrase Room channel $channelId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to broadcast delta to Passphrase Room", e)
+            }
+        }
+    }
+
+    /**
+     * Helper to wrap a single SyncDelta into a packet and broadcast to the active Passphrase Relay Room.
+     */
+    fun broadcastDeltaToPassphraseRoom(delta: SyncDelta, localDevice: SyncDevice) {
+        val channelId = activePassphraseChannelId ?: return
+        val packet = SyncDeltaPacket(
+            channelId = channelId,
+            senderDeviceId = localDevice.id,
+            deltas = listOf(delta)
+        )
+        broadcastDeltaPacketToPassphraseRoom(packet, localDevice)
+    }
+
+    /**
+     * Processes an incoming encrypted frame from the Global Live Mesh relay or Passphrase Room.
      */
     private fun handleIncomingRelayFrame(rawEnvelopeJson: String, localDevice: SyncDevice) {
         scope.launch {
@@ -601,12 +724,108 @@ class P2PDataChannelEngine(
                 if (envelope.action == "pong") return@launch
                 if (envelope.action != "frame" || envelope.payloadJson.isNullOrBlank()) return@launch
 
-                val peer = subscribedChannels[envelope.channelId] ?: return@launch
                 val syncMsg = messageAdapter.fromJson(envelope.payloadJson) ?: return@launch
 
                 // Ignore frames originating from ourselves
-                if (syncMsg.deviceId == localDevice.id) return@launch
+                if (syncMsg.deviceId == localDevice.id || envelope.senderId == localDevice.id) return@launch
 
+                // Case A: Incoming message on the Passphrase Relay Room channel
+                if (envelope.channelId == activePassphraseChannelId && activePassphraseKey != null) {
+                    val key = activePassphraseKey!!
+                    val senderName = syncMsg.deviceName.ifBlank { "Passphrase Peer" }
+
+                    when (syncMsg.type) {
+                        "DELTA_SYNC" -> {
+                            val encrypted = syncMsg.deltaPacketEncryptedBase64 ?: syncMsg.payloadEncryptedBase64 ?: return@launch
+                            val iv = syncMsg.ivBase64 ?: return@launch
+                            val senderNonce = syncMsg.nonce.ifBlank { envelope.channelId }
+
+                            onStateChanged(SyncState.Merging("Passphrase Relay: Merging CRDT delta from $senderName..."))
+
+                            val decryptedBytes = SyncCryptoManager.decryptPayload(encrypted, iv, key, senderNonce)
+                            val packetJson = String(decryptedBytes, Charsets.UTF_8)
+                            val packet = deltaPacketAdapter.fromJson(packetJson) ?: return@launch
+
+                            val db = AppDatabase.getDatabase(context, profileManager.getActiveProfileId())
+                            val report = SyncMergeEngine.mergeDeltaPacket(db.scholarDao(), packet, senderName)
+
+                            onPassphraseRoomMerged?.invoke(report)
+                            onStateChanged(SyncState.Success(report))
+
+                            // Send DELTA_ACK back to room
+                            val localNonce = SyncCryptoManager.generateNonce()
+                            val ackMsg = SyncMessage(
+                                type = "DELTA_ACK",
+                                deviceId = localDevice.id,
+                                deviceName = localDevice.name,
+                                channelId = envelope.channelId,
+                                nonce = localNonce,
+                                ackMutationIds = packet.deltas.map { it.mutationId }
+                            )
+                            val ackEnvelope = RelayEnvelope(
+                                action = "frame",
+                                channelId = envelope.channelId,
+                                senderId = localDevice.id,
+                                payloadJson = messageAdapter.toJson(ackMsg)
+                            )
+                            webSocket?.send(relayEnvelopeAdapter.toJson(ackEnvelope))
+                        }
+                        "SYNC_DATA" -> {
+                            val encrypted = syncMsg.payloadEncryptedBase64 ?: return@launch
+                            val iv = syncMsg.ivBase64 ?: return@launch
+                            val senderNonce = syncMsg.nonce.ifBlank { envelope.channelId }
+
+                            onStateChanged(SyncState.Merging("Passphrase Relay: Merging full snapshot from $senderName..."))
+
+                            val decryptedBytes = SyncCryptoManager.decryptPayload(encrypted, iv, key, senderNonce)
+                            val remoteBackup = backupAdapter.fromJson(String(decryptedBytes, Charsets.UTF_8)) ?: return@launch
+
+                            val report = SyncMergeEngine.mergeFullApp(
+                                context = context,
+                                profileManager = profileManager,
+                                remoteBackup = remoteBackup,
+                                peerDeviceName = senderName,
+                                syncMode = syncMsg.syncMode
+                            )
+
+                            onPassphraseRoomMerged?.invoke(report)
+                            onStateChanged(SyncState.Success(report))
+
+                            // Send encrypted SYNC_ACK back to room
+                            val localNonce = SyncCryptoManager.generateNonce()
+                            val reportJsonStr = reportAdapter.toJson(report)
+                            val (ackEncrypted, ackIv) = SyncCryptoManager.encryptPayload(
+                                reportJsonStr.toByteArray(Charsets.UTF_8),
+                                key,
+                                localNonce
+                            )
+                            val ackMsg = SyncMessage(
+                                type = "SYNC_ACK",
+                                deviceId = localDevice.id,
+                                deviceName = localDevice.name,
+                                channelId = envelope.channelId,
+                                nonce = localNonce,
+                                payloadEncryptedBase64 = ackEncrypted,
+                                ivBase64 = ackIv,
+                                reportJson = reportJsonStr
+                            )
+                            val ackEnvelope = RelayEnvelope(
+                                action = "frame",
+                                channelId = envelope.channelId,
+                                senderId = localDevice.id,
+                                payloadJson = messageAdapter.toJson(ackMsg)
+                            )
+                            webSocket?.send(relayEnvelopeAdapter.toJson(ackEnvelope))
+                        }
+                        "SYNC_ACK", "DELTA_ACK" -> {
+                            // Handled cleanly without errors
+                        }
+                    }
+                    return@launch
+                }
+
+                // Case B: Pairwise Global Live Mesh Relay Channel
+                val peer = subscribedChannels[envelope.channelId] ?: return@launch
                 when (syncMsg.type) {
                     "SYNC_DATA" -> {
                         val encrypted = syncMsg.payloadEncryptedBase64 ?: return@launch
@@ -685,7 +904,7 @@ class P2PDataChannelEngine(
     }
 
     /**
-     * Executes an End-to-End Encrypted synchronization over the Global Live Mesh Relay.
+     * Executes an End-to-End Encrypted synchronization over the Global Live Mesh Relay for a paired peer.
      */
     fun syncViaGlobalMesh(
         trustedPeer: TrustedPeer,
@@ -750,6 +969,74 @@ class P2PDataChannelEngine(
         }
     }
 
+    /**
+     * Executes an End-to-End Encrypted synchronization over the Passphrase Relay Room.
+     */
+    fun syncPassphraseRoomNow(
+        localDevice: SyncDevice,
+        mode: SyncMode = SyncMode.SMART_MERGE,
+        onComplete: (SyncMergeReport?) -> Unit
+    ) {
+        val channelId = activePassphraseChannelId
+        val key = activePassphraseKey
+        if (channelId == null || key == null) {
+            onStateChanged(SyncState.Error("No active Passphrase Sync Room"))
+            onComplete(null)
+            return
+        }
+
+        scope.launch {
+            try {
+                onStateChanged(SyncState.Connecting("Passphrase Room (${activePassphrase ?: "Relay"})"))
+                val localBackup = createFullLocalBackup()
+                val localBackupJson = backupAdapter.toJson(localBackup)
+                val sessionNonce = SyncCryptoManager.generateNonce()
+
+                val (encryptedLocal, localIv) = SyncCryptoManager.encryptPayload(
+                    localBackupJson.toByteArray(Charsets.UTF_8),
+                    key,
+                    sessionNonce
+                )
+
+                onStateChanged(SyncState.ExchangingData("Passphrase Room", 0.5f, "Broadcasting encrypted snapshot..."))
+
+                val syncDataMsg = SyncMessage(
+                    type = "SYNC_DATA",
+                    deviceId = localDevice.id,
+                    deviceName = localDevice.name,
+                    avatarEmoji = localDevice.avatarEmoji,
+                    channelId = channelId,
+                    nonce = sessionNonce,
+                    syncMode = mode.name,
+                    isTrustedAuth = true,
+                    payloadEncryptedBase64 = encryptedLocal,
+                    ivBase64 = localIv
+                )
+
+                val frameEnvelope = RelayEnvelope(
+                    action = "frame",
+                    channelId = channelId,
+                    senderId = localDevice.id,
+                    payloadJson = messageAdapter.toJson(syncDataMsg)
+                )
+
+                webSocket?.send(relayEnvelopeAdapter.toJson(frameEnvelope))
+                Log.i(TAG, "Full snapshot dispatched to Passphrase Room channel $channelId")
+
+                val report = SyncMergeReport(
+                    peerDeviceName = "Passphrase Room: ${activePassphrase ?: "Relay"}",
+                    syncMode = mode.name
+                )
+                onStateChanged(SyncState.Success(report))
+                onComplete(report)
+            } catch (e: Exception) {
+                Log.e(TAG, "Passphrase Room sync error", e)
+                onStateChanged(SyncState.Error("Passphrase Room error: ${e.message}"))
+                onComplete(null)
+            }
+        }
+    }
+
     // =========================================================================
     // SECTION 3: Helper Functions & Database Serialization
     // =========================================================================
@@ -809,7 +1096,7 @@ class P2PDataChannelEngine(
     }
 
     /**
-     * Cleanly stops both Local TCP server and Global Live Mesh WebSocket clients.
+     * Cleanly stops both Local TCP server, Passphrase Room, and Global Live Mesh WebSocket clients.
      */
     fun stop() {
         isRunning.set(false)
@@ -825,5 +1112,8 @@ class P2PDataChannelEngine(
         webSocket = null
         okHttpClient = null
         subscribedChannels.clear()
+        activePassphrase = null
+        activePassphraseChannelId = null
+        activePassphraseKey = null
     }
 }

@@ -18,12 +18,14 @@ import javax.crypto.spec.SecretKeySpec
  * 2. Mutual challenge-response authentication (HMAC-SHA256).
  * 3. Permanent Pre-Shared Key (PSK) derivation for 1-time handshake pairing.
  * 4. Deterministic Global Live Mesh Relay Channel ID derivation with zero identity leakage.
- * 5. Payload integrity checksum verification (SHA-256).
+ * 5. Deterministic Passphrase Relay Channel ID and 256-bit AES Key derivation for zero-cloud room sync.
+ * 6. Memorable passphrase generation.
+ * 7. Payload integrity checksum verification (SHA-256).
  */
 @ValueScore(
     score = 96,
     importance = Importance.CRITICAL,
-    description = "Cryptographic primitives for AES-256-GCM E2EE, HMAC-SHA256 mutual auth, deterministic mesh channels, and PSK key derivation",
+    description = "Cryptographic primitives for AES-256-GCM E2EE, HMAC-SHA256 mutual auth, deterministic mesh channels, PSK key derivation, and passphrase relay sync",
     category = "Security"
 )
 object SyncCryptoManager {
@@ -34,6 +36,8 @@ object SyncCryptoManager {
     private const val PSK_SALT = "LUMIA_P2P_PERMANENT_PSK_SALT_"
     private const val SYNC_KEY_SALT = "LUMIA_P2P_SYNC_SALT_"
     private const val GLOBAL_MESH_CHANNEL_SALT = "LUMIA_GLOBAL_MESH_CHANNEL_SALT_v2_"
+    private const val PASSPHRASE_CHANNEL_SALT = "LUMIA_PASSPHRASE_RELAY_CHANNEL_SALT_v1_"
+    private const val PASSPHRASE_KEY_SALT = "LUMIA_PASSPHRASE_AES_KEY_SALT_v1_"
 
     /**
      * Generates a 6-digit numeric PIN for user pairing verification during initial setup.
@@ -120,6 +124,78 @@ object SyncCryptoManager {
         digest.update(psk.toByteArray(Charsets.UTF_8))
         val hash = digest.digest()
         return hash.joinToString("") { "%02x".format(it) }.take(32)
+    }
+
+    /**
+     * Derives a deterministic 32-character hexadecimal Global Live Mesh relay channel ID
+     * from a user-configured synchronization passphrase.
+     * Allows zero-cloud, non-database multi-device synchronization over anonymous relay WebSocket.
+     */
+    @ValueScore(
+        score = 96,
+        importance = Importance.CRITICAL,
+        description = "Derives deterministic 32-character hex relay room channel ID from passphrase for anonymous zero-cloud sync",
+        category = "Security"
+    )
+    fun derivePassphraseChannelId(passphrase: String): String {
+        val normalized = passphrase.trim().lowercase()
+        val digest = MessageDigest.getInstance("SHA-256")
+        digest.update(PASSPHRASE_CHANNEL_SALT.toByteArray(Charsets.UTF_8))
+        digest.update(normalized.toByteArray(Charsets.UTF_8))
+        val hash = digest.digest()
+        return hash.joinToString("") { "%02x".format(it) }.take(32)
+    }
+
+    /**
+     * Derives a deterministic 256-bit symmetric AES key (64 hex characters) from a passphrase.
+     * Used for authenticated AES-256-GCM End-to-End Encryption in relay mesh rooms.
+     */
+    @ValueScore(
+        score = 96,
+        importance = Importance.CRITICAL,
+        description = "Derives deterministic 256-bit symmetric AES key from passphrase for zero-knowledge E2EE",
+        category = "Security"
+    )
+    fun derivePassphraseKey(passphrase: String): String {
+        val normalized = passphrase.trim().lowercase()
+        val digest = MessageDigest.getInstance("SHA-256")
+        digest.update(PASSPHRASE_KEY_SALT.toByteArray(Charsets.UTF_8))
+        digest.update(normalized.toByteArray(Charsets.UTF_8))
+        val hash = digest.digest()
+        return hash.joinToString("") { "%02x".format(it) }
+    }
+
+    /**
+     * Generates a memorable, human-friendly hyphenated passphrase (e.g. 'lunar-focus-atlas-42')
+     * for easy cross-device room setup without cloud databases or accounts.
+     */
+    @ValueScore(
+        score = 90,
+        importance = Importance.HIGH,
+        description = "Generates human-memorable hyphenated passphrase for zero-cloud room sync",
+        category = "Security"
+    )
+    fun generateMemorablePassphrase(): String {
+        val adjectives = listOf(
+            "lunar", "solar", "cosmic", "quantum", "stellar", "astral", "zenith", "hyper",
+            "neon", "amber", "velvet", "crystal", "silent", "prime", "swift", "calm",
+            "noble", "vivid", "golden", "shadow", "radiant", "mystic", "bright", "emerald"
+        )
+        val concepts = listOf(
+            "focus", "flow", "pulse", "orbit", "prism", "nexus", "matrix", "beacon",
+            "vector", "spark", "echo", "vertex", "strata", "flux", "horizon", "tempo",
+            "logic", "cipher", "haven", "zen", "stride", "spark", "rhythm", "signal"
+        )
+        val nouns = listOf(
+            "atlas", "phoenix", "falcon", "voyager", "aurora", "comet", "nebula", "titan",
+            "orion", "chronos", "glider", "ranger", "pioneer", "drifter", "sentry", "monarch",
+            "vanguard", "apex", "harbor", "solace", "sentinel", "scout", "summit", "orbit"
+        )
+        val adj = adjectives[secureRandom.nextInt(adjectives.size)]
+        val concept = concepts[secureRandom.nextInt(concepts.size)]
+        val noun = nouns[secureRandom.nextInt(nouns.size)]
+        val number = secureRandom.nextInt(90) + 10 // 10..99
+        return "$adj-$concept-$noun-$number"
     }
 
     /**
