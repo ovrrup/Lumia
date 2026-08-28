@@ -76,13 +76,16 @@ class ReminderReceiver : BroadcastReceiver() {
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         val db = AppDatabase.getDatabase(context)
-                        val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+                        val cal = java.util.Calendar.getInstance().apply {
+                            set(java.util.Calendar.HOUR_OF_DAY, 0)
+                            set(java.util.Calendar.MINUTE, 0)
+                            set(java.util.Calendar.SECOND, 0)
+                            set(java.util.Calendar.MILLISECOND, 0)
+                        }
                         val record = lumia.tracker.model.AttendanceRecord(
                             courseId = courseId,
-                            date = todayStr,
-                            status = status,
-                            note = "Auto-marked via Notification action",
-                            timestamp = System.currentTimeMillis()
+                            dateMillis = cal.timeInMillis,
+                            status = status
                         )
                         db.scholarDao().insertAttendanceRecord(record)
                         WidgetUpdateHelper.updateAllWidgets(context)
