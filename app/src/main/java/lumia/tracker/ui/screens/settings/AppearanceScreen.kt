@@ -33,7 +33,7 @@ import lumia.tracker.ui.screens.settings.components.*
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
- * AppearanceScreen - Comprehensive visual, thematic, and tactile personalization hub.
+ * AppearanceScreen - Visual, thematic, and tactile personalization hub.
  * Houses theme palettes, AMOLED pure black, dynamic background lighting, typography enhancements,
  * bottom navigation dock dimensions, and animation profiles with clean Material 3 design.
  */
@@ -99,8 +99,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             // 1. Display Mode (Dark / Light / System) Card
             SettingsGroupCard(title = "Display Mode & Contrast", icon = Icons.Rounded.DarkMode) {
                 SettingsSegmentedPicker(
-                    title = "Color Scheme Mode",
-                    subtitle = "Switch between dark, light, or system follow",
+                    title = "Color Scheme",
+                    subtitle = "",
                     options = listOf(
                         Triple("System", "System", Icons.Rounded.SettingsBrightness),
                         Triple("Light", "Light", Icons.Rounded.LightMode),
@@ -117,7 +117,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                 SettingsToggleItem(
                     title = "Pure AMOLED Black",
-                    subtitle = "Maximize battery savings and OLED contrast with true #000000 black surfaces",
+                    subtitle = "True black #000000 surfaces for OLED screens",
                     checked = pureBlackMode,
                     icon = Icons.Rounded.Contrast,
                     onCheckedChange = { viewModel.updatePureBlackMode(it) }
@@ -128,16 +128,11 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             SettingsGroupCard(title = "Theme Color Palette", icon = Icons.Rounded.Palette) {
                 Column(modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)) {
                     Text(
-                        text = "Active Theme Accent",
+                        text = "Accent Color",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Personalize the primary hue used across all academic components",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(bottom = 10.dp)
                     )
 
                     LazyRow(
@@ -176,8 +171,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     Spacer(modifier = Modifier.height(4.dp))
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                     SettingsActionItemInCard(
-                        title = "Fine-Tune Custom Hex Palette",
-                        subtitle = "Deep customize specific hex color codes",
+                        title = "Fine-Tune Custom Palette",
+                        subtitle = "Customize individual hex color codes",
                         icon = Icons.Rounded.Edit,
                         onClick = { navController.navigate("settings/advanced_theme") }
                     )
@@ -188,7 +183,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             SettingsGroupCard(title = "Dynamic Background Lighting", icon = Icons.Rounded.Flare) {
                 SettingsToggleItem(
                     title = "Dynamic Ambient Lighting",
-                    subtitle = "Soft, responsive animated background gradient accents tailored to the theme",
+                    subtitle = "Animated background gradient accents",
                     checked = betaDynamicBackground,
                     enabled = !betaMinimalistMode,
                     icon = Icons.Rounded.Flare,
@@ -216,7 +211,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (isDarkTheme) "Dark Mode Glow Intensity" else "Light Mode Glow Intensity",
+                                text = if (isDarkTheme) "Dark Glow Intensity" else "Light Glow Intensity",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -234,16 +229,6 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 )
                             }
                         }
-                        Text(
-                            text = if (isDarkTheme) {
-                                "Calibrate ambient glow intensity in dark modes for optimal readability"
-                            } else {
-                                "Calibrate background energy in light modes for clean visual focus"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp, bottom = 6.dp)
-                        )
                         Slider(
                             value = if (isDarkTheme) dynamicBgDarkBrightness else dynamicBgLightBrightness,
                             onValueChange = {
@@ -264,7 +249,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             SettingsGroupCard(title = "Typography & Text Enhancements", icon = Icons.Rounded.TextFields) {
                 SettingsToggleItem(
                     title = "Enhanced Text Rendering",
-                    subtitle = "Boost font weight contrast, line spacing, and optimal readability",
+                    subtitle = "Boost contrast and font legibility",
                     checked = betaBetterTexts,
                     icon = Icons.Rounded.TextFields,
                     enabled = !betaMinimalistMode,
@@ -283,7 +268,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         )
                         SettingsToggleItem(
                             title = "Theme-Tinted Typography",
-                            subtitle = "Subtly infuse primary theme tones into header and title text",
+                            subtitle = "Tint headers with active theme color",
                             checked = betaBetterTextsPalette,
                             enabled = betaBetterTexts && !betaMinimalistMode,
                             onCheckedChange = { viewModel.updateBetaBetterTextsPalette(it) }
@@ -305,7 +290,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                 SettingsSegmentedPicker(
                     title = "Navigation Layout",
-                    subtitle = "Switch layout format between standard flat and suspended floating dock",
+                    subtitle = "",
                     options = listOf(
                         Triple("Flat", "Standard Flat", Icons.Rounded.HorizontalSplit),
                         Triple("Floating", "Floating Dock", Icons.Rounded.VerticalAlignBottom)
@@ -321,7 +306,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                 SettingsSegmentedPicker(
                     title = "Item Labels Mode",
-                    subtitle = "Control visibility of tab titles on the navigation bar",
+                    subtitle = "",
                     options = listOf(
                         Triple("Always", "Always", null),
                         Triple("Selected Only", "Selected", null),
@@ -337,8 +322,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 )
 
                 SettingsToggleItem(
-                    title = "Custom Dimension Controls",
-                    subtitle = "Fine-tune dock height, corner radius, and lift margins",
+                    title = "Custom Dimensions",
+                    subtitle = "Adjust dock height, radius, and margins",
                     checked = betaNavBarSizeControls,
                     icon = Icons.Rounded.Straighten,
                     onCheckedChange = { viewModel.updateBetaNavBarSizeControls(it) }
@@ -366,7 +351,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Bar Panel Height",
+                                text = "Bar Height",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -402,7 +387,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Indicator Tint Alpha",
+                                text = "Indicator Alpha",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -439,7 +424,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Pill Corner Radius",
+                                    text = "Corner Radius",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -475,7 +460,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Horizontal Dock Margin",
+                                    text = "Horizontal Margin",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -511,7 +496,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Bottom Lift Distance",
+                                    text = "Bottom Margin",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -542,8 +527,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             // 6. Tactile & Animation Profiles Card
             SettingsGroupCard(title = "Tactile Animations", icon = Icons.Rounded.Speed) {
                 SettingsSegmentedPicker(
-                    title = "Interaction Spring Physics",
-                    subtitle = "Choose touch response bounciness across cards and buttons",
+                    title = "Spring Physics",
+                    subtitle = "",
                     options = listOf(
                         Triple("Bouncy", "Bouncy", Icons.Rounded.TouchApp),
                         Triple("Dynamic", "Dynamic", null),

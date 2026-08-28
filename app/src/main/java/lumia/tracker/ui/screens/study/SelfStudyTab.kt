@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,8 +26,6 @@ import androidx.navigation.NavController
 import lumia.tracker.model.Task
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
-import lumia.tracker.ui.components.BouncyTextButton
-import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.study.components.MetricSummaryTile
@@ -138,7 +137,7 @@ fun SelfStudyTab(
                 top = bottomPadding.calculateTopPadding() + 12.dp,
                 bottom = bottomPadding.calculateBottomPadding() + 80.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // Task Breakdown Metrics Hero Row
             item(key = "task_metrics") {
@@ -175,8 +174,8 @@ fun SelfStudyTab(
             // Filter Tabs Segmented Bar
             item(key = "filter_tabs_bar") {
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -191,12 +190,13 @@ fun SelfStudyTab(
                             TaskFilterTab.COMPLETED to "Done (${completedTasks.size})"
                         ).forEach { (tab, label) ->
                             val isSelected = selectedFilterTab == tab
-                            val bg = if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent
-                            val textColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            val bg = if (isSelected) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent
+                            val textColor = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .background(bg, RoundedCornerShape(10.dp))
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(bg)
                                     .clickable { selectedFilterTab = tab }
                                     .padding(vertical = 8.dp),
                                 contentAlignment = Alignment.Center
@@ -204,7 +204,7 @@ fun SelfStudyTab(
                                 Text(
                                     text = label,
                                     style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                                     color = textColor
                                 )
                             }
@@ -225,57 +225,93 @@ fun SelfStudyTab(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        FilterChip(
-                            selected = selectedPriorityFilter == null,
-                            onClick = { selectedPriorityFilter = null },
-                            label = { Text("All", style = MaterialTheme.typography.labelSmall) }
-                        )
-                        FilterChip(
-                            selected = selectedPriorityFilter == 2,
-                            onClick = { selectedPriorityFilter = if (selectedPriorityFilter == 2) null else 2 },
-                            label = { Text("High", style = MaterialTheme.typography.labelSmall) },
-                            leadingIcon = {
-                                Box(modifier = Modifier.size(6.dp).background(MaterialTheme.colorScheme.error, CircleShape))
+                        listOf(
+                            null to "All",
+                            2 to "High",
+                            1 to "Medium"
+                        ).forEach { (priority, label) ->
+                            val isSelected = selectedPriorityFilter == priority
+                            val activeColor = when (priority) {
+                                2 -> MaterialTheme.colorScheme.error
+                                1 -> MaterialTheme.colorScheme.secondary
+                                else -> MaterialTheme.colorScheme.primary
                             }
-                        )
-                        FilterChip(
-                            selected = selectedPriorityFilter == 1,
-                            onClick = { selectedPriorityFilter = if (selectedPriorityFilter == 1) null else 1 },
-                            label = { Text("Medium", style = MaterialTheme.typography.labelSmall) },
-                            leadingIcon = {
-                                Box(modifier = Modifier.size(6.dp).background(MaterialTheme.colorScheme.secondary, CircleShape))
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) activeColor.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceContainerLow,
+                                modifier = Modifier.clickable {
+                                    selectedPriorityFilter = if (isSelected && priority != null) null else priority
+                                }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                ) {
+                                    if (priority != null) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .background(activeColor, CircleShape)
+                                        )
+                                    }
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                                        color = if (isSelected) activeColor else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
-                        )
+                        }
                     }
 
                     // Grouping dropdown (when advanced tasks enabled)
                     if (advancedTasks && tasks.isNotEmpty()) {
                         var expandSort by remember { mutableStateOf(false) }
                         Box {
-                            BouncyTextButton(onClick = { expandSort = true }) {
-                                Text(
-                                    "Group: $groupBy",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Icon(Icons.Rounded.ArrowDropDown, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                modifier = Modifier.clickable { expandSort = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        text = "Group: $groupBy",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Icon(
+                                        Icons.Rounded.ArrowDropDown,
+                                        contentDescription = "Group",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                             DropdownMenu(
                                 expanded = expandSort,
                                 onDismissRequest = { expandSort = false }
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text("None") },
-                                    onClick = { groupBy = "None"; expandSort = false }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Tags") },
-                                    onClick = { groupBy = "Tags"; expandSort = false }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Priority") },
-                                    onClick = { groupBy = "Priority"; expandSort = false }
-                                )
+                                listOf("None", "Tags", "Priority").forEach { option ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = option,
+                                                fontWeight = if (groupBy == option) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        },
+                                        onClick = {
+                                            groupBy = option
+                                            expandSort = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -285,41 +321,49 @@ fun SelfStudyTab(
             // Task Items / Empty State
             if (filteredTasks.isEmpty()) {
                 item(key = "empty_filtered_tasks") {
-                    ScholarCard(
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        shape = RoundedCornerShape(24.dp)
+                            .padding(top = 4.dp)
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(28.dp),
+                                .padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(
-                                imageVector = if (selectedFilterTab == TaskFilterTab.COMPLETED) Icons.Rounded.CheckCircleOutline else Icons.Rounded.TaskAlt,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.size(44.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (selectedFilterTab == TaskFilterTab.COMPLETED) Icons.Rounded.CheckCircleOutline else Icons.Rounded.TaskAlt,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 text = when (selectedFilterTab) {
-                                    TaskFilterTab.IN_PROGRESS -> "All caught up! 🎉"
-                                    TaskFilterTab.COMPLETED -> "No completed tasks yet"
-                                    TaskFilterTab.ALL -> "No tasks created yet"
+                                    TaskFilterTab.IN_PROGRESS -> "All caught up"
+                                    TaskFilterTab.COMPLETED -> "No completed tasks"
+                                    TaskFilterTab.ALL -> "No tasks yet"
                                 },
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = when (selectedFilterTab) {
-                                    TaskFilterTab.IN_PROGRESS -> "You have no active study tasks remaining."
-                                    TaskFilterTab.COMPLETED -> "Complete your active tasks to see them logged here."
-                                    TaskFilterTab.ALL -> "Tap the + button below to create your first study task."
+                                    TaskFilterTab.IN_PROGRESS -> "No active study tasks remaining."
+                                    TaskFilterTab.COMPLETED -> "Completed tasks will appear here."
+                                    TaskFilterTab.ALL -> "Add a task to start tracking your study goals."
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -332,11 +376,12 @@ fun SelfStudyTab(
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Create Task", fontWeight = FontWeight.Bold)
+                                    Text("Create Task", fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -361,13 +406,31 @@ fun SelfStudyTab(
                     }
                     grouped.forEach { (tag, tTasks) ->
                         item(key = "tag_header_$tag") {
-                            Text(
-                                text = "#$tag",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.tertiary,
-                                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 10.dp, bottom = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.LocalOffer,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = tag,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "(${tTasks.size})",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                         items(tTasks, key = { it.id }) { task ->
                             TaskItemCard(
@@ -390,13 +453,35 @@ fun SelfStudyTab(
                         val tTasks = grouped[pLabel]
                         if (!tTasks.isNullOrEmpty()) {
                             item(key = "priority_header_$pLabel") {
-                                Text(
-                                    text = pLabel,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (pLabel.startsWith("High")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
-                                    modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-                                )
+                                val pColor = when {
+                                    pLabel.startsWith("High") -> MaterialTheme.colorScheme.error
+                                    pLabel.startsWith("Medium") -> MaterialTheme.colorScheme.secondary
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 10.dp, bottom = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .background(pColor, CircleShape)
+                                    )
+                                    Text(
+                                        text = pLabel,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "(${tTasks.size})",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                             items(tTasks, key = { it.id }) { task ->
                                 TaskItemCard(
@@ -424,3 +509,4 @@ fun SelfStudyTab(
         )
     }
 }
+

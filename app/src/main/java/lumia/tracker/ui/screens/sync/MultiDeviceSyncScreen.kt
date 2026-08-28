@@ -105,19 +105,12 @@ fun MultiDeviceSyncScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            "Live Mesh Cockpit",
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            "Cloudless P2P Local Handshake Protocol",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        "Device Sync",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 },
                 navigationIcon = {
                     BouncyIconButton(onClick = { navController.navigateUp() }) {
@@ -233,12 +226,12 @@ fun MultiDeviceSyncScreen(
                                 )
                             }
                             Text(
-                                "No Mesh Peers Paired",
+                                "No Paired Devices",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Pair your phone or tablet once using a QR Code or 6-digit PIN. Subsequent syncs occur 100% silently and automatically over local Wi-Fi with zero cloud dependencies.",
+                                "Pair with a phone or tablet using QR Code or PIN for automatic local Wi-Fi sync.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center

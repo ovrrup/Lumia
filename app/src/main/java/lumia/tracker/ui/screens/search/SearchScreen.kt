@@ -145,7 +145,7 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                 SearchResult(
                     id = c.id,
                     title = c.name,
-                    subtitle = if (c.code.isNotBlank()) "Code: ${c.code} • ${c.instructor}" else c.instructor,
+                    subtitle = if (c.code.isNotBlank()) "${c.code} · ${c.instructor}" else c.instructor,
                     type = "Course",
                     tags = c.tags,
                     meta = c.description,
@@ -160,7 +160,7 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                 SearchResult(
                     id = s.id,
                     title = s.name,
-                    subtitle = "Subject Workspace",
+                    subtitle = if (s.tags.isNotBlank()) s.tags else "",
                     type = "Subject",
                     tags = s.tags,
                     originalEntity = s
@@ -175,7 +175,7 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                 SearchResult(
                     id = ch.id,
                     title = ch.name,
-                    subtitle = "Chapter • In: $parentSubject",
+                    subtitle = parentSubject,
                     type = "Chapter",
                     tags = ch.tags,
                     meta = ch.description,
@@ -191,7 +191,7 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                 SearchResult(
                     id = t.id,
                     title = t.title,
-                    subtitle = "Topic • In: $parentSubject",
+                    subtitle = parentSubject,
                     type = "Topic",
                     tags = t.tags,
                     isCompleted = t.isCompleted,
@@ -207,7 +207,7 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                 SearchResult(
                     id = a.id,
                     title = a.title,
-                    subtitle = "Assignment • [${a.category}] in $parentCourse",
+                    subtitle = if (a.category.isNotBlank()) "$parentCourse · ${a.category}" else parentCourse,
                     type = "Assignment",
                     tags = a.tags,
                     meta = a.description,
@@ -221,12 +221,12 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
         tasks.forEach { tk ->
             val dueStr = tk.dueDateMillis?.let {
                 SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
-            } ?: "No Deadline"
+            }
             list.add(
                 SearchResult(
                     id = tk.id,
                     title = tk.title,
-                    subtitle = "Task • Due: $dueStr",
+                    subtitle = if (dueStr != null) "Due $dueStr" else "",
                     type = "Task",
                     tags = tk.tags,
                     meta = tk.description,
@@ -240,16 +240,12 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
         notes.forEach { n ->
             val associatedCourse = courses.find { it.id == n.courseId }?.name
             val associatedSubject = subjects.find { it.id == n.subjectId }?.name
-            val origin = when {
-                associatedCourse != null -> "Course: $associatedCourse"
-                associatedSubject != null -> "Subject: $associatedSubject"
-                else -> "Quick Note"
-            }
+            val origin = associatedCourse ?: associatedSubject ?: "Quick Note"
             list.add(
                 SearchResult(
                     id = n.id,
                     title = if (n.content.length > 60) n.content.take(60) + "..." else n.content,
-                    subtitle = "Quick Note • $origin",
+                    subtitle = origin,
                     type = "Note",
                     tags = n.tag,
                     meta = n.content,
@@ -266,8 +262,8 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
             list.add(
                 SearchResult(
                     id = tr.id,
-                    title = "${tr.title} • Score: ${tr.marksObtained}/${tr.totalMarks}",
-                    subtitle = "Test Record • Under: $origin",
+                    title = tr.title,
+                    subtitle = "$origin · Score: ${tr.marksObtained}/${tr.totalMarks}",
                     type = "Test Record",
                     tags = tr.tags,
                     meta = tr.notes,
@@ -288,12 +284,12 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                 "All" -> true
                 "Courses" -> item.type == "Course"
                 "Subjects" -> item.type == "Subject"
+                "Chapters" -> item.type == "Chapter"
+                "Topics" -> item.type == "Topic"
                 "Tasks" -> item.type == "Task"
                 "Assignments" -> item.type == "Assignment"
                 "Notes" -> item.type == "Note"
                 "Tests" -> item.type == "Test Record"
-                "Chapters" -> item.type == "Chapter"
-                "Topics" -> item.type == "Topic"
                 else -> item.type.equals(selectedFilter, ignoreCase = true)
             }
 
@@ -332,10 +328,11 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                // Header Bar with Back Button & Title
+                // Header Bar with Back Button & Integrated Search Bar
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     BouncyIconButton(
                         onClick = { navController.popBackStack() },
@@ -347,124 +344,97 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Search Workspace",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Instant access to all study materials",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Full-width Search Input Bar
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
-                    ),
-                    shadowElevation = 0.5.dp
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Full-width Search Input Bar
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        border = BorderStroke(
+                            width = 0.8.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Search,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        TextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            placeholder = {
-                                Text(
-                                    text = "Search courses, tasks, notes, tags...",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                )
-                            },
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                disabledContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                        Row(
                             modifier = Modifier
-                                .weight(1f)
-                                .testTag("search_text_input")
-                        )
-
-                        AnimatedVisibility(
-                            visible = searchQuery.isNotEmpty(),
-                            enter = fadeIn() + scaleIn(),
-                            exit = fadeOut() + scaleOut()
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            BouncyIconButton(
-                                onClick = { searchQuery = "" },
+                            Icon(
+                                imageVector = Icons.Rounded.Search,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = {
+                                    Text(
+                                        text = "Search workspace...",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    )
+                                },
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    disabledContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                                ),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                                 modifier = Modifier
-                                    .size(36.dp)
-                                    .testTag("search_clear_button")
+                                    .weight(1f)
+                                    .testTag("search_text_input")
+                            )
+
+                            AnimatedVisibility(
+                                visible = searchQuery.isNotEmpty(),
+                                enter = fadeIn() + scaleIn(),
+                                exit = fadeOut() + scaleOut()
                             ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    modifier = Modifier.size(24.dp)
+                                BouncyIconButton(
+                                    onClick = { searchQuery = "" },
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .testTag("search_clear_button")
                                 ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Close,
-                                            contentDescription = "Clear search",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
+                                    Icon(
+                                        imageVector = Icons.Rounded.Close,
+                                        contentDescription = "Clear search",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(16.dp)
+                                    )
                                 }
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Horizontal Filter Chips
+                // Horizontal Filter Chips: All, Courses, Subjects, Chapters, Topics, Tasks, Assignments, Notes
                 val categories = listOf(
                     CategoryItem("All", Icons.Rounded.GridView),
                     CategoryItem("Courses", Icons.Rounded.School),
                     CategoryItem("Subjects", Icons.Rounded.AutoStories),
+                    CategoryItem("Chapters", Icons.Rounded.ListAlt),
+                    CategoryItem("Topics", Icons.Rounded.BubbleChart),
                     CategoryItem("Tasks", Icons.Rounded.TaskAlt),
                     CategoryItem("Assignments", Icons.Rounded.Assignment),
-                    CategoryItem("Notes", Icons.Rounded.StickyNote2),
-                    CategoryItem("Tests", Icons.Rounded.Grade),
-                    CategoryItem("Chapters", Icons.Rounded.ListAlt),
-                    CategoryItem("Topics", Icons.Rounded.BubbleChart)
+                    CategoryItem("Notes", Icons.Rounded.StickyNote2)
                 )
 
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 2.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(categories) { catItem ->
                         val isSelected = selectedFilter == catItem.name
@@ -480,18 +450,18 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                         }
 
                         Surface(
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(16.dp),
                             color = chipBg,
                             border = if (!isSelected) {
-                                BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                             } else null,
                             modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
+                                .clip(RoundedCornerShape(16.dp))
                                 .clickable { selectedFilter = catItem.name }
                                 .testTag("filter_chip_${catItem.name}")
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
@@ -499,7 +469,7 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                                     imageVector = catItem.icon,
                                     contentDescription = null,
                                     tint = chipContentColor,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(15.dp)
                                 )
                                 Text(
                                     text = catItem.name,
@@ -596,27 +566,26 @@ private fun SearchResultItemCard(
 
     ScholarCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         onClick = onClick
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(14.dp)
         ) {
-            // Header Row: Entity Type Pill + Completion + Origin Icon
+            // Header Row: Entity Type Pill + Completion + Chevron
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Entity Type Pill
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = typeConfig.color.copy(alpha = 0.12f),
-                    border = BorderStroke(0.5.dp, typeConfig.color.copy(alpha = 0.25f))
+                    shape = RoundedCornerShape(6.dp),
+                    color = typeConfig.color.copy(alpha = 0.1f)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -624,24 +593,23 @@ private fun SearchResultItemCard(
                             imageVector = typeConfig.icon,
                             contentDescription = null,
                             tint = typeConfig.color,
-                            modifier = Modifier.size(13.dp)
+                            modifier = Modifier.size(12.dp)
                         )
                         Text(
                             text = result.type.uppercase(Locale.getDefault()),
                             color = typeConfig.color,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
+                            letterSpacing = 0.3.sp
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
                 if (result.isCompleted) {
+                    Spacer(modifier = Modifier.width(6.dp))
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
@@ -652,7 +620,7 @@ private fun SearchResultItemCard(
                                 imageVector = Icons.Rounded.CheckCircle,
                                 contentDescription = "Completed",
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(13.dp)
+                                modifier = Modifier.size(12.dp)
                             )
                             Text(
                                 text = "Done",
@@ -669,12 +637,12 @@ private fun SearchResultItemCard(
                 Icon(
                     imageVector = Icons.Rounded.ChevronRight,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    modifier = Modifier.size(18.dp)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
+                    modifier = Modifier.size(16.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Title with Highlighted Matches
             Text(
@@ -688,21 +656,23 @@ private fun SearchResultItemCard(
 
             // Subtitle
             if (result.subtitle.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = buildHighlightedText(result.subtitle, searchQuery, highlightColor),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
-            // Description / Meta context
-            if (result.meta.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
+            // Description / Meta context (only if distinct from title/subtitle and not a note content duplicate)
+            if (result.meta.isNotBlank() && result.meta != result.title && result.type != "Note") {
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = buildHighlightedText(result.meta, searchQuery, highlightColor),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -715,26 +685,26 @@ private fun SearchResultItemCard(
                     .filter { it.isNotBlank() }
             }
             if (tagList.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     tagList.forEach { tag ->
                         val colors = getTagColors(tag)
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(6.dp))
                                 .background(colors.first)
                                 .clickable { onTagClick(tag) }
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = "#$tag",
                                 color = colors.second,
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }

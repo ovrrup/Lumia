@@ -81,8 +81,6 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
     var updateError by remember { mutableStateOf("") }
 
     // Expandable details states
-    var showTerms by remember { mutableStateOf(false) }
-    var showPrivacy by remember { mutableStateOf(false) }
     var showLicense by remember { mutableStateOf(false) }
 
     fun runUpdateCheck() {
@@ -201,17 +199,17 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(20.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
+                        .padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(68.dp)
+                            .size(56.dp)
                             .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -219,41 +217,40 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                             imageVector = Icons.Rounded.School,
                             contentDescription = "Lumia Logo",
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(30.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
                         text = "Lumia Tracker",
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        modifier = Modifier.padding(top = 6.dp)
+                        modifier = Modifier.padding(top = 4.dp)
                     ) {
                         Text(
-                            text = "v$currentVersion • Production Release",
+                            text = "v$currentVersion",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "Next-generation academic companion designed for focused students, researchers, and scholars.",
+                        text = "Academic companion for students and researchers.",
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 12.dp)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -337,7 +334,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
             SettingsGroupCard(title = "Community & Open Source", icon = Icons.Rounded.Code) {
                 SettingsActionItemInCard(
                     title = "GitHub Repository",
-                    subtitle = "github.com/ovrrup/Lumia • Star, contribute, and report issues",
+                    subtitle = "Source code, contributions, and issues",
                     icon = Icons.Rounded.Terminal,
                     iconBgColor = Color(0xFF24292E),
                     onClick = {
@@ -352,8 +349,8 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                 )
 
                 SettingsActionItemInCard(
-                    title = "MIT License & Open Source Disclosure",
-                    subtitle = "Free, open, and private software",
+                    title = "MIT License",
+                    subtitle = "Free and open-source software license",
                     icon = Icons.Rounded.Gavel,
                     iconBgColor = Color(0xFF5856D6),
                     onClick = { showLicense = !showLicense }
@@ -364,3 +361,4 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
         }
     }
 }
+

@@ -1,22 +1,13 @@
 package lumia.tracker.ui.screens.settings
 
-import android.content.Intent
-import android.net.Uri
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,7 +17,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -38,7 +28,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import lumia.tracker.service.AodAccessibilityService
-import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
@@ -129,7 +118,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
             SettingsGroupCard(title = "Safety Guard Monitor", icon = Icons.Rounded.Shield) {
                 SettingsToggleItem(
                     title = "System Safety Watch",
-                    subtitle = "Monitor settings state conflicts and offer smart ecosystem guidelines",
+                    subtitle = "Detect settings conflicts and suggest optimizations",
                     checked = safetyPinEnabled,
                     icon = Icons.Rounded.Shield,
                     onCheckedChange = { viewModel.updateSafetyPinEnabled(it) }
@@ -146,8 +135,8 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                             modifier = Modifier.padding(vertical = 4.dp)
                         )
                         SettingsToggleItem(
-                            title = "Active Conflict Warnings",
-                            subtitle = "Immediate warning banner if toggles physically oppose each other structurally",
+                            title = "Conflict Warnings",
+                            subtitle = "Alert when active settings oppose each other",
                             checked = safetyPinConflictWarning,
                             onCheckedChange = { viewModel.updateSafetyPinConflictWarning(it) }
                         )
@@ -156,8 +145,8 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                             modifier = Modifier.padding(vertical = 4.dp)
                         )
                         SettingsToggleItem(
-                            title = "Aesthetic Recommendations",
-                            subtitle = "Show smart suggestions when optimal visual synergy settings are detected",
+                            title = "Visual Recommendations",
+                            subtitle = "Suggest synergy settings when detected",
                             checked = safetyPinRecommendations,
                             onCheckedChange = { viewModel.updateSafetyPinRecommendations(it) }
                         )
@@ -168,8 +157,8 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
             // 2. Always-On Display (AOD)
             SettingsGroupCard(title = "Always-On Display (AOD)", icon = Icons.Rounded.ScreenLockPortrait) {
                 SettingsToggleItem(
-                    title = "Active True AOD Guard",
-                    subtitle = "Sustain interactive minimalist focus clock and status upon device sleep",
+                    title = "Always-On Display",
+                    subtitle = "Show minimalist clock and status during sleep",
                     checked = aodTrueAodEnabled,
                     icon = Icons.Rounded.Visibility,
                     onCheckedChange = { viewModel.updateAodTrueAodEnabled(it) }
@@ -180,7 +169,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut()
                 ) {
-                    Column(modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)) {
+                    Column(modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp)) {
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
                             modifier = Modifier.padding(vertical = 6.dp)
@@ -193,7 +182,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "AOD Dimness Level",
+                                text = "Dimness Level",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -257,10 +246,10 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
             }
 
             // 3. OLED Burn-In Prevention
-            SettingsGroupCard(title = "OLED Protection & Burn-In Shift", icon = Icons.Rounded.BrightnessLow) {
+            SettingsGroupCard(title = "OLED Burn-In Protection", icon = Icons.Rounded.BrightnessLow) {
                 SettingsToggleItem(
                     title = "Pure Black OLED Surface",
-                    subtitle = "Turn off individual OLED pixels in sleep preview mode to eliminate energy consumption",
+                    subtitle = "Turn off pixels on OLED screens",
                     checked = aodTrueBlackOled,
                     icon = Icons.Rounded.Contrast,
                     onCheckedChange = { viewModel.updateAodTrueBlackOled(it) }
@@ -272,8 +261,8 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 )
 
                 SettingsToggleItem(
-                    title = "Lock Screen Synergy Support",
-                    subtitle = "Synchronize AOD timer states directly above system lock screens",
+                    title = "Lock Screen Support",
+                    subtitle = "Display AOD status on lock screen",
                     checked = aodLockScreenSupport,
                     icon = Icons.Rounded.Lock,
                     onCheckedChange = { viewModel.updateAodLockScreenSupport(it) }
@@ -292,7 +281,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Pixel Shift Period",
+                            text = "Pixel Shift Interval",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -323,3 +312,4 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
         }
     }
 }
+

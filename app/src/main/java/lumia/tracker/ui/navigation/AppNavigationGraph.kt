@@ -38,42 +38,42 @@ fun AppNavigationGraph(
         // Forward screen entry transition
         enterTransition = {
             val spec: FiniteAnimationSpec<Float> = when (appAnimationMode) {
-                "Bouncy" -> spring(dampingRatio = 0.45f, stiffness = 200f)
-                "Dynamic" -> spring(dampingRatio = 0.75f, stiffness = 500f)
-                else -> tween(300, easing = LinearOutSlowInEasing)
+                "Bouncy" -> spring(dampingRatio = 0.8f, stiffness = 380f)
+                "Dynamic" -> spring(dampingRatio = 0.9f, stiffness = 450f)
+                else -> tween(250, easing = FastOutSlowInEasing)
             }
-            fadeIn(animationSpec = tween(300)) +
-                    scaleIn(initialScale = if (appAnimationMode == "Bouncy") 0.8f else 0.95f, animationSpec = spec)
+            fadeIn(animationSpec = tween(250)) +
+                    scaleIn(initialScale = if (appAnimationMode == "Bouncy") 0.94f else 0.97f, animationSpec = spec)
         },
         // Forward screen exit transition
         exitTransition = {
             val spec: FiniteAnimationSpec<Float> = when (appAnimationMode) {
-                "Bouncy" -> spring(dampingRatio = 0.45f, stiffness = 200f)
-                "Dynamic" -> spring(dampingRatio = 0.75f, stiffness = 500f)
-                else -> tween(300, easing = FastOutLinearInEasing)
+                "Bouncy" -> spring(dampingRatio = 0.8f, stiffness = 380f)
+                "Dynamic" -> spring(dampingRatio = 0.9f, stiffness = 450f)
+                else -> tween(250, easing = FastOutSlowInEasing)
             }
-            fadeOut(animationSpec = tween(300)) +
-                    scaleOut(targetScale = if (appAnimationMode == "Bouncy") 1.2f else 1.05f, animationSpec = spec)
+            fadeOut(animationSpec = tween(250)) +
+                    scaleOut(targetScale = if (appAnimationMode == "Bouncy") 1.04f else 1.02f, animationSpec = spec)
         },
         // Pop/backstack return entry transition
         popEnterTransition = {
             val spec: FiniteAnimationSpec<Float> = when (appAnimationMode) {
-                "Bouncy" -> spring(dampingRatio = 0.45f, stiffness = 200f)
-                "Dynamic" -> spring(dampingRatio = 0.75f, stiffness = 500f)
-                else -> tween(300, easing = LinearOutSlowInEasing)
+                "Bouncy" -> spring(dampingRatio = 0.8f, stiffness = 380f)
+                "Dynamic" -> spring(dampingRatio = 0.9f, stiffness = 450f)
+                else -> tween(250, easing = FastOutSlowInEasing)
             }
-            fadeIn(animationSpec = tween(300)) +
-                    scaleIn(initialScale = if (appAnimationMode == "Bouncy") 1.2f else 1.05f, animationSpec = spec)
+            fadeIn(animationSpec = tween(250)) +
+                    scaleIn(initialScale = if (appAnimationMode == "Bouncy") 0.94f else 0.97f, animationSpec = spec)
         },
         // Pop/backstack return exit transition
         popExitTransition = {
             val spec: FiniteAnimationSpec<Float> = when (appAnimationMode) {
-                "Bouncy" -> spring(dampingRatio = 0.45f, stiffness = 200f)
-                "Dynamic" -> spring(dampingRatio = 0.75f, stiffness = 500f)
-                else -> tween(300, easing = FastOutLinearInEasing)
+                "Bouncy" -> spring(dampingRatio = 0.8f, stiffness = 380f)
+                "Dynamic" -> spring(dampingRatio = 0.9f, stiffness = 450f)
+                else -> tween(250, easing = FastOutSlowInEasing)
             }
-            fadeOut(animationSpec = tween(300)) +
-                    scaleOut(targetScale = if (appAnimationMode == "Bouncy") 0.8f else 0.95f, animationSpec = spec)
+            fadeOut(animationSpec = tween(250)) +
+                    scaleOut(targetScale = if (appAnimationMode == "Bouncy") 1.04f else 1.02f, animationSpec = spec)
         }
     ) {
         // Welcome and First-Time Onboarding Flow

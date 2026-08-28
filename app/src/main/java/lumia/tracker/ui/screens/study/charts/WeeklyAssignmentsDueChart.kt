@@ -1,91 +1,37 @@
 package lumia.tracker.ui.screens.study.charts
 
-import androidx.navigation.NavController
-
-import android.text.format.DateFormat
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.ui.draw.alpha
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.School
-import androidx.compose.material.icons.rounded.MenuBook
-import androidx.compose.material.icons.rounded.MilitaryTech
-import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material.icons.rounded.Whatshot
-import androidx.compose.material.icons.rounded.EmojiEvents
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.surfaceColorAtElevation
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import lumia.tracker.viewmodel.ScholarViewModel
-import java.util.Date
-import androidx.compose.material3.IconButtonDefaults
-import lumia.tracker.ui.components.BouncyIconButton
+import androidx.compose.ui.window.Dialog
+import lumia.tracker.model.Course
+import lumia.tracker.model.PracticeAssignment
 import lumia.tracker.ui.components.BouncyButton
-import lumia.tracker.ui.components.BouncyTextButton
-import lumia.tracker.ui.components.BouncyFloatingActionButton
+import lumia.tracker.ui.components.ScholarCard
 import java.util.Calendar
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.material3.IconButton
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.runtime.remember
 
 @Composable
 fun WeeklyAssignmentsDueChart(
     modifier: Modifier = Modifier,
-    assignments: List<lumia.tracker.model.PracticeAssignment>,
-    courses: List<lumia.tracker.model.Course>,
-    onToggleCompletion: (lumia.tracker.model.PracticeAssignment) -> Unit
+    assignments: List<PracticeAssignment>,
+    courses: List<Course>,
+    onToggleCompletion: (PracticeAssignment) -> Unit
 ) {
-    var selectedGroup by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<Pair<String, List<lumia.tracker.model.PracticeAssignment>>?>(null) }
+    var selectedGroup by remember { mutableStateOf<Pair<String, List<PracticeAssignment>>?>(null) }
 
     val calendar = Calendar.getInstance().apply {
         set(Calendar.HOUR_OF_DAY, 0)
@@ -99,7 +45,7 @@ fun WeeklyAssignmentsDueChart(
     val validAssignments = assignments.filter { it.dueDateMillis > 0 }
 
     val groups = listOf(
-        Triple("Past", "Past / Overdue", validAssignments.filter { it.dueDateMillis < startOfToday }),
+        Triple("Past", "Past & Overdue", validAssignments.filter { it.dueDateMillis < startOfToday }),
         Triple("This Wk", "Due This Week", validAssignments.filter { it.dueDateMillis >= startOfToday && it.dueDateMillis < startOfToday + 7 * oneDayMillis }),
         Triple("Next Wk", "Due Next Week", validAssignments.filter { it.dueDateMillis >= startOfToday + 7 * oneDayMillis && it.dueDateMillis < startOfToday + 14 * oneDayMillis }),
         Triple("Wk 3", "Due in 2 Weeks", validAssignments.filter { it.dueDateMillis >= startOfToday + 14 * oneDayMillis && it.dueDateMillis < startOfToday + 21 * oneDayMillis }),
@@ -109,29 +55,28 @@ fun WeeklyAssignmentsDueChart(
 
     val maxCount = groups.maxOf { it.third.size }.coerceAtLeast(1)
 
-    lumia.tracker.ui.components.ScholarCard(
+    ScholarCard(
         modifier = modifier,
-        shape = MaterialTheme.shapes.extraLarge
+        shape = RoundedCornerShape(20.dp)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
             Text(
-                "Weekly Assignment Schedule",
-                style = MaterialTheme.typography.titleLarge,
+                text = "Upcoming Deadlines",
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurface
             )
-            Text(
-                "Tap bars to inspect specific deadlines",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                modifier = Modifier.padding(bottom = 20.dp)
-            )
+            Spacer(modifier = Modifier.height(14.dp))
 
+            // Bars Row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
-                    .padding(vertical = 12.dp),
+                    .height(130.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.Bottom
             ) {
@@ -148,35 +93,33 @@ fun WeeklyAssignmentsDueChart(
                         verticalArrangement = Arrangement.Bottom,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Fraction counter label
+                        // Fraction count label
                         if (total > 0) {
                             Text(
                                 text = "$completed/$total",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = if (pending > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                modifier = Modifier.padding(bottom = 4.dp)
+                                color = if (pending > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         } else {
                             Text(
-                                text = "-",
+                                text = "·",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                                modifier = Modifier.padding(bottom = 4.dp)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                             )
                         }
 
-                        // Bar
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Bar Column
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxWidth(0.5f)
-                                .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
-                                .clickable { 
-                                    if (total > 0) {
-                                        selectedGroup = fullTitle to weekList
-                                    }
+                                .fillMaxWidth(0.45f)
+                                .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                                .clickable(enabled = total > 0) {
+                                    selectedGroup = fullTitle to weekList
                                 },
                             contentAlignment = Alignment.BottomCenter
                         ) {
@@ -192,7 +135,7 @@ fun WeeklyAssignmentsDueChart(
                                                 .fillMaxWidth()
                                                 .weight(pending.toFloat())
                                                 .background(
-                                                    if (shortLabel == "Past") MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
+                                                    if (shortLabel == "Past") MaterialTheme.colorScheme.error.copy(alpha = 0.45f)
                                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
                                                 )
                                         )
@@ -206,24 +149,16 @@ fun WeeklyAssignmentsDueChart(
                                         )
                                     }
                                 }
-                            } else {
-                                // Mini empty dash representation
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(4.dp)
-                                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f), RoundedCornerShape(2.dp))
-                                )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
 
-                        // Label
+                        // Day/Week Short Label
                         Text(
                             text = shortLabel,
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1
                         )
@@ -231,63 +166,83 @@ fun WeeklyAssignmentsDueChart(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Legend
+            // Concise Legend
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(modifier = Modifier.size(10.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Completed", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                
-                Spacer(modifier = Modifier.width(20.dp))
-                
-                Box(modifier = Modifier.size(10.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), RoundedCornerShape(2.dp)))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Pending", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                
-                Spacer(modifier = Modifier.width(20.dp))
-                
-                Box(modifier = Modifier.size(10.dp).background(MaterialTheme.colorScheme.error.copy(alpha = 0.4f), RoundedCornerShape(2.dp)))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Overdue/Past", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Done",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), CircleShape)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Due",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.45f), CircleShape)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Overdue",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
 
-    // Detail interactive Dialog
+    // Modern Detail Dialog
     selectedGroup?.let { (title, weekList) ->
-        androidx.compose.ui.window.Dialog(
-            onDismissRequest = { selectedGroup = null }
-        ) {
-            lumia.tracker.ui.components.ScholarCard(
+        Dialog(onDismissRequest = { selectedGroup = null }) {
+            ScholarCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.65f)
-                    .padding(16.dp),
-                shape = RoundedCornerShape(28.dp),
-                containerColor = MaterialTheme.colorScheme.surface
+                    .fillMaxHeight(0.6f),
+                shape = RoundedCornerShape(22.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp)
+                        .padding(18.dp)
                 ) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "${weekList.size} Assignments in current period",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        text = "${weekList.size} assignments",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     if (weekList.isEmpty()) {
                         Box(
@@ -297,7 +252,7 @@ fun WeeklyAssignmentsDueChart(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Chill day! No assignments due.",
+                                text = "No assignments due.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -305,7 +260,7 @@ fun WeeklyAssignmentsDueChart(
                     } else {
                         LazyColumn(
                             modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(weekList, key = { it.id }) { assignment ->
                                 val course = courses.find { it.id == assignment.courseId }
@@ -317,55 +272,42 @@ fun WeeklyAssignmentsDueChart(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .background(
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f),
-                                            RoundedCornerShape(12.dp)
+                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                            RoundedCornerShape(10.dp)
                                         )
-                                        .padding(12.dp),
+                                        .padding(horizontal = 10.dp, vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    androidx.compose.material3.Checkbox(
+                                    Checkbox(
                                         checked = assignment.isCompleted,
-                                        onCheckedChange = { 
-                                            onToggleCompletion(assignment)
-                                        },
-                                        modifier = Modifier.size(24.dp)
+                                        onCheckedChange = { onToggleCompletion(assignment) },
+                                        modifier = Modifier.size(20.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = assignment.title,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurface,
-                                            textDecoration = if (assignment.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                                            textDecoration = if (assignment.isCompleted) TextDecoration.LineThrough else null,
                                             maxLines = 1,
-                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(
                                                 text = courseName,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.primary,
-                                                fontWeight = FontWeight.SemiBold
+                                                fontWeight = FontWeight.Medium
                                             )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            // Category Tag
-                                            Box(
-                                                modifier = Modifier
-                                                    .background(
-                                                        try { Color(android.graphics.Color.parseColor(assignment.categoryColor)).copy(alpha = 0.15f) } catch (e: Exception) { MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f) },
-                                                        RoundedCornerShape(6.dp)
-                                                    )
-                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                                            ) {
-                                                Text(
-                                                    text = assignment.category,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = try { Color(android.graphics.Color.parseColor(assignment.categoryColor)) } catch (e: Exception) { MaterialTheme.colorScheme.secondary },
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            }
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "• ${assignment.category}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         }
                                     }
                                 }
@@ -373,13 +315,13 @@ fun WeeklyAssignmentsDueChart(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     BouncyButton(
                         onClick = { selectedGroup = null },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Dismiss", fontWeight = FontWeight.Bold)
+                        Text("Close", fontWeight = FontWeight.Bold)
                     }
                 }
             }

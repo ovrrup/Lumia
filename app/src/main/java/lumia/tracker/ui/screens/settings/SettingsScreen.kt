@@ -3,13 +3,8 @@ package lumia.tracker.ui.screens.settings
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -20,14 +15,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -51,14 +44,13 @@ import java.io.FileOutputStream
 
 /**
  * SettingsScreen - Clean, unified academic preferences and configuration hub.
- * Features an integrated Hero Profile card with live active badge,
- * organized categorized group cards, zero circular shortcut loops,
- * and a polished footer with version info & quick actions.
+ * Features a decluttered Hero Profile card, simplified preference groups with concise subtitles,
+ * and a streamlined footer.
  */
 @ValueScore(
     score = 96,
     importance = Importance.CRITICAL,
-    description = "Academic settings hub with hero profile card and categorized preference groups",
+    description = "Academic settings hub with decluttered hero profile card and concise preference groups",
     category = "Settings"
 )
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,7 +72,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     Text(
                         "Settings",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                 },
@@ -104,50 +96,40 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // ==========================================
             // 1. HERO SCHOLAR PROFILE CARD
             // ==========================================
             Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                OutlinedCard(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .animateContentSize(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.outlinedCardColors(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    border = BorderStroke(
-                        width = 0.75.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
-                    ),
-                    elevation = CardDefaults.outlinedCardElevation(defaultElevation = 0.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(20.dp)
+                            .padding(16.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Large Profile Avatar Monogram / Image (64dp)
+                            // Simplified Avatar Monogram / Photo
                             Box(
                                 modifier = Modifier
-                                    .size(64.dp)
+                                    .size(56.dp)
                                     .background(
-                                        brush = Brush.linearGradient(
-                                            colors = listOf(
-                                                MaterialTheme.colorScheme.primaryContainer,
-                                                MaterialTheme.colorScheme.secondaryContainer
-                                            )
-                                        ),
-                                        shape = CircleShape
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                        CircleShape
                                     )
-                                    .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.85f), CircleShape)
                                     .clip(CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -172,111 +154,111 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                                     }
                                     Text(
                                         text = fallback,
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.Black,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 }
                             }
 
-                            Spacer(Modifier.width(16.dp))
+                            Spacer(Modifier.width(14.dp))
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = activeProfile.name.ifBlank { "Scholar" },
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Black,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    text = if (activeProfile.alias.isNotBlank()) "@${activeProfile.alias}" else "Personal Workspace",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                if (activeProfile.alias.isNotBlank()) {
+                                    Spacer(Modifier.height(1.dp))
+                                    Text(
+                                        text = "@${activeProfile.alias}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
 
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(12.dp))
 
-                        // Active Profile Status Chip
+                        // Streamlined Active Profile Status Chip
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.20f))
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.VerifiedUser,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(14.dp)
                                     )
                                     Text(
-                                        text = "Active Academic Profile",
+                                        text = "Active Profile",
                                         style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                                 Text(
-                                    text = "${allProfiles.size} Profile${if (allProfiles.size > 1) "s" else ""}",
+                                    text = "${allProfiles.size} profile${if (allProfiles.size > 1) "s" else ""}",
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
 
-                        Spacer(Modifier.height(14.dp))
+                        Spacer(Modifier.height(10.dp))
 
-                        // Quick Action Buttons: Edit & Switch
+                        // Streamlined Quick Action Buttons: Edit & Switch
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             BouncyOutlinedButton(
                                 onClick = { showEditProfileSheet = true },
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(14.dp),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                             ) {
                                 Icon(
                                     Icons.Rounded.Edit,
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(15.dp)
                                 )
                                 Spacer(Modifier.width(6.dp))
-                                Text("Edit Profile", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                                Text("Edit Profile", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                             }
 
                             BouncyButton(
                                 onClick = { showSwitchProfileSheet = true },
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(14.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                                 ),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                             ) {
                                 Icon(
                                     Icons.Rounded.SwapHoriz,
                                     contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(6.dp))
-                                Text("Switch Profile", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                                Text("Switch Profile", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -292,20 +274,20 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Appearance & Theme",
-                    subtitle = "Themes, AMOLED pure black, lighting & custom palettes",
+                    subtitle = "Themes & colors",
                     icon = Icons.Rounded.Palette,
                     iconBgColor = Color(0xFF007AFF),
                     onClick = { navController.navigate("settings/appearance") }
                 )
 
                 HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                    modifier = Modifier.padding(start = 56.dp, end = 8.dp)
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                    modifier = Modifier.padding(start = 52.dp, end = 8.dp)
                 )
 
                 SettingsActionItemInCard(
                     title = "Streak Goals & Requirements",
-                    subtitle = "Daily targets, completion thresholds & motivational tones",
+                    subtitle = "Daily goals & targets",
                     icon = Icons.Rounded.LocalFireDepartment,
                     iconBgColor = Color(0xFFFF9500),
                     onClick = { navController.navigate("settings/streaks") }
@@ -321,20 +303,20 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Tag Management",
-                    subtitle = "Customize tag colors and global taxonomies",
+                    subtitle = "Manage tags",
                     icon = Icons.Rounded.LocalOffer,
                     iconBgColor = Color(0xFF30B0C7),
                     onClick = { navController.navigate("tags_hub") }
                 )
 
                 HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                    modifier = Modifier.padding(start = 56.dp, end = 8.dp)
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                    modifier = Modifier.padding(start = 52.dp, end = 8.dp)
                 )
 
                 SettingsActionItemInCard(
                     title = "System Configuration",
-                    subtitle = "Course-subject linking, synergy scoring & Pomodoro defaults",
+                    subtitle = "Preferences & defaults",
                     icon = Icons.Rounded.Tune,
                     iconBgColor = Color(0xFF5856D6),
                     onClick = { navController.navigate("settings/system") }
@@ -350,20 +332,20 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Safety System Guard",
-                    subtitle = "App PIN lock, biometric protection & safety alerts",
+                    subtitle = "App lock & security",
                     icon = Icons.Rounded.Security,
                     iconBgColor = Color(0xFFFF3B30),
                     onClick = { navController.navigate("settings/safety") }
                 )
 
                 HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                    modifier = Modifier.padding(start = 56.dp, end = 8.dp)
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                    modifier = Modifier.padding(start = 52.dp, end = 8.dp)
                 )
 
                 SettingsActionItemInCard(
                     title = "Notifications & Reminders",
-                    subtitle = "Notification channels, study alarms & reminders",
+                    subtitle = "Alarms & alerts",
                     icon = Icons.Rounded.Notifications,
                     iconBgColor = Color(0xFF34C759),
                     onClick = { navController.navigate("settings/notifications") }
@@ -379,20 +361,20 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Multi-Device P2P Sync",
-                    subtitle = "End-to-end encrypted device syncing with 1-time mutual pairing",
+                    subtitle = "P2P local sync",
                     icon = Icons.Rounded.Sync,
                     iconBgColor = Color(0xFFAF52DE),
                     onClick = { navController.navigate("settings/sync") }
                 )
 
                 HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                    modifier = Modifier.padding(start = 56.dp, end = 8.dp)
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                    modifier = Modifier.padding(start = 52.dp, end = 8.dp)
                 )
 
                 SettingsActionItemInCard(
                     title = "Data & Backups",
-                    subtitle = "Export, import, database backups & complete resets",
+                    subtitle = "Backups & storage",
                     icon = Icons.Rounded.Storage,
                     iconBgColor = Color(0xFF8E8E93),
                     onClick = { navController.navigate("settings/data") }
@@ -408,20 +390,20 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Experimental Features & Labs",
-                    subtitle = "Prototype study tools, beta workflows & advanced diagnostics",
+                    subtitle = "Labs & experimental",
                     icon = Icons.Rounded.Science,
                     iconBgColor = Color(0xFFE040FB),
                     onClick = { navController.navigate("settings/beta") }
                 )
 
                 HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                    modifier = Modifier.padding(start = 56.dp, end = 8.dp)
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                    modifier = Modifier.padding(start = 52.dp, end = 8.dp)
                 )
 
                 SettingsActionItemInCard(
                     title = "About Lumia",
-                    subtitle = "Version v1.0.7, license & open source repository",
+                    subtitle = "App info & release notes",
                     icon = Icons.Rounded.Info,
                     iconBgColor = Color(0xFF636366),
                     onClick = { navController.navigate("settings/about") }
@@ -434,39 +416,16 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.AutoAwesome,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-
                 Text(
                     text = "Lumia Tracker • v1.0.7",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = "Academic Productivity & Mastery Hub",
                     style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
-                Spacer(Modifier.height(4.dp))
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -477,12 +436,12 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     }
                     Text("•", color = MaterialTheme.colorScheme.outlineVariant)
                     BouncyTextButton(onClick = { navController.navigate("settings/data") }) {
-                        Text("Backup Hub", style = MaterialTheme.typography.labelSmall)
+                        Text("Backups", style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 
@@ -519,15 +478,15 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             onDismissRequest = { showEditProfileSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 36.dp)
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 32.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Header
                 Row(
@@ -538,7 +497,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     Text(
                         "Edit Profile",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     BouncyIconButton(onClick = { showEditProfileSheet = false }) {
@@ -546,20 +505,19 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     }
                 }
 
-                // Avatar and Photo Upload
+                // Avatar & Photo Upload
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
-                        .padding(16.dp),
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+                        .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(60.dp)
+                            .size(52.dp)
                             .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                            .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
                             .clip(CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -575,7 +533,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                             Text(
                                 text = editAvatar.ifBlank { editName.take(2).uppercase().ifBlank { "SC" } },
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Black,
+                                fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
@@ -583,12 +541,12 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Profile Avatar",
+                            "Avatar Photo",
                             style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            "Custom photo or initial icon",
+                            "Choose a photo or emoji",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -597,7 +555,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     BouncyButton(
                         onClick = { imagePickerLauncher.launch("image/*") },
                         shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Icon(Icons.Rounded.PhotoCamera, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
@@ -613,32 +571,32 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     placeholder = { Text("e.g. Alex Rivera") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(14.dp)
                 )
 
                 OutlinedTextField(
                     value = editAlias,
                     onValueChange = { editAlias = it },
-                    label = { Text("Handle / Workspace Alias") },
+                    label = { Text("Handle (Optional)") },
                     prefix = { Text("@") },
                     placeholder = { Text("username") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(14.dp)
                 )
 
                 // Emoji Presets
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Or choose avatar preset emoji:",
+                        text = "Emoji Presets",
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     val emojiList = listOf("🎓", "📚", "⚡", "🔬", "🚀", "💡", "🧠", "🎯", "💻", "✨", "🪐", "🔥")
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         items(emojiList) { emoji ->
@@ -646,9 +604,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                             Surface(
                                 shape = CircleShape,
                                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                                border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier
-                                    .size(44.dp)
+                                    .size(40.dp)
                                     .clickable { editAvatar = emoji }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
@@ -664,12 +621,12 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 // Actions
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     BouncyOutlinedButton(
                         onClick = { showEditProfileSheet = false },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(14.dp)
                     ) {
                         Text("Cancel")
                     }
@@ -683,9 +640,9 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                         },
                         enabled = editName.isNotBlank(),
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(14.dp)
                     ) {
-                        Text("Save Changes")
+                        Text("Save")
                     }
                 }
             }
@@ -700,15 +657,15 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             onDismissRequest = { showSwitchProfileSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 36.dp)
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 32.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Sheet Header
                 Row(
@@ -716,19 +673,12 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column {
-                        Text(
-                            "Scholar Profiles",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            "Switch workspace or manage profiles",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        "Switch Profile",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
 
                     BouncyButton(
                         onClick = {
@@ -745,30 +695,26 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }
 
                 // Profile Items List
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     allProfiles.forEach { profile ->
                         val isCurrent = profile.id == activeProfile.id
                         Surface(
-                            shape = RoundedCornerShape(18.dp),
-                            color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface,
-                            border = BorderStroke(
-                                width = if (isCurrent) 1.5.dp else 0.8.dp,
-                                color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surface,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable(enabled = !isCurrent) {
-                                    showSwitchProfileSheet = false
-                                    viewModel.switchProfileAndRestart(context, profile.id)
+                                   showSwitchProfileSheet = false
+                                   viewModel.switchProfileAndRestart(context, profile.id)
                                 }
                         ) {
                             Row(
-                                modifier = Modifier.padding(14.dp),
+                                modifier = Modifier.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(44.dp)
+                                        .size(40.dp)
                                         .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
                                         .clip(CircleShape),
                                     contentAlignment = Alignment.Center
@@ -784,19 +730,19 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                                     } else {
                                         Text(
                                             profile.avatarEmoji.ifBlank { profile.name.take(2).uppercase().ifBlank { "SC" } },
-                                            fontWeight = FontWeight.Black,
+                                            fontWeight = FontWeight.Bold,
                                             style = MaterialTheme.typography.titleSmall
                                         )
                                     }
                                 }
 
-                                Spacer(Modifier.width(14.dp))
+                                Spacer(Modifier.width(12.dp))
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         profile.name,
                                         style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     if (profile.alias.isNotBlank()) {
@@ -809,19 +755,12 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 }
 
                                 if (isCurrent) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.primary
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.Check,
-                                            contentDescription = "Active",
-                                            tint = MaterialTheme.colorScheme.onPrimary,
-                                            modifier = Modifier
-                                                .padding(4.dp)
-                                                .size(16.dp)
-                                        )
-                                    }
+                                    Icon(
+                                        Icons.Rounded.CheckCircle,
+                                        contentDescription = "Active",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
                                 }
                             }
                         }
@@ -852,22 +791,16 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             onDismissRequest = { showCreateProfileDialog = false },
             title = {
                 Text(
-                    "Create New Profile",
+                    "Create Profile",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Black
+                    fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        "Each profile maintains its own courses, streaks, tags, and database.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
                     OutlinedTextField(
                         value = createName,
                         onValueChange = { createName = it },
@@ -881,9 +814,9 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     OutlinedTextField(
                         value = createAlias,
                         onValueChange = { createAlias = it },
-                        label = { Text("Handle / Alias (Optional)") },
+                        label = { Text("Handle (Optional)") },
                         prefix = { Text("@") },
-                        placeholder = { Text("research_hub") },
+                        placeholder = { Text("username") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp)
@@ -891,7 +824,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            text = "Choose Initial Emoji Avatar:",
+                            text = "Avatar Emoji",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -907,9 +840,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 Surface(
                                     shape = CircleShape,
                                     color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
                                     modifier = Modifier
-                                        .size(38.dp)
+                                        .size(36.dp)
                                         .clickable { createAvatar = emoji }
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
@@ -933,7 +865,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     enabled = createName.isNotBlank(),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Create & Switch")
+                    Text("Create")
                 }
             },
             dismissButton = {
@@ -941,7 +873,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     Text("Cancel")
                 }
             },
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(24.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     }

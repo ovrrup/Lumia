@@ -33,14 +33,14 @@ import lumia.tracker.util.TrueAodManager
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
- * PomodoroControls - Primary tactile interaction suite for focus sessions.
- * Features a 64dp primary action button with spring-scale micro-interactions,
- * secondary skip/reset/stop controls, quick utility launcher chips, and True AOD engine selection.
+ * PomodoroControls - Clean, modern tactile interaction suite for focus sessions.
+ * Features a balanced primary action cluster (Start / Pause / Skip / Stop),
+ * minimalist utility chips, and True AOD engine selection.
  */
 @ValueScore(
     score = 92,
     importance = Importance.CRITICAL,
-    description = "Tactile 64dp primary start/pause action cluster with spring micro-interactions and utility actions",
+    description = "Clean primary start/pause/skip action cluster with utility chips and True AOD launcher",
     category = "Focus"
 )
 @Composable
@@ -87,7 +87,7 @@ fun PomodoroControls(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // 1. Alarm Dismiss Alert Banner (if alarm is firing)
@@ -97,29 +97,29 @@ fun PomodoroControls(
             exit = fadeOut() + shrinkVertically()
         ) {
             Surface(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.errorContainer,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.NotificationsActive,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = "Timer Interval Complete!",
+                            text = "Timer Complete",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onErrorContainer
@@ -128,33 +128,33 @@ fun PomodoroControls(
 
                     BouncyButton(
                         onClick = onStopAlarm,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error,
                             contentColor = MaterialTheme.colorScheme.onError
                         ),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                     ) {
-                        Text("Dismiss", fontWeight = FontWeight.Bold)
+                        Text("Dismiss", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
 
-        // 2. Primary 64dp Action Cluster (Start / Pause / Resume / Skip / Stop)
+        // 2. Primary Action Controls (Start / Pause / Resume / Skip / Stop)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (!isRunning) {
-                // PRIMARY START BUTTON (64dp Height with Tactile Micro-Interactions)
+                // PRIMARY START BUTTON
                 BouncyButton(
                     onClick = onStart,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(64.dp),
-                    shape = RoundedCornerShape(24.dp),
+                        .height(54.dp),
+                    shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -163,26 +163,25 @@ fun PomodoroControls(
                     Icon(
                         imageVector = Icons.Rounded.PlayArrow,
                         contentDescription = "Start Focus",
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(24.dp)
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Start Focus",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.5.sp
+                        fontWeight = FontWeight.Bold
                     )
                 }
             } else {
-                // RUNNING STATE: 64dp Pause/Resume + 64dp Skip + 64dp Stop
+                // RUNNING STATE: Clean Pause/Resume + Skip + Stop
                 val pauseButtonBg by animateColorAsState(
                     targetValue = if (isPaused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
-                    animationSpec = tween(250),
+                    animationSpec = tween(200),
                     label = "pause_btn_bg"
                 )
                 val pauseButtonContent by animateColorAsState(
                     targetValue = if (isPaused) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
-                    animationSpec = tween(250),
+                    animationSpec = tween(200),
                     label = "pause_btn_content"
                 )
 
@@ -190,8 +189,8 @@ fun PomodoroControls(
                     onClick = onPauseResume,
                     modifier = Modifier
                         .weight(1.8f)
-                        .height(64.dp),
-                    shape = RoundedCornerShape(24.dp),
+                        .height(54.dp),
+                    shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = pauseButtonBg,
                         contentColor = pauseButtonContent
@@ -200,9 +199,7 @@ fun PomodoroControls(
                     AnimatedContent(
                         targetState = isPaused,
                         transitionSpec = {
-                            (fadeIn(animationSpec = tween(220, delayMillis = 50)) +
-                                scaleIn(initialScale = 0.88f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)))
-                                .togetherWith(fadeOut(animationSpec = tween(120)) + scaleOut(targetScale = 0.88f))
+                            fadeIn(animationSpec = tween(180)).togetherWith(fadeOut(animationSpec = tween(120)))
                         },
                         label = "pause_resume_animated_content"
                     ) { paused ->
@@ -213,9 +210,9 @@ fun PomodoroControls(
                             Icon(
                                 imageVector = if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
                                 contentDescription = if (paused) "Resume" else "Pause",
-                                modifier = Modifier.size(26.dp)
+                                modifier = Modifier.size(22.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = if (paused) "Resume" else "Pause",
                                 style = MaterialTheme.typography.titleMedium,
@@ -225,31 +222,30 @@ fun PomodoroControls(
                     }
                 }
 
-                // Skip Button (64dp)
+                // Skip Button
                 Surface(
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(18.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(54.dp)
                         .bouncyClick(onClick = onSkip)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Rounded.SkipNext,
-                            contentDescription = "Skip Cycle",
+                            contentDescription = "Skip Interval",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(26.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
 
-                // Stop / Reset Button (64dp)
+                // Stop / Reset Button
                 Surface(
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(18.dp),
                     color = MaterialTheme.colorScheme.errorContainer,
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(54.dp)
                         .bouncyClick(onClick = onStop)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -257,7 +253,7 @@ fun PomodoroControls(
                             imageVector = Icons.Rounded.Stop,
                             contentDescription = "Stop Timer",
                             tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(26.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -306,7 +302,7 @@ fun PomodoroControls(
             )
         }
 
-        // 4. Interactive True AOD Engine Selector Modal Dialog
+        // 4. True AOD Engine Selector Modal Dialog
         if (showAodEngineDialog) {
             val hasOverlay = Settings.canDrawOverlays(context)
             val hasAccessibility = AodAccessibilityService.isServiceEnabled(context)
@@ -316,7 +312,7 @@ fun PomodoroControls(
                 icon = {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(40.dp)
                             .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -324,34 +320,33 @@ fun PomodoroControls(
                             Icons.Rounded.BrightnessLow,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 },
                 title = {
                     Text(
                         text = "True AOD Engine",
-                        fontWeight = FontWeight.Black,
+                        fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleLarge
                     )
                 },
                 text = {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = "Choose your preferred engine to render True Always-On Display as a 100% pure #000000 black OLED screen with pixel anti-burn-in shifting:",
-                            style = MaterialTheme.typography.bodySmall,
+                            text = "Select OLED Always-On Display rendering engine:",
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         // Option 1: Display Over Other Apps
                         val isOverlaySelected = selectedEngine == "overlay"
                         EngineSelectionCard(
-                            title = "Display Over Other Apps",
-                            subtitle = "System Window Overlay Engine",
-                            description = "Renders fullscreen OLED clock over open apps and launchers with zero battery overhead.",
+                            title = "Display Over Apps",
+                            subtitle = "Window Overlay",
                             icon = Icons.Rounded.ViewQuilt,
                             isSelected = isOverlaySelected,
                             isGranted = hasOverlay,
@@ -376,8 +371,7 @@ fun PomodoroControls(
                         val isAccessSelected = selectedEngine == "accessibility"
                         EngineSelectionCard(
                             title = "Accessibility Service",
-                            subtitle = "Hardware Screen Lock Integration",
-                            description = "Runs behind lock panels and provides automated hardware locking when timeout triggers.",
+                            subtitle = "Hardware Screen Lock",
                             icon = Icons.Rounded.Accessibility,
                             isSelected = isAccessSelected,
                             isGranted = hasAccessibility,
@@ -405,7 +399,7 @@ fun PomodoroControls(
                             launchTrueAod(useAccessibility = selectedEngine == "accessibility")
                         },
                         enabled = canLaunch,
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(14.dp)
                     ) {
                         Text("Launch True AOD", fontWeight = FontWeight.Bold)
                     }
@@ -415,7 +409,7 @@ fun PomodoroControls(
                         Text("Cancel")
                     }
                 },
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(24.dp),
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
         }
@@ -425,7 +419,7 @@ fun PomodoroControls(
 @ValueScore(
     score = 68,
     importance = Importance.MEDIUM,
-    description = "Utility chip for launching Zen mode, True AOD, or interval configuration",
+    description = "Clean utility chip for launching Zen mode, True AOD, or interval configuration",
     category = "Focus"
 )
 @Composable
@@ -436,13 +430,12 @@ private fun UtilityFilterChip(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
         modifier = modifier.bouncyClick(onClick = onClick)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -456,7 +449,7 @@ private fun UtilityFilterChip(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
@@ -466,14 +459,13 @@ private fun UtilityFilterChip(
 @ValueScore(
     score = 72,
     importance = Importance.HIGH,
-    description = "Engine selection card for True AOD overlay and accessibility modes with permission status badge",
+    description = "Clean engine selection card for True AOD overlay and accessibility modes",
     category = "Focus"
 )
 @Composable
 private fun EngineSelectionCard(
     title: String,
     subtitle: String,
-    description: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
     isGranted: Boolean,
@@ -481,19 +473,19 @@ private fun EngineSelectionCard(
     onGrantPermission: () -> Unit
 ) {
     Surface(
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
         else MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(
             width = if (isSelected) 1.5.dp else 1.dp,
             color = if (isSelected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
         ),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -506,7 +498,7 @@ private fun EngineSelectionCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(34.dp)
                             .background(
                                 if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                 CircleShape
@@ -550,24 +542,18 @@ private fun EngineSelectionCard(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
             if (!isGranted && isSelected) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
                 BouncyTextButton(
                     onClick = onGrantPermission,
                     contentPadding = PaddingValues(0.dp)
                 ) {
-                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(15.dp))
+                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Grant Permission in Settings", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    Text("Grant in Settings", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
             }
         }
     }
 }
+

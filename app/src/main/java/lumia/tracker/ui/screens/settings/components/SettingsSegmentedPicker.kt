@@ -1,7 +1,6 @@
 package lumia.tracker.ui.screens.settings.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +23,7 @@ import lumia.tracker.ui.meta.ValueScore
 @ValueScore(
     score = 82,
     importance = Importance.HIGH,
-    description = "Segmented option picker with tactile feedback, subtle border, and rounded chip active state",
+    description = "Segmented option picker with tactile feedback, flat container, and crisp typography",
     category = "Settings"
 )
 @Composable
@@ -54,7 +53,7 @@ fun <T> SettingsSegmentedPicker(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 6.dp)
                 )
             }
         }
@@ -62,38 +61,27 @@ fun <T> SettingsSegmentedPicker(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                .border(
-                    width = 0.75.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(14.dp)
-                )
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                .padding(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             options.forEach { (value, label, icon) ->
                 val isSelected = value == selected
                 val bgSelected = MaterialTheme.colorScheme.primaryContainer
-                val borderSelected = MaterialTheme.colorScheme.primary
 
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
                         .background(if (isSelected) bgSelected else Color.Transparent)
-                        .border(
-                            width = if (isSelected) 1.dp else 0.dp,
-                            color = if (isSelected) borderSelected else Color.Transparent,
-                            shape = RoundedCornerShape(10.dp)
-                        )
                         .clickable {
                             if (value != selected) {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             }
                             onSelected(value)
                         }
-                        .padding(vertical = 10.dp),
+                        .padding(vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
@@ -110,7 +98,7 @@ fun <T> SettingsSegmentedPicker(
                         }
                         Text(
                             text = label,
-                            style = MaterialTheme.typography.labelLarge,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                         )

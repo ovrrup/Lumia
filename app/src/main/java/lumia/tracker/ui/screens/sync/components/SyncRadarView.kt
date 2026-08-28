@@ -25,65 +25,45 @@ import lumia.tracker.ui.meta.ValueScore
 @ValueScore(
     score = 88,
     importance = Importance.MEDIUM,
-    description = "Animated radar scanning canvas with concentric rings and sweeping beam for P2P mesh discovery",
+    description = "Animated radar scanning canvas with clean concentric rings and sweeping beam for P2P mesh discovery",
     category = "Sync"
 )
 @Composable
 fun SyncRadarView(
     isScanning: Boolean,
     modifier: Modifier = Modifier,
-    size: Dp = 160.dp,
+    size: Dp = 150.dp,
     primaryColor: Color = MaterialTheme.colorScheme.primary,
     accentColor: Color = MaterialTheme.colorScheme.tertiary,
     content: @Composable () -> Unit = {}
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "RadarTransition")
 
-    val pulseScale1 by infiniteTransition.animateFloat(
-        initialValue = 0.2f,
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
         targetValue = 1.0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2400, easing = LinearEasing),
+            animation = tween(2200, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "Pulse1"
+        label = "Pulse"
     )
 
-    val pulseAlpha1 by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.6f,
         targetValue = 0.0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2400, easing = LinearEasing),
+            animation = tween(2200, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "PulseAlpha1"
-    )
-
-    val pulseScale2 by infiniteTransition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2400, delayMillis = 1200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "Pulse2"
-    )
-
-    val pulseAlpha2 by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
-        targetValue = 0.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2400, delayMillis = 1200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "PulseAlpha2"
+        label = "PulseAlpha"
     )
 
     val rotationAngle by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
+            animation = tween(2800, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "RadarSweep"
@@ -97,66 +77,40 @@ fun SyncRadarView(
             val center = Offset(this.size.width / 2f, this.size.height / 2f)
             val maxRadius = this.size.minDimension / 2f
 
-            // Static concentric grid circles
+            // Clean concentric grid rings
             drawCircle(
                 color = primaryColor.copy(alpha = 0.1f),
-                radius = maxRadius * 0.35f,
+                radius = maxRadius * 0.5f,
                 center = center,
-                style = Stroke(width = 1.5f)
+                style = Stroke(width = 1.dp.toPx())
             )
             drawCircle(
                 color = primaryColor.copy(alpha = 0.15f),
-                radius = maxRadius * 0.70f,
+                radius = maxRadius * 0.95f,
                 center = center,
-                style = Stroke(width = 1.5f)
-            )
-            drawCircle(
-                color = primaryColor.copy(alpha = 0.2f),
-                radius = maxRadius * 0.98f,
-                center = center,
-                style = Stroke(width = 2.0f)
-            )
-
-            // Crosshair axes
-            drawLine(
-                color = primaryColor.copy(alpha = 0.08f),
-                start = Offset(center.x - maxRadius * 0.98f, center.y),
-                end = Offset(center.x + maxRadius * 0.98f, center.y),
-                strokeWidth = 1.dp.toPx()
-            )
-            drawLine(
-                color = primaryColor.copy(alpha = 0.08f),
-                start = Offset(center.x, center.y - maxRadius * 0.98f),
-                end = Offset(center.x, center.y + maxRadius * 0.98f),
-                strokeWidth = 1.dp.toPx()
+                style = Stroke(width = 1.2.dp.toPx())
             )
 
             if (isScanning) {
-                // Expanding pulse waves
+                // Expanding pulse wave
                 drawCircle(
-                    color = primaryColor.copy(alpha = pulseAlpha1 * 0.4f),
-                    radius = maxRadius * pulseScale1,
+                    color = primaryColor.copy(alpha = pulseAlpha * 0.35f),
+                    radius = maxRadius * pulseScale,
                     center = center,
-                    style = Stroke(width = 3.dp.toPx())
-                )
-                drawCircle(
-                    color = accentColor.copy(alpha = pulseAlpha2 * 0.4f),
-                    radius = maxRadius * pulseScale2,
-                    center = center,
-                    style = Stroke(width = 3.dp.toPx())
+                    style = Stroke(width = 2.dp.toPx())
                 )
 
                 // Rotating radar beam
                 val sweepRad = Math.toRadians(rotationAngle.toDouble())
                 val sweepEnd = Offset(
-                    (center.x + maxRadius * 0.98f * Math.cos(sweepRad)).toFloat(),
-                    (center.y + maxRadius * 0.98f * Math.sin(sweepRad)).toFloat()
+                    (center.x + maxRadius * 0.95f * Math.cos(sweepRad)).toFloat(),
+                    (center.y + maxRadius * 0.95f * Math.sin(sweepRad)).toFloat()
                 )
                 drawLine(
                     brush = Brush.linearGradient(
                         colors = listOf(
-                            primaryColor.copy(alpha = 0.85f),
-                            accentColor.copy(alpha = 0.4f),
+                            primaryColor.copy(alpha = 0.7f),
+                            accentColor.copy(alpha = 0.3f),
                             Color.Transparent
                         ),
                         start = center,
@@ -164,7 +118,7 @@ fun SyncRadarView(
                     ),
                     start = center,
                     end = sweepEnd,
-                    strokeWidth = 3.dp.toPx()
+                    strokeWidth = 2.dp.toPx()
                 )
             }
         }

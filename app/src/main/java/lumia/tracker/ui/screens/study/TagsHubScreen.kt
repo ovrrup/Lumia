@@ -153,7 +153,7 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Tags Network & Manager",
+                        text = "Tags",
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )

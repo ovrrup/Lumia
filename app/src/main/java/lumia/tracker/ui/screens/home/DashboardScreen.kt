@@ -51,10 +51,14 @@ import lumia.tracker.viewmodel.ScholarViewModel
 fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     val selectedTab by viewModel.selectedDashboardTab.collectAsStateWithLifecycle()
     val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
-    val navBarHeight by viewModel.navBarHeight.collectAsStateWithLifecycle()
-    val navBarPaddingHorizontal by viewModel.navBarPaddingHorizontal.collectAsStateWithLifecycle()
-    val navBarPaddingBottom by viewModel.navBarPaddingBottom.collectAsStateWithLifecycle()
-    val navBarCornerRadius by viewModel.navBarCornerRadius.collectAsStateWithLifecycle()
+    val navBarHeightRaw by viewModel.navBarHeight.collectAsStateWithLifecycle()
+    val navBarPaddingHorizontalRaw by viewModel.navBarPaddingHorizontal.collectAsStateWithLifecycle()
+    val navBarPaddingBottomRaw by viewModel.navBarPaddingBottom.collectAsStateWithLifecycle()
+    val navBarCornerRadiusRaw by viewModel.navBarCornerRadius.collectAsStateWithLifecycle()
+    val navBarHeight = navBarHeightRaw.toInt()
+    val navBarPaddingHorizontal = navBarPaddingHorizontalRaw.toInt()
+    val navBarPaddingBottom = navBarPaddingBottomRaw.toInt()
+    val navBarCornerRadius = navBarCornerRadiusRaw.toInt()
     val navBarLabelMode by viewModel.navBarLabelMode.collectAsStateWithLifecycle()
     val navBarIndicatorAlpha by viewModel.navBarIndicatorAlpha.collectAsStateWithLifecycle()
 
@@ -257,8 +261,8 @@ private fun StandardDashboardBottomBar(
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 3.dp,
-        shadowElevation = 3.dp,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
         border = BorderStroke(
             0.5.dp,
             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
@@ -313,11 +317,11 @@ private fun BoxScope.FloatingDashboardBottomBar(
         shape = RoundedCornerShape(navBarCornerRadius.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         border = BorderStroke(
-            0.8.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+            0.5.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
         ),
-        shadowElevation = 10.dp,
-        tonalElevation = 6.dp
+        shadowElevation = 2.dp,
+        tonalElevation = 0.dp
     ) {
         NavigationBar(
             modifier = Modifier
@@ -359,8 +363,8 @@ private fun RowScope.DashboardNavItems(
     // 0: Home
     val homeSelected = selectedTab == 0
     val homeScale by animateFloatAsState(
-        targetValue = if (homeSelected) 1.12f else 1.0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        targetValue = if (homeSelected) 1.05f else 1.0f,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "home_nav_scale"
     )
     NavigationBarItem(
@@ -384,8 +388,8 @@ private fun RowScope.DashboardNavItems(
     // 1: Academics (Courses & Subjects Unified)
     val academicsSelected = selectedTab == 1
     val academicsScale by animateFloatAsState(
-        targetValue = if (academicsSelected) 1.12f else 1.0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        targetValue = if (academicsSelected) 1.05f else 1.0f,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "academics_nav_scale"
     )
     NavigationBarItem(
@@ -410,8 +414,8 @@ private fun RowScope.DashboardNavItems(
     if (featureSelfStudyEnabled) {
         val tasksSelected = selectedTab == 2
         val tasksScale by animateFloatAsState(
-            targetValue = if (tasksSelected) 1.12f else 1.0f,
-            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+            targetValue = if (tasksSelected) 1.05f else 1.0f,
+            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
             label = "tasks_nav_scale"
         )
         NavigationBarItem(
@@ -437,8 +441,8 @@ private fun RowScope.DashboardNavItems(
     if (featureAnalyticsEnabled) {
         val analyticsSelected = selectedTab == 3
         val analyticsScale by animateFloatAsState(
-            targetValue = if (analyticsSelected) 1.12f else 1.0f,
-            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+            targetValue = if (analyticsSelected) 1.05f else 1.0f,
+            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
             label = "analytics_nav_scale"
         )
         NavigationBarItem(

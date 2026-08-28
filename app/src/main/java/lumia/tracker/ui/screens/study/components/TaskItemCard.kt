@@ -50,18 +50,18 @@ fun TaskItemCard(
         modifier = modifier
             .fillMaxWidth()
             .alpha(contentAlpha),
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(18.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Animated Checkbox Circle Button (48dp Touch Target)
+            // Animated Checkbox Circle Button
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(40.dp)
                     .clickable { viewModel.toggleTaskCompleted(task) },
                 contentAlignment = Alignment.Center
             ) {
@@ -69,13 +69,13 @@ fun TaskItemCard(
                     targetValue = if (isCompleted) MaterialTheme.colorScheme.primary else Color.Transparent,
                     label = "checkBg"
                 )
-                val borderColor = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                val borderColor = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
 
                 Box(
                     modifier = Modifier
-                        .size(24.dp)
+                        .size(22.dp)
                         .background(checkColor, CircleShape)
-                        .border(2.dp, borderColor, CircleShape),
+                        .border(1.5.dp, borderColor, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isCompleted) {
@@ -83,7 +83,7 @@ fun TaskItemCard(
                             imageVector = Icons.Rounded.Check,
                             contentDescription = "Completed",
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 }
@@ -111,24 +111,24 @@ fun TaskItemCard(
 
                     // Priority Badge
                     if (task.priority > 0) {
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(6.dp))
                         val (pText, pBg, pTint) = when (task.priority) {
                             2 -> Triple("High", MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f), MaterialTheme.colorScheme.error)
                             1 -> Triple("Med", MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f), MaterialTheme.colorScheme.secondary)
                             else -> Triple("Low", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(4.dp),
                             color = pBg
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(5.dp)
+                                        .size(4.dp)
                                         .background(pTint, CircleShape)
                                 )
                                 Text(
@@ -154,41 +154,35 @@ fun TaskItemCard(
                     )
                 }
 
-                // Due Date Badge
+                // Due Date
                 if (task.dueDateMillis != null) {
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(4.dp))
                     val isOverdue = task.dueDateMillis < System.currentTimeMillis() && !isCompleted
-                    val df = SimpleDateFormat("MMM dd, yyyy • hh:mm a", Locale.getDefault())
+                    val df = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
                     val dateFormatted = df.format(Date(task.dueDateMillis))
 
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (isOverdue) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isOverdue) Icons.Rounded.EventBusy else Icons.Rounded.DateRange,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = if (isOverdue) "Overdue • $dateFormatted" else dateFormatted,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Medium
-                            )
-                        }
+                        Icon(
+                            imageVector = if (isOverdue) Icons.Rounded.EventBusy else Icons.Rounded.DateRange,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = if (isOverdue) "Overdue • $dateFormatted" else dateFormatted,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Medium
+                        )
                     }
                 }
 
                 // Tags Chips
                 if (task.tags.isNotBlank()) {
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(4.dp))
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -197,60 +191,38 @@ fun TaskItemCard(
                         task.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { tag ->
                             val colors = getTagColors(tag)
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(4.dp),
                                 color = colors.first,
                                 modifier = Modifier.clickable {
                                     navController?.navigate("tags_hub?selectedTag=$tag")
                                 }
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.LocalOffer,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(10.dp),
-                                        tint = colors.second
-                                    )
-                                    Text(
-                                        text = tag,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = colors.second,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
+                                Text(
+                                    text = tag,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.second,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                )
                             }
                         }
                     }
                 }
 
-                // Linked Entities Row
+                // Linked Entities Row (clean text without redundant link icon)
                 if (task.subjectId != null || task.courseId != null || task.assignmentId != null) {
-                    Spacer(Modifier.height(6.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Link,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        val linkText = listOfNotNull(
-                            if (task.subjectId != null) "Subject" else null,
-                            if (task.courseId != null) "Course" else null,
-                            if (task.assignmentId != null) "Assignment" else null
-                        ).joinToString(", ")
-                        Text(
-                            text = "$linkText Linked",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+                    Spacer(Modifier.height(4.dp))
+                    val linkText = listOfNotNull(
+                        if (task.subjectId != null) "Subject" else null,
+                        if (task.courseId != null) "Course" else null,
+                        if (task.assignmentId != null) "Assignment" else null
+                    ).joinToString(", ")
+                    Text(
+                        text = "$linkText linked",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
 

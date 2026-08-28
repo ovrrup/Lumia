@@ -88,40 +88,33 @@ fun StudyEmptySectionCard(
 ) {
     ScholarCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             if (icon != null) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(accentColor.copy(alpha = 0.1f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(10.dp))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = accentColor.copy(alpha = 0.8f),
+                    modifier = Modifier.size(28.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
             }
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (icon != null) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (icon != null) FontWeight.SemiBold else FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
             if (subtitle != null) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
@@ -130,7 +123,7 @@ fun StudyEmptySectionCard(
                 )
             }
             if (buttonText != null && onClick != null) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 BouncyTextButton(onClick = onClick) {
                     Text(buttonText, fontWeight = FontWeight.Bold)
                 }
@@ -154,20 +147,19 @@ fun DetailMetaBadge(
 ) {
     Surface(
         modifier = modifier,
-        color = tint.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, tint.copy(alpha = 0.25f))
+        color = tint.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(8.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(13.dp))
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
                 color = tint
             )
         }
@@ -197,7 +189,7 @@ fun AttendanceCounterItem(
         ) {
             Box(
                 modifier = Modifier
-                    .size(8.dp)
+                    .size(6.dp)
                     .background(color, CircleShape)
             )
             Text(
@@ -210,7 +202,7 @@ fun AttendanceCounterItem(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -243,7 +235,7 @@ fun StudyStatItem(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         if (detail != null) {
@@ -252,7 +244,7 @@ fun StudyStatItem(
                 style = MaterialTheme.typography.labelSmall,
                 color = tint.copy(alpha = 0.85f),
                 fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
         }
     }

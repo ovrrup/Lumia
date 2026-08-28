@@ -1,6 +1,5 @@
 package lumia.tracker.ui.screens.focus
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,9 +30,8 @@ import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.theme.bouncyClick
 
 /**
- * PomodoroCourseSelector - Contextual linking selector for Courses and Subjects.
- * Displays current study context with instant quick-switch pill chips and a dedicated ModalBottomSheet
- * with search and filtering for academic tracking.
+ * PomodoroCourseSelector - Clean contextual linking selector for Courses and Subjects.
+ * Displays current study context with compact quick chips and a searchable selection sheet.
  */
 @ValueScore(
     score = 88,
@@ -55,13 +53,13 @@ fun PomodoroCourseSelector(
     var showSheet by remember { mutableStateOf(false) }
 
     val defaultColor = MaterialTheme.colorScheme.primary
-    // Active color derived from selected course or subject
     val activeColor = remember(selectedCourse, selectedSubject, defaultColor) {
         selectedCourse?.colorHex?.let {
             try { Color(android.graphics.Color.parseColor(it)) } catch (e: Exception) { null }
         } ?: defaultColor
     }
 
+    val isLinked = selectedCourse != null || selectedSubject != null
     val contextTitle = when {
         selectedCourse != null -> selectedCourse.name
         selectedSubject != null -> selectedSubject.name
@@ -69,14 +67,14 @@ fun PomodoroCourseSelector(
     }
 
     val contextSubtitle = when {
-        selectedCourse != null -> if (selectedCourse.code.isNotBlank()) "Course • ${selectedCourse.code}" else "Linked Course"
-        selectedSubject != null -> "Linked Subject"
-        else -> "No course or subject linked"
+        selectedCourse != null -> if (selectedCourse.code.isNotBlank()) selectedCourse.code else "Course"
+        selectedSubject != null -> "Subject"
+        else -> "No course linked"
     }
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Section Header
         Row(
@@ -89,28 +87,27 @@ fun PomodoroCourseSelector(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.Link,
+                    imageVector = Icons.Rounded.School,
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(15.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "STUDY CONTEXT",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
+                    text = "Study Context",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            if (selectedCourse != null || selectedSubject != null) {
+            if (isLinked) {
                 Text(
-                    text = "Clear Link",
+                    text = "Clear",
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(6.dp))
                         .bouncyClick {
                             onSelectCourse(null)
                             onSelectSubject?.invoke(null)
@@ -123,41 +120,32 @@ fun PomodoroCourseSelector(
         // Active Context Card Trigger
         ScholarCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            containerColor = if (selectedCourse != null || selectedSubject != null) {
-                activeColor.copy(alpha = 0.10f)
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerHigh
-            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = if (isLinked) activeColor.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceContainer,
             border = BorderStroke(
                 width = 1.dp,
-                color = if (selectedCourse != null || selectedSubject != null) {
-                    activeColor.copy(alpha = 0.35f)
-                } else {
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                }
+                color = if (isLinked) activeColor.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
             ),
             onClick = { showSheet = true }
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(34.dp)
                             .background(
-                                color = if (selectedCourse != null || selectedSubject != null) activeColor.copy(alpha = 0.20f)
-                                else MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(12.dp)
+                                color = if (isLinked) activeColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                shape = RoundedCornerShape(10.dp)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -168,23 +156,23 @@ fun PomodoroCourseSelector(
                                 else -> Icons.Rounded.Psychology
                             },
                             contentDescription = null,
-                            tint = if (selectedCourse != null || selectedSubject != null) activeColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
+                            tint = if (isLinked) activeColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = contextTitle,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = contextSubtitle,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -192,51 +180,27 @@ fun PomodoroCourseSelector(
                     }
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = "Change",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Icon(
-                            imageVector = Icons.Rounded.UnfoldMore,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+                Icon(
+                    imageVector = Icons.Rounded.ChevronRight,
+                    contentDescription = "Select context",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
             }
         }
 
-        // Horizontal Quick-Access Chips for Fast 1-Tap Switching
+        // Horizontal Quick-Access Chips
         if (courses.isNotEmpty() || subjects.isNotEmpty()) {
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 contentPadding = PaddingValues(vertical = 2.dp)
             ) {
                 // General (Unlinked) Option Chip
                 item {
                     val isGeneralSelected = selectedCourse == null && selectedSubject == null
                     Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = if (isGeneralSelected) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainer,
-                        border = BorderStroke(
-                            1.dp,
-                            if (isGeneralSelected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isGeneralSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.bouncyClick {
                             onSelectCourse(null)
                             onSelectSubject?.invoke(null)
@@ -244,18 +208,12 @@ fun PomodoroCourseSelector(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
-                            Icon(
-                                Icons.Rounded.Psychology,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = if (isGeneralSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                             Text(
                                 text = "General",
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = if (isGeneralSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isGeneralSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -271,13 +229,9 @@ fun PomodoroCourseSelector(
                     } ?: MaterialTheme.colorScheme.primary
 
                     Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = if (isSelected) courseColor.copy(alpha = 0.20f)
-                        else MaterialTheme.colorScheme.surfaceContainer,
-                        border = BorderStroke(
-                            1.dp,
-                            if (isSelected) courseColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isSelected) courseColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainer,
+                        border = if (isSelected) BorderStroke(1.dp, courseColor) else null,
                         modifier = Modifier.bouncyClick {
                             if (isSelected) {
                                 onSelectCourse(null)
@@ -289,30 +243,22 @@ fun PomodoroCourseSelector(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(8.dp)
+                                    .size(6.dp)
                                     .clip(CircleShape)
                                     .background(courseColor)
                             )
                             Text(
                                 text = course.name,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1
                             )
-                            if (isSelected) {
-                                Icon(
-                                    Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    tint = courseColor,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                            }
                         }
                     }
                 }
@@ -321,14 +267,9 @@ fun PomodoroCourseSelector(
                 items(subjects, key = { "subject_${it.id}" }) { subject ->
                     val isSelected = selectedSubject?.id == subject.id
                     Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainer,
-                        border = BorderStroke(
-                            1.dp,
-                            if (isSelected) MaterialTheme.colorScheme.secondary
-                            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+                        border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.secondary) else null,
                         modifier = Modifier.bouncyClick {
                             if (isSelected) {
                                 onSelectSubject?.invoke(null)
@@ -340,30 +281,16 @@ fun PomodoroCourseSelector(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
-                            Icon(
-                                Icons.Rounded.AutoStories,
-                                contentDescription = null,
-                                modifier = Modifier.size(13.dp),
-                                tint = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                             Text(
                                 text = subject.name,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1
                             )
-                            if (isSelected) {
-                                Icon(
-                                    Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                            }
                         }
                     }
                 }
@@ -379,7 +306,7 @@ fun PomodoroCourseSelector(
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             var searchQuery by remember { mutableStateOf("") }
-            var selectedTab by remember { mutableIntStateOf(0) } // 0: All, 1: Courses, 2: Subjects
+            var selectedTab by remember { mutableIntStateOf(0) }
 
             val filteredCourses = remember(courses, searchQuery, selectedTab) {
                 if (selectedTab == 2) emptyList()
@@ -401,7 +328,7 @@ fun PomodoroCourseSelector(
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
                     .padding(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Header Row
                 Row(
@@ -409,29 +336,11 @@ fun PomodoroCourseSelector(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Rounded.Link,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Text(
-                            text = "Link Study Context",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
+                    Text(
+                        text = "Select Study Context",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
 
                     BouncyIconButton(onClick = { showSheet = false }) {
                         Icon(Icons.Rounded.Close, contentDescription = "Close")
@@ -455,7 +364,7 @@ fun PomodoroCourseSelector(
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface
@@ -493,15 +402,15 @@ fun PomodoroCourseSelector(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 420.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .heightIn(max = 400.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     // 1. General Study (Unlink) option
                     item {
                         val isGeneral = selectedCourse == null && selectedSubject == null
                         ContextSelectionRow(
-                            title = "General Focus (No Context)",
-                            subtitle = "Untracked general study session",
+                            title = "General Focus",
+                            subtitle = "Untracked study session",
                             icon = Icons.Rounded.Psychology,
                             tintColor = MaterialTheme.colorScheme.primary,
                             isSelected = isGeneral,
@@ -521,8 +430,8 @@ fun PomodoroCourseSelector(
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
-                                letterSpacing = 1.sp,
-                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                letterSpacing = 0.5.sp,
+                                modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)
                             )
                         }
 
@@ -534,7 +443,7 @@ fun PomodoroCourseSelector(
 
                             ContextSelectionRow(
                                 title = course.name,
-                                subtitle = if (course.code.isNotBlank()) "Code: ${course.code}" else "Enrolled Course",
+                                subtitle = if (course.code.isNotBlank()) "Code: ${course.code}" else "Course",
                                 icon = Icons.Rounded.School,
                                 tintColor = courseColor,
                                 isSelected = isSelected,
@@ -555,8 +464,8 @@ fun PomodoroCourseSelector(
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.secondary,
-                                letterSpacing = 1.sp,
-                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                letterSpacing = 0.5.sp,
+                                modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)
                             )
                         }
 
@@ -564,7 +473,7 @@ fun PomodoroCourseSelector(
                             val isSelected = selectedSubject?.id == subject.id
                             ContextSelectionRow(
                                 title = subject.name,
-                                subtitle = "Academic Subject",
+                                subtitle = "Subject",
                                 icon = Icons.Rounded.AutoStories,
                                 tintColor = MaterialTheme.colorScheme.secondary,
                                 isSelected = isSelected,
@@ -583,20 +492,20 @@ fun PomodoroCourseSelector(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 32.dp),
+                                    .padding(vertical = 24.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(
                                         Icons.Rounded.SearchOff,
                                         contentDescription = null,
-                                        modifier = Modifier.size(36.dp),
+                                        modifier = Modifier.size(32.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                     )
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Spacer(modifier = Modifier.height(6.dp))
                                     Text(
-                                        text = "No matching courses or subjects found",
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        text = "No matching courses or subjects",
+                                        style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -625,11 +534,11 @@ private fun ContextSelectionRow(
     onClick: () -> Unit
 ) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = if (isSelected) tintColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(14.dp),
+        color = if (isSelected) tintColor.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
         border = BorderStroke(
             width = if (isSelected) 1.5.dp else 1.dp,
-            color = if (isSelected) tintColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            color = if (isSelected) tintColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -638,33 +547,33 @@ private fun ContextSelectionRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.weight(1f)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .background(tintColor.copy(alpha = 0.20f), CircleShape),
+                        .size(32.dp)
+                        .background(tintColor.copy(alpha = 0.15f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         tint = tintColor,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
@@ -672,7 +581,7 @@ private fun ContextSelectionRow(
                     )
                     Text(
                         text = subtitle,
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -683,7 +592,7 @@ private fun ContextSelectionRow(
             if (isSelected) {
                 Box(
                     modifier = Modifier
-                        .size(24.dp)
+                        .size(20.dp)
                         .background(tintColor, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
@@ -691,10 +600,11 @@ private fun ContextSelectionRow(
                         Icons.Rounded.Check,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(12.dp)
                     )
                 }
             }
         }
     }
 }
+

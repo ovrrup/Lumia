@@ -71,7 +71,7 @@ fun NotificationPermissionPanel() {
     ) {
         PermissionPanel(
             title = "Enable Notifications",
-            description = "We need notification permission to alert you about tasks, deadlines, classes, and Pomodoro sessions effectively.",
+            description = "Get alerts for deadlines, classes, and Pomodoro focus sessions.",
             icon = Icons.Rounded.Notifications,
             onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -119,7 +119,7 @@ fun ExactAlarmPermissionPanel() {
     ) {
         PermissionPanel(
             title = "Precise Alarms Required",
-            description = "To ensure deadlines and Pomodoro timers trigger exactly on time, we kindly request exact alarm permissions.",
+            description = "Allow timers and study reminders to ring precisely on time.",
             icon = Icons.Rounded.Timer,
             onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -170,7 +170,7 @@ fun BatteryOptimizationPermissionPanel() {
     ) {
         PermissionPanel(
             title = "Exempt Battery Optimization",
-            description = "Without Play Services to wake the device, Android pauses local alarms when idle. Disable optimizations to ensure reminders trigger exactly on time.",
+            description = "Keep background study alarms and Pomodoro timers running reliably.",
             icon = Icons.Rounded.Warning,
             onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -203,28 +203,30 @@ fun PermissionPanel(
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 4.dp)
             .clickable { onClick() }
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(20.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
@@ -232,7 +234,7 @@ fun PermissionPanel(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onTertiaryContainer
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,

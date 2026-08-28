@@ -65,13 +65,13 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                     0 -> OnboardingPage(
                         icon = Icons.Rounded.AutoAwesome,
                         title = "Personalization & Style",
-                        description = "Experience Lumia's modern adaptive layouts! Custom theme palettes, dynamic ambient lighting, tactile bouncy actions, and multi-profile workspaces elevate your routine.",
+                        description = "Personalize themes, streamline focus sessions, and organize academic workspaces.",
                         isActive = pagerState.currentPage == page
                     )
                     1 -> OnboardingPage(
                         icon = Icons.Rounded.Timer,
-                        title = "Basic Focus Timer",
-                        description = "Our classic Pomodoro study space and course organizers are 100% free with local offline data security.",
+                        title = "Focus & Organization",
+                        description = "Integrated Pomodoro timer, syllabus tracking, and offline data privacy.",
                         isActive = pagerState.currentPage == page
                     )
                     2 -> PermissionsPage(
@@ -402,11 +402,10 @@ fun VisualTourPage(isActive: Boolean) {
         
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Lumia is optimized and ready. Explore the dynamic screens inside your cockpit:",
+            text = "Lumia is ready. Explore key features:",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center,
-            lineHeight = 20.sp
+            textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -418,26 +417,26 @@ fun VisualTourPage(isActive: Boolean) {
         ) {
             TourItemCard(
                 icon = Icons.Rounded.Dashboard,
-                title = "Home Dashboard",
-                desc = "Track schedules, daily streaks, task progress, and live indicators.",
+                title = "Dashboard",
+                desc = "Track schedules, daily streaks, and task progress.",
                 tint = MaterialTheme.colorScheme.primary
             )
             TourItemCard(
                 icon = Icons.Rounded.MenuBook,
-                title = "Courses & Subjects",
-                desc = "Organize classes, calculate grade analytics, and manage coursework.",
+                title = "Academics",
+                desc = "Organize courses, syllabus topics, and assignments.",
                 tint = MaterialTheme.colorScheme.secondary
             )
             TourItemCard(
                 icon = Icons.Rounded.Timer,
-                title = "Pomodoro Timer",
-                desc = "Engage in deep focused study sessions with integrated statistics.",
+                title = "Focus Timer",
+                desc = "Deep study sessions with Pomodoro and analytics.",
                 tint = MaterialTheme.colorScheme.tertiary
             )
             TourItemCard(
                 icon = Icons.Rounded.Settings,
-                title = "Aesthetic Settings",
-                desc = "Customize glass transparency, accent themes, and widgets easily.",
+                title = "Settings",
+                desc = "Personalize theme accents, layouts, and display modes.",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

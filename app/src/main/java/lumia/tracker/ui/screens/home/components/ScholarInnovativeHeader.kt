@@ -125,11 +125,11 @@ fun ScholarSearchCapsule(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(
-            0.75.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            0.5.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
         ),
-        shadowElevation = 0.5.dp,
-        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp,
         modifier = modifier
             .height(42.dp)
             .clip(CircleShape)
@@ -153,11 +153,11 @@ fun ScholarSearchCapsule(
             contentAlignment = Alignment.CenterStart
         ) { targetTab ->
             val (icon, title) = when (targetTab) {
-                0 -> Icons.Rounded.Search to "Search workspace..."
+                0 -> Icons.Rounded.Search to "Search..."
                 1 -> Icons.AutoMirrored.Rounded.MenuBook to "Academics"
                 2 -> Icons.Rounded.AutoStories to "Tasks"
                 3 -> Icons.Rounded.Analytics to "Analytics"
-                else -> Icons.Rounded.Search to "Search workspace..."
+                else -> Icons.Rounded.Search to "Search..."
             }
 
             Row(
@@ -234,31 +234,31 @@ fun ScholarFocusPill(
         label = "focus_pill_text_color"
     )
 
-    // Equalizer wave pulse animation when active
+    // Pulse animation when active
     val infiniteTransition = rememberInfiniteTransition(label = "focus_pulse")
-    val eqScale by infiniteTransition.animateFloat(
-        initialValue = 0.88f,
-        targetValue = 1.18f,
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 1.15f,
         animationSpec = infiniteRepeatable(
             animation = tween(800, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "eq_scale"
+        label = "pulse_scale"
     )
 
     Surface(
         shape = CircleShape,
         color = focusPillBg,
         border = BorderStroke(
-            0.75.dp,
+            0.5.dp,
             if (isRunning) {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
             } else {
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
             }
         ),
-        shadowElevation = if (isRunning) 2.5.dp else 0.5.dp,
-        tonalElevation = if (isRunning) 4.dp else 1.dp,
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp,
         modifier = modifier
             .height(42.dp)
             .clip(CircleShape)
@@ -273,28 +273,22 @@ fun ScholarFocusPill(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             if (isRunning) {
-                // Pulsing dot indicator
+                // Simplified pulsing dot indicator
                 Box(
                     modifier = Modifier
-                        .size(7.dp)
+                        .size(6.dp)
                         .graphicsLayer {
-                            scaleX = eqScale
-                            scaleY = eqScale
+                            scaleX = pulseScale
+                            scaleY = pulseScale
                         }
                         .background(MaterialTheme.colorScheme.onPrimary, CircleShape)
-                )
-                Icon(
-                    imageVector = Icons.Rounded.GraphicEq,
-                    contentDescription = "Focus Active",
-                    tint = focusPillText,
-                    modifier = Modifier.size(17.dp)
                 )
             } else {
                 Icon(
                     imageVector = Icons.Rounded.Timer,
                     contentDescription = "Focus Space",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(17.dp)
                 )
             }
 
@@ -303,13 +297,13 @@ fun ScholarFocusPill(
             val timerStr = String.format(Locale.US, "%02d:%02d", mins, secs)
 
             AnimatedContent(
-                targetState = isRunning to (if (isRunning) timerStr else "Focus"),
+                targetState = if (isRunning) timerStr else "Focus",
                 transitionSpec = {
                     (fadeIn(animationSpec = tween(200)) + slideInVertically { it / 3 })
                         .togetherWith(fadeOut(animationSpec = tween(150)) + slideOutVertically { -it / 3 })
                 },
                 label = "focus_pill_text_transition"
-            ) { (_, labelText) ->
+            ) { labelText ->
                 Text(
                     text = labelText,
                     style = MaterialTheme.typography.labelLarge,
@@ -341,9 +335,9 @@ fun ScholarProfileAvatar(
     Box(
         modifier = modifier
             .size(42.dp)
-            .shadow(elevation = 1.5.dp, shape = CircleShape)
+            .shadow(elevation = 0.dp, shape = CircleShape)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape)
-            .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.75f), CircleShape)
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), CircleShape)
             .clip(CircleShape)
             .bouncyClick(onClick = onClick)
             .testTag("profile_avatar_button"),
@@ -377,3 +371,4 @@ fun ScholarProfileAvatar(
         }
     }
 }
+

@@ -1,5 +1,6 @@
 package lumia.tracker.ui.components
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Warning
@@ -7,9 +8,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.viewmodel.ScholarViewModel
 
@@ -19,6 +20,8 @@ fun SafetyPinDialog(viewModel: ScholarViewModel) {
     
     safetyPinDialogData?.let { data ->
         AlertDialog(
+            shape = RoundedCornerShape(24.dp),
+            tonalElevation = 0.dp,
             icon = {
                 Icon(
                     imageVector = if (data.isConflict) Icons.Rounded.Warning else Icons.Rounded.Info,
@@ -30,12 +33,12 @@ fun SafetyPinDialog(viewModel: ScholarViewModel) {
             text = { Text(data.description) },
             onDismissRequest = { data.onIgnore() },
             confirmButton = {
-                TextButton(onClick = data.onConfirm) {
+                BouncyTextButton(onClick = data.onConfirm) {
                     Text(if (data.isConflict) "Continue" else "Apply")
                 }
             },
             dismissButton = {
-                TextButton(onClick = data.onIgnore) {
+                BouncyTextButton(onClick = data.onIgnore) {
                     Text(if (data.isConflict) "Stop" else "Ignore")
                 }
             }

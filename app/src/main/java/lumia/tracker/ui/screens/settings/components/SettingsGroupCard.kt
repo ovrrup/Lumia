@@ -1,7 +1,6 @@
 package lumia.tracker.ui.screens.settings.components
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -12,19 +11,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 
 /**
- * SettingsGroupCard - Modern Material 3 Inset Grouped Section Card for Lumia settings.
- * Features rounded 22dp corners, subtle 0.75dp outline border, smooth animateContentSize() transitions,
- * and unified section typography.
+ * SettingsGroupCard - Clean, flat Material 3 inset section card for Lumia settings.
+ * Features rounded 20dp corners, subtle surface container color, smooth content size animations,
+ * and decluttered title typography with clean icon.
  */
 @ValueScore(
     score = 88,
     importance = Importance.HIGH,
-    description = "Categorized settings card container with unified typography and subtle outline border",
+    description = "Decluttered settings card container with unified typography and flat surface styling",
     category = "Settings"
 )
 @Composable
@@ -38,46 +36,40 @@ fun SettingsGroupCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
         if (title.isNotEmpty()) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
+                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
             ) {
                 if (icon != null) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(15.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                 }
                 Text(
-                    text = title.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        letterSpacing = 1.sp
-                    ),
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
         }
 
-        OutlinedCard(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .animateContentSize(),
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.outlinedCardColors(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
                 containerColor = containerColor
             ),
-            border = BorderStroke(
-                width = 0.75.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
-            ),
-            elevation = CardDefaults.outlinedCardElevation(defaultElevation = 0.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),

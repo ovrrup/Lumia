@@ -19,13 +19,13 @@ import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 
 /**
- * SettingsActionItem - Refined action item row with 34dp rounded squircle icon badge,
- * crisp title, subtle subtitle, sleek trailing chevron, and >=48dp touch target.
+ * SettingsActionItem - Flat, clean action item row with rounded squircle icon badge,
+ * crisp title and subtitle typography, sleek trailing chevron, and accessible touch target.
  */
 @ValueScore(
     score = 80,
     importance = Importance.HIGH,
-    description = "Configurable settings action row with icon badge, title/subtitle, and customizable trailing content",
+    description = "Configurable settings action row with clean icon badge, crisp typography, and trailing content",
     category = "Settings"
 )
 @Composable
@@ -61,18 +61,18 @@ fun SettingsActionItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .defaultMinSize(minHeight = 52.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .defaultMinSize(minHeight = 48.dp)
+            .clip(RoundedCornerShape(12.dp))
             .clickable { onClick() }
             .padding(
-                horizontal = if (inCard) 8.dp else 14.dp,
-                vertical = 10.dp
+                horizontal = if (inCard) 8.dp else 12.dp,
+                vertical = 8.dp
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(34.dp)
+                .size(32.dp)
                 .clip(badgeShape)
                 .background(badgeBg),
             contentAlignment = Alignment.Center
@@ -81,11 +81,11 @@ fun SettingsActionItem(
                 imageVector = icon,
                 contentDescription = null,
                 tint = badgeTint,
-                modifier = Modifier.size(19.dp)
+                modifier = Modifier.size(18.dp)
             )
         }
 
-        Spacer(modifier = Modifier.width(14.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -95,7 +95,6 @@ fun SettingsActionItem(
                 color = titleColor
             )
             if (subtitle.isNotBlank()) {
-                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
@@ -112,8 +111,8 @@ fun SettingsActionItem(
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-                modifier = Modifier.size(20.dp)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
+                modifier = Modifier.size(18.dp)
             )
         }
     }

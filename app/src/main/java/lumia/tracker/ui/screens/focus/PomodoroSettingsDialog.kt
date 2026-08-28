@@ -27,8 +27,8 @@ import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
- * PomodoroSettingsDialog - Interactive configuration modal for Pomodoro intervals,
- * cycle lengths, automation auto-logging, and target alerts.
+ * PomodoroSettingsDialog - Clean configuration modal for Pomodoro intervals,
+ * cycle lengths, and automation preferences.
  */
 @ValueScore(
     score = 86,
@@ -68,7 +68,7 @@ fun PomodoroSettingsDialog(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Header Row with Title and Reset Button
             Row(
@@ -82,7 +82,7 @@ fun PomodoroSettingsDialog(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(36.dp)
                             .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -90,13 +90,13 @@ fun PomodoroSettingsDialog(
                             imageVector = Icons.Rounded.Tune,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                     Text(
                         text = "Focus Preferences",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
@@ -108,19 +108,18 @@ fun PomodoroSettingsDialog(
                         tempSessions = 4f
                     }
                 ) {
-                    Text("Reset Defaults", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    Text("Reset", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
 
             // 1. Focus Interval Slider Card
             DurationSettingCard(
-                title = "Focus Interval",
-                subtitle = "Length of individual concentrated study sprints",
+                title = "Focus Duration",
                 icon = Icons.Rounded.Psychology,
                 iconTint = MaterialTheme.colorScheme.primary,
-                valueText = "${tempWork.toInt()} min",
+                valueText = "${tempWork.toInt()}m",
                 sliderValue = tempWork,
                 onValueChange = { tempWork = it },
                 valueRange = 5f..90f,
@@ -132,10 +131,9 @@ fun PomodoroSettingsDialog(
             // 2. Short Break Duration Slider Card
             DurationSettingCard(
                 title = "Short Break",
-                subtitle = "Quick breathing rest between active study sprints",
                 icon = Icons.Rounded.Coffee,
                 iconTint = MaterialTheme.colorScheme.secondary,
-                valueText = "${tempShort.toInt()} min",
+                valueText = "${tempShort.toInt()}m",
                 sliderValue = tempShort,
                 onValueChange = { tempShort = it },
                 valueRange = 1f..30f,
@@ -147,10 +145,9 @@ fun PomodoroSettingsDialog(
             // 3. Long Break Duration Slider Card
             DurationSettingCard(
                 title = "Long Break",
-                subtitle = "Extended recharge rest after completing a full cycle",
                 icon = Icons.Rounded.SelfImprovement,
                 iconTint = MaterialTheme.colorScheme.tertiary,
-                valueText = "${tempLong.toInt()} min",
+                valueText = "${tempLong.toInt()}m",
                 sliderValue = tempLong,
                 onValueChange = { tempLong = it },
                 valueRange = 5f..60f,
@@ -161,8 +158,7 @@ fun PomodoroSettingsDialog(
 
             // 4. Cycle Count Slider Card
             DurationSettingCard(
-                title = "Sessions per Cycle",
-                subtitle = "Number of focus intervals before triggering a long break",
+                title = "Cycle Length",
                 icon = Icons.Rounded.Autorenew,
                 iconTint = MaterialTheme.colorScheme.primary,
                 valueText = "${tempSessions.toInt()} sessions",
@@ -177,21 +173,21 @@ fun PomodoroSettingsDialog(
             // 5. Automation & Logging Preferences
             ScholarCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 containerColor = MaterialTheme.colorScheme.surfaceContainer
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "AUTOMATION & LOGGING",
+                        text = "PREFERENCES",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.5.sp
                     )
 
                     // Auto-Log Toggle
@@ -200,25 +196,18 @@ fun PomodoroSettingsDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Auto-Log Focus Sessions",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Automatically record completed sessions to study analytics",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = "Auto-Log Focus Sessions",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
                         Switch(
                             checked = tempAutoLog,
                             onCheckedChange = { tempAutoLog = it }
                         )
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                     // Cycle Target Alert Toggle
                     Row(
@@ -226,18 +215,11 @@ fun PomodoroSettingsDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Cycle Target Alert",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Notify when a full multi-session Pomodoro cycle is achieved",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = "Cycle Complete Notification",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
                         Switch(
                             checked = tempPeriodTarget,
                             onCheckedChange = { tempPeriodTarget = it }
@@ -249,7 +231,7 @@ fun PomodoroSettingsDialog(
             // Bottom Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BouncyTextButton(
@@ -270,9 +252,9 @@ fun PomodoroSettingsDialog(
                         onDismiss()
                     },
                     modifier = Modifier.weight(1.5f),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text("Apply Preferences", fontWeight = FontWeight.Bold)
+                    Text("Apply", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -282,13 +264,12 @@ fun PomodoroSettingsDialog(
 @ValueScore(
     score = 70,
     importance = Importance.HIGH,
-    description = "Interactive slider and preset chip card for duration settings",
+    description = "Clean slider and preset chip card for duration settings",
     category = "Focus"
 )
 @Composable
 private fun DurationSettingCard(
     title: String,
-    subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     iconTint: Color,
     valueText: String,
@@ -301,14 +282,14 @@ private fun DurationSettingCard(
 ) {
     ScholarCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -317,12 +298,12 @@ private fun DurationSettingCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(34.dp)
+                            .size(30.dp)
                             .background(iconTint.copy(alpha = 0.15f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -330,33 +311,26 @@ private fun DurationSettingCard(
                             imageVector = icon,
                             contentDescription = null,
                             tint = iconTint,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
-                    Column {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = iconTint.copy(alpha = 0.15f)
+                    shape = RoundedCornerShape(8.dp),
+                    color = iconTint.copy(alpha = 0.12f)
                 ) {
                     Text(
                         text = valueText,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Black,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
                         color = iconTint,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
             }
@@ -370,36 +344,36 @@ private fun DurationSettingCard(
                 colors = SliderDefaults.colors(
                     thumbColor = iconTint,
                     activeTrackColor = iconTint,
-                    inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
                 )
             )
 
             // Preset Quick Selection Chips
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 presets.forEach { preset ->
                     val isSelected = sliderValue.toInt() == preset
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = if (isSelected) iconTint else MaterialTheme.colorScheme.surface,
                         border = BorderStroke(
                             1.dp,
-                            if (isSelected) iconTint else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                            if (isSelected) iconTint else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
                         ),
                         modifier = Modifier
                             .weight(1f)
                             .bouncyClick { onSelectPreset(preset) }
                     ) {
                         Box(
-                            modifier = Modifier.padding(vertical = 6.dp),
+                            modifier = Modifier.padding(vertical = 5.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "$preset",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -409,3 +383,4 @@ private fun DurationSettingCard(
         }
     }
 }
+

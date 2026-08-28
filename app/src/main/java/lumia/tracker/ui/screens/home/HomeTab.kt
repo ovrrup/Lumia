@@ -126,18 +126,7 @@ fun HomeTab(
         }
     }
 
-    // Pulse animation for active focus session
     val isFocusRunning = pomodoroState.isRunning
-    val infiniteTransition = rememberInfiniteTransition(label = "home_pulse_transition")
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(900, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse_alpha"
-    )
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -147,7 +136,7 @@ fun HomeTab(
             top = bottomPadding.calculateTopPadding() + 8.dp,
             bottom = bottomPadding.calculateBottomPadding() + 32.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         // 1. Personalized Time-Aware Greeting Section
         item(key = "greeting_section") {
@@ -170,27 +159,25 @@ fun HomeTab(
                     .padding(horizontal = 4.dp, vertical = 2.dp)
             ) {
                 Text(
-                    text = todayDateFormatted.uppercase(Locale.getDefault()),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.height(3.dp))
-                Text(
                     text = greetingHeadline,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = todayDateFormatted,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
         // 2. Permission Health Check Panels
         item(key = "permissions") {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 NotificationPermissionPanel()
                 ExactAlarmPermissionPanel()
                 BatteryOptimizationPermissionPanel()
@@ -203,34 +190,19 @@ fun HomeTab(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Bento 1: HERO FOCUS COMMAND (Large interactive gradient hero card)
-                Surface(
+                // Bento 1: Focus Hero Card
+                ScholarCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .bouncyClick(onClick = {
                             navController.navigate("pomodoro") { launchSingleTop = true }
                         }),
-                    shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(
-                        0.8.dp,
-                        if (isFocusRunning) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                    ),
-                    shadowElevation = if (isFocusRunning) 2.dp else 0.5.dp
+                    shape = RoundedCornerShape(20.dp)
                 ) {
-                    Box(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.primaryContainer,
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-                                    )
-                                )
-                            )
-                            .padding(18.dp)
+                            .padding(16.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -238,131 +210,99 @@ fun HomeTab(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                // Status Pill with pulse indicator
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = if (isFocusRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        if (isFocusRunning) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(7.dp)
-                                                    .clip(CircleShape)
-                                                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = pulseAlpha))
-                                            )
-                                        }
-                                        Text(
-                                            text = if (isFocusRunning) "FOCUS IN PROGRESS" else "FOCUS COMMAND SPACE",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (isFocusRunning) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-                                            letterSpacing = 0.5.sp
-                                        )
+                                    Icon(
+                                        imageVector = Icons.Rounded.Timer,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = if (isFocusRunning) "Focusing" else "Focus",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                Spacer(Modifier.height(6.dp))
+
+                                val minsLeft = pomodoroState.timeLeft / 60
+                                val secsLeft = pomodoroState.timeLeft % 60
+                                val focusDisplayTime = if (isFocusRunning) {
+                                    String.format(Locale.US, "%02d:%02d", minsLeft, secsLeft)
+                                } else {
+                                    if (todayFocusMinutes >= 60) {
+                                        "${todayFocusMinutes / 60}h ${todayFocusMinutes % 60}m"
+                                    } else {
+                                        "${todayFocusMinutes}m"
                                     }
                                 }
 
-                                Spacer(Modifier.height(8.dp))
-
-                                // Focus Time Typography
-                                val focusDisplayTime = if (todayFocusMinutes >= 60) {
-                                    "${todayFocusMinutes / 60}h ${todayFocusMinutes % 60}m"
-                                } else {
-                                    "${todayFocusMinutes}m"
-                                }
                                 Text(
                                     text = focusDisplayTime,
-                                    style = MaterialTheme.typography.headlineLarge,
-                                    fontWeight = FontWeight.Black,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
 
-                                Spacer(Modifier.height(4.dp))
-
-                                // Focus Subtitle & Progress Info
-                                val minsLeft = pomodoroState.timeLeft / 60
-                                val secsLeft = pomodoroState.timeLeft % 60
-                                val focusSubtitle = if (isFocusRunning) {
-                                    val timeStr = String.format(Locale.US, "%02d:%02d", minsLeft, secsLeft)
-                                    "Active timer • $timeStr remaining • Tap to view"
-                                } else {
-                                    val dailyGoalPct = ((todayFocusMinutes.toFloat() / 120f) * 100).coerceAtMost(100f).toInt()
-                                    "Daily Goal: 120m • $dailyGoalPct% completed"
-                                }
                                 Text(
-                                    text = focusSubtitle,
+                                    text = if (isFocusRunning) "Session in progress" else "Today's focus time",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-
-                                Spacer(Modifier.height(8.dp))
-
-                                // Clean Focus Progress Bar
-                                val focusProgress = remember(todayFocusMinutes) {
-                                    (todayFocusMinutes.toFloat() / 120f).coerceIn(0f, 1f)
-                                }
-                                LinearProgressIndicator(
-                                    progress = { focusProgress },
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.85f)
-                                        .height(5.dp)
-                                        .clip(RoundedCornerShape(3.dp)),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    trackColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
-                            Spacer(Modifier.width(12.dp))
-
-                            // Interactive Quick Start Button with Pulse Aura
-                            Box(contentAlignment = Alignment.Center) {
-                                if (isFocusRunning) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(64.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f * pulseAlpha))
-                                    )
-                                }
-                                FilledIconButton(
-                                    onClick = {
-                                        if (!isFocusRunning) {
-                                            val intent = Intent(context, PomodoroService::class.java).apply {
-                                                action = "START"
-                                                putExtra("workDuration", workDurationMin * 60)
-                                                putExtra("shortBreakDuration", 5 * 60)
-                                                putExtra("longBreakDuration", 15 * 60)
-                                                putExtra("periodSessions", 4)
-                                            }
-                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                context.startForegroundService(intent)
-                                            } else {
-                                                context.startService(intent)
-                                            }
+                            FilledIconButton(
+                                onClick = {
+                                    if (!isFocusRunning) {
+                                        val intent = Intent(context, PomodoroService::class.java).apply {
+                                            action = "START"
+                                            putExtra("workDuration", workDurationMin * 60)
+                                            putExtra("shortBreakDuration", 5 * 60)
+                                            putExtra("longBreakDuration", 15 * 60)
+                                            putExtra("periodSessions", 4)
                                         }
-                                        navController.navigate("pomodoro") { launchSingleTop = true }
-                                    },
-                                    modifier = Modifier.size(54.dp),
-                                    shape = CircleShape,
-                                    colors = IconButtonDefaults.filledIconButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                ) {
-                                    Icon(
-                                        imageVector = if (isFocusRunning) Icons.Rounded.GraphicEq else Icons.Rounded.PlayArrow,
-                                        contentDescription = if (isFocusRunning) "Focus in progress" else "Start Focus",
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            context.startForegroundService(intent)
+                                        } else {
+                                            context.startService(intent)
+                                        }
+                                    }
+                                    navController.navigate("pomodoro") { launchSingleTop = true }
+                                },
+                                modifier = Modifier.size(46.dp),
+                                shape = CircleShape,
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = if (isFocusRunning) Icons.Rounded.GraphicEq else Icons.Rounded.PlayArrow,
+                                    contentDescription = if (isFocusRunning) "Focus in progress" else "Start Focus",
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
                         }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        val focusProgress = remember(todayFocusMinutes) {
+                            (todayFocusMinutes.toFloat() / 120f).coerceIn(0f, 1f)
+                        }
+                        LinearProgressIndicator(
+                            progress = { focusProgress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp)),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
                     }
                 }
 
@@ -375,9 +315,9 @@ fun HomeTab(
                     ScholarCard(
                         modifier = Modifier
                             .weight(1f)
-                            .height(148.dp),
+                            .height(136.dp),
                         onClick = { onNavigateToTasks() },
-                        shape = RoundedCornerShape(22.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Column(
                             modifier = Modifier
@@ -392,43 +332,41 @@ fun HomeTab(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(36.dp)
-                                        .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(12.dp)),
+                                        .size(34.dp)
+                                        .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(10.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         Icons.Rounded.TaskAlt,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                                 IconButton(
                                     onClick = { showQuickAddTaskDialog = true },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(28.dp)
                                 ) {
                                     Icon(
                                         Icons.Rounded.AddCircleOutline,
                                         contentDescription = "Quick Add Task",
                                         tint = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.size(22.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
 
                             Column {
                                 Text(
-                                    text = "$pendingTasksCount Left",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Black,
+                                    text = "$pendingTasksCount Pending",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "$completedTasksCount completed (${(taskCompletionRate * 100).toInt()}%)",
+                                    text = "${(taskCompletionRate * 100).toInt()}% completed",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 LinearProgressIndicator(
@@ -448,9 +386,9 @@ fun HomeTab(
                     ScholarCard(
                         modifier = Modifier
                             .weight(1f)
-                            .height(148.dp),
+                            .height(136.dp),
                         onClick = { viewModel.setSelectedDashboardTab(1) },
-                        shape = RoundedCornerShape(22.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Column(
                             modifier = Modifier
@@ -465,38 +403,36 @@ fun HomeTab(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(36.dp)
-                                        .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(12.dp)),
+                                        .size(34.dp)
+                                        .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(10.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         Icons.AutoMirrored.Rounded.MenuBook,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.tertiary,
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                                 Icon(
                                     Icons.Rounded.ChevronRight,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
 
                             Column {
                                 Text(
                                     text = "${courses.size} Courses",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Black,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "${subjects.size} subjects linked",
+                                    text = "${subjects.size} subjects",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 Row(
@@ -505,22 +441,22 @@ fun HomeTab(
                                 ) {
                                     if (courses.isEmpty()) {
                                         Text(
-                                            text = "No courses yet",
+                                            text = "None added",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                         )
                                     } else {
-                                        courses.take(5).forEach { course ->
+                                        courses.take(4).forEach { course ->
                                             val cColor = parseHexColor(course.colorHex, MaterialTheme.colorScheme.primary)
                                             Box(
                                                 modifier = Modifier
-                                                    .size(8.dp)
+                                                    .size(7.dp)
                                                     .background(cColor, CircleShape)
                                             )
                                         }
-                                        if (courses.size > 5) {
+                                        if (courses.size > 4) {
                                             Text(
-                                                text = "+${courses.size - 5}",
+                                                text = "+${courses.size - 4}",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 fontSize = 10.sp,
@@ -541,8 +477,6 @@ fun HomeTab(
             val baseCalendar = Calendar.getInstance()
             baseCalendar.add(Calendar.DAY_OF_MONTH, selectedDateOffset)
             val currentDayOfWeekStr = SimpleDateFormat("EEEE", Locale.getDefault()).format(baseCalendar.time)
-            val todayDayNum = baseCalendar.get(Calendar.DAY_OF_MONTH)
-            val todayMonthStr = SimpleDateFormat("MMM", Locale.getDefault()).format(baseCalendar.time)
 
             val scheduledCourses = remember(courses, currentDayOfWeekStr) {
                 courses.filter { course ->
@@ -552,199 +486,131 @@ fun HomeTab(
 
             ScholarCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(20.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(18.dp)
+                        .padding(16.dp)
                 ) {
-                    // Timetable Header Row
+                    // Header Row
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(10.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Rounded.CalendarToday,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = when (selectedDateOffset) {
-                                        0 -> "Today's Timetable"
-                                        1 -> "Tomorrow's Timetable"
-                                        -1 -> "Yesterday's Timetable"
-                                        else -> "$currentDayOfWeekStr's Timetable"
-                                    },
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "$currentDayOfWeekStr, $todayMonthStr $todayDayNum",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                        Text(
+                            text = "Timetable",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
 
                         if (selectedDateOffset != 0) {
-                            BouncyTextButton(onClick = { selectedDateOffset = 0 }) {
+                            Text(
+                                text = "Today",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { selectedDateOffset = 0 }
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Minimal & Flat 5-Day Selector
+                    val todayCalendar = Calendar.getInstance()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        for (i in -2..2) {
+                            val calOffset = todayCalendar.clone() as Calendar
+                            val targetOffset = i
+                            calOffset.add(Calendar.DAY_OF_MONTH, targetOffset)
+                            val isSelected = selectedDateOffset == targetOffset
+                            val isToday = targetOffset == 0
+                            val dayLetter = SimpleDateFormat("EEE", Locale.getDefault()).format(calOffset.time)
+                            val dayNumber = calOffset.get(Calendar.DAY_OF_MONTH).toString()
+
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        when {
+                                            isSelected -> MaterialTheme.colorScheme.primary
+                                            isToday -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                                        }
+                                    )
+                                    .clickable { selectedDateOffset = targetOffset }
+                                    .padding(vertical = 8.dp)
+                            ) {
                                 Text(
-                                    "Reset to Today",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold
+                                    text = dayLetter,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = dayNumber,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // 5-Day Segmented Day Selector Row with Animated Indicator
-                    val todayCalendar = Calendar.getInstance()
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            for (i in -2..2) {
-                                val calOffset = todayCalendar.clone() as Calendar
-                                val targetOffset = i
-                                calOffset.add(Calendar.DAY_OF_MONTH, targetOffset)
-                                val isSelected = selectedDateOffset == targetOffset
-                                val isToday = targetOffset == 0
-                                val dayLetter = SimpleDateFormat("E", Locale.getDefault()).format(calOffset.time).take(3)
-                                val dayNumber = calOffset.get(Calendar.DAY_OF_MONTH).toString()
-
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(horizontal = 2.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(
-                                            if (isSelected) MaterialTheme.colorScheme.primary
-                                            else Color.Transparent
-                                        )
-                                        .clickable { selectedDateOffset = targetOffset }
-                                        .padding(vertical = 8.dp)
-                                ) {
-                                    Text(
-                                        text = dayLetter,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = dayNumber,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Black,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                                    )
-                                    if (isToday && !isSelected) {
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .size(4.dp)
-                                                .background(MaterialTheme.colorScheme.primary, CircleShape)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Lecture Cards or Clean Empty State
                     if (scheduledCourses.isEmpty()) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.EventBusy,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    modifier = Modifier.size(28.dp)
-                                )
-                                Text(
-                                    text = "No classes scheduled for $currentDayOfWeekStr",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "Enjoy your self-study time or take a well-deserved break.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                )
-                            }
+                            Text(
+                                text = "No classes scheduled",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     } else {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             scheduledCourses.forEach { course ->
                                 val courseColor = parseHexColor(course.colorHex, MaterialTheme.colorScheme.primary)
 
-                                ScholarCard(
-                                    shape = RoundedCornerShape(16.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onClick = {
-                                        navController.navigate("courseDetail/${course.id}") { launchSingleTop = true }
-                                    }
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            navController.navigate("courseDetail/${course.id}") { launchSingleTop = true }
+                                        }
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(12.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        // Course Initial Pill
                                         Box(
                                             modifier = Modifier
-                                                .size(42.dp)
-                                                .background(courseColor.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = course.name.take(2).uppercase(),
-                                                color = courseColor,
-                                                fontWeight = FontWeight.Black,
-                                                style = MaterialTheme.typography.titleSmall
-                                            )
-                                        }
+                                                .size(8.dp)
+                                                .background(courseColor, CircleShape)
+                                        )
 
-                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Spacer(modifier = Modifier.width(10.dp))
 
-                                        // Course Name, Code & Schedule Details
                                         Column(modifier = Modifier.weight(1f)) {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
@@ -752,90 +618,47 @@ fun HomeTab(
                                             ) {
                                                 Text(
                                                     text = course.name,
-                                                    style = MaterialTheme.typography.titleSmall,
-                                                    fontWeight = FontWeight.Bold,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.SemiBold,
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
                                                 if (course.code.isNotBlank()) {
-                                                    Surface(
-                                                        shape = RoundedCornerShape(6.dp),
-                                                        color = courseColor.copy(alpha = 0.12f)
-                                                    ) {
-                                                        Text(
-                                                            text = course.code,
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            fontWeight = FontWeight.Bold,
-                                                            color = courseColor,
-                                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
-                                                        )
-                                                    }
+                                                    Text(
+                                                        text = course.code,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
                                                 }
                                             }
 
-                                            // Schedule time / instructor badge
                                             val scheduleText = when {
                                                 course.scheduleStartTime.isNotBlank() && course.scheduleEndTime.isNotBlank() ->
                                                     "${course.scheduleStartTime} - ${course.scheduleEndTime}"
                                                 course.schedule.isNotBlank() -> course.schedule
                                                 else -> ""
                                             }
+                                            val details = listOfNotNull(
+                                                scheduleText.ifBlank { null },
+                                                course.instructor.ifBlank { null }
+                                            ).joinToString(" • ")
 
-                                            if (scheduleText.isNotBlank() || course.instructor.isNotBlank()) {
-                                                Spacer(modifier = Modifier.height(2.dp))
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                ) {
-                                                    if (scheduleText.isNotBlank()) {
-                                                        Row(
-                                                            verticalAlignment = Alignment.CenterVertically,
-                                                            horizontalArrangement = Arrangement.spacedBy(3.dp)
-                                                        ) {
-                                                            Icon(
-                                                                Icons.Rounded.Schedule,
-                                                                contentDescription = null,
-                                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                modifier = Modifier.size(13.dp)
-                                                            )
-                                                            Text(
-                                                                text = scheduleText,
-                                                                style = MaterialTheme.typography.bodySmall,
-                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                maxLines = 1,
-                                                                overflow = TextOverflow.Ellipsis
-                                                            )
-                                                        }
-                                                    }
-                                                    if (course.instructor.isNotBlank()) {
-                                                        Row(
-                                                            verticalAlignment = Alignment.CenterVertically,
-                                                            horizontalArrangement = Arrangement.spacedBy(3.dp)
-                                                        ) {
-                                                            Icon(
-                                                                Icons.Rounded.Person,
-                                                                contentDescription = null,
-                                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                modifier = Modifier.size(13.dp)
-                                                            )
-                                                            Text(
-                                                                text = course.instructor,
-                                                                style = MaterialTheme.typography.bodySmall,
-                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                maxLines = 1,
-                                                                overflow = TextOverflow.Ellipsis
-                                                            )
-                                                        }
-                                                    }
-                                                }
+                                            if (details.isNotBlank()) {
+                                                Text(
+                                                    text = details,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
                                             }
                                         }
 
                                         Icon(
                                             Icons.Rounded.ChevronRight,
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                            modifier = Modifier.size(18.dp)
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
                                 }
@@ -851,52 +674,27 @@ fun HomeTab(
             item(key = "today_classes_attendance_panel") {
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp)
+                    shape = RoundedCornerShape(20.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp)
+                            .padding(16.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(10.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.FactCheck,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Column {
-                                    Text(
-                                        text = "Today's Attendance",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Mark attendance for today's active lectures",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
+                            Text(
+                                text = "Today's Attendance",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
 
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = MaterialTheme.colorScheme.primaryContainer
                             ) {
                                 Text(
@@ -904,53 +702,33 @@ fun HomeTab(
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             pendingAttendanceCoursesToday.forEach { course ->
                                 val courseColor = parseHexColor(course.colorHex, MaterialTheme.colorScheme.primary)
 
                                 Surface(
-                                    shape = RoundedCornerShape(18.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                                    border = BorderStroke(1.dp, courseColor.copy(alpha = 0.25f)),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(12.dp),
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        // 4dp Colored Left Accent Bar
                                         Box(
                                             modifier = Modifier
-                                                .width(4.dp)
-                                                .height(40.dp)
-                                                .background(courseColor, RoundedCornerShape(2.dp))
+                                                .size(8.dp)
+                                                .background(courseColor, CircleShape)
                                         )
-
-                                        Spacer(Modifier.width(10.dp))
-
-                                        // Course Initial Icon Box
-                                        Box(
-                                            modifier = Modifier
-                                                .size(40.dp)
-                                                .background(courseColor.copy(alpha = 0.18f), RoundedCornerShape(12.dp)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = course.name.take(2).uppercase(),
-                                                color = courseColor,
-                                                fontWeight = FontWeight.Black,
-                                                style = MaterialTheme.typography.titleSmall
-                                            )
-                                        }
 
                                         Spacer(Modifier.width(10.dp))
 
@@ -963,8 +741,8 @@ fun HomeTab(
                                         ) {
                                             Text(
                                                 text = course.name,
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
@@ -981,7 +759,6 @@ fun HomeTab(
 
                                         Spacer(Modifier.width(8.dp))
 
-                                        // Quick Attendance Action Pills
                                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                             // Present Button
                                             FilledTonalIconButton(
@@ -989,15 +766,15 @@ fun HomeTab(
                                                     viewModel.addAttendanceRecord(course.id, todayStartMillis, "Present")
                                                 },
                                                 colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                                    containerColor = Color(0xFF34C759).copy(alpha = 0.18f),
+                                                    containerColor = Color(0xFF34C759).copy(alpha = 0.15f),
                                                     contentColor = Color(0xFF34C759)
                                                 ),
-                                                modifier = Modifier.size(36.dp)
+                                                modifier = Modifier.size(32.dp)
                                             ) {
                                                 Icon(
                                                     Icons.Rounded.Check,
                                                     contentDescription = "Present",
-                                                    modifier = Modifier.size(18.dp)
+                                                    modifier = Modifier.size(16.dp)
                                                 )
                                             }
 
@@ -1010,12 +787,12 @@ fun HomeTab(
                                                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
                                                     contentColor = MaterialTheme.colorScheme.error
                                                 ),
-                                                modifier = Modifier.size(36.dp)
+                                                modifier = Modifier.size(32.dp)
                                             ) {
                                                 Icon(
                                                     Icons.Rounded.Close,
                                                     contentDescription = "Absent",
-                                                    modifier = Modifier.size(18.dp)
+                                                    modifier = Modifier.size(16.dp)
                                                 )
                                             }
                                         }
@@ -1031,39 +808,22 @@ fun HomeTab(
         // 6. Urgent Upcoming Assignments
         if (upcomingAssigns.isNotEmpty()) {
             item(key = "upcoming_assignments_section") {
-                ScholarCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
-                    Column(modifier = Modifier.padding(18.dp)) {
+                ScholarCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(10.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.AssignmentLate,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                                Text(
-                                    text = "Assignments & Projects",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            Text(
+                                text = "Assignments",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
 
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = MaterialTheme.colorScheme.secondaryContainer
                             ) {
                                 Text(
@@ -1071,48 +831,49 @@ fun HomeTab(
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                 )
                             }
                         }
 
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(10.dp))
 
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             upcomingAssigns.forEach { assignment ->
                                 val catColor = parseHexColor(assignment.categoryColor, MaterialTheme.colorScheme.primary)
                                 val isOverdue = assignment.dueDateMillis in 1 until System.currentTimeMillis()
 
-                                ScholarCard(
-                                    shape = RoundedCornerShape(14.dp),
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(12.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(10.dp)
+                                                .size(8.dp)
                                                 .background(catColor, CircleShape)
                                         )
                                         Spacer(Modifier.width(10.dp))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = assignment.title,
-                                                style = MaterialTheme.typography.titleSmall,
+                                                style = MaterialTheme.typography.bodyMedium,
                                                 fontWeight = FontWeight.SemiBold,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
                                             if (assignment.dueDateMillis > 0) {
-                                                val df = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                                                val df = SimpleDateFormat("MMM d", Locale.getDefault())
                                                 val dueFormatted = df.format(Date(assignment.dueDateMillis))
                                                 Text(
-                                                    text = if (isOverdue) "Overdue • Due $dueFormatted" else "Due $dueFormatted",
-                                                    style = MaterialTheme.typography.labelSmall,
+                                                    text = if (isOverdue) "Overdue • $dueFormatted" else "Due $dueFormatted",
+                                                    style = MaterialTheme.typography.bodySmall,
                                                     fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Normal,
-                                                    color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
+                                                    color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             }
                                         }
@@ -1128,65 +889,53 @@ fun HomeTab(
         // 7. Active Prioritized Study Tasks
         if (activeTasks.isNotEmpty()) {
             item(key = "active_tasks_section") {
-                ScholarCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
-                    Column(modifier = Modifier.padding(18.dp)) {
+                ScholarCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(10.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.CheckCircleOutline,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.tertiary,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                                Text(
-                                    text = "Prioritized Tasks",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            BouncyTextButton(onClick = onNavigateToTasks) {
-                                Text(
-                                    "View All",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            Text(
+                                text = "Tasks",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "View All",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { onNavigateToTasks() }
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
                         }
 
                         Spacer(Modifier.height(10.dp))
 
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             activeTasks.forEach { task ->
-                                ScholarCard(
-                                    shape = RoundedCornerShape(14.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onClick = { viewModel.toggleTaskCompleted(task) }
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { viewModel.toggleTaskCompleted(task) }
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(12.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        // Animated Checkbox
+                                        // Minimal Checkbox
                                         Box(
                                             modifier = Modifier
-                                                .size(24.dp)
+                                                .size(20.dp)
                                                 .clip(CircleShape)
                                                 .border(
-                                                    width = 2.dp,
+                                                    width = 1.5.dp,
                                                     color = if (task.isCompleted) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline,
                                                     shape = CircleShape
                                                 )
@@ -1195,21 +944,17 @@ fun HomeTab(
                                                 ),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            androidx.compose.animation.AnimatedVisibility(
-                                                visible = task.isCompleted,
-                                                enter = fadeIn() + scaleIn(),
-                                                exit = fadeOut() + scaleOut()
-                                            ) {
+                                            if (task.isCompleted) {
                                                 Icon(
                                                     Icons.Rounded.Check,
                                                     contentDescription = null,
                                                     tint = Color.White,
-                                                    modifier = Modifier.size(14.dp)
+                                                    modifier = Modifier.size(12.dp)
                                                 )
                                             }
                                         }
 
-                                        Spacer(Modifier.width(12.dp))
+                                        Spacer(Modifier.width(10.dp))
 
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
@@ -1222,18 +967,11 @@ fun HomeTab(
                                                 overflow = TextOverflow.Ellipsis
                                             )
                                             if (task.tags.isNotBlank()) {
-                                                Spacer(Modifier.height(2.dp))
-                                                Surface(
-                                                    shape = RoundedCornerShape(6.dp),
-                                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-                                                ) {
-                                                    Text(
-                                                        text = task.tags,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                    )
-                                                }
+                                                Text(
+                                                    text = task.tags,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
                                             }
                                         }
                                     }
@@ -1262,30 +1000,30 @@ fun HomeTab(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                    .size(34.dp)
+                                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(10.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     Icons.AutoMirrored.Rounded.Notes,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                             Column {
                                 Text(
-                                    "Academic Scratchpad",
-                                    style = MaterialTheme.typography.titleSmall,
+                                    "Scratchpad",
+                                    style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    "Draft equations, quick formulas & thoughts",
-                                    style = MaterialTheme.typography.labelSmall,
+                                    "Draft equations, formulas & thoughts",
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -1293,7 +1031,8 @@ fun HomeTab(
                         Icon(
                             Icons.Rounded.ChevronRight,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }

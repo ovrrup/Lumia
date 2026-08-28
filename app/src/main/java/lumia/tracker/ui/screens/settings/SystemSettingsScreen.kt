@@ -76,7 +76,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             SettingsGroupCard(title = "Course & Subject Integration", icon = Icons.Rounded.Hub) {
                 SettingsToggleItem(
                     title = "Auto-Link by Name",
-                    subtitle = "Automatically couple Courses and study Subjects together if they share the same name (case-insensitive)",
+                    subtitle = "Link courses and subjects with matching names",
                     checked = autoLinkByName,
                     icon = Icons.Rounded.Link,
                     onCheckedChange = { viewModel.updateSystemAutoLinkByName(it) }
@@ -89,7 +89,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
                 SettingsToggleItem(
                     title = "Course Synergy Score",
-                    subtitle = "Measure alignments between lectures and study topics using a Dynamic Synergy Gauge",
+                    subtitle = "Track alignment between lectures and study topics",
                     checked = enableSynergy,
                     icon = Icons.Rounded.Star,
                     onCheckedChange = { viewModel.updateSystemEnableSynergy(it) }
@@ -101,8 +101,8 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 )
 
                 SettingsToggleItem(
-                    title = "Auto-Create Associated Subject",
-                    subtitle = "Automatically create a matching Study Subject whenever you enroll in/add a new academic Course",
+                    title = "Auto-Create Subject",
+                    subtitle = "Create matching subject when adding a course",
                     checked = autoCreateSubject,
                     icon = Icons.Rounded.School,
                     onCheckedChange = { viewModel.updateSystemAutoCreateSubject(it) }
@@ -115,7 +115,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
                 SettingsToggleItem(
                     title = "Fuse Subjects & Courses",
-                    subtitle = "Embed subjects within courses to simplify navigation. Turn off to display 'Subjects' as a separate bottom tab",
+                    subtitle = "Combine subjects into courses in navigation",
                     checked = fuseSubjectsCourses,
                     icon = Icons.Rounded.MergeType,
                     onCheckedChange = { viewModel.updateSystemFuseSubjectsCourses(it) }
@@ -127,8 +127,8 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 )
 
                 SettingsToggleItem(
-                    title = "Advanced Tasks & Linkages",
-                    subtitle = "Enable complex task tracking, including multi-linking with courses and assignments, plus advanced sorting",
+                    title = "Advanced Tasks",
+                    subtitle = "Enable multi-linking and advanced task sorting",
                     checked = advancedTasks,
                     icon = Icons.Rounded.ListAlt,
                     onCheckedChange = { viewModel.updateSystemAdvancedTasks(it) }
@@ -139,7 +139,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             SettingsGroupCard(title = "Timer & Productivity Log", icon = Icons.Rounded.Timer) {
                 SettingsToggleItem(
                     title = "Auto-Log Focus Sessions",
-                    subtitle = "Automatically register and log Pomodoro 'Work' sessions into the database productivity history log upon completion",
+                    subtitle = "Record completed Pomodoro sessions in history",
                     checked = pomodoroAutoLog,
                     icon = Icons.Rounded.History,
                     onCheckedChange = { viewModel.updateSystemPomodoroAutoLog(it) }
@@ -150,3 +150,4 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
         }
     }
 }
+

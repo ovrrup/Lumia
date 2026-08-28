@@ -35,21 +35,21 @@ object ScholarCardDefaults {
     val shape: Shape = RoundedCornerShape(22.dp)
     val heroShape: Shape = RoundedCornerShape(22.dp)
     val compactShape: Shape = RoundedCornerShape(16.dp)
-    val borderWidth: Dp = 0.8.dp
-    val shadowElevation: Dp = 0.5.dp
-    val tonalElevation: Dp = 1.dp
-    val heroShadowElevation: Dp = 1.5.dp
-    val heroTonalElevation: Dp = 3.dp
+    val borderWidth: Dp = 0.5.dp
+    val shadowElevation: Dp = 0.dp
+    val tonalElevation: Dp = 0.dp
+    val heroShadowElevation: Dp = 0.dp
+    val heroTonalElevation: Dp = 0.dp
 
     @Composable
     fun border(
-        color: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+        color: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
         width: Dp = borderWidth
     ): BorderStroke = BorderStroke(width = width, color = color)
 
     @Composable
     fun heroBorder(
-        color: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+        color: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
         width: Dp = borderWidth
     ): BorderStroke = BorderStroke(width = width, color = color)
 }

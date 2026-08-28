@@ -87,13 +87,13 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
             }
 
             // 1. Notification Persona & Voice Tone
-            SettingsGroupCard(title = "Notification Tone & Persona", icon = Icons.Rounded.RecordVoiceOver) {
+            SettingsGroupCard(title = "Notification Persona", icon = Icons.Rounded.RecordVoiceOver) {
                 SettingsToggleItem(
                     title = "Formal Notification Tone",
                     subtitle = if (notifFormalTone) {
-                        "Polite, respectful, and professional tone for reminders"
+                        "Polite, professional tone for reminders"
                     } else {
-                        "Strict, challenging, and taunting tone to push you harder!"
+                        "Direct, challenging tone for motivation"
                     },
                     checked = notifFormalTone,
                     icon = Icons.Rounded.RecordVoiceOver,
@@ -105,7 +105,7 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
             SettingsGroupCard(title = "Alert Subscriptions", icon = Icons.Rounded.Notifications) {
                 SettingsToggleItem(
                     title = "Deadline Alerts",
-                    subtitle = "Get notified before upcoming assignment and task deadlines",
+                    subtitle = "Reminders for upcoming assignment deadlines",
                     checked = notifEnableDeadlines,
                     icon = Icons.Rounded.Alarm,
                     onCheckedChange = { viewModel.updateNotifEnableDeadlines(it) }
@@ -117,8 +117,8 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
                 )
 
                 SettingsToggleItem(
-                    title = "Daily Digest Summary",
-                    subtitle = "A single unified morning summary of your schedule and tasks",
+                    title = "Daily Digest",
+                    subtitle = "Morning schedule and task summary",
                     checked = notifEnableDailyDigest,
                     icon = Icons.Rounded.Summarize,
                     onCheckedChange = { viewModel.updateNotifEnableDailyDigest(it) }
@@ -130,8 +130,8 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
                 )
 
                 SettingsToggleItem(
-                    title = "Class & Attendance Reminders",
-                    subtitle = "Get notified when academic lectures start and end to log attendance",
+                    title = "Class Reminders",
+                    subtitle = "Alerts before lecture sessions start",
                     checked = notifEnableClasses,
                     icon = Icons.Rounded.School,
                     onCheckedChange = { viewModel.updateNotifEnableClasses(it) }
@@ -142,3 +142,4 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
         }
     }
 }
+

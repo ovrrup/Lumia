@@ -190,22 +190,12 @@ fun PomodoroScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "FOCUS SPACE",
-                            fontWeight = FontWeight.Black,
-                            style = MaterialTheme.typography.titleMedium,
-                            letterSpacing = 1.8.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        val cycleIndex = (pomodoroState.sessionsCompleted % periodSessions) + 1
-                        Text(
-                            text = "Session $cycleIndex of $periodSessions • Cycle ${(pomodoroState.sessionsCompleted / periodSessions) + 1}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = ringColor,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Text(
+                        text = "Focus",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 },
                 navigationIcon = {
                     BouncyIconButton(onClick = { navController.popBackStack() }) {

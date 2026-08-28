@@ -81,108 +81,53 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Hero Guidance Card
-            ScholarCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.AutoAwesome,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Scientific Palette Generator",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Pick a preset or enter a custom hex color to compute complementary container, background, surface, and text shades.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
             // 1. Preset Palettes
-            SettingsGroupCard(title = "Curated Color Presets", icon = Icons.Rounded.Palette) {
-                Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    Text(
-                        text = "Instant Harmonic Palettes",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+            SettingsGroupCard(title = "Curated Presets", icon = Icons.Rounded.Palette) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    val presets = listOf(
+                        Triple("Cyber Glow", "#00A896", Color(0xFF00A896)),
+                        Triple("Amethyst", "#7B2CBF", Color(0xFF7B2CBF)),
+                        Triple("Emerald", "#2D6A4F", Color(0xFF2D6A4F)),
+                        Triple("Sunset", "#FF7043", Color(0xFFFF7043)),
+                        Triple("Midnight", "#1A237E", Color(0xFF1A237E)),
+                        Triple("Rose", "#D81B60", Color(0xFFD81B60)),
+                        Triple("Cappuccino", "#8D6E63", Color(0xFF8D6E63)),
+                        Triple("Lavender", "#9575CD", Color(0xFF9575CD))
                     )
-                    Text(
-                        text = "Tap any preset below to automatically populate all color slots",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 10.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        val presets = listOf(
-                            Triple("Cyber Glow", "#00A896", Color(0xFF00A896)),
-                            Triple("Amethyst", "#7B2CBF", Color(0xFF7B2CBF)),
-                            Triple("Emerald Forest", "#2D6A4F", Color(0xFF2D6A4F)),
-                            Triple("Sunset Orange", "#FF7043", Color(0xFFFF7043)),
-                            Triple("Midnight Ocean", "#1A237E", Color(0xFF1A237E)),
-                            Triple("Rose Petal", "#D81B60", Color(0xFFD81B60)),
-                            Triple("Cappuccino", "#8D6E63", Color(0xFF8D6E63)),
-                            Triple("Lavender Bliss", "#9575CD", Color(0xFF9575CD))
-                        )
-                        presets.forEach { (name, hex, previewColor) ->
-                            Surface(
-                                modifier = Modifier.clickable {
-                                    viewModel.generatePaletteFromPrimaryHex(hex)
-                                },
-                                shape = RoundedCornerShape(16.dp),
-                                color = previewColor.copy(alpha = 0.12f),
-                                border = BorderStroke(
-                                    width = 1.dp,
-                                    color = previewColor.copy(alpha = 0.5f)
-                                )
+                    presets.forEach { (name, hex, previewColor) ->
+                        Surface(
+                            modifier = Modifier.clickable {
+                                viewModel.generatePaletteFromPrimaryHex(hex)
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            color = previewColor.copy(alpha = 0.12f),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = previewColor.copy(alpha = 0.4f)
+                            )
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(14.dp)
-                                            .background(previewColor, CircleShape)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        name,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .background(previewColor, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    name,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
                     }
@@ -192,25 +137,25 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
             // 2. Primary Color & Auto-Generate
             SettingsGroupCard(title = "Primary Hex & Generator", icon = Icons.Rounded.ColorLens) {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    HexColorInputItem("Primary Shade", customPrimary) {
+                    HexColorInputItem("Primary", customPrimary) {
                         viewModel.updateCustomColor("primary", it)
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     BouncyButton(
                         onClick = { viewModel.generatePaletteFromPrimaryHex(customPrimary) },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.AutoAwesome,
-                            contentDescription = "Magic Wand",
+                            contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Generate Cohesive Palette from Primary",
+                            "Generate Harmonic Palette",
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -224,35 +169,35 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
                     modifier = Modifier.padding(vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    HexColorInputItem("Secondary / Header Shade", customPrimaryContainer) {
+                    HexColorInputItem("Container", customPrimaryContainer) {
                         viewModel.updateCustomColor("primary_container", it)
                     }
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
-                        modifier = Modifier.padding(vertical = 4.dp)
+                        modifier = Modifier.padding(vertical = 2.dp)
                     )
-                    HexColorInputItem("Background Shade", customBackground) {
+                    HexColorInputItem("Background", customBackground) {
                         viewModel.updateCustomColor("background", it)
                     }
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
-                        modifier = Modifier.padding(vertical = 4.dp)
+                        modifier = Modifier.padding(vertical = 2.dp)
                     )
-                    HexColorInputItem("Surface / Panel Shade", customSurface) {
+                    HexColorInputItem("Surface", customSurface) {
                         viewModel.updateCustomColor("surface", it)
                     }
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
-                        modifier = Modifier.padding(vertical = 4.dp)
+                        modifier = Modifier.padding(vertical = 2.dp)
                     )
-                    HexColorInputItem("Text Shade", customText) {
+                    HexColorInputItem("Text", customText) {
                         viewModel.updateCustomColor("text", it)
                     }
                 }
             }
 
             // 4. Live Palette Preview
-            SettingsGroupCard(title = "Live Palette Preview", icon = Icons.Rounded.Visibility) {
+            SettingsGroupCard(title = "Live Preview", icon = Icons.Rounded.Visibility) {
                 val parsedPrimary = remember(customPrimary) {
                     try { Color(android.graphics.Color.parseColor(customPrimary)) } catch (e: Exception) { Color(0xFF3197D6) }
                 }
@@ -272,54 +217,53 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    shape = RoundedCornerShape(18.dp),
+                        .padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = parsedBg,
                     border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(14.dp)) {
                         Text(
-                            text = "Theme Canvas Sample",
-                            style = MaterialTheme.typography.titleMedium,
+                            text = "Sample Preview",
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = parsedText
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         Surface(
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                             color = parsedSurface,
-                            shadowElevation = 1.dp,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
-                                modifier = Modifier.padding(14.dp),
+                                modifier = Modifier.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Sample Surface Card",
+                                        text = "Surface Card",
                                         fontWeight = FontWeight.SemiBold,
                                         color = parsedText,
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                     Text(
-                                        text = "Subtle card content text preview",
+                                        text = "Text content preview",
                                         color = parsedText.copy(alpha = 0.7f),
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
                                 Surface(
-                                    shape = RoundedCornerShape(10.dp),
+                                    shape = RoundedCornerShape(8.dp),
                                     color = parsedPrimary
                                 ) {
                                     Text(
                                         text = "Action",
                                         color = Color.White,
                                         fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                     )
                                 }
                             }
@@ -332,3 +276,4 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
         }
     }
 }
+

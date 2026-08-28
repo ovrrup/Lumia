@@ -28,6 +28,8 @@ import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyFloatingActionButton
 import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.ui.screens.study.components.SubjectItemCard
+import lumia.tracker.ui.screens.study.components.StudyHeaderStatCard
+import lumia.tracker.ui.screens.study.components.StudyEmptyStateCard
 import lumia.tracker.ui.screens.study.dialogs.EditSubjectDialog
 import lumia.tracker.ui.theme.animateItemEntry
 import lumia.tracker.viewmodel.ScholarViewModel
@@ -59,7 +61,9 @@ fun SubjectsTab(
     val totalSubjects = subjects.size
     val totalTopics = allTopics.size
     val completedTopics = remember(allTopics) { allTopics.count { it.isCompleted } }
-    val overallCoveragePct = if (totalTopics > 0) ((completedTopics.toFloat() / totalTopics) * 100).toInt() else 0
+    val overallCoveragePct = remember(totalTopics, completedTopics) {
+        if (totalTopics > 0) ((completedTopics.toFloat() / totalTopics) * 100).toInt() else null
+    }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -76,14 +80,13 @@ fun SubjectsTab(
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            clipToPadding = false,
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
                 top = bottomPadding.calculateTopPadding() + 12.dp,
                 bottom = bottomPadding.calculateBottomPadding() + 80.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Header Stats Row
             if (subjects.isNotEmpty()) {
@@ -103,7 +106,7 @@ fun SubjectsTab(
 
                         // Syllabus Coverage Card
                         StudyHeaderStatCard(
-                            value = if (totalTopics > 0) "$overallCoveragePct%" else "$totalTopics Topics",
+                            value = if (overallCoveragePct != null) "$overallCoveragePct%" else "0%",
                             label = "Coverage",
                             icon = Icons.Rounded.PieChart,
                             iconColor = MaterialTheme.colorScheme.primary,
@@ -119,7 +122,7 @@ fun SubjectsTab(
                     StudyEmptyStateCard(
                         icon = Icons.AutoMirrored.Rounded.MenuBook,
                         title = "No subjects registered yet",
-                        description = "Organize your academic curriculum by subject and break chapters down into syllabus topics.",
+                        description = "Organize your academic curriculum and track syllabus topics by subject.",
                         buttonText = "Create First Subject",
                         onButtonClick = onAddSubjectClick,
                         modifier = Modifier.padding(top = 16.dp),

@@ -88,14 +88,13 @@ fun CoursesTab(
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            clipToPadding = false,
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
                 top = bottomPadding.calculateTopPadding() + 12.dp,
                 bottom = bottomPadding.calculateBottomPadding() + 80.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Header Stats Row
             if (courses.isNotEmpty()) {
@@ -133,7 +132,7 @@ fun CoursesTab(
                     StudyEmptyStateCard(
                         icon = Icons.AutoMirrored.Rounded.MenuBook,
                         title = "No courses enrolled yet",
-                        description = "Add your university or school courses to track lectures, attendance, assignments, and curriculum.",
+                        description = "Add your courses to track lectures, attendance, and assignments.",
                         buttonText = "Add Your First Course",
                         onButtonClick = onAddCourseClick,
                         modifier = Modifier.padding(top = 16.dp),
