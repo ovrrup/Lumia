@@ -163,6 +163,15 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        fun deleteDatabaseFiles(context: Context, profileId: String) {
+            val dbName = if (profileId == ProfileManager.DEFAULT_PROFILE_ID) {
+                "scholar_sync_database"
+            } else {
+                "scholar_sync_$profileId"
+            }
+            context.deleteDatabase(dbName)
+        }
+
         fun clearInstances() {
             synchronized(this) {
                 instances.values.forEach { db ->

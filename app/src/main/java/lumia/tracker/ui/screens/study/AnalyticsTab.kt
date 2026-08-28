@@ -585,5 +585,8 @@ fun AnalyticsTab(
                 }
             }
         }
+    }
 }
+
+
 
