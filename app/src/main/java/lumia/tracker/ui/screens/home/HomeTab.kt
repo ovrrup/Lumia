@@ -56,6 +56,32 @@ private fun parseHexColor(hex: String?, fallback: Color): Color {
 }
 
 /**
+ * Parses time string like '10:00 AM' or '14:30' into epoch milliseconds for the target calendar date.
+ */
+private fun parseTimeToDayMillis(timeStr: String, baseCal: Calendar): Long? {
+    if (timeStr.isBlank()) return null
+    val trimmed = timeStr.trim().uppercase(Locale.US)
+    val formats = listOf("hh:mm a", "h:mm a", "HH:mm", "H:mm")
+    for (format in formats) {
+        try {
+            val sdf = SimpleDateFormat(format, Locale.US)
+            sdf.isLenient = true
+            val date = sdf.parse(trimmed)
+            if (date != null) {
+                val timeCal = Calendar.getInstance().apply { time = date }
+                return (baseCal.clone() as Calendar).apply {
+                    set(Calendar.HOUR_OF_DAY, timeCal.get(Calendar.HOUR_OF_DAY))
+                    set(Calendar.MINUTE, timeCal.get(Calendar.MINUTE))
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+            }
+        } catch (_: Exception) {}
+    }
+    return null
+}
+
+/**
  * HomeTab - Interactive Academic Command Center with modern Bento Grid layout.
  * Combines personalized time-aware greeting, 1-tap focus session launching,
  * interactive task objectives, dynamic timetable browser, real-time attendance recording,
@@ -472,17 +498,24 @@ fun HomeTab(
             }
         }
 
-        // 4. Daily Class Schedule & Timetable Browser
+        // 4. Interactive Daily Class Schedule & Timetable Calendar
         item(key = "today_classes_calendar") {
             val baseCalendar = Calendar.getInstance()
             baseCalendar.add(Calendar.DAY_OF_MONTH, selectedDateOffset)
             val currentDayOfWeekStr = SimpleDateFormat("EEEE", Locale.getDefault()).format(baseCalendar.time)
+            val currentShortDayStr = SimpleDateFormat("EEE", Locale.getDefault()).format(baseCalendar.time)
 
-            val scheduledCourses = remember(courses, currentDayOfWeekStr) {
+            val scheduledCourses = remember(courses, currentDayOfWeekStr, currentShortDayStr) {
                 courses.filter { course ->
-                    course.scheduleDays.contains(currentDayOfWeekStr, ignoreCase = true)
+                    course.scheduleDays.isNotBlank() && (
+                        course.scheduleDays.contains(currentDayOfWeekStr, ignoreCase = true) ||
+                        course.scheduleDays.contains(currentShortDayStr, ignoreCase = true)
+                    )
                 }
             }
+
+            val isSelectedDayToday = selectedDateOffset == 0
+            val currentTimeMillis = System.currentTimeMillis()
 
             ScholarCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -493,49 +526,99 @@ fun HomeTab(
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    // Header Row
+                    // 1. Header with Title, Summary, and Quick Today Reset
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = "Timetable",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        if (selectedDateOffset != 0) {
+                        Column {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.CalendarToday,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = "Timetable & Schedule",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                             Text(
-                                text = "Today",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .clickable { selectedDateOffset = 0 }
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                text = when {
+                                    scheduledCourses.isEmpty() -> "No classes scheduled"
+                                    scheduledCourses.size == 1 -> "1 class on ${SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(baseCalendar.time)}"
+                                    else -> "${scheduledCourses.size} classes • ${SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(baseCalendar.time)}"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+
+                        if (!isSelectedDayToday) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { selectedDateOffset = 0 }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.Today,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Text(
+                                        text = "Today",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                    // Minimal & Flat 5-Day Selector
+                    // 2. 7-Day Rolling Calendar Strip with Course Color Dots
                     val todayCalendar = Calendar.getInstance()
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        for (i in -2..2) {
+                        for (i in -2..4) {
                             val calOffset = todayCalendar.clone() as Calendar
                             val targetOffset = i
                             calOffset.add(Calendar.DAY_OF_MONTH, targetOffset)
                             val isSelected = selectedDateOffset == targetOffset
                             val isToday = targetOffset == 0
+
                             val dayLetter = SimpleDateFormat("EEE", Locale.getDefault()).format(calOffset.time)
                             val dayNumber = calOffset.get(Calendar.DAY_OF_MONTH).toString()
+                            val fullDayName = SimpleDateFormat("EEEE", Locale.getDefault()).format(calOffset.time)
+
+                            // Find courses scheduled for this specific day to render dots
+                            val dayCourses = remember(courses, fullDayName, dayLetter) {
+                                courses.filter { c ->
+                                    c.scheduleDays.isNotBlank() && (
+                                        c.scheduleDays.contains(fullDayName, ignoreCase = true) ||
+                                        c.scheduleDays.contains(dayLetter, ignoreCase = true)
+                                    )
+                                }
+                            }
 
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -545,7 +628,7 @@ fun HomeTab(
                                     .background(
                                         when {
                                             isSelected -> MaterialTheme.colorScheme.primary
-                                            isToday -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                            isToday -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
                                             else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                                         }
                                     )
@@ -553,10 +636,11 @@ fun HomeTab(
                                     .padding(vertical = 8.dp)
                             ) {
                                 Text(
-                                    text = dayLetter,
+                                    text = dayLetter.take(3),
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 11.sp
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
@@ -565,234 +649,336 @@ fun HomeTab(
                                     fontWeight = FontWeight.Bold,
                                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                                 )
-                            }
-                        }
-                    }
+                                Spacer(modifier = Modifier.height(4.dp))
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Lecture Cards or Clean Empty State
-                    if (scheduledCourses.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No classes scheduled",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            scheduledCourses.forEach { course ->
-                                val courseColor = parseHexColor(course.colorHex, MaterialTheme.colorScheme.primary)
-
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            navController.navigate("courseDetail/${course.id}") { launchSingleTop = true }
-                                        }
+                                // Course Color Dots Row
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.height(5.dp)
                                 ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .background(courseColor, CircleShape)
-                                        )
-
-                                        Spacer(modifier = Modifier.width(10.dp))
-
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                            ) {
-                                                Text(
-                                                    text = course.name,
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                                if (course.code.isNotBlank()) {
-                                                    Text(
-                                                        text = course.code,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                }
+                                    if (dayCourses.isEmpty()) {
+                                        Spacer(modifier = Modifier.size(4.dp))
+                                    } else {
+                                        dayCourses.take(3).forEach { dc ->
+                                            val dotColor = if (isSelected) {
+                                                MaterialTheme.colorScheme.onPrimary
+                                            } else {
+                                                parseHexColor(dc.colorHex, MaterialTheme.colorScheme.primary)
                                             }
-
-                                            val scheduleText = when {
-                                                course.scheduleStartTime.isNotBlank() && course.scheduleEndTime.isNotBlank() ->
-                                                    "${course.scheduleStartTime} - ${course.scheduleEndTime}"
-                                                course.schedule.isNotBlank() -> course.schedule
-                                                else -> ""
-                                            }
-                                            val details = listOfNotNull(
-                                                scheduleText.ifBlank { null },
-                                                course.instructor.ifBlank { null }
-                                            ).joinToString(" • ")
-
-                                            if (details.isNotBlank()) {
-                                                Text(
-                                                    text = details,
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(4.dp)
+                                                    .background(dotColor, CircleShape)
+                                            )
                                         }
-
-                                        Icon(
-                                            Icons.Rounded.ChevronRight,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                            modifier = Modifier.size(16.dp)
-                                        )
                                     }
                                 }
                             }
                         }
                     }
-                }
-            }
-        }
 
-        // 5. Today's Pending Classes & Attendance Panel
-        if (pendingAttendanceCoursesToday.isNotEmpty()) {
-            item(key = "today_classes_attendance_panel") {
-                ScholarCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // 3. Dynamic Lecture Cards with Live Timing & Inline Attendance
+                    if (scheduledCourses.isEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = "Today's Attendance",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 18.dp, horizontal = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
+                                Icon(
+                                    Icons.Rounded.EventBusy,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(28.dp)
+                                )
                                 Text(
-                                    text = "${pendingAttendanceCoursesToday.size} pending",
+                                    text = "No Lectures Scheduled",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "Enjoy your free day or prepare ahead for upcoming assignments.",
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            pendingAttendanceCoursesToday.forEach { course ->
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            scheduledCourses.forEach { course ->
                                 val courseColor = parseHexColor(course.colorHex, MaterialTheme.colorScheme.primary)
 
+                                // Parse lecture start and end millis for today
+                                val startMillis = remember(course.scheduleStartTime, isSelectedDayToday) {
+                                    if (isSelectedDayToday && course.scheduleStartTime.isNotBlank()) {
+                                        parseTimeToDayMillis(course.scheduleStartTime, baseCalendar)
+                                    } else null
+                                }
+                                val endMillis = remember(course.scheduleEndTime, isSelectedDayToday) {
+                                    if (isSelectedDayToday && course.scheduleEndTime.isNotBlank()) {
+                                        parseTimeToDayMillis(course.scheduleEndTime, baseCalendar)
+                                    } else null
+                                }
+
+                                val isLiveNow = isSelectedDayToday && startMillis != null && endMillis != null &&
+                                        currentTimeMillis in startMillis..endMillis
+                                val isUpcoming = isSelectedDayToday && startMillis != null && currentTimeMillis < startMillis
+                                val isPast = isSelectedDayToday && endMillis != null && currentTimeMillis > endMillis
+
+                                val liveProgress = if (isLiveNow && startMillis != null && endMillis != null && endMillis > startMillis) {
+                                    ((currentTimeMillis - startMillis).toFloat() / (endMillis - startMillis)).coerceIn(0f, 1f)
+                                } else 0f
+
+                                // Check attendance record for this course on selected date
+                                val selectedDateStartMillis = remember(selectedDateOffset) {
+                                    (baseCalendar.clone() as Calendar).apply {
+                                        set(Calendar.HOUR_OF_DAY, 0)
+                                        set(Calendar.MINUTE, 0)
+                                        set(Calendar.SECOND, 0)
+                                        set(Calendar.MILLISECOND, 0)
+                                    }.timeInMillis
+                                }
+                                val existingAttendance = allAttendanceRecords.firstOrNull {
+                                    it.courseId == course.id && it.dateMillis == selectedDateStartMillis
+                                }
+
+                                // Check schedule conflict with other courses on this day
+                                val hasConflict = remember(scheduledCourses, course) {
+                                    scheduledCourses.any { other ->
+                                        other.id != course.id &&
+                                        other.scheduleStartTime.isNotBlank() &&
+                                        other.scheduleStartTime.equals(course.scheduleStartTime, ignoreCase = true)
+                                    }
+                                }
+
                                 Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = if (isLiveNow) {
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                                    },
+                                    border = if (isLiveNow) {
+                                        BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
+                                    } else null,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Row(
+                                    Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                            .padding(12.dp)
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .background(courseColor, CircleShape)
-                                        )
-
-                                        Spacer(Modifier.width(10.dp))
-
-                                        Column(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clickable {
-                                                    navController.navigate("courseDetail/${course.id}") { launchSingleTop = true }
-                                                }
+                                        // Main Row: Color stripe, Title, Schedule, and Actions
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(
-                                                text = course.name,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.SemiBold,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(10.dp)
+                                                    .background(courseColor, CircleShape)
                                             )
-                                            if (course.schedule.isNotBlank()) {
-                                                Text(
-                                                    text = course.schedule,
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
+
+                                            Spacer(modifier = Modifier.width(10.dp))
+
+                                            Column(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clickable {
+                                                        navController.navigate("courseDetail/${course.id}") { launchSingleTop = true }
+                                                    }
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    Text(
+                                                        text = course.name,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    if (course.code.isNotBlank()) {
+                                                        Text(
+                                                            text = course.code,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
+                                                }
+
+                                                val scheduleText = when {
+                                                    course.scheduleStartTime.isNotBlank() && course.scheduleEndTime.isNotBlank() ->
+                                                        "${course.scheduleStartTime} - ${course.scheduleEndTime}"
+                                                    course.schedule.isNotBlank() -> course.schedule
+                                                    else -> ""
+                                                }
+                                                val details = listOfNotNull(
+                                                    scheduleText.ifBlank { null },
+                                                    course.instructor.ifBlank { null }
+                                                ).joinToString(" • ")
+
+                                                if (details.isNotBlank()) {
+                                                    Text(
+                                                        text = details,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.width(8.dp))
+
+                                            // Quick Attendance Buttons or Status Badge
+                                            if (existingAttendance != null) {
+                                                val statusColor = when (existingAttendance.status.lowercase()) {
+                                                    "present" -> Color(0xFF34C759)
+                                                    "absent" -> MaterialTheme.colorScheme.error
+                                                    "late" -> Color(0xFFFF9500)
+                                                    else -> MaterialTheme.colorScheme.primary
+                                                }
+                                                Surface(
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = statusColor.copy(alpha = 0.15f),
+                                                    modifier = Modifier.clickable {
+                                                        // Toggle between Present -> Absent -> Late
+                                                        val nextStatus = when (existingAttendance.status.lowercase()) {
+                                                            "present" -> "Absent"
+                                                            "absent" -> "Late"
+                                                            else -> "Present"
+                                                        }
+                                                        viewModel.addAttendanceRecord(course.id, selectedDateStartMillis, nextStatus)
+                                                    }
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        Icon(
+                                                            if (existingAttendance.status.equals("present", true)) Icons.Rounded.Check else Icons.Rounded.Edit,
+                                                            contentDescription = null,
+                                                            tint = statusColor,
+                                                            modifier = Modifier.size(12.dp)
+                                                        )
+                                                        Text(
+                                                            text = existingAttendance.status,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = statusColor
+                                                        )
+                                                    }
+                                                }
+                                            } else {
+                                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                    // Quick 1-tap Present
+                                                    FilledTonalIconButton(
+                                                        onClick = {
+                                                            viewModel.addAttendanceRecord(course.id, selectedDateStartMillis, "Present")
+                                                        },
+                                                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                                            containerColor = Color(0xFF34C759).copy(alpha = 0.15f),
+                                                            contentColor = Color(0xFF34C759)
+                                                        ),
+                                                        modifier = Modifier.size(32.dp)
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Rounded.Check,
+                                                            contentDescription = "Present",
+                                                            modifier = Modifier.size(16.dp)
+                                                        )
+                                                    }
+
+                                                    // Quick 1-tap Absent
+                                                    FilledTonalIconButton(
+                                                        onClick = {
+                                                            viewModel.addAttendanceRecord(course.id, selectedDateStartMillis, "Absent")
+                                                        },
+                                                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                                                            contentColor = MaterialTheme.colorScheme.error
+                                                        ),
+                                                        modifier = Modifier.size(32.dp)
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Rounded.Close,
+                                                            contentDescription = "Absent",
+                                                            modifier = Modifier.size(16.dp)
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
 
-                                        Spacer(Modifier.width(8.dp))
-
-                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            // Present Button
-                                            FilledTonalIconButton(
-                                                onClick = {
-                                                    viewModel.addAttendanceRecord(course.id, todayStartMillis, "Present")
-                                                },
-                                                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                                    containerColor = Color(0xFF34C759).copy(alpha = 0.15f),
-                                                    contentColor = Color(0xFF34C759)
-                                                ),
-                                                modifier = Modifier.size(32.dp)
+                                        // Status Pill / Live lecture countdown / Conflict Alert
+                                        if (isLiveNow || hasConflict) {
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Icon(
-                                                    Icons.Rounded.Check,
-                                                    contentDescription = "Present",
-                                                    modifier = Modifier.size(16.dp)
-                                                )
+                                                if (isLiveNow) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(6.dp)
+                                                                .background(Color(0xFF34C759), CircleShape)
+                                                        )
+                                                        val minutesLeft = if (endMillis != null) {
+                                                            ((endMillis - currentTimeMillis) / 60000).coerceAtLeast(1)
+                                                        } else 0
+                                                        Text(
+                                                            text = "Live Now • $minutesLeft min left",
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = Color(0xFF34C759)
+                                                        )
+                                                    }
+                                                }
+
+                                                if (hasConflict) {
+                                                    Surface(
+                                                        shape = RoundedCornerShape(6.dp),
+                                                        color = Color(0xFFFF9500).copy(alpha = 0.15f)
+                                                    ) {
+                                                        Text(
+                                                            text = "Time Overlap",
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = Color(0xFFFF9500),
+                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        )
+                                                    }
+                                                }
                                             }
 
-                                            // Absent Button
-                                            FilledTonalIconButton(
-                                                onClick = {
-                                                    viewModel.addAttendanceRecord(course.id, todayStartMillis, "Absent")
-                                                },
-                                                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
-                                                    contentColor = MaterialTheme.colorScheme.error
-                                                ),
-                                                modifier = Modifier.size(32.dp)
-                                            ) {
-                                                Icon(
-                                                    Icons.Rounded.Close,
-                                                    contentDescription = "Absent",
-                                                    modifier = Modifier.size(16.dp)
+                                            if (isLiveNow && liveProgress > 0f) {
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                LinearProgressIndicator(
+                                                    progress = { liveProgress },
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(3.dp)
+                                                        .clip(RoundedCornerShape(2.dp)),
+                                                    color = Color(0xFF34C759),
+                                                    trackColor = Color(0xFF34C759).copy(alpha = 0.2f)
                                                 )
                                             }
                                         }

@@ -135,7 +135,48 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 )
             }
 
-            // 2. Pomodoro & Session Logging
+            // 2. Automated Reminders & Smart Alerts
+            val enableDeadlines by viewModel.notifEnableDeadlines.collectAsStateWithLifecycle()
+            val enableClasses by viewModel.notifEnableClasses.collectAsStateWithLifecycle()
+            val enableDailyDigest by viewModel.notifEnableDailyDigest.collectAsStateWithLifecycle()
+
+            SettingsGroupCard(title = "Smart Automations & Alerts", icon = Icons.Rounded.NotificationsActive) {
+                SettingsToggleItem(
+                    title = "Class Start & Attendance Alerts",
+                    subtitle = "10m heads-up before lecture and 1-tap post-class attendance prompts",
+                    checked = enableClasses,
+                    icon = Icons.Rounded.Alarm,
+                    onCheckedChange = { viewModel.updateNotifEnableClasses(it) }
+                )
+
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+
+                SettingsToggleItem(
+                    title = "Multi-Tier Deadline Alerts",
+                    subtitle = "Automated high-priority reminders for tasks and assignments",
+                    checked = enableDeadlines,
+                    icon = Icons.Rounded.NotificationImportant,
+                    onCheckedChange = { viewModel.updateNotifEnableDeadlines(it) }
+                )
+
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+
+                SettingsToggleItem(
+                    title = "Daily Digest Morning Summary",
+                    subtitle = "Daily morning briefing of approaching deadlines in next 24 hours",
+                    checked = enableDailyDigest,
+                    icon = Icons.Rounded.Today,
+                    onCheckedChange = { viewModel.updateNotifEnableDailyDigest(it) }
+                )
+            }
+
+            // 3. Pomodoro & Session Logging
             SettingsGroupCard(title = "Timer & Productivity Log", icon = Icons.Rounded.Timer) {
                 SettingsToggleItem(
                     title = "Auto-Log Focus Sessions",

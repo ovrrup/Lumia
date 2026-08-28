@@ -867,6 +867,33 @@ private fun MeshCockpitHeader(
                     )
                 }
             }
+
+            // Quick Actions in Cockpit
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                BouncyButton(
+                    onClick = {
+                        syncManager.triggerAutoSyncToAllTrustedPeers()
+                        Toast.makeText(context, "Synchronizing mesh fleet...", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Rounded.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Sync Fleet Now")
+                }
+
+                BouncyOutlinedButton(
+                    onClick = onOpenPairSheet,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Rounded.QrCode, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Pair Device")
+                }
+            }
         }
     }
 }

@@ -1747,6 +1747,21 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateTask(task: Task) {
         viewModelScope.launch {
             repository.updateTask(task)
+            if (task.dueDateMillis != null) {
+                lumia.tracker.util.ReminderScheduler.scheduleReminder(
+                    getApplication(),
+                    task.id + 20000,
+                    "Task: ${task.title}",
+                    task.description,
+                    task.tags,
+                    task.dueDateMillis,
+                    "task",
+                    courseId = task.courseId,
+                    subjectId = task.subjectId
+                )
+            } else {
+                lumia.tracker.util.ReminderScheduler.cancelReminder(getApplication(), task.id + 20000)
+            }
             logAction("Updated task: ${task.title}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
@@ -1764,6 +1779,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun deleteTask(task: Task) {
         viewModelScope.launch {
             repository.deleteTask(task)
+            lumia.tracker.util.ReminderScheduler.cancelReminder(getApplication(), task.id + 20000)
             logAction("Deleted task: ${task.title}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
@@ -1791,6 +1807,14 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             val newlyCompleted = !assignment.isCompleted
             repository.updateAssignment(assignment.copy(isCompleted = newlyCompleted))
+            if (newlyCompleted) {
+                lumia.tracker.util.ReminderScheduler.cancelReminder(getApplication(), assignment.id)
+            } else if (assignment.dueDateMillis > System.currentTimeMillis()) {
+                lumia.tracker.util.ReminderScheduler.scheduleReminder(
+                    getApplication(), assignment.id, assignment.title, assignment.description, assignment.tags, assignment.dueDateMillis,
+                    courseId = assignment.courseId, subjectId = assignment.subjectId
+                )
+            }
             val actionText = if (newlyCompleted) "Completed assignment: ${assignment.title}" else "Unmarked assignment: ${assignment.title}"
             logAction(actionText)
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
@@ -1801,6 +1825,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun deleteAssignment(assignment: PracticeAssignment) {
         viewModelScope.launch {
             repository.deleteAssignment(assignment)
+            lumia.tracker.util.ReminderScheduler.cancelReminder(getApplication(), assignment.id)
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }
@@ -1809,6 +1834,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     fun updateAssignmentDetails(assignment: PracticeAssignment) {
         viewModelScope.launch {
             repository.updateAssignment(assignment)
+            if (assignment.dueDateMillis > System.currentTimeMillis() && !assignment.isCompleted) {
+                lumia.tracker.util.ReminderScheduler.scheduleReminder(
+                    getApplication(), assignment.id, assignment.title, assignment.description, assignment.tags, assignment.dueDateMillis,
+                    courseId = assignment.courseId, subjectId = assignment.subjectId
+                )
+            }
             logAction("Updated assignment: ${assignment.title}")
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()

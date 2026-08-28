@@ -64,6 +64,39 @@ class ReminderReceiver : BroadcastReceiver() {
             return
         }
 
+        if (action == "ACTION_MARK_PRESENT" || action == "ACTION_MARK_ABSENT") {
+            val courseId = intent.getIntExtra("courseId", -1)
+            val notifId = intent.getIntExtra("notif_id", assignmentId)
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            if (notifId != -1) notificationManager?.cancel(notifId)
+
+            if (courseId != -1) {
+                val status = if (action == "ACTION_MARK_PRESENT") "PRESENT" else "ABSENT"
+                val pendingResult = goAsync()
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val db = AppDatabase.getDatabase(context)
+                        val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+                        val record = lumia.tracker.model.AttendanceRecord(
+                            courseId = courseId,
+                            date = todayStr,
+                            status = status,
+                            note = "Auto-marked via Notification action",
+                            timestamp = System.currentTimeMillis()
+                        )
+                        db.scholarDao().insertAttendanceRecord(record)
+                        WidgetUpdateHelper.updateAllWidgets(context)
+                        Log.d("ReminderReceiver", "Auto-marked attendance for course $courseId as $status")
+                    } catch (e: Exception) {
+                        Log.e("ReminderReceiver", "Error marking attendance from notification", e)
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
+            }
+            return
+        }
+
         if (action == "ACTION_SNOOZE" && assignmentId != -1) {
             val title = intent.getStringExtra("title") ?: "Reminder"
             val desc = intent.getStringExtra("desc") ?: ""
@@ -217,6 +250,34 @@ class ReminderReceiver : BroadcastReceiver() {
                 "Snooze 10m",
                 snoozePendingIntent
             )
+        } else if (typeExtra == "class_end" && courseId != null) {
+            val notifId = if (assignmentId != -1) assignmentId else (System.currentTimeMillis() % 100000).toInt()
+            val presentIntent = Intent(context, ReminderReceiver::class.java).apply {
+                this.action = "ACTION_MARK_PRESENT"
+                putExtra("courseId", courseId)
+                putExtra("notif_id", notifId)
+            }
+            val presentPending = PendingIntent.getBroadcast(
+                context,
+                notifId + 1,
+                presentIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val absentIntent = Intent(context, ReminderReceiver::class.java).apply {
+                this.action = "ACTION_MARK_ABSENT"
+                putExtra("courseId", courseId)
+                putExtra("notif_id", notifId)
+            }
+            val absentPending = PendingIntent.getBroadcast(
+                context,
+                notifId + 2,
+                absentIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            builder.addAction(android.R.drawable.checkbox_on_background, "Present", presentPending)
+            builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Absent", absentPending)
         }
 
         val notification = builder.build()

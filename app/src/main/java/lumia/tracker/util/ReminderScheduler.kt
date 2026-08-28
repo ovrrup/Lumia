@@ -175,4 +175,54 @@ object ReminderScheduler {
             Log.e("ReminderScheduler", "Error cancelling reminder for id $assignmentId", e)
         }
     }
+
+    /**
+     * Automatically re-scans and reschedules all active assignments, tasks, and today's class reminders.
+     */
+    fun rescheduleAllReminders(context: Context) {
+        try {
+            val db = lumia.tracker.data.AppDatabase.getDatabase(context)
+            val now = System.currentTimeMillis()
+
+            // 1. Reschedule Assignments
+            val assignments = db.scholarDao().exportAllAssignments()
+            for (assignment in assignments) {
+                if (!assignment.isCompleted && assignment.dueDateMillis > now) {
+                    scheduleReminder(
+                        context = context,
+                        assignmentId = assignment.id,
+                        title = assignment.title,
+                        desc = "Due in 1 hour: ${assignment.description}",
+                        interconnections = assignment.tags,
+                        timestamp = assignment.dueDateMillis,
+                        type = "assignment",
+                        courseId = assignment.courseId,
+                        subjectId = assignment.subjectId
+                    )
+                }
+            }
+
+            // 2. Reschedule Tasks
+            val tasks = db.scholarDao().exportAllTasks()
+            for (task in tasks) {
+                val due = task.dueDateMillis
+                if (!task.isCompleted && due != null && due > now) {
+                    scheduleReminder(
+                        context = context,
+                        assignmentId = task.id + 20000,
+                        title = task.title,
+                        desc = "Task due soon (${task.priority} priority)",
+                        interconnections = task.tags,
+                        timestamp = due,
+                        type = "task",
+                        courseId = task.courseId,
+                        subjectId = task.subjectId
+                    )
+                }
+            }
+            Log.d("ReminderScheduler", "Successfully rescheduled all active reminders")
+        } catch (e: Exception) {
+            Log.e("ReminderScheduler", "Error rescheduling all reminders", e)
+        }
+    }
 }
