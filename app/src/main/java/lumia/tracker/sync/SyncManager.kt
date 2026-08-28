@@ -393,7 +393,7 @@ class SyncManager(private val context: Context) {
             updateConnectedDevicesCount()
 
             // Launch keep-alive heartbeat loop
-            sessionJob!!.launch {
+            (scope + sessionJob!!).launch {
                 while (isActive && isRunning.get() && socket.isConnected && !socket.isClosed) {
                     delay(25_000L)
                     try {
@@ -520,7 +520,7 @@ class SyncManager(private val context: Context) {
                 _syncState.value = SyncState.LiveMeshActive(activeSessions.size)
 
                 // Launch keep-alive heartbeat loop
-                sessionJob!!.launch {
+                (scope + sessionJob!!).launch {
                     while (isActive && isRunning.get() && socket.isConnected && !socket.isClosed) {
                         delay(25_000L)
                         try {
