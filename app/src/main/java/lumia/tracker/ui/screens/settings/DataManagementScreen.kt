@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +78,10 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.loadDBStatistics()
+    }
+
     LaunchedEffect(status) {
         status?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
@@ -91,8 +96,9 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 title = {
                     Text(
                         "Data & Backups",
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.primary
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
@@ -119,7 +125,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // 1. Database Integrity & Metrics Hero Card
+            // 1. Database Integrity & Storage Metrics Hero Card
             ScholarCard(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -133,7 +139,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(42.dp)
                                 .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
@@ -155,13 +161,13 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                 )
                                 Surface(
                                     shape = RoundedCornerShape(6.dp),
-                                    color = Color(0xFF4CAF50).copy(alpha = 0.15f)
+                                    color = Color(0xFF34C759).copy(alpha = 0.15f)
                                 ) {
                                     Text(
                                         text = "Healthy",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF2E7D32),
+                                        color = Color(0xFF34C759),
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                     )
                                 }
@@ -177,13 +183,24 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     // Storage Distribution Breakdown Bar
                     val totalRecords = coursesCount.size + subjectsCount.size + assignmentsCount.size + pomodoroSessionsCount.size
                     if (totalRecords > 0) {
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Storage Distribution", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("$totalRecords Total Entities", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    "Storage Distribution",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    "$totalRecords Total Entities",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
                             }
                             Row(
                                 modifier = Modifier
@@ -199,7 +216,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                 Box(modifier = Modifier.weight(cWeight).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
                                 Box(modifier = Modifier.weight(sWeight).fillMaxHeight().background(MaterialTheme.colorScheme.secondary))
                                 Box(modifier = Modifier.weight(aWeight).fillMaxHeight().background(MaterialTheme.colorScheme.tertiary))
-                                Box(modifier = Modifier.weight(pWeight).fillMaxHeight().background(Color(0xFFFF9800)))
+                                Box(modifier = Modifier.weight(pWeight).fillMaxHeight().background(Color(0xFFFF9500)))
                             }
                         }
                     }
@@ -245,7 +262,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                         ) {
                             Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${pomodoroSessionsCount.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = Color(0xFFFF9800))
+                                Text("${pomodoroSessionsCount.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = Color(0xFFFF9500))
                                 Text("Sessions", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }

@@ -186,6 +186,7 @@ object SyncMergeEngine {
                 SyncEntityType.NOTE -> mergeNoteDelta(dao, delta)
                 SyncEntityType.TEST_RECORD -> mergeTestRecordDelta(dao, delta)
                 SyncEntityType.TAG_CUSTOMIZATION -> mergeTagCustomizationDelta(dao, delta)
+                SyncEntityType.ATTACHMENT -> mergeAttachmentDelta(dao, delta)
                 else -> true
             }
         } catch (e: Exception) {
@@ -205,6 +206,10 @@ object SyncMergeEngine {
 
         if (match != null) {
             val updated = match.copy(
+                code = if (match.code.isBlank()) remoteCourse.code else match.code,
+                scheduleDays = if (match.scheduleDays.isBlank()) remoteCourse.scheduleDays else match.scheduleDays,
+                scheduleStartTime = if (match.scheduleStartTime.isBlank()) remoteCourse.scheduleStartTime else match.scheduleStartTime,
+                scheduleEndTime = if (match.scheduleEndTime.isBlank()) remoteCourse.scheduleEndTime else match.scheduleEndTime,
                 attendedClasses = maxOf(match.attendedClasses, remoteCourse.attendedClasses),
                 totalClasses = maxOf(match.totalClasses, remoteCourse.totalClasses),
                 instructor = if (match.instructor.isBlank()) remoteCourse.instructor else match.instructor,
@@ -212,7 +217,8 @@ object SyncMergeEngine {
                 description = if (match.description.isBlank()) remoteCourse.description else match.description,
                 colorHex = if (remoteCourse.colorHex.isNotBlank() && match.colorHex == "#3197D6") remoteCourse.colorHex else match.colorHex,
                 tags = mergeTags(match.tags, remoteCourse.tags),
-                subjectId = match.subjectId ?: remoteCourse.subjectId
+                subjectId = match.subjectId ?: remoteCourse.subjectId,
+                subjectIds = if (match.subjectIds.isBlank()) remoteCourse.subjectIds else match.subjectIds
             )
             dao.updateCourse(updated)
         } else {
@@ -425,6 +431,22 @@ object SyncMergeEngine {
         return true
     }
 
+    private suspend fun mergeAttachmentDelta(dao: ScholarDao, delta: SyncDelta): Boolean {
+        val remote = delta.payloadJson?.let { attachmentAdapter.fromJson(it) } ?: return false
+        val local = dao.exportAllAttachments()
+        val match = local.find { it.name.trim().equals(remote.name.trim(), ignoreCase = true) && it.addedAt == remote.addedAt }
+
+        if (delta.operation == SyncOperation.DELETE) {
+            if (match != null) dao.deleteAttachment(match)
+            return true
+        }
+
+        if (match == null) {
+            dao.insertAttachment(remote.copy(id = 0))
+        }
+        return true
+    }
+
     private fun mergeTags(tag1: String, tag2: String): String {
         val set = mutableSetOf<String>()
         tag1.split(",", "|").map { it.trim() }.filter { it.isNotBlank() }.forEach { set.add(it) }
@@ -589,12 +611,19 @@ object SyncMergeEngine {
             if (match != null) {
                 remoteToLocalCourseId[rCourse.id] = match.id
                 val updated = match.copy(
+                    code = if (match.code.isBlank()) rCourse.code else match.code,
+                    scheduleDays = if (match.scheduleDays.isBlank()) rCourse.scheduleDays else match.scheduleDays,
+                    scheduleStartTime = if (match.scheduleStartTime.isBlank()) rCourse.scheduleStartTime else match.scheduleStartTime,
+                    scheduleEndTime = if (match.scheduleEndTime.isBlank()) rCourse.scheduleEndTime else match.scheduleEndTime,
                     attendedClasses = maxOf(match.attendedClasses, rCourse.attendedClasses),
                     totalClasses = maxOf(match.totalClasses, rCourse.totalClasses),
                     description = if (match.description.isBlank()) rCourse.description else match.description,
                     instructor = if (match.instructor.isBlank()) rCourse.instructor else match.instructor,
                     schedule = if (match.schedule.isBlank()) rCourse.schedule else match.schedule,
-                    subjectId = match.subjectId ?: mappedSubjectId
+                    colorHex = if (rCourse.colorHex.isNotBlank() && match.colorHex == "#3197D6") rCourse.colorHex else match.colorHex,
+                    tags = mergeTags(match.tags, rCourse.tags),
+                    subjectId = match.subjectId ?: mappedSubjectId,
+                    subjectIds = if (match.subjectIds.isBlank()) rCourse.subjectIds else match.subjectIds
                 )
                 if (updated != match) {
                     dao.updateCourse(updated)
@@ -736,6 +765,9 @@ object SyncMergeEngine {
             if (existing == null) {
                 dao.insertAttendanceRecord(rAtt.copy(id = 0, courseId = localCourseId))
                 attendanceMerged++
+            } else if (existing.status != rAtt.status) {
+                dao.updateAttendanceRecord(existing.copy(status = rAtt.status))
+                attendanceMerged++
             }
         }
 
@@ -761,6 +793,20 @@ object SyncMergeEngine {
             if (existing == null) {
                 dao.insertTagCustomization(rTag)
                 tagCustomizationsMerged++
+            }
+        }
+
+        // 12. Merge Attachments
+        val localAttachments = dao.exportAllAttachments()
+        remoteBackup.attachments?.forEach { rAttach ->
+            val localCourseId = rAttach.courseId?.let { remoteToLocalCourseId[it] }
+            val localSubId = rAttach.subjectId?.let { remoteToLocalSubjectId[it] }
+            val existing = localAttachments.find {
+                it.name.trim().equals(rAttach.name.trim(), ignoreCase = true) &&
+                (it.addedAt == rAttach.addedAt || it.filePath == rAttach.filePath)
+            }
+            if (existing == null) {
+                dao.insertAttachment(rAttach.copy(id = 0, courseId = localCourseId, subjectId = localSubId))
             }
         }
 

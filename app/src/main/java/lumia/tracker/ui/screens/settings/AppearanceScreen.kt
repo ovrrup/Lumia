@@ -117,7 +117,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                 SettingsToggleItem(
                     title = "Pure AMOLED Black",
-                    subtitle = "True black #000000 surfaces for OLED screens",
+                    subtitle = "True black surfaces for OLED screens",
                     checked = pureBlackMode,
                     icon = Icons.Rounded.Contrast,
                     onCheckedChange = { viewModel.updatePureBlackMode(it) }
@@ -172,7 +172,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                     SettingsActionItemInCard(
                         title = "Fine-Tune Custom Palette",
-                        subtitle = "Customize individual hex color codes",
+                        subtitle = "Custom hex color codes",
                         icon = Icons.Rounded.Edit,
                         onClick = { navController.navigate("settings/advanced_theme") }
                     )
@@ -183,7 +183,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             SettingsGroupCard(title = "Dynamic Background Lighting", icon = Icons.Rounded.Flare) {
                 SettingsToggleItem(
                     title = "Dynamic Ambient Lighting",
-                    subtitle = "Animated background gradient accents",
+                    subtitle = "Animated gradient accents",
                     checked = betaDynamicBackground,
                     enabled = !betaMinimalistMode,
                     icon = Icons.Rounded.Flare,
@@ -249,7 +249,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             SettingsGroupCard(title = "Typography & Text Enhancements", icon = Icons.Rounded.TextFields) {
                 SettingsToggleItem(
                     title = "Enhanced Text Rendering",
-                    subtitle = "Boost contrast and font legibility",
+                    subtitle = "Enhanced contrast & legibility",
                     checked = betaBetterTexts,
                     icon = Icons.Rounded.TextFields,
                     enabled = !betaMinimalistMode,
@@ -268,7 +268,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         )
                         SettingsToggleItem(
                             title = "Theme-Tinted Typography",
-                            subtitle = "Tint headers with active theme color",
+                            subtitle = "Tint headings with accent color",
                             checked = betaBetterTextsPalette,
                             enabled = betaBetterTexts && !betaMinimalistMode,
                             onCheckedChange = { viewModel.updateBetaBetterTextsPalette(it) }
@@ -323,7 +323,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                 SettingsToggleItem(
                     title = "Custom Dimensions",
-                    subtitle = "Adjust dock height, radius, and margins",
+                    subtitle = "Adjust height, margins & radius",
                     checked = betaNavBarSizeControls,
                     icon = Icons.Rounded.Straighten,
                     onCheckedChange = { viewModel.updateBetaNavBarSizeControls(it) }

@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -595,14 +596,35 @@ fun HomeTab(
 
                     // 2. 7-Day Rolling Calendar Strip with Course Color Dots
                     val todayCalendar = Calendar.getInstance()
+                    val liveTransition = rememberInfiniteTransition(label = "live_pulse_anim")
+                    val livePulseScale by liveTransition.animateFloat(
+                        initialValue = 0.85f,
+                        targetValue = 1.15f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(800, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "live_scale"
+                    )
+                    val livePulseAlpha by liveTransition.animateFloat(
+                        initialValue = 0.5f,
+                        targetValue = 1.0f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(800, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "live_alpha"
+                    )
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         for (i in -2..4) {
-                            val calOffset = todayCalendar.clone() as Calendar
+                            val calOffset = (todayCalendar.clone() as Calendar).apply {
+                                add(Calendar.DAY_OF_MONTH, i)
+                            }
                             val targetOffset = i
-                            calOffset.add(Calendar.DAY_OF_MONTH, targetOffset)
                             val isSelected = selectedDateOffset == targetOffset
                             val isToday = targetOffset == 0
 
@@ -611,13 +633,11 @@ fun HomeTab(
                             val fullDayName = SimpleDateFormat("EEEE", Locale.getDefault()).format(calOffset.time)
 
                             // Find courses scheduled for this specific day to render dots
-                            val dayCourses = remember(courses, fullDayName, dayLetter) {
-                                courses.filter { c ->
-                                    c.scheduleDays.isNotBlank() && (
-                                        c.scheduleDays.contains(fullDayName, ignoreCase = true) ||
-                                        c.scheduleDays.contains(dayLetter, ignoreCase = true)
-                                    )
-                                }
+                            val dayCourses = courses.filter { c ->
+                                c.scheduleDays.isNotBlank() && (
+                                    c.scheduleDays.contains(fullDayName, ignoreCase = true) ||
+                                    c.scheduleDays.contains(dayLetter, ignoreCase = true)
+                                )
                             }
 
                             Column(
@@ -777,7 +797,7 @@ fun HomeTab(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(12.dp)
-                                    ) {
+                                        ) {
                                         // Main Row: Color stripe, Title, Schedule, and Actions
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
@@ -932,24 +952,36 @@ fun HomeTab(
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 if (isLiveNow) {
-                                                    Row(
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                    Surface(
+                                                        shape = RoundedCornerShape(6.dp),
+                                                        color = Color(0xFF34C759).copy(alpha = 0.12f),
+                                                        border = BorderStroke(0.5.dp, Color(0xFF34C759).copy(alpha = 0.35f))
                                                     ) {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .size(6.dp)
-                                                                .background(Color(0xFF34C759), CircleShape)
-                                                        )
-                                                        val minutesLeft = if (endMillis != null) {
-                                                            ((endMillis - currentTimeMillis) / 60000).coerceAtLeast(1)
-                                                        } else 0
-                                                        Text(
-                                                            text = "Live Now • $minutesLeft min left",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            fontWeight = FontWeight.Bold,
-                                                            color = Color(0xFF34C759)
-                                                        )
+                                                        Row(
+                                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                        ) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(6.dp)
+                                                                    .graphicsLayer {
+                                                                        scaleX = livePulseScale
+                                                                        scaleY = livePulseScale
+                                                                        alpha = livePulseAlpha
+                                                                    }
+                                                                    .background(Color(0xFF34C759), CircleShape)
+                                                            )
+                                                            val minutesLeft = if (endMillis != null) {
+                                                                ((endMillis - currentTimeMillis) / 60000).coerceAtLeast(1)
+                                                            } else 0
+                                                            Text(
+                                                                text = "Live Now • $minutesLeft min left",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = Color(0xFF34C759)
+                                                            )
+                                                        }
                                                     }
                                                 }
 

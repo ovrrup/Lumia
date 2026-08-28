@@ -274,7 +274,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Appearance & Theme",
-                    subtitle = "Themes & colors",
+                    subtitle = "Themes, dark mode & layout",
                     icon = Icons.Rounded.Palette,
                     iconBgColor = Color(0xFF007AFF),
                     onClick = { navController.navigate("settings/appearance") }
@@ -287,7 +287,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
                 SettingsActionItemInCard(
                     title = "Streak Goals & Requirements",
-                    subtitle = "Daily goals & targets",
+                    subtitle = "Daily goals & streak targets",
                     icon = Icons.Rounded.LocalFireDepartment,
                     iconBgColor = Color(0xFFFF9500),
                     onClick = { navController.navigate("settings/streaks") }
@@ -303,7 +303,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Tag Management",
-                    subtitle = "Manage tags",
+                    subtitle = "Organize academic tags",
                     icon = Icons.Rounded.LocalOffer,
                     iconBgColor = Color(0xFF30B0C7),
                     onClick = { navController.navigate("tags_hub") }
@@ -316,7 +316,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
                 SettingsActionItemInCard(
                     title = "System Configuration",
-                    subtitle = "Preferences & defaults",
+                    subtitle = "App behavior & defaults",
                     icon = Icons.Rounded.Tune,
                     iconBgColor = Color(0xFF5856D6),
                     onClick = { navController.navigate("settings/system") }
@@ -332,7 +332,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Safety System Guard",
-                    subtitle = "App lock & security",
+                    subtitle = "Biometrics & app security",
                     icon = Icons.Rounded.Security,
                     iconBgColor = Color(0xFFFF3B30),
                     onClick = { navController.navigate("settings/safety") }
@@ -345,7 +345,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
                 SettingsActionItemInCard(
                     title = "Notifications & Reminders",
-                    subtitle = "Alarms & alerts",
+                    subtitle = "Alerts & study alarms",
                     icon = Icons.Rounded.Notifications,
                     iconBgColor = Color(0xFF34C759),
                     onClick = { navController.navigate("settings/notifications") }
@@ -361,7 +361,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Multi-Device P2P Sync",
-                    subtitle = "P2P local sync",
+                    subtitle = "Local device synchronization",
                     icon = Icons.Rounded.Sync,
                     iconBgColor = Color(0xFFAF52DE),
                     onClick = { navController.navigate("settings/sync") }
@@ -374,7 +374,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
                 SettingsActionItemInCard(
                     title = "Data & Backups",
-                    subtitle = "Backups & storage",
+                    subtitle = "Export, import & storage",
                     icon = Icons.Rounded.Storage,
                     iconBgColor = Color(0xFF8E8E93),
                     onClick = { navController.navigate("settings/data") }
@@ -390,7 +390,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Experimental Features & Labs",
-                    subtitle = "Labs & experimental",
+                    subtitle = "Beta features & previews",
                     icon = Icons.Rounded.Science,
                     iconBgColor = Color(0xFFE040FB),
                     onClick = { navController.navigate("settings/beta") }
@@ -403,7 +403,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
                 SettingsActionItemInCard(
                     title = "About Lumia",
-                    subtitle = "App info & release notes",
+                    subtitle = "Version, build & licenses",
                     icon = Icons.Rounded.Info,
                     iconBgColor = Color(0xFF636366),
                     onClick = { navController.navigate("settings/about") }

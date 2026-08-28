@@ -46,12 +46,16 @@ class SyncManager(private val context: Context) {
 
     private val profileManager = ProfileManager(context)
     private val discoveryManager = P2PDiscoveryManager(context)
+    private val pairedDeviceStore = PairedDeviceStore.getInstance(context)
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     private val messageAdapter = moshi.adapter(SyncMessage::class.java)
     private val deltaPacketAdapter = moshi.adapter(SyncDeltaPacket::class.java)
     private val tokenAdapter = moshi.adapter(SyncPairingToken::class.java)
+    private val backupAdapter = moshi.adapter(ScholarBackup::class.java)
+    private val fullBackupAdapter = moshi.adapter(FullAppBackup::class.java)
+    private val reportAdapter = moshi.adapter(SyncMergeReport::class.java)
     private val historyAdapter = moshi.adapter<List<SyncHistoryRecord>>(
         Types.newParameterizedType(List::class.java, SyncHistoryRecord::class.java)
     )
@@ -121,7 +125,10 @@ class SyncManager(private val context: Context) {
     private var serverSocket: ServerSocket? = null
     private val isRunning = AtomicBoolean(false)
     private var serverJob: Job? = null
+    private var dbObservationJob: Job? = null
     private val activeSessions = ConcurrentHashMap<String, LiveMeshSession>()
+    private val connectingPeers = ConcurrentHashMap.newKeySet<String>()
+    private val isApplyingRemoteMerge = AtomicBoolean(false)
 
     companion object {
         private const val TAG = "SyncManager"
@@ -150,10 +157,23 @@ class SyncManager(private val context: Context) {
     init {
         updatePairingToken()
         startHosting()
+        setupNetworkWatcher()
         if (_continuousAutoSyncEnabled.value) {
             startDiscovery()
         }
         startDatabaseObservation()
+    }
+
+    private fun setupNetworkWatcher() {
+        discoveryManager.onNetworkStateChanged = { isOnline, isWifiOrEthernet ->
+            if (isOnline) {
+                updatePairingToken()
+                if (_continuousAutoSyncEnabled.value) {
+                    startDiscovery()
+                    triggerAutoSyncToAllTrustedPeers()
+                }
+            }
+        }
     }
 
     fun getLocalDevice(): SyncDevice {
@@ -253,11 +273,19 @@ class SyncManager(private val context: Context) {
                             _syncState.value = SyncState.Discovering(current.size)
                         }
 
-                        // Automatic background mesh connection for permanently paired trusted peers
+                        // Automatic zero-touch background mesh connection for permanently paired trusted peers
                         if (_continuousAutoSyncEnabled.value && isPaired) {
                             val trusted = getTrustedPeer(peer.id)
-                            if (trusted != null && trusted.autoSyncEnabled && !activeSessions.containsKey(peer.id)) {
-                                connectToTrustedPeer(peer, trusted)
+                            if (trusted != null && trusted.autoSyncEnabled) {
+                                if (!activeSessions.containsKey(peer.id) && !activeSessions.containsKey(trusted.deviceId)) {
+                                    if (connectingPeers.add(trusted.deviceId)) {
+                                        try {
+                                            connectToTrustedPeer(peer, trusted)
+                                        } finally {
+                                            connectingPeers.remove(trusted.deviceId)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -265,7 +293,9 @@ class SyncManager(private val context: Context) {
             },
             onPeerLost = { serviceName ->
                 scope.launch {
-                    val current = _discoveredPeers.value.filterNot { it.name == serviceName || it.id.startsWith(serviceName) }
+                    val current = _discoveredPeers.value.filterNot {
+                        it.name == serviceName || it.id.startsWith(serviceName) || serviceName.startsWith(it.name)
+                    }
                     _discoveredPeers.value = current
                     if (_syncState.value is SyncState.Discovering) {
                         _syncState.value = SyncState.Discovering(current.size)
@@ -287,6 +317,7 @@ class SyncManager(private val context: Context) {
     private suspend fun handleIncomingMeshConnection(socket: Socket) = withContext(Dispatchers.IO) {
         var peerId = ""
         var peerName = ""
+        var sessionJob: Job? = null
         try {
             socket.soTimeout = 45000
             val input = DataInputStream(socket.getInputStream())
@@ -349,11 +380,29 @@ class SyncManager(private val context: Context) {
 
             val channelId = trustedPeer?.channelId ?: helloMsg.channelId.ifBlank { UUID.randomUUID().toString() }
 
+            // Clean up any existing session for this peer
+            activeSessions.remove(peerId)?.let { oldSession ->
+                try { oldSession.socket.close() } catch (ignored: Exception) {}
+                oldSession.job.cancel()
+            }
+
             // Register active live mesh session
-            val sessionJob = Job()
-            val session = LiveMeshSession(peerId, peerName, socket, output, sessionEncryptionKey, channelId, sessionJob)
+            sessionJob = Job()
+            val session = LiveMeshSession(peerId, peerName, socket, output, sessionEncryptionKey, channelId, sessionJob!!)
             activeSessions[peerId] = session
             updateConnectedDevicesCount()
+
+            // Launch keep-alive heartbeat loop
+            sessionJob!!.launch {
+                while (isActive && isRunning.get() && socket.isConnected && !socket.isClosed) {
+                    delay(25_000L)
+                    try {
+                        sendMessage(output, SyncMessage(type = "HEARTBEAT", deviceId = deviceId))
+                    } catch (e: Exception) {
+                        break
+                    }
+                }
+            }
 
             // Flush offline buffer queue for this peer
             flushOutboxQueueForPeer(session)
@@ -363,6 +412,7 @@ class SyncManager(private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "Incoming connection error with $peerName", e)
         } finally {
+            sessionJob?.cancel()
             if (peerId.isNotBlank()) {
                 activeSessions.remove(peerId)
                 updateConnectedDevicesCount()
@@ -390,8 +440,14 @@ class SyncManager(private val context: Context) {
         channelId: String = "",
         mode: SyncMode = SyncMode.LIVE_MESH_CRDT
     ) {
+        if (activeSessions.containsKey(peer.id)) {
+            Log.d(TAG, "Session already active with ${peer.name}, skipping connect")
+            return
+        }
+
         scope.launch {
             var socket: Socket? = null
+            var sessionJob: Job? = null
             try {
                 _syncState.value = SyncState.Connecting(peer.name)
                 socket = Socket()
@@ -451,11 +507,29 @@ class SyncManager(private val context: Context) {
 
                 val activeChannelId = channelId.ifBlank { getTrustedPeer(peer.id)?.channelId ?: UUID.randomUUID().toString() }
 
-                val sessionJob = Job()
-                val session = LiveMeshSession(peer.id, peer.name, socket, output, sessionKey, activeChannelId, sessionJob)
+                // Clean up any existing session for this peer
+                activeSessions.remove(peer.id)?.let { oldSession ->
+                    try { oldSession.socket.close() } catch (ignored: Exception) {}
+                    oldSession.job.cancel()
+                }
+
+                sessionJob = Job()
+                val session = LiveMeshSession(peer.id, peer.name, socket, output, sessionKey, activeChannelId, sessionJob!!)
                 activeSessions[peer.id] = session
                 updateConnectedDevicesCount()
                 _syncState.value = SyncState.LiveMeshActive(activeSessions.size)
+
+                // Launch keep-alive heartbeat loop
+                sessionJob!!.launch {
+                    while (isActive && isRunning.get() && socket.isConnected && !socket.isClosed) {
+                        delay(25_000L)
+                        try {
+                            sendMessage(output, SyncMessage(type = "HEARTBEAT", deviceId = deviceId))
+                        } catch (e: Exception) {
+                            break
+                        }
+                    }
+                }
 
                 // Flush pending outbox entries
                 flushOutboxQueueForPeer(session)
@@ -466,6 +540,7 @@ class SyncManager(private val context: Context) {
                 Log.e(TAG, "Client connection to ${peer.name} failed", e)
                 _syncState.value = SyncState.Error(e.message ?: "Connection error")
             } finally {
+                sessionJob?.cancel()
                 activeSessions.remove(peer.id)
                 updateConnectedDevicesCount()
                 try { socket?.close() } catch (ignored: Exception) {}
@@ -485,13 +560,22 @@ class SyncManager(private val context: Context) {
                     "DELTA_SYNC" -> {
                         val encryptedBase64 = message.deltaPacketEncryptedBase64 ?: continue
                         val ivBase64 = message.ivBase64 ?: continue
-                        val decryptedBytes = SyncCryptoManager.decryptPayload(encryptedBase64, ivBase64, session.sessionKey, session.peerId)
+                        val decryptNonce = message.nonce.ifBlank { session.channelId }
+                        val decryptedBytes = SyncCryptoManager.decryptPayload(encryptedBase64, ivBase64, session.sessionKey, decryptNonce)
                         val packetJson = String(decryptedBytes, Charsets.UTF_8)
                         val packet = deltaPacketAdapter.fromJson(packetJson) ?: continue
 
                         _isSyncing.value = true
-                        val db = AppDatabase.getDatabase(context, profileManager.getActiveProfileId())
-                        val report = SyncMergeEngine.mergeDeltaPacket(db.scholarDao(), packet, session.peerName)
+                        isApplyingRemoteMerge.set(true)
+                        val report = try {
+                            val db = AppDatabase.getDatabase(context, profileManager.getActiveProfileId())
+                            SyncMergeEngine.mergeDeltaPacket(db.scholarDao(), packet, session.peerName)
+                        } finally {
+                            scope.launch {
+                                delay(600)
+                                isApplyingRemoteMerge.set(false)
+                            }
+                        }
 
                         val ackMsg = SyncMessage(
                             type = "DELTA_ACK",
@@ -519,8 +603,68 @@ class SyncManager(private val context: Context) {
                             pruneAcknowledgedOutboxEntries(session.peerId, ackIds)
                         }
                     }
+                    "FULL_SYNC_REQ" -> {
+                        val backup = createFullLocalBackup()
+                        val backupJson = backupAdapter.toJson(backup)
+                        val snapNonce = SyncCryptoManager.generateNonce()
+                        val (encrypted, iv) = SyncCryptoManager.encryptPayload(backupJson.toByteArray(Charsets.UTF_8), session.sessionKey, snapNonce)
+                        val syncDataMsg = SyncMessage(
+                            type = "SYNC_DATA",
+                            deviceId = deviceId,
+                            nonce = snapNonce,
+                            payloadEncryptedBase64 = encrypted,
+                            ivBase64 = iv
+                        )
+                        sendMessage(output, syncDataMsg)
+                    }
+                    "SYNC_DATA" -> {
+                        val encrypted = message.payloadEncryptedBase64 ?: continue
+                        val iv = message.ivBase64 ?: continue
+                        val snapNonce = message.nonce.ifBlank { session.channelId }
+                        val decryptedBytes = SyncCryptoManager.decryptPayload(encrypted, iv, session.sessionKey, snapNonce)
+                        val backup = backupAdapter.fromJson(String(decryptedBytes, Charsets.UTF_8)) ?: continue
+
+                        isApplyingRemoteMerge.set(true)
+                        val report = try {
+                            SyncMergeEngine.mergeFullApp(context, profileManager, backup, session.peerName, "SMART_MERGE")
+                        } finally {
+                            scope.launch {
+                                delay(600)
+                                isApplyingRemoteMerge.set(false)
+                            }
+                        }
+
+                        val ackMsg = SyncMessage(
+                            type = "SYNC_ACK",
+                            deviceId = deviceId,
+                            reportJson = reportAdapter.toJson(report)
+                        )
+                        sendMessage(output, ackMsg)
+
+                        val now = System.currentTimeMillis()
+                        _lastSyncedTimestamp.value = now
+                        prefs.edit().putLong("last_synced_timestamp", now).apply()
+                        updateTrustedPeerSyncTime(session.peerId)
+
+                        addHistoryRecord(
+                            SyncHistoryRecord(
+                                peerDeviceName = session.peerName,
+                                summary = "Snapshot Sync: +${report.coursesMerged} courses, +${report.tasksMerged} tasks",
+                                isSuccess = true
+                            )
+                        )
+                    }
+                    "SYNC_ACK" -> {
+                        val now = System.currentTimeMillis()
+                        _lastSyncedTimestamp.value = now
+                        prefs.edit().putLong("last_synced_timestamp", now).apply()
+                        updateTrustedPeerSyncTime(session.peerId)
+                    }
                     "HEARTBEAT" -> {
                         sendMessage(output, SyncMessage(type = "HEARTBEAT_ACK", deviceId = deviceId))
+                    }
+                    "HEARTBEAT_ACK" -> {
+                        // Keep-alive acknowledged
                     }
                     "DISCONNECT" -> {
                         break
@@ -539,6 +683,7 @@ class SyncManager(private val context: Context) {
      * If a paired peer is offline, queues the mutation in the persistent outbox buffer.
      */
     fun broadcastEntityMutation(entityType: SyncEntityType, operation: SyncOperation, entity: Any, entityId: String) {
+        if (isApplyingRemoteMerge.get()) return
         val globalId = SyncMergeEngine.generateGlobalId(entityType, entity).ifBlank { entityId }
         val delta = SyncMergeEngine.createDelta(
             entityType = entityType,
@@ -577,11 +722,13 @@ class SyncManager(private val context: Context) {
     private suspend fun dispatchPacketToSession(session: LiveMeshSession, packet: SyncDeltaPacket) = withContext(Dispatchers.IO) {
         try {
             val json = deltaPacketAdapter.toJson(packet)
-            val (encrypted, iv) = SyncCryptoManager.encryptPayload(json.toByteArray(Charsets.UTF_8), session.sessionKey, session.peerId)
+            val packetNonce = SyncCryptoManager.generateNonce()
+            val (encrypted, iv) = SyncCryptoManager.encryptPayload(json.toByteArray(Charsets.UTF_8), session.sessionKey, packetNonce)
             val msg = SyncMessage(
                 type = "DELTA_SYNC",
                 deviceId = deviceId,
                 channelId = session.channelId,
+                nonce = packetNonce,
                 deltaPacketEncryptedBase64 = encrypted,
                 ivBase64 = iv
             )
@@ -594,7 +741,13 @@ class SyncManager(private val context: Context) {
 
     private fun queueOutboxEntry(targetDeviceId: String, delta: SyncDelta) {
         val current = _outboxQueue.value.toMutableList()
-        current.add(OfflineMutationEntry(targetDeviceId = targetDeviceId, delta = delta))
+        // Deduplicate identical pending mutations
+        val existingIdx = current.indexOfFirst { it.targetDeviceId == targetDeviceId && it.delta.entityGlobalId == delta.entityGlobalId }
+        if (existingIdx >= 0) {
+            current[existingIdx] = OfflineMutationEntry(targetDeviceId = targetDeviceId, delta = delta)
+        } else {
+            current.add(OfflineMutationEntry(targetDeviceId = targetDeviceId, delta = delta))
+        }
         _outboxQueue.value = current
         saveOutbox(current)
     }
@@ -619,23 +772,33 @@ class SyncManager(private val context: Context) {
         dispatchPacketToSession(session, packet)
     }
 
-    // --- Reactive Room Database Change Observer ---
+    // --- Reactive Room Database Change Observer across All Entities ---
 
     private fun startDatabaseObservation() {
-        scope.launch {
+        dbObservationJob?.cancel()
+        dbObservationJob = scope.launch {
             val activeId = profileManager.getActiveProfileId()
             val db = AppDatabase.getDatabase(context, activeId)
             val dao = db.scholarDao()
 
             var lastCourses = dao.exportAllCourses().associateBy { it.id }
             var lastSubjects = dao.exportAllSubjects().associateBy { it.id }
-            var lastTasks = dao.exportAllTasks().associateBy { it.id }
+            var lastChapters = dao.exportAllChapters().associateBy { it.id }
+            var lastTopics = dao.exportAllTopics().associateBy { it.id }
             var lastAssignments = dao.exportAllAssignments().associateBy { it.id }
+            var lastTasks = dao.exportAllTasks().associateBy { it.id }
+            var lastAttendance = dao.exportAllAttendance().associateBy { "${it.courseId}_${it.dateMillis}" }
+            var lastPomodoro = dao.exportAllPomodoro().associateBy { "${it.dateMillis}_${it.durationMinutes}" }
+            var lastNotes = dao.exportAllNotes().associateBy { it.id }
+            var lastTests = dao.exportAllTestRecords().associateBy { it.id }
+            var lastTags = dao.exportAllTagCustomizations().associateBy { it.tagName }
+            var lastAttachments = dao.exportAllAttachments().associateBy { it.id }
 
+            // 1. Courses
             launch {
                 dao.getAllCourses().collect { currentList ->
                     val currentMap = currentList.associateBy { it.id }
-                    if (lastCourses.isNotEmpty()) {
+                    if (!isApplyingRemoteMerge.get() && lastCourses.isNotEmpty()) {
                         currentList.forEach { c ->
                             if (lastCourses[c.id] != c) {
                                 broadcastEntityMutation(SyncEntityType.COURSE, SyncOperation.UPSERT, c, c.name)
@@ -651,10 +814,91 @@ class SyncManager(private val context: Context) {
                 }
             }
 
+            // 2. Subjects
+            launch {
+                dao.getAllSubjects().collect { currentList ->
+                    val currentMap = currentList.associateBy { it.id }
+                    if (!isApplyingRemoteMerge.get() && lastSubjects.isNotEmpty()) {
+                        currentList.forEach { s ->
+                            if (lastSubjects[s.id] != s) {
+                                broadcastEntityMutation(SyncEntityType.SUBJECT, SyncOperation.UPSERT, s, s.name)
+                            }
+                        }
+                        lastSubjects.keys.forEach { oldId ->
+                            if (!currentMap.containsKey(oldId)) {
+                                lastSubjects[oldId]?.let { broadcastEntityMutation(SyncEntityType.SUBJECT, SyncOperation.DELETE, it, it.name) }
+                            }
+                        }
+                    }
+                    lastSubjects = currentMap
+                }
+            }
+
+            // 3. Chapters
+            launch {
+                dao.getAllChaptersFlow().collect { currentList ->
+                    val currentMap = currentList.associateBy { it.id }
+                    if (!isApplyingRemoteMerge.get() && lastChapters.isNotEmpty()) {
+                        currentList.forEach { ch ->
+                            if (lastChapters[ch.id] != ch) {
+                                broadcastEntityMutation(SyncEntityType.CHAPTER, SyncOperation.UPSERT, ch, ch.name)
+                            }
+                        }
+                        lastChapters.keys.forEach { oldId ->
+                            if (!currentMap.containsKey(oldId)) {
+                                lastChapters[oldId]?.let { broadcastEntityMutation(SyncEntityType.CHAPTER, SyncOperation.DELETE, it, it.name) }
+                            }
+                        }
+                    }
+                    lastChapters = currentMap
+                }
+            }
+
+            // 4. Topics
+            launch {
+                dao.getAllTopicsReactive().collect { currentList ->
+                    val currentMap = currentList.associateBy { it.id }
+                    if (!isApplyingRemoteMerge.get() && lastTopics.isNotEmpty()) {
+                        currentList.forEach { tp ->
+                            if (lastTopics[tp.id] != tp) {
+                                broadcastEntityMutation(SyncEntityType.TOPIC, SyncOperation.UPSERT, tp, tp.title)
+                            }
+                        }
+                        lastTopics.keys.forEach { oldId ->
+                            if (!currentMap.containsKey(oldId)) {
+                                lastTopics[oldId]?.let { broadcastEntityMutation(SyncEntityType.TOPIC, SyncOperation.DELETE, it, it.title) }
+                            }
+                        }
+                    }
+                    lastTopics = currentMap
+                }
+            }
+
+            // 5. Assignments
+            launch {
+                dao.getAllAssignments().collect { currentList ->
+                    val currentMap = currentList.associateBy { it.id }
+                    if (!isApplyingRemoteMerge.get() && lastAssignments.isNotEmpty()) {
+                        currentList.forEach { a ->
+                            if (lastAssignments[a.id] != a) {
+                                broadcastEntityMutation(SyncEntityType.ASSIGNMENT, SyncOperation.UPSERT, a, a.title)
+                            }
+                        }
+                        lastAssignments.keys.forEach { oldId ->
+                            if (!currentMap.containsKey(oldId)) {
+                                lastAssignments[oldId]?.let { broadcastEntityMutation(SyncEntityType.ASSIGNMENT, SyncOperation.DELETE, it, it.title) }
+                            }
+                        }
+                    }
+                    lastAssignments = currentMap
+                }
+            }
+
+            // 6. Tasks
             launch {
                 dao.getAllTasks().collect { currentList ->
                     val currentMap = currentList.associateBy { it.id }
-                    if (lastTasks.isNotEmpty()) {
+                    if (!isApplyingRemoteMerge.get() && lastTasks.isNotEmpty()) {
                         currentList.forEach { t ->
                             if (lastTasks[t.id] != t) {
                                 broadcastEntityMutation(SyncEntityType.TASK, SyncOperation.UPSERT, t, t.title)
@@ -669,13 +913,206 @@ class SyncManager(private val context: Context) {
                     lastTasks = currentMap
                 }
             }
+
+            // 7. Attendance
+            launch {
+                dao.getAllAttendanceRecords().collect { currentList ->
+                    val currentMap = currentList.associateBy { "${it.courseId}_${it.dateMillis}" }
+                    if (!isApplyingRemoteMerge.get() && lastAttendance.isNotEmpty()) {
+                        currentList.forEach { att ->
+                            val key = "${att.courseId}_${att.dateMillis}"
+                            if (lastAttendance[key] != att) {
+                                broadcastEntityMutation(SyncEntityType.ATTENDANCE, SyncOperation.UPSERT, att, key)
+                            }
+                        }
+                        lastAttendance.keys.forEach { oldKey ->
+                            if (!currentMap.containsKey(oldKey)) {
+                                lastAttendance[oldKey]?.let { broadcastEntityMutation(SyncEntityType.ATTENDANCE, SyncOperation.DELETE, it, oldKey) }
+                            }
+                        }
+                    }
+                    lastAttendance = currentMap
+                }
+            }
+
+            // 8. Pomodoro Focus Sessions
+            launch {
+                dao.getAllPomodoroSessions().collect { currentList ->
+                    val currentMap = currentList.associateBy { "${it.dateMillis}_${it.durationMinutes}" }
+                    if (!isApplyingRemoteMerge.get() && lastPomodoro.isNotEmpty()) {
+                        currentList.forEach { pomo ->
+                            val key = "${pomo.dateMillis}_${pomo.durationMinutes}"
+                            if (!lastPomodoro.containsKey(key)) {
+                                broadcastEntityMutation(SyncEntityType.POMODORO, SyncOperation.UPSERT, pomo, key)
+                            }
+                        }
+                    }
+                    lastPomodoro = currentMap
+                }
+            }
+
+            // 9. Notes
+            launch {
+                dao.getAllNotes().collect { currentList ->
+                    val currentMap = currentList.associateBy { it.id }
+                    if (!isApplyingRemoteMerge.get() && lastNotes.isNotEmpty()) {
+                        currentList.forEach { n ->
+                            if (lastNotes[n.id] != n) {
+                                broadcastEntityMutation(SyncEntityType.NOTE, SyncOperation.UPSERT, n, n.content)
+                            }
+                        }
+                        lastNotes.keys.forEach { oldId ->
+                            if (!currentMap.containsKey(oldId)) {
+                                lastNotes[oldId]?.let { broadcastEntityMutation(SyncEntityType.NOTE, SyncOperation.DELETE, it, it.content) }
+                            }
+                        }
+                    }
+                    lastNotes = currentMap
+                }
+            }
+
+            // 10. Test Records
+            launch {
+                dao.getAllTestRecordsReactive().collect { currentList ->
+                    val currentMap = currentList.associateBy { it.id }
+                    if (!isApplyingRemoteMerge.get() && lastTests.isNotEmpty()) {
+                        currentList.forEach { tr ->
+                            if (lastTests[tr.id] != tr) {
+                                broadcastEntityMutation(SyncEntityType.TEST_RECORD, SyncOperation.UPSERT, tr, tr.title)
+                            }
+                        }
+                        lastTests.keys.forEach { oldId ->
+                            if (!currentMap.containsKey(oldId)) {
+                                lastTests[oldId]?.let { broadcastEntityMutation(SyncEntityType.TEST_RECORD, SyncOperation.DELETE, it, it.title) }
+                            }
+                        }
+                    }
+                    lastTests = currentMap
+                }
+            }
+
+            // 11. Tag Customizations
+            launch {
+                dao.getAllTagCustomizations().collect { currentList ->
+                    val currentMap = currentList.associateBy { it.tagName }
+                    if (!isApplyingRemoteMerge.get() && lastTags.isNotEmpty()) {
+                        currentList.forEach { tag ->
+                            if (lastTags[tag.tagName] != tag) {
+                                broadcastEntityMutation(SyncEntityType.TAG_CUSTOMIZATION, SyncOperation.UPSERT, tag, tag.tagName)
+                            }
+                        }
+                        lastTags.keys.forEach { oldTag ->
+                            if (!currentMap.containsKey(oldTag)) {
+                                lastTags[oldTag]?.let { broadcastEntityMutation(SyncEntityType.TAG_CUSTOMIZATION, SyncOperation.DELETE, it, oldTag) }
+                            }
+                        }
+                    }
+                    lastTags = currentMap
+                }
+            }
+
+            // 12. Attachments
+            launch {
+                dao.getAllAttachments().collect { currentList ->
+                    val currentMap = currentList.associateBy { it.id }
+                    if (!isApplyingRemoteMerge.get() && lastAttachments.isNotEmpty()) {
+                        currentList.forEach { att ->
+                            if (lastAttachments[att.id] != att) {
+                                broadcastEntityMutation(SyncEntityType.ATTACHMENT, SyncOperation.UPSERT, att, att.name)
+                            }
+                        }
+                        lastAttachments.keys.forEach { oldId ->
+                            if (!currentMap.containsKey(oldId)) {
+                                lastAttachments[oldId]?.let { broadcastEntityMutation(SyncEntityType.ATTACHMENT, SyncOperation.DELETE, it, it.name) }
+                            }
+                        }
+                    }
+                    lastAttachments = currentMap
+                }
+            }
         }
+    }
+
+    private suspend fun createFullLocalBackup(): ScholarBackup = withContext(Dispatchers.IO) {
+        val allProfs = profileManager.getAllProfiles()
+        val profileBackupsJson = mutableMapOf<String, String>()
+
+        for (prof in allProfs) {
+            val db = AppDatabase.getDatabase(context, prof.id)
+            val dao = db.scholarDao()
+            val pBackup = ScholarBackup(
+                courses = dao.exportAllCourses(),
+                subjects = dao.exportAllSubjects(),
+                topics = dao.exportAllTopics(),
+                assignments = dao.exportAllAssignments(),
+                attendance = dao.exportAllAttendance(),
+                pomodoro = dao.exportAllPomodoro(),
+                actionLogs = dao.exportAllActionLogs(),
+                notes = dao.exportAllNotes(),
+                chapters = dao.exportAllChapters(),
+                tasks = dao.exportAllTasks(),
+                attachments = dao.exportAllAttachments(),
+                testRecords = dao.exportAllTestRecords(),
+                tagCustomizations = dao.exportAllTagCustomizations(),
+                profile = prof
+            )
+            profileBackupsJson[prof.id] = backupAdapter.toJson(pBackup)
+        }
+
+        val fullApp = FullAppBackup(
+            profiles = allProfs,
+            activeProfileId = profileManager.getActiveProfileId(),
+            profileBackupsJson = profileBackupsJson
+        )
+
+        ScholarBackup(
+            isFullAppBackup = true,
+            fullAppBackupJson = fullBackupAdapter.toJson(fullApp)
+        )
     }
 
     // --- Pairing Token Scanning / Paste ---
 
     fun pairWithToken(rawToken: String, mode: SyncMode = SyncMode.LIVE_MESH_CRDT) {
         try {
+            // Check if encrypted/plain QR metadata format from PairedDeviceStore
+            val qrMeta = pairedDeviceStore.parseEncryptedQrPayload(rawToken)
+            if (qrMeta != null) {
+                if (qrMeta.secretKey.isNotBlank()) {
+                    val trustedPeer = TrustedPeer(
+                        deviceId = qrMeta.deviceId,
+                        deviceName = qrMeta.deviceName,
+                        channelId = qrMeta.channelId,
+                        preSharedKey = qrMeta.secretKey,
+                        pairedAt = System.currentTimeMillis(),
+                        lastSyncAt = 0L,
+                        autoSyncEnabled = true,
+                        avatarEmoji = qrMeta.avatarEmoji
+                    )
+                    saveTrustedPeer(trustedPeer)
+                    val peer = SyncDevice(
+                        id = qrMeta.deviceId,
+                        name = qrMeta.deviceName,
+                        ipAddress = qrMeta.ip.ifBlank { P2PDiscoveryManager.getLocalIpAddress() },
+                        port = qrMeta.port,
+                        avatarEmoji = qrMeta.avatarEmoji
+                    )
+                    connectToTrustedPeer(peer, trustedPeer, mode)
+                    return
+                } else if (qrMeta.pin.isNotBlank()) {
+                    val peer = SyncDevice(
+                        id = qrMeta.deviceId,
+                        name = qrMeta.deviceName,
+                        ipAddress = qrMeta.ip.ifBlank { P2PDiscoveryManager.getLocalIpAddress() },
+                        port = qrMeta.port,
+                        avatarEmoji = qrMeta.avatarEmoji
+                    )
+                    connectToPeer(peer, qrMeta.pin, mode)
+                    return
+                }
+            }
+
+            // Fallback to Base64 SyncPairingToken parse
             val jsonString = String(Base64.decode(rawToken.trim(), Base64.DEFAULT), Charsets.UTF_8)
             val token = tokenAdapter.fromJson(jsonString) ?: throw IllegalArgumentException("Invalid QR / Pairing Token")
 
@@ -696,17 +1133,33 @@ class SyncManager(private val context: Context) {
         val onlineTrusted = _discoveredPeers.value.filter { isPeerTrusted(it.id) }
         onlineTrusted.forEach { peer ->
             val trusted = getTrustedPeer(peer.id)
-            if (trusted != null && !activeSessions.containsKey(peer.id)) {
-                connectToTrustedPeer(peer, trusted)
+            if (trusted != null && trusted.autoSyncEnabled && !activeSessions.containsKey(peer.id) && !activeSessions.containsKey(trusted.deviceId)) {
+                if (connectingPeers.add(trusted.deviceId)) {
+                    try {
+                        connectToTrustedPeer(peer, trusted)
+                    } finally {
+                        connectingPeers.remove(trusted.deviceId)
+                    }
+                }
             }
         }
     }
 
     // --- Trusted Peer Management ---
 
-    fun getTrustedPeer(deviceId: String): TrustedPeer? = _pairedDevices.value.find { it.deviceId == deviceId }
+    fun getTrustedPeer(deviceId: String): TrustedPeer? = _pairedDevices.value.find {
+        it.deviceId == deviceId ||
+        it.deviceId.equals(deviceId, ignoreCase = true) ||
+        deviceId.startsWith("Lumia-${it.deviceId.take(6)}") ||
+        it.deviceId.startsWith(deviceId.removePrefix("Lumia-"))
+    } ?: pairedDeviceStore.getTrustedPeer(deviceId)
 
-    fun isPeerTrusted(deviceId: String): Boolean = _pairedDevices.value.any { it.deviceId == deviceId }
+    fun isPeerTrusted(deviceId: String): Boolean = _pairedDevices.value.any {
+        it.deviceId == deviceId ||
+        it.deviceId.equals(deviceId, ignoreCase = true) ||
+        deviceId.startsWith("Lumia-${it.deviceId.take(6)}") ||
+        it.deviceId.startsWith(deviceId.removePrefix("Lumia-"))
+    } || pairedDeviceStore.isDevicePaired(deviceId)
 
     fun saveTrustedPeer(peer: TrustedPeer) {
         val current = _pairedDevices.value.toMutableList()
@@ -714,12 +1167,14 @@ class SyncManager(private val context: Context) {
         if (idx >= 0) current[idx] = peer else current.add(peer)
         _pairedDevices.value = current
         saveTrustedPeersList(current)
+        pairedDeviceStore.saveTrustedPeer(peer, peer.channelId)
     }
 
     fun removeTrustedPeer(deviceId: String) {
         val current = _pairedDevices.value.filterNot { it.deviceId == deviceId }
         _pairedDevices.value = current
         saveTrustedPeersList(current)
+        pairedDeviceStore.removeTrustedPeer(deviceId)
         activeSessions[deviceId]?.socket?.close()
         activeSessions.remove(deviceId)
         updateConnectedDevicesCount()
@@ -729,9 +1184,11 @@ class SyncManager(private val context: Context) {
         val current = _pairedDevices.value.toMutableList()
         val idx = current.indexOfFirst { it.deviceId == deviceId }
         if (idx >= 0) {
-            current[idx] = current[idx].copy(lastSyncAt = System.currentTimeMillis())
+            val now = System.currentTimeMillis()
+            current[idx] = current[idx].copy(lastSyncAt = now)
             _pairedDevices.value = current
             saveTrustedPeersList(current)
+            pairedDeviceStore.updateLastSyncTime(deviceId, now)
         }
     }
 
@@ -742,13 +1199,18 @@ class SyncManager(private val context: Context) {
             current[idx] = current[idx].copy(autoSyncEnabled = enabled)
             _pairedDevices.value = current
             saveTrustedPeersList(current)
+            pairedDeviceStore.updateAutoSync(deviceId, enabled)
         }
     }
 
     fun setContinuousAutoSyncEnabled(enabled: Boolean) {
         _continuousAutoSyncEnabled.value = enabled
         prefs.edit().putBoolean("continuous_auto_sync", enabled).apply()
-        if (enabled) startDiscovery()
+        pairedDeviceStore.isGlobalContinuousAutoSyncEnabled = enabled
+        if (enabled) {
+            startDiscovery()
+            triggerAutoSyncToAllTrustedPeers()
+        }
     }
 
     fun resetSyncState() {
@@ -776,8 +1238,16 @@ class SyncManager(private val context: Context) {
     }
 
     private fun loadTrustedPeers(): List<TrustedPeer> {
-        val json = prefs.getString("trusted_peers_json", null) ?: return emptyList()
-        return try { trustedPeersAdapter.fromJson(json) ?: emptyList() } catch (e: Exception) { emptyList() }
+        val storePeers = pairedDeviceStore.getAllTrustedPeers()
+        val json = prefs.getString("trusted_peers_json", null)
+        val legacyPeers = if (!json.isNullOrBlank()) {
+            try { trustedPeersAdapter.fromJson(json) ?: emptyList() } catch (e: Exception) { emptyList() }
+        } else emptyList()
+
+        val combinedMap = mutableMapOf<String, TrustedPeer>()
+        legacyPeers.forEach { combinedMap[it.deviceId] = it }
+        storePeers.forEach { combinedMap[it.deviceId] = it }
+        return combinedMap.values.toList()
     }
 
     private fun saveTrustedPeersList(list: List<TrustedPeer>) {
@@ -810,8 +1280,13 @@ class SyncManager(private val context: Context) {
         discoveryManager.stop()
         isRunning.set(false)
         serverJob?.cancel()
-        activeSessions.values.forEach { it.socket.close() }
+        dbObservationJob?.cancel()
+        activeSessions.values.forEach { session ->
+            session.job.cancel()
+            try { session.socket.close() } catch (ignored: Exception) {}
+        }
         activeSessions.clear()
+        connectingPeers.clear()
         try { serverSocket?.close() } catch (ignored: Exception) {}
         serverSocket = null
         _isServerRunning.value = false

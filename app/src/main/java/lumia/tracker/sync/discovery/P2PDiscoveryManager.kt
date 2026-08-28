@@ -202,7 +202,7 @@ class P2PDiscoveryManager(private val context: Context) {
             override fun onServiceFound(service: NsdServiceInfo) {
                 Log.i(TAG, "Discovered NSD service: ${service.serviceName}")
                 if (service.serviceType.contains("lumiasync") || service.serviceType == SERVICE_TYPE) {
-                    resolveService(service, onPeerFound)
+                    queueResolve(service, onPeerFound)
                 }
             }
 
@@ -234,43 +234,70 @@ class P2PDiscoveryManager(private val context: Context) {
         }
     }
 
+    private val resolveQueue = java.util.concurrent.ConcurrentLinkedQueue<Pair<NsdServiceInfo, (SyncDevice) -> Unit>>()
+    private val isResolving = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    private fun queueResolve(serviceInfo: NsdServiceInfo, onPeerFound: (SyncDevice) -> Unit) {
+        resolveQueue.add(serviceInfo to onPeerFound)
+        processNextResolve()
+    }
+
+    @Synchronized
+    private fun processNextResolve() {
+        if (isResolving.get()) return
+        val next = resolveQueue.poll() ?: return
+        isResolving.set(true)
+        resolveService(next.first, next.second)
+    }
+
     private fun resolveService(serviceInfo: NsdServiceInfo, onPeerFound: (SyncDevice) -> Unit) {
         try {
             nsdManager?.resolveService(serviceInfo, object : NsdManager.ResolveListener {
                 override fun onResolveFailed(failedService: NsdServiceInfo, errorCode: Int) {
                     Log.w(TAG, "NSD resolve failed for ${failedService.serviceName}: code $errorCode")
+                    isResolving.set(false)
+                    processNextResolve()
                 }
 
                 override fun onServiceResolved(resolvedInfo: NsdServiceInfo) {
-                    val rawHost = resolvedInfo.host?.hostAddress ?: return
-                    val host = rawHost.substringBefore("%") // Strip IPv6 zone index if present
-                    val port = resolvedInfo.port
-                    var deviceId = resolvedInfo.serviceName
-                    var deviceName = resolvedInfo.serviceName
-                    var avatar = "DEV"
-
                     try {
-                        resolvedInfo.attributes?.let { attrs ->
-                            attrs["deviceId"]?.let { deviceId = String(it, Charsets.UTF_8) }
-                            attrs["deviceName"]?.let { deviceName = String(it, Charsets.UTF_8) }
-                            attrs["avatar"]?.let { avatar = String(it, Charsets.UTF_8) }
-                        }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to read NSD attributes", e)
-                    }
+                        val rawHost = resolvedInfo.host?.hostAddress
+                        if (rawHost != null) {
+                            val host = rawHost.substringBefore("%") // Strip IPv6 zone index if present
+                            val port = resolvedInfo.port
+                            var deviceId = resolvedInfo.serviceName
+                            var deviceName = resolvedInfo.serviceName
+                            var avatar = "DEV"
 
-                    val peer = SyncDevice(
-                        id = deviceId,
-                        name = deviceName,
-                        ipAddress = host,
-                        port = port,
-                        avatarEmoji = avatar
-                    )
-                    onPeerFound(peer)
+                            try {
+                                resolvedInfo.attributes?.let { attrs ->
+                                    attrs["deviceId"]?.let { deviceId = String(it, Charsets.UTF_8) }
+                                    attrs["deviceName"]?.let { deviceName = String(it, Charsets.UTF_8) }
+                                    attrs["avatar"]?.let { avatar = String(it, Charsets.UTF_8) }
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to read NSD attributes", e)
+                            }
+
+                            val peer = SyncDevice(
+                                id = deviceId,
+                                name = deviceName,
+                                ipAddress = host,
+                                port = port,
+                                avatarEmoji = avatar
+                            )
+                            onPeerFound(peer)
+                        }
+                    } finally {
+                        isResolving.set(false)
+                        processNextResolve()
+                    }
                 }
             })
         } catch (e: Exception) {
             Log.e(TAG, "Error initiating NSD resolve", e)
+            isResolving.set(false)
+            processNextResolve()
         }
     }
 
@@ -279,6 +306,8 @@ class P2PDiscoveryManager(private val context: Context) {
      */
     @Synchronized
     fun stop() {
+        resolveQueue.clear()
+        isResolving.set(false)
         if (isAdvertising && registrationListener != null) {
             try {
                 nsdManager?.unregisterService(registrationListener)

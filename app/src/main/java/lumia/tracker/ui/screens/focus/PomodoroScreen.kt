@@ -7,6 +7,7 @@ import android.os.Build
 import android.view.WindowManager
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -274,40 +275,44 @@ fun PomodoroScreen(
                 if (!pomodoroState.isRunning) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        data class Preset(val name: String, val work: Int, val shortBreak: Int, val longBreak: Int)
                         val presets = listOf(
-                            Triple("Standard", 25, 5),
-                            Triple("Deep Work", 50, 10),
-                            Triple("Sprint", 15, 3)
+                            Preset("Standard", 25, 5, 15),
+                            Preset("Deep Work", 50, 10, 20),
+                            Preset("Sprint", 15, 3, 10)
                         )
-                        presets.forEach { (name, work, brk) ->
-                            val isSelected = workDurationMin == work && shortBreakDurationMin == brk
+                        presets.forEach { preset ->
+                            val isSelected = workDurationMin == preset.work && shortBreakDurationMin == preset.shortBreak
                             Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (isSelected) ringColor.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, ringColor) else null,
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) ringColor.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surfaceContainer,
+                                border = if (isSelected) BorderStroke(1.5.dp, ringColor) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clickable {
-                                        viewModel.updatePomodoroWorkDuration(work)
-                                        viewModel.updatePomodoroShortBreakDuration(brk)
+                                    .bouncyClick {
+                                        viewModel.updatePomodoroWorkDuration(preset.work)
+                                        viewModel.updatePomodoroShortBreakDuration(preset.shortBreak)
+                                        viewModel.updatePomodoroLongBreakDuration(preset.longBreak)
                                     }
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(vertical = 6.dp, horizontal = 4.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     Text(
-                                        text = name,
+                                        text = preset.name,
                                         style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                                         color = if (isSelected) ringColor else MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "${work}m / ${brk}m",
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        text = "${preset.work}m / ${preset.shortBreak}m",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (isSelected) ringColor.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
