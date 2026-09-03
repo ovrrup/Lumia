@@ -130,7 +130,7 @@ fun HexColorInputItem(label: String, value: String, onValueChange: (String) -> U
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = label, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text(text = label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
             OutlinedTextField(
                 value = textValue,
                 onValueChange = { 
@@ -145,6 +145,10 @@ fun HexColorInputItem(label: String, value: String, onValueChange: (String) -> U
                         // Safe ignore during half-typed strings
                     }
                 },
+                placeholder = { Text("#RRGGBB") },
+                supportingText = if (isError && textValue.isNotBlank()) {
+                    { Text("Format: #RRGGBB", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+                } else null,
                 singleLine = true,
                 isError = isError,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp, end = 16.dp)

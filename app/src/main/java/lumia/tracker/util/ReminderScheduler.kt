@@ -36,6 +36,8 @@ class ReminderReceiver : BroadcastReceiver() {
                 val assignment = assignments.find { it.id == assignmentId }
                 if (assignment != null) {
                     db.scholarDao().updateAssignment(assignment.copy(isCompleted = true))
+                    db.scholarDao().insertActionLog(lumia.tracker.model.ActionLog(actionText = "Completed assignment: ${assignment.title}"))
+                    lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(context)
                 }
             }
             return

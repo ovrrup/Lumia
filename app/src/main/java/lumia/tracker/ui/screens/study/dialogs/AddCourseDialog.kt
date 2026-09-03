@@ -46,13 +46,13 @@ fun AddCourseDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add New Course") },
+        title = { Text("Add Course") },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it },
-                    label = { Text("Course Code") },
+                    label = { Text("Course Code (e.g., CS101)") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -66,11 +66,11 @@ fun AddCourseDialog(
                 OutlinedTextField(
                     value = instructor,
                     onValueChange = { instructor = it },
-                    label = { Text("Instructor") },
+                    label = { Text("Instructor (optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                Text("Course Color Tag", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text("Course Color", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     colorsList.forEach { col ->
@@ -114,13 +114,13 @@ fun AddCourseDialog(
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                Text("Schedule Time Range", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text("Schedule Time", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Button(
+                    OutlinedButton(
                         onClick = { 
                             pickerTargetIsStart = true
                             showTimePicker = true
@@ -129,7 +129,7 @@ fun AddCourseDialog(
                     ) {
                         Text(if (startTime.isBlank()) "Start Time" else "Start: $startTime")
                     }
-                    Button(
+                    OutlinedButton(
                         onClick = { 
                             pickerTargetIsStart = false
                             showTimePicker = true
@@ -159,6 +159,7 @@ fun AddCourseDialog(
                     val timePickerState = rememberTimePickerState(initialHour = initialHour, initialMinute = initialMinute)
                     AlertDialog(
                         onDismissRequest = { showTimePicker = false },
+                        title = { Text(if (pickerTargetIsStart) "Select Start Time" else "Select End Time") },
                         confirmButton = {
                             BouncyTextButton(onClick = {
                                 val hour = timePickerState.hour
@@ -175,7 +176,13 @@ fun AddCourseDialog(
                             }) { Text("OK") }
                         },
                         dismissButton = {
-                            BouncyTextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                            Row {
+                                BouncyTextButton(onClick = {
+                                    if (pickerTargetIsStart) startTime = "" else endTime = ""
+                                    showTimePicker = false
+                                }) { Text("Clear") }
+                                BouncyTextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                            }
                         },
                         text = {
                             TimePicker(state = timePickerState)
@@ -187,20 +194,20 @@ fun AddCourseDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description (Optional)") },
+                    label = { Text("Description (optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = tags,
                     onValueChange = { tags = it },
-                    label = { Text("Tags (Optional, comma separated)") },
+                    label = { Text("Tags (comma separated, optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 val subjects by viewModel.subjects.collectAsStateWithLifecycle()
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    "Link to Study Subject (Optional)",
+                    "Linked Subject (Optional)",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -232,7 +239,7 @@ fun AddCourseDialog(
                     FilterChip(
                         selected = false,
                         onClick = { showAddSubjectDialog = true },
-                        label = { Text("+ New Subject", color = MaterialTheme.colorScheme.tertiary) }
+                        label = { Text("+ New Subject", color = MaterialTheme.colorScheme.primary) }
                     )
                 }
             }
@@ -240,7 +247,12 @@ fun AddCourseDialog(
         confirmButton = {
             BouncyTextButton(onClick = {
                 if (name.isNotBlank()) {
-                    val computedSchedule = if (startTime.isNotBlank() && endTime.isNotBlank()) "$startTime - $endTime" else schedule
+                    val computedSchedule = when {
+                        startTime.isNotBlank() && endTime.isNotBlank() -> "$startTime - $endTime"
+                        startTime.isNotBlank() -> startTime
+                        endTime.isNotBlank() -> endTime
+                        else -> schedule
+                    }
                     viewModel.addCourse(
                         name = name,
                         code = code,

@@ -216,7 +216,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                     )
                 }
                 CenterAlignedTopAppBar(
-                    title = { Text("About App", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                    title = { Text("About Lumia", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
@@ -266,10 +266,10 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Lumia", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-                    Text("v$currentVersion-foss", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("v$currentVersion", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "A beautiful, 100% offline-first academic tracker and focus cockpit built with Material 3 design, local Room databases, LogDog crash safety guard, and the True Always-On Display saving option.",
+                        text = "A clean, private academic tracker and focus timer built with offline-first local storage and Material 3 design.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -279,11 +279,11 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
 
             // GitHub & Community Listings
-            SettingsGroupCard(title = "Community & Sources", icon = Icons.Rounded.Star) {
+            SettingsGroupCard(title = "Source & Developer", icon = Icons.Rounded.Star) {
                 SettingsActionItemInCard(
-                    title = "Creator GitHub Profile",
+                    title = "Developer GitHub",
                     subtitle = "github.com/ovrrup",
-                    icon = Icons.Rounded.Edit,
+                    icon = Icons.Rounded.Person,
                     onClick = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ovrrup"))
                         try { context.startActivity(intent) } catch (e: Exception) {}
@@ -291,8 +291,8 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                 SettingsActionItemInCard(
-                    title = "GitHub Source Repository",
-                    subtitle = "Join our development base or clone the code",
+                    title = "Source Repository",
+                    subtitle = "github.com/ovrrup/Lumia",
                     icon = Icons.Rounded.School,
                     onClick = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ovrrup/Lumia"))
@@ -302,7 +302,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
 
             // Updates Manager
-            SettingsGroupCard(title = "Open Source Version Control", icon = Icons.Rounded.Download) {
+            SettingsGroupCard(title = "Updates", icon = Icons.Rounded.Download) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -310,8 +310,8 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Auto-Check Updates on Startup", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        Text("Verify latest releases from public channels", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Check for Updates on Startup", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text("Check GitHub Releases for new versions when opening the app", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(
                         checked = autoCheckEnabled,
@@ -337,12 +337,12 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                         shape = RoundedCornerShape(12.dp),
                         enabled = updateState != "checking"
                     ) {
-                        Text(if (updateState == "checking") "Checking Repository..." else "Check for Updates Now")
+                        Text(if (updateState == "checking") "Checking for Updates..." else "Check for Updates Now")
                     }
 
                     when (updateState) {
                         "checking" -> {
-                            Text("Querying GitHub releases API...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                            Text("Checking GitHub Releases...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                         }
                         "available" -> {
                             Card(
@@ -355,13 +355,13 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                                     verticalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     Text(
-                                        text = "Update Available! ($updateTagName)",
+                                        text = "Update Available: $updateTagName",
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                     Text(
-                                        text = "A new formal release is available. You can download the latest Lumia.apk directly from the GitHub Releases assets.",
+                                        text = "A new release is available to download from GitHub Releases.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     )
@@ -376,7 +376,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                                             Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
                                             Text(
-                                                text = "Note: If installation fails with 'Package Conflict', please uninstall your current preview/debug version first. Official GitHub APKs are signed differently.",
+                                                text = "Note: If updating fails due to signature differences with preview builds, export a backup first, then reinstall.",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onErrorContainer
                                             )
@@ -418,23 +418,23 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Go to GitHub Releases")
+                                        Text("Open GitHub Releases")
                                     }
                                 }
                             }
                         }
                         "latest" -> {
-                            Text("Lumia FOSS is up-to-date (v$currentVersion) with latest release branch.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                            Text("Lumia is up to date (v$currentVersion).", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                         }
                         "error" -> {
-                            Text("Code status: Offline or DNS limitation. Standard local database remains highly optimized.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            Text("Unable to check for updates. Check your network connection.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
             }
 
             // Terms & Privacy policies
-            SettingsGroupCard(title = "Legal terms", icon = Icons.Rounded.Lock) {
+            SettingsGroupCard(title = "Privacy & Legal", icon = Icons.Rounded.Lock) {
                 // Terms
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -445,8 +445,8 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Terms & Conditions Agreement", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                            Text("Read our local user accountability parameters", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Terms of Use", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                            Text("Open-source license terms and disclaimer", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(
                             imageVector = Icons.Rounded.ChevronRight,
@@ -460,10 +460,10 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
                         ) {
                             Text(
-                                text = "1. Open Source Framework & License\n" +
-                                       "Lumia is free software distributed under the GNU GPLv3 terms. You can modify and share code as long as your changes remain public under the same copyleft license.\n\n" +
-                                       "2. No Warranty\n" +
-                                       "Lumia is provided entirely 'as-is' without warranties of any kind. You are solely responsible for local storage backups.",
+                                text = "1. Open Source\n" +
+                                       "Lumia is free and open-source software distributed under the GNU General Public License v3.0 (GPLv3).\n\n" +
+                                       "2. Disclaimer of Warranty\n" +
+                                       "Lumia is provided 'as is', without warranty of any kind. You are responsible for maintaining your local data backups.",
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(12.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -485,8 +485,8 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Local Privacy Policy", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                            Text("100% serverless, zero telemetry operations", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Privacy Policy", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                            Text("100% offline, zero data collection or tracking", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(
                             imageVector = Icons.Rounded.ChevronRight,
@@ -501,9 +501,9 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                         ) {
                             Text(
                                 text = "1. Zero Telemetry\n" +
-                                       "Lumia operates completely offline. No tracking SDKs, no external ads, no user harvesting.\n\n" +
-                                       "2. Safe Permission Utilization\n" +
-                                       "All accessibility and overlay requests are completely handled locally on your own CPU to manage focus screen timers.",
+                                       "Lumia operates completely offline. No tracking SDKs, analytics, ads, or external data collection.\n\n" +
+                                       "2. Local Data Storage\n" +
+                                       "All academic records, study notes, and profiles are stored exclusively on your device's local database.",
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(12.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -525,8 +525,8 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("GNU GPLv3 Open Source License", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                            Text("Verification parameters of other distributions", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("GNU GPLv3 License", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                            Text("Free Software Foundation Copyleft License", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(
                             imageVector = Icons.Rounded.ChevronRight,
@@ -540,8 +540,8 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
                         ) {
                             Text(
-                                text = "Lumia is powered by the GNU General Public License v3.0.\n\n" +
-                                       "This license grants you the freedom to run, study, share, and modify Lumia. Any public distribution of derivative versions must be open-source and preserve original contributor attributions.",
+                                text = "Lumia is free software licensed under the GNU General Public License v3.0.\n\n" +
+                                       "You are free to run, study, share, and modify Lumia. Any public distribution of modified versions must remain open-source under the GNU GPLv3.",
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(12.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,

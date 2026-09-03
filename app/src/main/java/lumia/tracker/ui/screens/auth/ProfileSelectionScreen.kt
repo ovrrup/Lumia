@@ -132,6 +132,8 @@ fun ProfileSelectionScreen(
                         value = name,
                         onValueChange = { name = it },
                         label = { Text("Profile Name") },
+                        placeholder = { Text("e.g. Alex") },
+                        singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(8.dp))
@@ -139,11 +141,13 @@ fun ProfileSelectionScreen(
                         value = alias,
                         onValueChange = { alias = it },
                         label = { Text("Alias / Nickname") },
+                        placeholder = { Text("e.g. Student") },
+                        singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(16.dp))
 
-                    Text("Select Starter Theme", style = MaterialTheme.typography.titleSmall, modifier = Modifier.align(Alignment.Start))
+                    Text("Theme", style = MaterialTheme.typography.titleSmall, modifier = Modifier.align(Alignment.Start))
                     Spacer(Modifier.height(8.dp))
                     
                     val themesList = listOf(
@@ -207,11 +211,11 @@ fun ProfileSelectionScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(
                                     imageVector = Icons.Rounded.Photo,
-                                    contentDescription = "Pick Photo",
+                                    contentDescription = "Choose Photo",
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(28.dp)
                                 )
-                                Text("Choose Device Photo", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer, textAlign = TextAlign.Center)
+                                Text("Choose Photo", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer, textAlign = TextAlign.Center)
                             }
                         }
                     }

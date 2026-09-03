@@ -42,8 +42,8 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
     val coroutineScope = rememberCoroutineScope()
     
     // First user setup temporary state variables
-    var firstProfileName by remember { mutableStateOf("Main User") }
-    var firstProfileAlias by remember { mutableStateOf("Student") }
+    var firstProfileName by remember { mutableStateOf("") }
+    var firstProfileAlias by remember { mutableStateOf("") }
     var firstProfileTheme by remember { mutableStateOf("Ocean") }
     var firstProfileAvatar by remember { mutableStateOf("") }
 
@@ -64,14 +64,14 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                 when (page) {
                     0 -> OnboardingPage(
                         icon = Icons.Rounded.AutoAwesome,
-                        title = "Glassmorphism & Style",
-                        description = "Experience Lumia's distinctive Frosted Glass layouts! Custom theme overlays, floating adaptive navigation rails, and tactile actions elevate your routine.",
+                        title = "Modern Design",
+                        description = "A clean frosted-glass interface with customizable themes tailored to your daily study routine.",
                         isActive = pagerState.currentPage == page
                     )
                     1 -> OnboardingPage(
                         icon = Icons.Rounded.Timer,
-                        title = "Basic Focus Timer",
-                        description = "Our classic Pomodoro study space and course organizers are 100% free with local offline data security.",
+                        title = "Focus & Productivity",
+                        description = "Boost your study sessions with an integrated Pomodoro timer, course tracking, and complete offline privacy.",
                         isActive = pagerState.currentPage == page
                     )
                     2 -> PermissionsPage(
@@ -139,8 +139,8 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                         onClick = {
                             if (pagerState.currentPage == 4) {
                                 viewModel.setupFirstProfile(
-                                    name = firstProfileName.ifBlank { "Main User" },
-                                    alias = firstProfileAlias.ifBlank { "Student" },
+                                    name = firstProfileName.ifBlank { "Student" },
+                                    alias = firstProfileAlias.ifBlank { "Learner" },
                                     avatar = firstProfileAvatar,
                                     starterTheme = firstProfileTheme
                                 )
@@ -159,7 +159,7 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                         shape = RoundedCornerShape(24.dp),
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)
                     ) {
-                        Text(if (pagerState.currentPage == 5) "Let's Go!" else "Next", fontWeight = FontWeight.Bold)
+                        Text(if (pagerState.currentPage == 5) "Get Started" else "Next", fontWeight = FontWeight.Bold)
                     }
                 } else {
                     Spacer(modifier = Modifier.width(64.dp))
@@ -227,7 +227,7 @@ fun BackupOptionPage(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Welcome Back?",
+            text = "Restore or Start Fresh",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.onBackground,
@@ -237,7 +237,7 @@ fun BackupOptionPage(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Restore academic data from a previous backup file, or start fresh with a clean profile setup.",
+            text = "Restore your academic data from a previous backup file, or start fresh with a new profile.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
             textAlign = TextAlign.Center,
@@ -296,13 +296,13 @@ fun BackupOptionPage(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Import Local Backup",
+                        text = "Import Backup",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Restore all courses, settings, profiles, and logs instantly via your .bin or .json file.",
+                        text = "Restore your courses, tasks, settings, and study history from an existing backup file.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -345,13 +345,13 @@ fun BackupOptionPage(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "I'm a New User",
+                        text = "Create New Profile",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Create a beautiful custom student profile and start tracking your academic journey from scratch.",
+                        text = "Set up a new student profile and customize your preferences to get started.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -402,7 +402,7 @@ fun VisualTourPage(isActive: Boolean) {
         
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Lumia is optimized and ready. Explore the dynamic screens inside your cockpit:",
+            text = "You're all set to begin. Here's a quick overview of what you can do:",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
             textAlign = TextAlign.Center,
@@ -419,25 +419,25 @@ fun VisualTourPage(isActive: Boolean) {
             TourItemCard(
                 icon = Icons.Rounded.Dashboard,
                 title = "Home Dashboard",
-                desc = "Track schedules, daily streaks, task progress, and live indicators.",
+                desc = "View your schedule, study streaks, and daily task progress at a glance.",
                 tint = MaterialTheme.colorScheme.primary
             )
             TourItemCard(
                 icon = Icons.Rounded.MenuBook,
                 title = "Courses & Subjects",
-                desc = "Organize classes, calculate grade analytics, and manage coursework.",
+                desc = "Manage classes, track coursework, and monitor your academic progress.",
                 tint = MaterialTheme.colorScheme.secondary
             )
             TourItemCard(
                 icon = Icons.Rounded.Timer,
                 title = "Pomodoro Timer",
-                desc = "Engage in deep focused study sessions with integrated statistics.",
+                desc = "Stay focused with customizable study intervals and session statistics.",
                 tint = MaterialTheme.colorScheme.tertiary
             )
             TourItemCard(
                 icon = Icons.Rounded.Settings,
-                title = "Aesthetic Settings",
-                desc = "Customize glass transparency, accent themes, and widgets easily.",
+                title = "Settings & Themes",
+                desc = "Customize color themes, display preferences, and notifications.",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

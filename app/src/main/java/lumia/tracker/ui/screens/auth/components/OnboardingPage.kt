@@ -62,7 +62,7 @@ fun OnboardingPage(icon: ImageVector, title: String, description: String, isActi
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (title.contains("Glassmorphism", ignoreCase = true)) {
+                if (title.contains("Design", ignoreCase = true) || title.contains("Glass", ignoreCase = true)) {
                     // Glassmorphism visual representation
                     GlassmorphicRepresentation()
                 } else {
@@ -229,7 +229,7 @@ fun GlassmorphicRepresentation() {
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                text = "Academic Cockpit",
+                                text = "Study Companion",
                                 fontSize = 8.sp,
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                             )
@@ -291,7 +291,7 @@ fun GlassmorphicRepresentation() {
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Your personalized companion",
+                        text = "Your personal study companion",
                         fontSize = 8.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -140,7 +140,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
 
         item {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // NEW: Study Sessions Today counter
+                // Study Sessions Today counter
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
@@ -156,15 +156,16 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                     }
                 }
 
-                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                             Text("Total Notes", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Active Tasks", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSecondaryContainer, maxLines = 1)
+                            Spacer(Modifier.height(4.dp))
                             Text(
-                                text = viewModel.getNotesCount().toString(),
+                                text = viewModel.getActiveTasksCount().toString(),
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -175,28 +176,44 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                             Text("Active Tasks", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            val completionRate = if (totalAssignments > 0) ((completedAssignments.toFloat() / totalAssignments) * 100).toInt() else 0
+                            Text("Completion Rate", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onTertiaryContainer, maxLines = 1)
+                            Spacer(Modifier.height(4.dp))
                             Text(
-                                text = viewModel.getActiveTasksCount().toString(),
+                                text = "$completionRate%",
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
                         }
                     }
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Total Notes", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = viewModel.getNotesCount().toString(),
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
-                
                 
                 val streakTotalNormal by viewModel.streakTotalNormal.collectAsStateWithLifecycle()
                 val streakTotalComplete by viewModel.streakTotalComplete.collectAsStateWithLifecycle()
                 val streakLongest by viewModel.streakLongest.collectAsStateWithLifecycle()
                 val streakCurrent by viewModel.streakCurrent.collectAsStateWithLifecycle()
 
-                // Streaks Analytics Card
+                // Streaks Overview Card
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Streaks Analytics",
+                    text = "Study Streaks",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Black,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -228,12 +245,12 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Normal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Active Days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(streakTotalNormal.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             }
                             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Complete", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Goal Met", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(streakTotalComplete.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color(0xFFE67E22))
                             }
@@ -248,7 +265,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                 if (allTestRecords.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Academic & Test Analytics",
+                        text = "Academic Performance",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -310,12 +327,12 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("GPA / Average", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text("Average Score", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text("${overallAverage.toInt()}%", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                     }
                                     Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("Tests Taken", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text("Assessments", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text("$totalTests", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                     }
@@ -339,7 +356,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                         Icon(imageVector = Icons.Rounded.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = "$perfectScoresCount perfect scores achieved! Outstanding!",
+                                            text = "$perfectScoresCount perfect score${if (perfectScoresCount > 1) "s" else ""} achieved",
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onTertiaryContainer
@@ -350,7 +367,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
 
                             if (subjects.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(24.dp))
-                                Text("Subject Strength & Mastery", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text("Subject Mastery", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(12.dp))
 
                                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -367,10 +384,10 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                             val subjAvg = subjTests.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }.average().toFloat()
                                             
                                             val (statusText, statusColor) = when {
-                                                subjAvg >= 85f -> "MASTER" to Color(0xFF2ECC71)
-                                                subjAvg >= 70f -> "PROFICIENT" to MaterialTheme.colorScheme.secondary
-                                                subjAvg >= 50f -> "DEVELOPING" to MaterialTheme.colorScheme.tertiary
-                                                else -> "NEEDS WORK" to Color(0xFFE74C3C)
+                                                subjAvg >= 85f -> "Mastery" to Color(0xFF2ECC71)
+                                                subjAvg >= 70f -> "Proficient" to MaterialTheme.colorScheme.secondary
+                                                subjAvg >= 50f -> "Developing" to MaterialTheme.colorScheme.tertiary
+                                                else -> "Needs Focus" to Color(0xFFE74C3C)
                                             }
 
                                             Column(modifier = Modifier.fillMaxWidth()) {
@@ -385,7 +402,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                                                             .background(statusColor.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
                                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                                     ) {
-                                                        Text(statusText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = statusColor)
+                                                        Text(statusText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = statusColor)
                                                     }
                                                     Spacer(modifier = Modifier.width(8.dp))
                                                     Text("${subjAvg.toInt()}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
@@ -415,7 +432,7 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
 
                             if (allTagsMap.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(24.dp))
-                                Text("Performance by Tag Indicators", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text("Performance by Tag", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(12.dp))
 
                                 Row(
@@ -462,9 +479,9 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                             val testedTopicIds = allTestRecords.mapNotNull { it.topicId }.distinct()
                             if (testedTopicIds.isNotEmpty() && topics.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(24.dp))
-                                Text("Focused Concept Mastery", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text("Topic Mastery", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("Interconnected concept mastery computed across assessments.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Average assessment scores for tested topics.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(modifier = Modifier.height(12.dp))
 
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -514,6 +531,15 @@ fun AnalyticsTab(navController: NavController, viewModel: ScholarViewModel, padd
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Study Trends & Activity",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
 
                 WeeklyAssignmentsDueChart(
                     modifier = Modifier.fillMaxWidth(),

@@ -228,13 +228,49 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            StatItem(label = "Courses", count = linkedCourses.size)
+                            StatItem(label = "Chapters", count = subjectChapters.size)
                             val completedTopics = subjectTopics.count { it.isCompleted }
                             StatItem(label = "Topics", count = subjectTopics.size, detail = "$completedTopics Done")
                             val pendingAssignments = subjectAssignments.count { !it.isCompleted }
                             StatItem(label = "Assignments", count = subjectAssignments.size, detail = "$pendingAssignments Left")
                             val pendingTasks = subjectTasks.count { !it.isCompleted }
                             StatItem(label = "Tasks", count = subjectTasks.size, detail = "$pendingTasks Left")
+                        }
+
+                        if (subjectTopics.isNotEmpty()) {
+                            val completedTopics = subjectTopics.count { it.isCompleted }
+                            val progressPercent = (completedTopics * 100) / subjectTopics.size
+                            Spacer(modifier = Modifier.height(16.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Syllabus Progress",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "$progressPercent% completed ($completedTopics/${subjectTopics.size} topics)",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = completedTopics.toFloat() / subjectTopics.size.toFloat(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
                         }
                     }
                 }
@@ -296,7 +332,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 }
             }
 
-            // 2. Study Outline (Chapters & Topics) Section
+            // 2. Syllabus & Chapters Section
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -308,7 +344,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(Icons.Rounded.List, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Text("Study Outline", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
+                        Text("Syllabus & Chapters", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
                     }
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -346,20 +382,20 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = "No chapters or topics added yet. Group your learning materials under chapters and track topic completion.",
+                                text = "No syllabus chapters or topics added yet. Create chapters to organize your syllabus units and track topic completion.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 BouncyTextButton(onClick = { showAddChapterDialog = true }) {
-                                    Text("+ Add Chapter", fontWeight = FontWeight.Bold)
+                                    Text("+ Chapter", fontWeight = FontWeight.Bold)
                                 }
                                 BouncyTextButton(onClick = {
                                     selectedChapterForNewTopic = null
                                     showAddTopicDialog = true
                                 }) {
-                                    Text("+ Add Topic", fontWeight = FontWeight.Bold)
+                                    Text("+ Topic", fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -414,11 +450,26 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
+                                        val completedCount = chapterTopics.count { it.isCompleted }
+                                        val progressText = if (chapterTopics.isEmpty()) {
+                                            "No topics"
+                                        } else {
+                                            "$completedCount of ${chapterTopics.size} topics completed"
+                                        }
+                                        Text(
+                                            text = progressText,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (chapterTopics.isNotEmpty() && completedCount == chapterTopics.size) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            }
+                                        )
                                         if (chapter.tags.isNotBlank()) {
                                             Text(
-                                                text = "Tags: ${chapter.tags}",
+                                                text = chapter.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.joinToString(", "),
                                                 style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                             )
                                         }
                                     }
@@ -433,7 +484,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                         onDismissRequest = { showChapterMenu = false }
                                     ) {
                                         DropdownMenuItem(
-                                            text = { Text("Add Topic Here") },
+                                            text = { Text("Add Topic") },
                                             onClick = {
                                                 showChapterMenu = false
                                                 selectedChapterForNewTopic = chapter.id
@@ -475,7 +526,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                 Spacer(modifier = Modifier.height(12.dp))
                                 if (chapterTopics.isEmpty()) {
                                     Text(
-                                        text = "No topics added to this chapter yet.",
+                                        text = "No topics in this chapter yet.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(start = 32.dp, top = 4.dp, bottom = 4.dp)
@@ -518,7 +569,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                                     )
                                                     if (topic.tags.isNotBlank()) {
                                                         Text(
-                                                            text = "Tags: ${topic.tags}",
+                                                            text = topic.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.joinToString(", "),
                                                             style = MaterialTheme.typography.labelSmall,
                                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                                         )
@@ -579,7 +630,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                     ) {
                                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(14.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Add Topic Here", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Text("Add Topic", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -618,7 +669,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Rounded.HelpOutline,
+                                                imageVector = Icons.Rounded.Category,
                                                 contentDescription = null,
                                                 tint = MaterialTheme.colorScheme.secondary,
                                                 modifier = Modifier.size(18.dp)
@@ -626,10 +677,16 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                         }
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "General / Unassigned Topics",
+                                                text = "Standalone Topics",
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            val unassignedCompleted = unassignedTopics.count { it.isCompleted }
+                                            Text(
+                                                text = "$unassignedCompleted of ${unassignedTopics.size} topics completed",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }
@@ -674,7 +731,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                                                     )
                                                     if (topic.tags.isNotBlank()) {
                                                         Text(
-                                                            text = "Tags: ${topic.tags}",
+                                                            text = topic.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.joinToString(", "),
                                                             style = MaterialTheme.typography.labelSmall,
                                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                                         )
@@ -738,7 +795,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             if (subjectTasks.isEmpty()) {
                 item {
                     EmptySectionCard(
-                        text = "No direct tasks created for this subject yet. Create small actionable steps here.",
+                        text = "No tasks yet. Add actionable study steps or to-dos for this subject.",
                         buttonText = "Add Task",
                         onClick = { showAddTaskDialog = true }
                     )
@@ -834,7 +891,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             if (subjectAssignments.isEmpty()) {
                 item {
                     EmptySectionCard(
-                        text = "No assignments, homework, or exam preparations found for this subject. Create one now.",
+                        text = "No assignments or exams yet. Track homework, quizzes, and exams for this subject.",
                         buttonText = "Add Assignment",
                         onClick = { showAddAssignmentDialog = true }
                     )
@@ -942,7 +999,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             if (subjectNotes.isEmpty()) {
                 item {
                     EmptySectionCard(
-                        text = "No quick notes added yet. Keep formulas, code snippets, or definitions safe right inside the subject.",
+                        text = "No quick notes yet. Save key formulas, definitions, or study reminders here.",
                         buttonText = "Add Note",
                         onClick = { showAddNoteDialog = true }
                     )
@@ -1023,7 +1080,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
             title = { Text("Delete Subject?", fontWeight = FontWeight.Bold) },
-            text = { Text("Are you sure you want to delete ${subject.name}? All linked topics, notes, tasks, and assignments will stay, but they won't be mapped to this subject anymore.") },
+            text = { Text("Are you sure you want to delete \"${subject.name}\"? This will permanently remove the subject. Associated topics, chapters, and notes will no longer be grouped under it.") },
             confirmButton = {
                 BouncyTextButton(
                     onClick = {
@@ -1054,50 +1111,58 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Select which courses belong to this subject:", style = MaterialTheme.typography.bodyMedium)
+                    Text("Connect courses to link class schedules, attendance, and assignments with this subject.", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    LazyColumn(
-                        modifier = Modifier.heightIn(max = 280.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(allCourses, key = { it.id }) { course ->
-                            val currentIds = course.subjectIds.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-                            val isLinked = course.subjectId == subjectId || currentIds.contains(subjectId.toString())
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .clickable {
-                                        val updatedIds = if (isLinked) {
-                                            currentIds.filter { it != subjectId.toString() }
-                                        } else {
-                                            (currentIds + subjectId.toString()).distinct()
+                    if (allCourses.isEmpty()) {
+                        Text(
+                            "No courses available yet. Create courses in the Courses tab to link them here.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.heightIn(max = 280.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(allCourses, key = { it.id }) { course ->
+                                val currentIds = course.subjectIds.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                                val isLinked = course.subjectId == subjectId || currentIds.contains(subjectId.toString())
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            val updatedIds = if (isLinked) {
+                                                currentIds.filter { it != subjectId.toString() }
+                                            } else {
+                                                (currentIds + subjectId.toString()).distinct()
+                                            }
+                                            val updatedIdsStr = updatedIds.joinToString(",")
+                                            val firstId = updatedIds.firstOrNull()?.toIntOrNull()
+                                            viewModel.updateCourse(course.copy(subjectIds = updatedIdsStr, subjectId = firstId))
                                         }
-                                        val updatedIdsStr = updatedIds.joinToString(",")
-                                        val firstId = updatedIds.firstOrNull()?.toIntOrNull()
-                                        viewModel.updateCourse(course.copy(subjectIds = updatedIdsStr, subjectId = firstId))
-                                    }
-                                    .padding(vertical = 8.dp, horizontal = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(
-                                    checked = isLinked,
-                                    onCheckedChange = {
-                                        val updatedIds = if (isLinked) {
-                                            currentIds.filter { it != subjectId.toString() }
-                                        } else {
-                                            (currentIds + subjectId.toString()).distinct()
+                                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = isLinked,
+                                        onCheckedChange = {
+                                            val updatedIds = if (isLinked) {
+                                                currentIds.filter { it != subjectId.toString() }
+                                            } else {
+                                                (currentIds + subjectId.toString()).distinct()
+                                            }
+                                            val updatedIdsStr = updatedIds.joinToString(",")
+                                            val firstId = updatedIds.firstOrNull()?.toIntOrNull()
+                                            viewModel.updateCourse(course.copy(subjectIds = updatedIdsStr, subjectId = firstId))
                                         }
-                                        val updatedIdsStr = updatedIds.joinToString(",")
-                                        val firstId = updatedIds.firstOrNull()?.toIntOrNull()
-                                        viewModel.updateCourse(course.copy(subjectIds = updatedIdsStr, subjectId = firstId))
-                                    }
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column {
-                                    Text(course.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                                    if (course.code.isNotBlank()) {
-                                        Text(course.code, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(course.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                                        if (course.code.isNotBlank()) {
+                                            Text(course.code, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
                                     }
                                 }
                             }
@@ -1125,8 +1190,8 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
         }
         var chosenChapterId by remember(currentSelectedChapterId) { mutableStateOf(currentSelectedChapterId) }
         val chosenChapterName = remember(chosenChapterId, subjectChapters) {
-            if (chosenChapterId == null) "No Chapter (General Topic)"
-            else subjectChapters.find { it.id == chosenChapterId }?.name ?: "No Chapter (General Topic)"
+            if (chosenChapterId == null) "No Chapter (Standalone Topic)"
+            else subjectChapters.find { it.id == chosenChapterId }?.name ?: "No Chapter (Standalone Topic)"
         }
 
         AlertDialog(
@@ -1141,17 +1206,21 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         value = topicTitle,
                         onValueChange = { topicTitle = it },
                         label = { Text("Topic Title") },
-                        modifier = Modifier.fillMaxWidth()
+                        placeholder = { Text("e.g. Thermodynamics, Newton's Laws") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
                     OutlinedTextField(
                         value = topicTags,
                         onValueChange = { topicTags = it },
-                        label = { Text("Tags (comma separated, optional)") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Tags (optional)") },
+                        placeholder = { Text("e.g. physics, core, exam") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
                     
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("Assign to Chapter", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    Text("Chapter", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                     Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedCard(
                             onClick = { chapterDropdownExpanded = true },
@@ -1174,7 +1243,7 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             modifier = Modifier.fillMaxWidth(0.8f)
                         ) {
                             DropdownMenuItem(
-                                text = { Text("No Chapter (General Topic)") },
+                                text = { Text("No Chapter (Standalone Topic)") },
                                 onClick = {
                                     chosenChapterId = null
                                     chapterDropdownExpanded = false
@@ -1191,31 +1260,39 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                             }
                         }
                     }
+                    Text(
+                        text = "Topics track individual syllabus concepts and study completion within chapters.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             },
             confirmButton = {
-                BouncyTextButton(onClick = {
-                    if (topicTitle.isNotBlank()) {
-                        if (currentTopic == null) {
-                            viewModel.addTopic(
-                                subjectId = subjectId,
-                                title = topicTitle,
-                                tags = topicTags,
-                                chapterId = chosenChapterId
-                            )
-                        } else {
-                            viewModel.updateTopic(
-                                currentTopic.copy(
-                                    title = topicTitle,
-                                    tags = topicTags,
+                BouncyTextButton(
+                    onClick = {
+                        if (topicTitle.isNotBlank()) {
+                            if (currentTopic == null) {
+                                viewModel.addTopic(
+                                    subjectId = subjectId,
+                                    title = topicTitle.trim(),
+                                    tags = topicTags.trim(),
                                     chapterId = chosenChapterId
                                 )
-                            )
+                            } else {
+                                viewModel.updateTopic(
+                                    currentTopic.copy(
+                                        title = topicTitle.trim(),
+                                        tags = topicTags.trim(),
+                                        chapterId = chosenChapterId
+                                    )
+                                )
+                            }
                         }
-                    }
-                    showAddTopicDialog = false
-                    topicToEdit = null
-                }) { Text("Save") }
+                        showAddTopicDialog = false
+                        topicToEdit = null
+                    },
+                    enabled = topicTitle.isNotBlank()
+                ) { Text("Save") }
             },
             dismissButton = {
                 BouncyTextButton(onClick = {
@@ -1245,45 +1322,58 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         value = chapterName,
                         onValueChange = { chapterName = it },
                         label = { Text("Chapter Name") },
-                        modifier = Modifier.fillMaxWidth()
+                        placeholder = { Text("e.g. Chapter 1: Classical Mechanics") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
                     OutlinedTextField(
                         value = chapterDesc,
                         onValueChange = { chapterDesc = it },
-                        label = { Text("Description (Optional)") },
+                        label = { Text("Description (optional)") },
+                        placeholder = { Text("Overview of topics and learning objectives") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = chapterTags,
                         onValueChange = { chapterTags = it },
-                        label = { Text("Tags (comma separated, optional)") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Tags (optional)") },
+                        placeholder = { Text("e.g. unit 1, midterm") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    Text(
+                        text = "Chapters group related topics together to organize your syllabus.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },
             confirmButton = {
-                BouncyTextButton(onClick = {
-                    if (chapterName.isNotBlank()) {
-                        if (currentChapter == null) {
-                            viewModel.addChapter(
-                                name = chapterName,
-                                subjectId = subjectId,
-                                description = chapterDesc,
-                                tags = chapterTags
-                            )
-                        } else {
-                            viewModel.updateChapter(
-                                currentChapter.copy(
-                                    name = chapterName,
-                                    description = chapterDesc,
-                                    tags = chapterTags
+                BouncyTextButton(
+                    onClick = {
+                        if (chapterName.isNotBlank()) {
+                            if (currentChapter == null) {
+                                viewModel.addChapter(
+                                    name = chapterName.trim(),
+                                    subjectId = subjectId,
+                                    description = chapterDesc.trim(),
+                                    tags = chapterTags.trim()
                                 )
-                            )
+                            } else {
+                                viewModel.updateChapter(
+                                    currentChapter.copy(
+                                        name = chapterName.trim(),
+                                        description = chapterDesc.trim(),
+                                        tags = chapterTags.trim()
+                                    )
+                                )
+                            }
                         }
-                    }
-                    showAddChapterDialog = false
-                    chapterToEdit = null
-                }) { Text("Save") }
+                        showAddChapterDialog = false
+                        chapterToEdit = null
+                    },
+                    enabled = chapterName.isNotBlank()
+                ) { Text("Save") }
             },
             dismissButton = {
                 BouncyTextButton(onClick = {
@@ -1305,33 +1395,39 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
             },
             title = { Text(if (currentNote == null) "Add Note" else "Edit Note") },
             text = {
-                OutlinedTextField(
-                    value = noteContent,
-                    onValueChange = { noteContent = it },
-                    label = { Text("Note content") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 4
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = noteContent,
+                        onValueChange = { noteContent = it },
+                        label = { Text("Note Content") },
+                        placeholder = { Text("Write formulas, definitions, key takeaways, or quick thoughts...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 4
+                    )
+                }
             },
             confirmButton = {
-                BouncyTextButton(onClick = {
-                    if (noteContent.isNotBlank()) {
-                        if (currentNote == null) {
-                            viewModel.addNote(
-                                content = noteContent,
-                                subjectId = subjectId
-                            )
-                        } else {
-                            viewModel.updateNote(
-                                currentNote.copy(
-                                    content = noteContent
+                BouncyTextButton(
+                    onClick = {
+                        if (noteContent.isNotBlank()) {
+                            if (currentNote == null) {
+                                viewModel.addNote(
+                                    content = noteContent.trim(),
+                                    subjectId = subjectId
                                 )
-                            )
+                            } else {
+                                viewModel.updateNote(
+                                    currentNote.copy(
+                                        content = noteContent.trim()
+                                    )
+                                )
+                            }
                         }
-                    }
-                    showAddNoteDialog = false
-                    noteToEdit = null
-                }) { Text("Save") }
+                        showAddNoteDialog = false
+                        noteToEdit = null
+                    },
+                    enabled = noteContent.isNotBlank()
+                ) { Text("Save") }
             },
             dismissButton = {
                 BouncyTextButton(onClick = {
@@ -1361,12 +1457,15 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         value = taskTitle,
                         onValueChange = { taskTitle = it },
                         label = { Text("Task Title") },
-                        modifier = Modifier.fillMaxWidth()
+                        placeholder = { Text("e.g. Read chapter 3 summary") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
                     OutlinedTextField(
                         value = taskDescription,
                         onValueChange = { taskDescription = it },
-                        label = { Text("Description") },
+                        label = { Text("Description (optional)") },
+                        placeholder = { Text("Actionable steps or details") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     
@@ -1411,31 +1510,34 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 }
             },
             confirmButton = {
-                BouncyTextButton(onClick = {
-                    if (taskTitle.isNotBlank()) {
-                        if (currentTask == null) {
-                            viewModel.addTask(
-                                Task(
-                                    title = taskTitle,
-                                    description = taskDescription,
-                                    dueDateMillis = taskDueDate,
-                                    subjectId = subjectId,
-                                    isCompleted = false
+                BouncyTextButton(
+                    onClick = {
+                        if (taskTitle.isNotBlank()) {
+                            if (currentTask == null) {
+                                viewModel.addTask(
+                                    Task(
+                                        title = taskTitle.trim(),
+                                        description = taskDescription.trim(),
+                                        dueDateMillis = taskDueDate,
+                                        subjectId = subjectId,
+                                        isCompleted = false
+                                    )
                                 )
-                            )
-                        } else {
-                            viewModel.updateTask(
-                                currentTask.copy(
-                                    title = taskTitle,
-                                    description = taskDescription,
-                                    dueDateMillis = taskDueDate
+                            } else {
+                                viewModel.updateTask(
+                                    currentTask.copy(
+                                        title = taskTitle.trim(),
+                                        description = taskDescription.trim(),
+                                        dueDateMillis = taskDueDate
+                                    )
                                 )
-                            )
+                            }
                         }
-                    }
-                    showAddTaskDialog = false
-                    taskToEdit = null
-                }) { Text("Save") }
+                        showAddTaskDialog = false
+                        taskToEdit = null
+                    },
+                    enabled = taskTitle.isNotBlank()
+                ) { Text("Save") }
             },
             dismissButton = {
                 BouncyTextButton(onClick = {
@@ -1469,19 +1571,24 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                         value = assignmentTitle,
                         onValueChange = { assignmentTitle = it },
                         label = { Text("Title") },
-                        modifier = Modifier.fillMaxWidth()
+                        placeholder = { Text("e.g. Midterm Preparation, Problem Set 3") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
                     OutlinedTextField(
                         value = assignmentDesc,
                         onValueChange = { assignmentDesc = it },
-                        label = { Text("Description") },
+                        label = { Text("Description (optional)") },
+                        placeholder = { Text("Submission details, chapters covered, etc.") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = assignmentTags,
                         onValueChange = { assignmentTags = it },
                         label = { Text("Tags (optional)") },
-                        modifier = Modifier.fillMaxWidth()
+                        placeholder = { Text("e.g. exam, math") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1553,46 +1660,49 @@ fun SubjectDetailScreen(navController: NavController, viewModel: ScholarViewMode
                 }
             },
             confirmButton = {
-                BouncyTextButton(onClick = {
-                    if (assignmentTitle.isNotBlank()) {
-                        val categoryColor = when (assignmentCategory) {
-                            "Homework" -> "#3197D6"
-                            "Quiz" -> "#E91E63"
-                            "Project" -> "#4CAF50"
-                            "Exam" -> "#FF5722"
-                            else -> "#9C27B0"
-                        }
-                        // Default to first linked course, or 0 if none
-                        val courseId = linkedCourses.firstOrNull()?.id ?: 0
+                BouncyTextButton(
+                    onClick = {
+                        if (assignmentTitle.isNotBlank()) {
+                            val categoryColor = when (assignmentCategory) {
+                                "Homework" -> "#3197D6"
+                                "Quiz" -> "#E91E63"
+                                "Project" -> "#4CAF50"
+                                "Exam" -> "#FF5722"
+                                else -> "#9C27B0"
+                            }
+                            // Default to first linked course, or 0 if none
+                            val courseId = linkedCourses.firstOrNull()?.id ?: 0
 
-                        if (currentAssignment == null) {
-                            viewModel.addAssignment(
-                                courseId = courseId,
-                                title = assignmentTitle,
-                                desc = assignmentDesc,
-                                dueDate = assignmentDueDate,
-                                category = assignmentCategory,
-                                categoryColor = categoryColor,
-                                tags = assignmentTags,
-                                subjectId = subjectId
-                            )
-                        } else {
-                            viewModel.updateAssignmentDetails(
-                                currentAssignment.copy(
-                                    title = assignmentTitle,
-                                    description = assignmentDesc,
+                            if (currentAssignment == null) {
+                                viewModel.addAssignment(
+                                    courseId = courseId,
+                                    title = assignmentTitle.trim(),
+                                    desc = assignmentDesc.trim(),
+                                    dueDate = assignmentDueDate,
                                     category = assignmentCategory,
                                     categoryColor = categoryColor,
-                                    dueDateMillis = assignmentDueDate,
-                                    tags = assignmentTags,
-                                    courseId = if (currentAssignment.courseId > 0) currentAssignment.courseId else courseId
+                                    tags = assignmentTags.trim(),
+                                    subjectId = subjectId
                                 )
-                            )
+                            } else {
+                                viewModel.updateAssignmentDetails(
+                                    currentAssignment.copy(
+                                        title = assignmentTitle.trim(),
+                                        description = assignmentDesc.trim(),
+                                        category = assignmentCategory,
+                                        categoryColor = categoryColor,
+                                        dueDateMillis = assignmentDueDate,
+                                        tags = assignmentTags.trim(),
+                                        courseId = if (currentAssignment.courseId > 0) currentAssignment.courseId else courseId
+                                    )
+                                )
+                            }
                         }
-                    }
-                    showAddAssignmentDialog = false
-                    assignmentToEdit = null
-                }) { Text("Save") }
+                        showAddAssignmentDialog = false
+                        assignmentToEdit = null
+                    },
+                    enabled = assignmentTitle.isNotBlank()
+                ) { Text("Save") }
             },
             dismissButton = {
                 BouncyTextButton(onClick = {

@@ -438,7 +438,7 @@ fun StreakWidget(viewModel: ScholarViewModel, navController: NavController, modi
 
             Icon(
                 imageVector = Icons.Rounded.LocalFireDepartment,
-                contentDescription = "Streak",
+                contentDescription = "Streak: $streakCurrent ${if (streakCurrent == 1) "day" else "days"}",
                 tint = fireColor,
                 modifier = Modifier
                     .size(18.dp)

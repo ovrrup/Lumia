@@ -22,29 +22,40 @@ fun EditSubjectDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit Subject") },
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Subject Name") },
-                    modifier = Modifier.fillMaxWidth()
+                    placeholder = { Text("e.g. Mathematics") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
                 )
-                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = tags,
                     onValueChange = { tags = it },
-                    label = { Text("Tags (comma separated, optional)") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Tags (optional)") },
+                    placeholder = { Text("e.g. science, major, semester 1") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Text(
+                    text = "Update subject details and tags used across associated chapters and topics.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         },
         confirmButton = {
-            BouncyTextButton(onClick = {
-                if (name.isNotBlank()) {
-                    viewModel.updateSubject(subject.copy(name = name, tags = tags))
-                    onDismiss()
-                }
-            }) { Text("Save") }
+            BouncyTextButton(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        viewModel.updateSubject(subject.copy(name = name.trim(), tags = tags.trim()))
+                        onDismiss()
+                    }
+                },
+                enabled = name.isNotBlank()
+            ) { Text("Save") }
         },
         dismissButton = {
             BouncyTextButton(onClick = onDismiss) { Text("Cancel") }

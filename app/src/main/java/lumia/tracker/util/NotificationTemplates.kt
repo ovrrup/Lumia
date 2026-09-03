@@ -7,9 +7,9 @@ object NotificationTemplates {
         "Academic Schedule: %s", "Next Class: %s"
     )
     val informalClassStartTitles = listOf(
-        "Hurry! %s is starting!", "Don't be late for %s!", "Time to go: %s!",
-        "Sprint to %s now!", "You're up! %s is next.", "Wake up! %s is about to start.",
-        "Class time! Don't miss %s.", "Your presence is required at %s!"
+        "%s is starting soon!", "Don't forget %s!", "Time for %s!",
+        "%s starts shortly", "Up next: %s", "Heads up: %s starts soon",
+        "Class time: %s", "Ready for %s? It's starting soon"
     )
 
     val formalClassEndTitles = listOf(
@@ -18,19 +18,20 @@ object NotificationTemplates {
         "Schedule Update: %s Ended", "End of Session for %s"
     )
     val informalClassEndTitles = listOf(
-        "Class over! Log your attendance for %s!", "Freedom! %s is done.",
-        "Finally, %s is over.", "You survived %s!", "Time's up for %s.",
-        "%s is a wrap!", "Go take a break, %s is done.", "Class dismissed: %s."
+        "Class ended: %s. Log attendance", "%s is done! Remember to log attendance",
+        "%s has ended. Don't forget your attendance", "%s is complete! Take a breather",
+        "%s is concluded", "%s is a wrap! Mark your attendance",
+        "Take a break: %s is done", "Class dismissed: %s"
     )
 
     val formalTaskTitles = listOf(
-        "Deadline Reminder: %s", "Upcoming %s: %s", "%s Due Soon: %s",
-        "Action Required: %s", "Approaching Deadline: %s", "Pending %s: %s",
+        "Deadline Reminder: %s", "Upcoming Deadline: %s", "Due Soon: %s",
+        "Action Required: %s", "Approaching Deadline: %s", "Pending Item: %s",
         "Schedule Alert: %s", "Time-Sensitive: %s"
     )
     val informalTaskTitles = listOf(
-        "URGENT: %s is DUE!", "Don't forget: %s!", "You're running out of time for %s!",
-        "Tick tock! %s is waiting.", "Alert! %s needs you.", "Are you slacking? %s is due!",
-        "Focus time! Finish %s.", "Danger zone: %s deadline approaching!"
+        "Reminder: %s is due soon", "Don't forget: %s", "Upcoming deadline: %s",
+        "Time to focus on %s", "Heads up: %s is due soon", "Focus time: %s",
+        "Deadline approaching for %s", "Stay on track with %s"
     )
 }

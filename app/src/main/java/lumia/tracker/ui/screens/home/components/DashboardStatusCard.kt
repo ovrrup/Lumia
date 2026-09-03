@@ -61,6 +61,7 @@ fun DashboardStatusCard(
                 }
 
                 // Streak Badge
+                val streakUnit = if (streakDays == 1) "DAY" else "DAYS"
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
@@ -77,7 +78,7 @@ fun DashboardStatusCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "$streakDays DAYS",
+                            text = "$streakDays $streakUnit",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -113,7 +114,7 @@ fun DashboardStatusCard(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Launch Quick Pomodoro",
+                    text = "Start Focus Session",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.labelLarge
                 )

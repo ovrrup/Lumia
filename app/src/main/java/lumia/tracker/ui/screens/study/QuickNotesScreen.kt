@@ -11,9 +11,11 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import lumia.tracker.ui.components.BouncyFloatingActionButton
@@ -88,12 +90,31 @@ fun QuickNotesScreen(navController: NavController) {
         ) {
             if (notesList.isEmpty()) {
                 item {
-                    Text(
-                        "No notes yet. Tap + to add one.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 48.dp, start = 16.dp, end = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "No Notes Yet",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Tap + to jot down a quick note or thought.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
             itemsIndexed(notesList) { index, note ->
@@ -130,7 +151,8 @@ fun QuickNotesScreen(navController: NavController) {
                 OutlinedTextField(
                     value = newNoteText,
                     onValueChange = { newNoteText = it },
-                    label = { Text("Note content") },
+                    label = { Text("Note") },
+                    placeholder = { Text("Enter your note here...") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
                 )

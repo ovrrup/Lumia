@@ -8,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -17,6 +16,7 @@ fun PomodoroControls(
     isRunning: Boolean,
     isPaused: Boolean,
     isAlarmActive: Boolean,
+    alarmActionLabel: String = "Start Break",
     onStart: () -> Unit,
     onPauseResume: () -> Unit,
     onSkip: () -> Unit,
@@ -28,19 +28,34 @@ fun PomodoroControls(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (isAlarmActive) {
-            Button(
-                onClick = onStopAlarm,
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Rounded.NotificationsOff, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Dismiss Alarm", fontWeight = FontWeight.Bold)
-            }
-        }
+                Button(
+                    onClick = onStopAlarm,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Icon(Icons.Rounded.PlayArrow, contentDescription = null)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(alarmActionLabel, fontWeight = FontWeight.Bold)
+                }
 
-        if (!isRunning) {
+                FilledTonalButton(
+                    onClick = onStop,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                ) {
+                    Icon(Icons.Rounded.Stop, contentDescription = "Stop")
+                }
+            }
+        } else if (!isRunning) {
             Button(
                 onClick = onStart,
                 modifier = Modifier.fillMaxWidth(),

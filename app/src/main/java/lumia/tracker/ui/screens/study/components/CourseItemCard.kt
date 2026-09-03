@@ -104,7 +104,7 @@ fun CourseItemCard(
                 
                 Box {
                     BouncyIconButton(onClick = { expanded = true }) {
-                        Icon(Icons.Rounded.MoreVert, contentDescription = "Options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Rounded.MoreVert, contentDescription = "More options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     DropdownMenu(
                         expanded = expanded,
@@ -130,7 +130,9 @@ fun CourseItemCard(
                 }
             }
             
-            val hasSchedule = course.scheduleDays.isNotBlank() || course.schedule.isNotBlank()
+            val daysShort = course.scheduleDays.split(",").map { it.trim().take(3) }.filter { it.isNotBlank() }.joinToString(", ")
+            val scheduleStr = listOf(daysShort, course.schedule).filter { it.isNotBlank() }.joinToString(" • ")
+            val hasSchedule = scheduleStr.isNotBlank()
             if (hasSchedule || course.description.isNotBlank()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
@@ -139,8 +141,6 @@ fun CourseItemCard(
                 if (hasSchedule) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(Icons.Rounded.Schedule, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                        val daysShort = course.scheduleDays.split(",").map { it.trim().take(3) }.joinToString(", ")
-                        val scheduleStr = listOf(daysShort, course.schedule).filter { it.isNotBlank() }.joinToString(" • ")
                         Text(
                             text = scheduleStr,
                             style = MaterialTheme.typography.bodySmall,

@@ -161,11 +161,11 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             Spacer(modifier = Modifier.height(16.dp))
 
             // 1. Core Mode Card
-            SettingsGroupCard(title = "Core Theme Style", icon = Icons.Rounded.DarkMode) {
+            SettingsGroupCard(title = "Theme", icon = Icons.Rounded.DarkMode) {
                 // Segmented Theme selector
                 SettingsSegmentedPicker(
-                    title = "Active Render Mode",
-                    subtitle = "Select how the system environment is rendered",
+                    title = "Theme Mode",
+                    subtitle = "Choose light, dark, or follow system setting",
                     options = listOf(
                         Triple("System", "System", Icons.Rounded.Settings),
                         Triple("Light", "Light", Icons.Rounded.Palette),
@@ -178,19 +178,12 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
                 
                 SettingsToggleItem(
-                    title = "Pure Black Canvas",
-                    subtitle = "Apply solid pitch-black background inside dark render style",
+                    title = "Pure Black (AMOLED)",
+                    subtitle = "Use pure black backgrounds in dark mode to save battery on OLED screens",
                     checked = pureBlackMode,
                     icon = Icons.Rounded.DarkMode,
                     enabled = themeMode != "Light",
-                    onCheckedChange = {
-                        if (true) {
-                            viewModel.updatePureBlackMode(it)
-                        } else {
-                            val msg = "Pure Black Canvas is a Appearance setting."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
-                        }
-                    }
+                    onCheckedChange = { viewModel.updatePureBlackMode(it) }
                 )
             }
 
@@ -200,65 +193,44 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             SettingsGroupCard(title = "Screen Layout", icon = Icons.Rounded.CropFree) {
                 val displayLayoutMode by viewModel.displayLayoutMode.collectAsStateWithLifecycle()
                 SettingsSegmentedPicker(
-                    title = "Display Drawing Mode",
-                    subtitle = "Adjust how to handle device notches and screen edges",
+                    title = "Display Cutout & Insets",
+                    subtitle = "Adjust content placement around camera cutouts and edges",
                     options = listOf(
-                        Triple("Normal", "Normal", null),
+                        Triple("Normal", "Standard", null),
                         Triple("Notch Optimization", "Safe Area", null),
                         Triple("Immersive", "Immersive", Icons.Rounded.Star)
                     ),
                     selected = displayLayoutMode,
-                    onSelected = { 
-                        if (true) {
-                            viewModel.updateDisplayLayoutMode(it) 
-                        } else {
-                            val msg = "Requires Advanced Screen Layouts."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    }
+                    onSelected = { viewModel.updateDisplayLayoutMode(it) }
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SettingsGroupCard(title = "Animatics & Shape Configurations", icon = Icons.Rounded.PlayArrow) {
+            SettingsGroupCard(title = "Animations & Shapes", icon = Icons.Rounded.PlayArrow) {
                 val appAnimationMode by viewModel.appAnimationMode.collectAsStateWithLifecycle()
                 val moreRounds by viewModel.moreRounds.collectAsStateWithLifecycle()
 
                 SettingsSegmentedPicker(
-                    title = "Application Animation Quality",
-                    subtitle = "Changes the responsiveness and bounce traits across panels and gestures.",
+                    title = "Animation Style",
+                    subtitle = "Adjust responsiveness and spring bounce for touches and transitions",
                     options = listOf(
-                        Triple("Normal", "Normal", null),
-                        Triple("Dynamic", "Dynamic", null),
+                        Triple("Normal", "Standard", null),
+                        Triple("Dynamic", "Smooth", null),
                         Triple("Bouncy", "Bouncy", Icons.Rounded.Star)
                     ),
                     selected = appAnimationMode,
-                    onSelected = { 
-                        if (true) {
-                            viewModel.updateAppAnimationMode(it)
-                        } else {
-                            val msg = "Requires Advanced Animations."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    }
+                    onSelected = { viewModel.updateAppAnimationMode(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
                 SettingsToggleItem(
-                    title = "More Rounds Mode",
-                    subtitle = "Replace all sharp-edged geometries with bouncy, spherical rounded layouts",
+                    title = "Extra Rounded Corners",
+                    subtitle = "Increase corner roundness across cards, dialogs, and buttons",
                     checked = moreRounds,
                     icon = Icons.Rounded.CheckCircle,
-                    onCheckedChange = {
-                        if (true) {
-                            viewModel.updateMoreRounds(it)
-                        } else {
-                            val msg = "More Rounds is a Appearance setting."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
-                        }
-                    }
+                    onCheckedChange = { viewModel.updateMoreRounds(it) }
                 )
 
                 AnimatedVisibility(visible = moreRounds) {
@@ -266,11 +238,11 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     Column(modifier = Modifier.padding(top = 12.dp)) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(bottom = 12.dp))
                         SettingsSegmentedPicker(
-                            title = "Enhanced Rounds Style",
-                            subtitle = "Select the visual approach for rounded components and buttons",
+                            title = "Rounded Button Style",
+                            subtitle = "Choose button appearance when extra roundness is enabled",
                             options = listOf(
-                                Triple("Pastel", "Soft Pastel", Icons.Rounded.Palette),
-                                Triple("Glass", "Liquid Glass", Icons.Rounded.BlurOn)
+                                Triple("Pastel", "Pastel Accent", Icons.Rounded.Palette),
+                                Triple("Glass", "Translucent Glass", Icons.Rounded.BlurOn)
                             ),
                             selected = moreRoundsMode,
                             onSelected = { viewModel.updateMoreRoundsMode(it) }
@@ -278,8 +250,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = if (moreRoundsMode == "Pastel") 
-                                "Buttons will use high-contrast pastel colors with hidden outlines and deep elastic animations."
-                                else "Buttons will gain glass-like translucency and adapt dynamically to the active background.",
+                                "Buttons use tinted pastel accents with spring animations."
+                                else "Buttons use translucent glass styling that adapts to the background.",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -291,20 +263,13 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
             // 2. Glass UI Engine Card (Animated entry)
             AnimatedVisibility(visible = !betaMinimalistMode) {
-                SettingsGroupCard(title = "Aesthetic Glass Engine", icon = Icons.Rounded.Palette) {
+                SettingsGroupCard(title = "Glass UI Effects", icon = Icons.Rounded.Palette) {
                     SettingsToggleItem(
-                        title = "Frosted Glass UI",
-                        subtitle = "Enable translucent glass textures across screen panels",
+                        title = "Translucent Glass UI",
+                        subtitle = "Apply translucent glass styling to cards and navigation surfaces",
                         checked = betaGlassUi,
                         icon = Icons.Rounded.Palette,
-                        onCheckedChange = {
-                            if (true) {
-                                viewModel.updateBetaGlassUi(it)
-                            } else {
-                                val msg = "Frosted Glass is a Appearance setting."
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
-                            }
-                        }
+                        onCheckedChange = { viewModel.updateBetaGlassUi(it) }
                     )
                     
                     AnimatedVisibility(visible = betaGlassUi) {
@@ -316,15 +281,15 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                             
                             SettingsToggleItem(
-                                title = "Dynamic Color Tinting",
-                                subtitle = "Blend glass texture directly with active theme shades",
+                                title = "Theme Accent Tinting",
+                                subtitle = "Tint glass panels with your active theme color",
                                 checked = betaGlassDynamic,
                                 onCheckedChange = { viewModel.updateBetaGlassDynamic(it) }
                             )
 
                             SettingsToggleItem(
-                                title = "Soft Frost Glaze",
-                                subtitle = "Apply high-end satin texture blur to the primary panel layers",
+                                title = "Frosted Blur Effect",
+                                subtitle = "Add background blur behind translucent panels",
                                 checked = betaFrostGlass,
                                 onCheckedChange = { viewModel.updateBetaFrostGlass(it) }
                             )
@@ -333,12 +298,12 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                             // Sub-segmented backdrop style
                             SettingsSegmentedPicker(
-                                title = "Backdrop Density Style",
-                                subtitle = "Choose panel translucency characteristics",
+                                title = "Panel Transparency",
+                                subtitle = "Select how transparent panel backgrounds should be",
                                 options = listOf(
                                     Triple("Transparent", "Clear", null),
-                                    Triple("Translucent", "Satin", null),
-                                    Triple("Opaque", "Solid", null)
+                                    Triple("Translucent", "Frosted", null),
+                                    Triple("Opaque", "Opaque", null)
                                 ),
                                 selected = glassBackdropStyle,
                                 onSelected = { viewModel.updateGlassBackdropStyle(it) }
@@ -353,7 +318,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = "Frosted Layer Opacity",
+                                            text = "Panel Opacity",
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.SemiBold
                                         )
@@ -365,7 +330,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                         )
                                     }
                                     Text(
-                                        text = "Calibrate the light passage density through frosted satin panes",
+                                        text = "Adjust transparency level for frosted panels",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(bottom = 6.dp)
@@ -389,7 +354,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        text = "Nav Bar Glass Opacity",
+                                        text = "Navigation Bar Opacity",
                                         style = MaterialTheme.typography.titleSmall,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -400,7 +365,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                     )
                                 }
                                 Text(
-                                    text = "Control bottom bar glass opacity for current theme and light/dark mode",
+                                    text = "Adjust bottom navigation bar glass transparency",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(bottom = 6.dp)
@@ -420,7 +385,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             }
 
             // Advanced Navigation Panel Configuration Card
-            SettingsGroupCard(title = "Advanced Bottom Navigation", icon = Icons.Rounded.Settings) {
+            SettingsGroupCard(title = "Navigation Bar", icon = Icons.Rounded.Settings) {
                 val betaFloatingNav by viewModel.betaFloatingNav.collectAsStateWithLifecycle()
                 val navBarHeight by viewModel.navBarHeight.collectAsStateWithLifecycle()
                 val navBarPaddingHorizontal by viewModel.navBarPaddingHorizontal.collectAsStateWithLifecycle()
@@ -436,11 +401,11 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                 // Layout Style choosing picker
                 SettingsSegmentedPicker(
-                    title = "Bottom Navigation Format",
-                    subtitle = "Switch layout form between standard flat and suspended floating deck",
+                    title = "Navigation Bar Style",
+                    subtitle = "Choose between a standard bottom bar or a floating pill dock",
                     options = listOf(
-                        Triple("Flat", "Standard Flat", null),
-                        Triple("Floating", "Floating Dock", Icons.Rounded.Star)
+                        Triple("Flat", "Standard", null),
+                        Triple("Floating", "Floating", Icons.Rounded.Star)
                     ),
                     selected = if (betaFloatingNav) "Floating" else "Flat",
                     onSelected = { viewModel.updateBetaFloatingNav(it == "Floating") }
@@ -450,8 +415,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                 // Label visibility mode
                 SettingsSegmentedPicker(
-                    title = "Desktop Label Icons",
-                    subtitle = "Set when menu item labels should be visible on the bar",
+                    title = "Item Labels",
+                    subtitle = "Control when text labels are displayed under icons",
                     options = listOf(
                         Triple("Always", "Always", null),
                         Triple("Selected Only", "Selected", null),
@@ -465,18 +430,11 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                 // Toggle for forced glass navbar style
                 SettingsToggleItem(
-                    title = "Independent Glass Backdrop",
-                    subtitle = "Force glass satin backdrop overlay specifically on bottom bar even if global Frosted UI is off",
+                    title = "Separate Glass Style",
+                    subtitle = "Enable glass styling on the bottom bar independently of global Glass UI",
                     checked = navBarGlassForceEnabled,
                     icon = Icons.Rounded.Palette,
-                    onCheckedChange = {
-                        if (true) {
-                            viewModel.updateNavBarGlassForceEnabled(it)
-                        } else {
-                            val msg = "Independent Glass is a Appearance setting."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
-                        }
-                    }
+                    onCheckedChange = { viewModel.updateNavBarGlassForceEnabled(it) }
                 )
 
                 val isGlassTheme = lumia.tracker.ui.theme.LocalGlassMode.current
@@ -487,8 +445,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                     // Sync with Dynamic Glass UI Toggle
                     SettingsToggleItem(
-                        title = "Sync with Global Glass Style",
-                        subtitle = "Link the bottom navigation bar color, style, and glass type directly to the system-wide Glass UI theme setting.",
+                        title = "Match Global Glass Style",
+                        subtitle = "Inherit opacity and tint settings from global Glass UI",
                         checked = navBarGlassLinkedToMain,
                         icon = Icons.Rounded.Link,
                         onCheckedChange = { viewModel.updateNavBarGlassLinkedToMain(it) }
@@ -499,12 +457,12 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                         // Navbar Glass Type segmented chooser
                         SettingsSegmentedPicker(
-                            title = "Navbar Backdrop Style",
-                            subtitle = "Adjust the glass texture from solid translucent background to completely clear dynamic panel",
+                            title = "Bar Background Style",
+                            subtitle = "Select solid, frosted, or clear transparency for the bar",
                             options = listOf(
-                                Triple("Solid", "Solid Color", null),
-                                Triple("Translucent", "Frosted Glass", null),
-                                Triple("Clear", "Totally Clear", null)
+                                Triple("Solid", "Solid", null),
+                                Triple("Translucent", "Frosted", null),
+                                Triple("Clear", "Clear", null)
                             ),
                             selected = navBarGlassBackdropStyle,
                             onSelected = { viewModel.updateNavBarGlassBackdropStyle(it) }
@@ -514,8 +472,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
 
                         // Navbar Dynamic Color Tinting Toggle
                         SettingsToggleItem(
-                            title = "Ambient Accent Tinting",
-                            subtitle = "Infuse primary theme color highlight directly into the navigation glass backplane rendering.",
+                            title = "Theme Color Tint",
+                            subtitle = "Tint the navigation bar glass with your active theme color",
                             checked = navBarGlassDynamic,
                             icon = Icons.Rounded.InvertColors,
                             onCheckedChange = { viewModel.updateNavBarGlassDynamic(it) }
@@ -534,7 +492,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Bar Panel Height",
+                                text = "Bar Height",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -546,7 +504,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             )
                         }
                         Text(
-                            text = "Customize the absolute thickness of bottom panel",
+                            text = "Adjust the height of the bottom navigation bar",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 6.dp)
@@ -569,7 +527,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Indicator Tint Alpha",
+                                text = "Active Tab Indicator Opacity",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -581,7 +539,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             )
                         }
                         Text(
-                            text = "Calibrate the select-state container overlay opacity",
+                            text = "Adjust background highlight opacity for the selected tab",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 6.dp)
@@ -605,7 +563,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Pill Corner Radius",
+                                    text = "Corner Radius",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -617,7 +575,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 )
                             }
                             Text(
-                                text = "Control roundness bounding the suspended pill geometry",
+                                text = "Adjust corner roundness of the floating navigation bar",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(bottom = 6.dp)
@@ -640,7 +598,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Horizontal Deck Margin",
+                                    text = "Side Margins",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -652,7 +610,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 )
                             }
                             Text(
-                                text = "Expand or narrow down the width profile of bottom panel",
+                                text = "Adjust horizontal spacing on either side of the floating bar",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(bottom = 6.dp)
@@ -675,7 +633,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Bottom Lift Padding",
+                                    text = "Bottom Margin",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -687,7 +645,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 )
                             }
                             Text(
-                                text = "Elevate the bottom action shelf distance off device screen trim",
+                                text = "Adjust distance between the floating bar and screen bottom",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(bottom = 6.dp)
@@ -706,15 +664,15 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             Spacer(modifier = Modifier.height(16.dp))
 
             // 3. Theme & Colors Card
-            SettingsGroupCard(title = "Branding & Color Scheme", icon = Icons.Rounded.Palette) {
+            SettingsGroupCard(title = "Color Palette", icon = Icons.Rounded.Palette) {
                 Text(
-                    text = "Active App Theme",
+                    text = "Theme Palette",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Select your personalized active Lumia color scheme",
+                    text = "Choose an accent color palette for the app",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -755,8 +713,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     Spacer(modifier = Modifier.height(4.dp))
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                     SettingsActionItemInCard(
-                        title = "Fine-Tune Advanced Colors",
-                        subtitle = "Deep customize specific hex shades for the custom palette",
+                        title = "Customize Colors",
+                        subtitle = "Configure custom hex colors for primary, surface, and text",
                         icon = Icons.Rounded.Edit,
                         onClick = { navController.navigate("settings/advanced_theme") }
                     )
@@ -764,34 +722,32 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             }
 
             // 4. Interface Tweaks Card
-            SettingsGroupCard(title = "Interface Modifiers", icon = Icons.Rounded.Settings) {
+            SettingsGroupCard(title = "Visual Elements", icon = Icons.Rounded.Settings) {
                 SettingsToggleItem(
-                    title = "Minimalist Focus Mode",
-                    subtitle = "Force-off and lock complex visuals for intense studying focus",
+                    title = "Minimalist Mode",
+                    subtitle = "Disable blur, gradients, and glass effects for a clean, distraction-free interface",
                     checked = betaMinimalistMode,
                     icon = Icons.Rounded.Star,
-                    
                     onCheckedChange = { viewModel.updateBetaMinimalistMode(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
                 SettingsToggleItem(
-                    title = "UI-based Launcher Icon",
-                    subtitle = "Match home screen app icon style with the active Lumia color scheme",
+                    title = "Themed App Icon",
+                    subtitle = "Tint the launcher icon to match your active theme color",
                     checked = dynamicAppIcon,
                     icon = Icons.Rounded.Palette,
-                    
                     onCheckedChange = { viewModel.updateDynamicAppIcon(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
                 SettingsToggleItem(
-                    title = "Enhanced Blur Navigation",
-                    subtitle = "Apply a polished satin translucent backdrop to primary navigation header",
+                    title = "Frosted Top App Bar",
+                    subtitle = "Apply a translucent frosted glass backdrop to the top app bar",
                     checked = betaEnhancedHeader,
-                    enabled = !betaMinimalistMode ,
+                    enabled = !betaMinimalistMode,
                     icon = Icons.Rounded.Settings,
                     onCheckedChange = { viewModel.updateBetaEnhancedHeader(it) }
                 )
@@ -799,10 +755,10 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
                 SettingsToggleItem(
-                    title = "Dynamic Lighting Background",
-                    subtitle = "Soft, vibrant animated background gradient shifts",
+                    title = "Dynamic Background",
+                    subtitle = "Display subtle animated ambient color gradients in the background",
                     checked = betaDynamicBackground,
-                    enabled = !betaMinimalistMode ,
+                    enabled = !betaMinimalistMode,
                     icon = Icons.Rounded.Check,
                     onCheckedChange = { viewModel.updateBetaDynamicBackground(it) }
                 )
@@ -820,7 +776,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (isDarkTheme) "Dark Mode Lighting Brightness" else "Light Mode Lighting Brightness",
+                                text = if (isDarkTheme) "Dark Mode Background Glow" else "Light Mode Background Glow",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -834,9 +790,9 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         }
                         Text(
                             text = if (isDarkTheme) {
-                                "Calibrate background glow intensity in dark modes for optimal readability"
+                                "Adjust background gradient brightness in dark mode"
                             } else {
-                                "Calibrate vibrant background energy in light modes for clean visual focus"
+                                "Adjust background gradient brightness in light mode"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -859,10 +815,10 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
             }
 
             // 5. Legibility & Typography Card
-            SettingsGroupCard(title = "Legibility & Typography", icon = Icons.Rounded.Edit) {
+            SettingsGroupCard(title = "Typography & Contrast", icon = Icons.Rounded.Edit) {
                 SettingsToggleItem(
-                    title = "Better Texts Rendering",
-                    subtitle = "Enhance text readability, high contrasts and aesthetic typography",
+                    title = "Enhanced Text Contrast",
+                    subtitle = "Apply optimized contrast ratios to text across the app",
                     checked = betaBetterTexts,
                     icon = Icons.Rounded.Edit,
                     enabled = !betaMinimalistMode,
@@ -873,8 +829,8 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                     Column(modifier = Modifier.padding(start = 12.dp, top = 8.dp)) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
                         SettingsToggleItem(
-                            title = "Complex Palette Text Shades",
-                            subtitle = "Render text with warm color palette tones instead of absolute white/black",
+                            title = "Theme-Tinted Text",
+                            subtitle = "Subtly tint text with theme colors; turn off for pure black and white",
                             checked = betaBetterTextsPalette,
                             enabled = betaBetterTexts && !betaMinimalistMode,
                             onCheckedChange = { viewModel.updateBetaBetterTextsPalette(it) }

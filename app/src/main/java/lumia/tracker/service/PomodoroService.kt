@@ -247,9 +247,14 @@ class PomodoroService : Service() {
             stopAlarmSound()
             isAlarmActive = false
             endedModeStr = ""
-            syncToState()
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(2002, buildNotification(timeLeft))
+            if (isPaused && timeLeft > 0) {
+                isPaused = false
+                startTimer()
+            } else {
+                syncToState()
+                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.notify(2002, buildNotification(timeLeft))
+            }
             return START_NOT_STICKY
         }
         
@@ -348,8 +353,8 @@ class PomodoroService : Service() {
     private fun startForegroundService() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel("pomodoro_service", "Pomodoro Foreground", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Ongoing Pomodoro Timer"
+            val channel = NotificationChannel("pomodoro_service", "Focus Timer", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Ongoing Focus Timer"
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -362,10 +367,15 @@ class PomodoroService : Service() {
         val minutes = time / 60
         val seconds = time % 60
         val timeStr = String.format("%02d:%02d", minutes, seconds)
-        val title = when (currentMode) {
-            PomodoroMode.WORK -> "Focusing (Session ${sessionsCompleted + 1}/$periodSessions)"
-            PomodoroMode.SHORT_BREAK -> "Short Rest"
-            PomodoroMode.LONG_BREAK -> "Long Rest (Period Complete!)"
+        val phaseName = when (currentMode) {
+            PomodoroMode.WORK -> "Focus Session"
+            PomodoroMode.SHORT_BREAK -> "Short Break"
+            PomodoroMode.LONG_BREAK -> "Long Break (Cycle Complete)"
+        }
+        val title = if (isPaused) {
+            if (currentMode == PomodoroMode.WORK) "Focus Paused" else "Break Paused"
+        } else {
+            if (currentMode == PomodoroMode.WORK) "$phaseName (${sessionsCompleted + 1}/$periodSessions)" else phaseName
         }
 
         val mainIntent = Intent(this, MainActivity::class.java).apply { 
@@ -378,17 +388,20 @@ class PomodoroService : Service() {
             val stopAlarmIntent = Intent(this, PomodoroActionReceiver::class.java).apply { action = "STOP_ALARM" }
             val stopAlarmPending = PendingIntent.getBroadcast(this, 3, stopAlarmIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             
+            val isFocusEnded = endedModeStr == "WORK" || currentMode != PomodoroMode.WORK
+            val actionLabel = if (isFocusEnded) "Start Break" else "Start Focus Session"
+            
             return NotificationCompat.Builder(this, "pomodoro_service")
                 .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
-                .setContentTitle(if (currentMode == PomodoroMode.WORK) "Rest Break Finished!" else "Focus Session Finished!")
-                .setContentText("Alarm active! Tap to stop sound.")
+                .setContentTitle("Time's Up!")
+                .setContentText(if (isFocusEnded) "Start Break" else "Ready to focus?")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setContentIntent(mainPending)
                 .setOngoing(true)
                 .setColor(lumia.tracker.util.NotificationHelper.getColor(this))
-                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop Alarm", stopAlarmPending)
+                .addAction(android.R.drawable.ic_media_play, actionLabel, stopAlarmPending)
                 .build()
         }
 
@@ -408,7 +421,7 @@ class PomodoroService : Service() {
         val builder = NotificationCompat.Builder(this, "pomodoro_service")
             .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
             .setContentTitle(title)
-            .setContentText("Time remaining: $timeStr" + if (isPaused) " (PAUSED)" else "")
+            .setContentText("Time remaining: $timeStr")
             .setProgress(progressMax, progressNow, false)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
@@ -425,7 +438,7 @@ class PomodoroService : Service() {
             
         return builder.addAction(if (isPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause, if (isPaused) "Resume" else "Pause", pausePending)
             .addAction(android.R.drawable.ic_media_next, "Skip", skipPending)
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Exit", stopPending)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPending)
             .setStyle(androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0, 1, 2))
             .setOnlyAlertOnce(true)
             .build()
@@ -514,10 +527,15 @@ class PomodoroService : Service() {
             }
             val mainPending = PendingIntent.getActivity(applicationContext, 101, mainIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
+            val studyLoggedText = if (durationMinutes == 1) {
+                "1 minute of focused study logged"
+            } else {
+                "$durationMinutes minutes of focused study logged"
+            }
             val completionNotification = NotificationCompat.Builder(applicationContext, "pomodoro_service")
                 .setSmallIcon(lumia.tracker.util.NotificationHelper.getSmallIcon())
-                .setContentTitle(if (isFullCompletion) "Focus Completed!" else "Focus Saved!")
-                .setContentText("Locked in $durationMinutes min study.")
+                .setContentTitle(if (isFullCompletion) "Focus Session Complete" else "Focus Saved")
+                .setContentText(studyLoggedText)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true)
                 .setContentIntent(mainPending)

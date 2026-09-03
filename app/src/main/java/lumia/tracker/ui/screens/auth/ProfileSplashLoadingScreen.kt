@@ -200,7 +200,7 @@ fun ProfileSplashLoadingScreen(
                 Spacer(Modifier.height(12.dp))
                 
                 Text(
-                    text = "Logging in...",
+                    text = "Loading profile...",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Medium
@@ -227,12 +227,12 @@ fun ProfileSplashLoadingScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.SwapHoriz,
-                        contentDescription = "Switch Account",
+                        contentDescription = "Switch Profile",
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Change Profile",
+                        text = "Switch Profile",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.ExtraBold
                     )

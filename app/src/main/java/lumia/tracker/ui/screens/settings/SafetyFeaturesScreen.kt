@@ -168,12 +168,12 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            SettingsGroupCard(title = "Safety Guard Monitor", icon = Icons.Rounded.Lock) {
+            SettingsGroupCard(title = "Settings Safety Guard", icon = Icons.Rounded.CheckCircle) {
                 SettingsToggleItem(
-                    title = "System Safety Watch",
-                    subtitle = "Monitor settings state conflicts and offer smart ecosystem guidelines",
+                    title = "Settings Safety Guard",
+                    subtitle = "Warn about conflicting options and guide layout choices (does not lock app or require a PIN)",
                     checked = safetyPinEnabled,
-                    icon = Icons.Rounded.Lock,
+                    icon = Icons.Rounded.CheckCircle,
                     onCheckedChange = { viewModel.updateSafetyPinEnabled(it) }
                 )
 
@@ -183,7 +183,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
 
                         SettingsToggleItem(
                             title = "Active Conflict Warnings",
-                            subtitle = "Immediate warning banner if toggles physically oppose each other structurally",
+                            subtitle = "Prompt before activating settings that conflict with current options",
                             checked = safetyPinConflictWarning,
                             onCheckedChange = { viewModel.updateSafetyPinConflictWarning(it) }
                         )
@@ -191,8 +191,8 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
                         SettingsToggleItem(
-                            title = "Aesthetic Recommendations",
-                            subtitle = "Suggest complementary layout features whenever core styles change",
+                            title = "Layout Recommendations",
+                            subtitle = "Suggest complementary layout and theme options when changing styles",
                             checked = safetyPinRecommendations,
                             onCheckedChange = { viewModel.updateSafetyPinRecommendations(it) }
                         )
@@ -202,10 +202,10 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SettingsGroupCard(title = "Focus & AOD Safety Rules", icon = Icons.Rounded.Timer) {
+            SettingsGroupCard(title = "Focus & Screen Protection", icon = Icons.Rounded.Timer) {
                 SettingsToggleItem(
                     title = "True Black OLED Focus",
-                    subtitle = "AOD focus screen will use solid #000000 pixels to conserve battery power on OLED hardware",
+                    subtitle = "Use pure black background on the focus screen to save battery on OLED displays",
                     checked = aodTrueBlackOled,
                     icon = Icons.Rounded.Timer,
                     onCheckedChange = { viewModel.updateAodTrueBlackOled(it) }
@@ -214,8 +214,8 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
                 SettingsToggleItem(
-                    title = "Auto-Deactivate with Bright Themes",
-                    subtitle = "Automatically replace True Black with a beautifully dimmed themed focus screen when using Light theme, dynamic layouts, or Glass UI",
+                    title = "Auto-Dim with Bright Themes",
+                    subtitle = "Switch from pure black to a dimmed theme background when using light themes or dynamic layouts",
                     checked = aodAutoDeactivateTrueBlack,
                     onCheckedChange = { viewModel.updateAodAutoDeactivateTrueBlack(it) }
                 )
@@ -230,7 +230,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        "Period taken before slightly shifting always-on focus layout items slightly to protect modern screen pixels from permanent burn-in",
+                        "Frequency of shifting always-on display elements to help prevent OLED burn-in",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 12.dp)
@@ -255,18 +255,18 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 
                 val aodLockScreenSupport by viewModel.aodLockScreenSupport.collectAsStateWithLifecycle()
                 SettingsToggleItem(
-                    title = "Lock Screen Protection",
-                    subtitle = "Allows AOD to safely bypass system lock screen without permanently turning screen on, ideal for extended focus",
+                    title = "Show Over Lock Screen",
+                    subtitle = "Display the focus clock over the lock screen without requiring device unlock",
                     checked = aodLockScreenSupport,
-                    icon = Icons.Rounded.Lock,
+                    icon = Icons.Rounded.CropFree,
                     onCheckedChange = { viewModel.updateAodLockScreenSupport(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
 
                 SettingsToggleItem(
-                    title = "True Always-On Display (Advanced Mode)",
-                    subtitle = "Draw a full-screen SYSTEM OVERLAY clock directly over lockscreens, launchers, and other apps.",
+                    title = "True Always-On Display",
+                    subtitle = "Display a full-screen clock overlay above the lock screen and other apps",
                     checked = aodTrueAodEnabled,
                     icon = Icons.Rounded.CropFree,
                     onCheckedChange = { viewModel.updateAodTrueAodEnabled(it) }
@@ -282,7 +282,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = "True AOD Integration Mode (Advanced System)",
+                                text = "AOD Integration Mode",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -328,7 +328,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                             Text("System Overlay", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                                         }
                                         Text(
-                                            "Ideal for physical battery optimization and fast system responses.",
+                                            "Draws directly over other apps for low latency and smooth display.",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -376,7 +376,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                             Text("Accessibility Overlay", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                                         }
                                         Text(
-                                            "Safely render screen-saver behind system notification and secure lock controls.",
+                                            "Displays the clock behind system notifications and lock controls.",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -404,7 +404,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = if (aodTrueAodMode == "overlay") "Overlay Authorization Required" else "Accessibility Authorization Required",
+                                            text = if (aodTrueAodMode == "overlay") "Overlay Permission Required" else "Accessibility Permission Required",
                                             style = MaterialTheme.typography.titleSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onErrorContainer
@@ -413,9 +413,9 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
                                         text = if (aodTrueAodMode == "overlay") {
-                                            "Enable 'Draw over other apps' to allow Lumia to overlay a pure black fullscreen layout matching real OLED clocks."
+                                            "Enable 'Draw over other apps' so Lumia can display the full-screen clock overlay."
                                         } else {
-                                            "Enable Lumia's Accessibility Service to render the AOD safely behind system lock panels."
+                                            "Enable Lumia's Accessibility Service to render the clock beneath system lock panels."
                                         },
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
@@ -436,7 +436,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
-                                        Text("Grant Authorization", color = androidx.compose.ui.graphics.Color.White)
+                                        Text("Grant Permission", color = androidx.compose.ui.graphics.Color.White)
                                     }
                                 }
                             }
@@ -448,8 +448,8 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                             
                             val isSecureLockEnabled = aodLockTimeout > 0
                             SettingsToggleItem(
-                                title = "Secure Lock Fallback",
-                                subtitle = "Increase security and protect your physical screen: programmatically locks the system after AOD commences.",
+                                title = "Auto-Lock Screen",
+                                subtitle = "Automatically lock the screen after the always-on display has been active",
                                 checked = isSecureLockEnabled,
                                 onCheckedChange = { isChecked ->
                                     viewModel.updateAodLockTimeout(if (isChecked) 30 else 0)
@@ -458,7 +458,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
 
                             if (isSecureLockEnabled) {
                                 Text(
-                                    text = "Screen Lock Timeout Timer",
+                                    text = "Lock Timeout",
                                     style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -504,13 +504,13 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                 ) {
                                     Column(modifier = Modifier.padding(14.dp)) {
                                         Text(
-                                            text = "FORMAL COMPLIANCE WARNINGS",
+                                            text = "Device Lock Behavior",
                                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            text = "• PRIVACY NOTATION: Accessibility services are strictly utilized locally to issue standard lock actions. Lumia guarantees 100% data offline processing and never logs user touch inputs or credentials.\n" +
-                                                   "• BIOMETRIC COOLDOWN: Android OS rules state programmatic accessibility locking might sometimes prompt lock PIN fallback during your device's next unlock instead of fingerprint recognition.",
+                                            text = "• Accessibility is used only to lock the screen. No user data, touch inputs, or credentials are tracked or stored.\n" +
+                                                   "• On some Android versions, locking via accessibility may require entering your device PIN, pattern, or password to unlock instead of biometrics.",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
                                             modifier = Modifier.padding(top = 4.dp)
@@ -534,16 +534,16 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "Control physical contact and motion thresholds required to wake up from Always-On Display.",
+                                text = "Choose the gesture or movement required to exit Always-On Display.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             
                             val sensitivityOptions = listOf(
-                                Pair("motion", "Max (Motion & Tap)"),
-                                Pair("highest", "High (Single Tap)"),
-                                Pair("medium", "Mid (Double Tap)"),
-                                Pair("secure", "Hold (Secure)")
+                                Pair("motion", "Motion"),
+                                Pair("highest", "Tap"),
+                                Pair("medium", "Double"),
+                                Pair("secure", "Hold")
                             )
                             
                             Row(
@@ -568,7 +568,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(
-                                                text = label.split(" ").firstOrNull() ?: label,
+                                                text = label,
                                                 fontWeight = FontWeight.Bold,
                                                 style = MaterialTheme.typography.labelMedium,
                                                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary 
@@ -600,10 +600,10 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
                                         text = when (aodSensitivity) {
-                                            "motion" -> "Maximum: Accelerometer movement or single screen tap instantly wakes up Lumia."
-                                            "highest" -> "High sensitivity: Any single tap anywhere on the dark screen will instantly wake it up."
-                                            "medium" -> "Balanced sensitivity: Restricts wake-up to intentional double-taps to fully avoid pocket triggers."
-                                            "secure" -> "Fortified safety: Requires holding touch down anywhere for 1 second to unlock back."
+                                            "motion" -> "Device motion or a single screen tap immediately exits AOD."
+                                            "highest" -> "Single tap anywhere on screen exits AOD."
+                                            "medium" -> "Double tap exits AOD to prevent accidental pocket touches."
+                                            "secure" -> "Hold touch for 1 second to exit AOD, avoiding accidental triggers."
                                             else -> "Standard touch gesture control."
                                         },
                                         style = MaterialTheme.typography.bodySmall,
@@ -678,13 +678,13 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = "Screen Dimness Override Level",
+                                text = "Screen Dimness Level",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "Controls absolute pixel dimness. High darkness values scale back hardware output to support OLED and eye comfort.",
+                                text = "Adjust overlay darkness to reduce screen brightness and minimize eye strain during focus.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

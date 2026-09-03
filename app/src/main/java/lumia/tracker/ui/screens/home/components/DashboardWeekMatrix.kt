@@ -28,7 +28,7 @@ fun DashboardWeekMatrix(
     streakDays: Int,
     streakColor: Color
 ) {
-    val weekDays = remember {
+    val weekDays = remember(streakDays, System.currentTimeMillis() / 86400000L) {
         val cal = Calendar.getInstance()
         cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
@@ -56,7 +56,7 @@ fun DashboardWeekMatrix(
     ) {
         weekDays.forEach { (dateStr, label, isToday) ->
             val status = prefs.getString("streak_status_$dateStr", "none")
-            val isDone = status == "complete" || status == "normal" || (isToday && streakDays > 0)
+            val isDone = status == "complete" || status == "normal"
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

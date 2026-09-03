@@ -37,7 +37,6 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
     val isGlass = lumia.tracker.ui.theme.LocalGlassMode.current
     
     var showEditDialog by remember { mutableStateOf(false) }
-    var showAboutDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.background,
@@ -51,7 +50,7 @@ fun ProfileMenuScreen(navController: NavController, viewModel: ScholarViewModel)
                     )
                 }
                 TopAppBar(
-                    title = { Text("Profile & Menu", fontWeight = FontWeight.Bold) },
+                    title = { Text("Profile & Settings", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")

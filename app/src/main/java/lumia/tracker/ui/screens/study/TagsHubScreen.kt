@@ -148,7 +148,7 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Tags Network & Manager",
+                        text = "Tags Hub",
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -225,14 +225,14 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
                             tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                         Text(
-                            text = "No Tags Found",
+                            text = "No Tags Yet",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Add tags to your Courses, Subjects, Chapters, Topics, Tasks, or Test Records to unleash the full power of study interconnections!",
+                            text = "Add tags to courses, subjects, assignments, or tasks to organize and link your study materials.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -263,7 +263,7 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
                                 .padding(16.dp)
                         ) {
                             Text(
-                                text = "Tag Cloud Network (${filteredTags.size})",
+                                text = "Tags (${filteredTags.size})",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -406,11 +406,11 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
                                                     )
                                                 }
                                                 
-                                                // Synergy Badge
+                                                // Activity Badge
                                                 val synergyLabel = when {
-                                                    meta.totalCount >= 10 -> "Study Core Node"
-                                                    meta.totalCount >= 5 -> "Highly Integrated"
-                                                    else -> "Connected Hub"
+                                                    meta.totalCount >= 10 -> "Core Tag"
+                                                    meta.totalCount >= 5 -> "Frequently Used"
+                                                    else -> "Active Tag"
                                                 }
                                                 val synergyColor = when {
                                                     meta.totalCount >= 10 -> MaterialTheme.colorScheme.error
@@ -529,7 +529,7 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
                                             ConnectionCard(
                                                 title = subject.name,
                                                 subtitle = "Focus Subject",
-                                                infoText = "Navigate to explore detail mind-map",
+                                                infoText = "Tap to view subject details",
                                                 badgeText = "Subject",
                                                 badgeColor = MaterialTheme.colorScheme.secondary,
                                                 onClick = { navController.navigate("subjectDetail/${subject.id}") }
@@ -581,8 +581,8 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
                                         items(meta.assignments) { assignment ->
                                             val courseName = courses.find { it.id == assignment.courseId }?.name ?: "Unknown Course"
                                             val dateStr = if (assignment.dueDateMillis > 0) {
-                                                val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                                                "Due: " + sdf.format(Date(assignment.dueDateMillis))
+                                                 val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                                                 "Due: " + sdf.format(Date(assignment.dueDateMillis))
                                             } else "No Due Date"
                                             ConnectionCard(
                                                 title = assignment.title,
@@ -598,7 +598,7 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
                                     // 6. Connected Tasks (Interactive Checkbox)
                                     if (meta.tasks.isNotEmpty()) {
                                         item {
-                                            ConnectionSectionHeader("Self-Study Tasks (${meta.tasks.size})", Icons.Rounded.TaskAlt)
+                                            ConnectionSectionHeader("Tasks (${meta.tasks.size})", Icons.Rounded.TaskAlt)
                                         }
                                         items(meta.tasks) { task ->
                                             val priorityLabel = when (task.priority) {
@@ -659,7 +659,7 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
                                                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                                                         ) {
                                                             Text(
-                                                                text = priorityLabel,
+                                                                text = "$priorityLabel Priority",
                                                                 style = MaterialTheme.typography.labelSmall,
                                                                 color = priorityColor,
                                                                 fontWeight = FontWeight.Bold
@@ -723,11 +723,11 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
     if (showRenameDialog && selectedTagMetadata != null) {
         AlertDialog(
             onDismissRequest = { showRenameDialog = false },
-            title = { Text("Rename Tag Globally") },
+            title = { Text("Rename Tag") },
             text = {
                 Column {
                     Text(
-                        text = "Renaming '${selectedTagMetadata.name}' will update it across all Courses, Subjects, Chapters, Topics, Assignments, Tasks, and Test Records.",
+                        text = "Renaming '${selectedTagMetadata.name}' will update it across all linked items.",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
@@ -770,10 +770,10 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
     if (showDeleteDialog && selectedTagMetadata != null) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Tag Globally") },
+            title = { Text("Delete Tag") },
             text = {
                 Text(
-                    text = "Are you sure you want to delete '${selectedTagMetadata.name}'? This tag will be removed from all connected academic objects. The objects themselves will not be deleted."
+                    text = "Are you sure you want to delete '${selectedTagMetadata.name}'? This tag will be removed from all linked items. The items themselves will not be deleted."
                 )
             },
             confirmButton = {
@@ -809,7 +809,7 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
             text = {
                 Column {
                     Text(
-                        text = "Merge and combine all connections of '${selectedTagMetadata.name}' into another tag. This tag will be deleted, and all connected items will receive the other tag instead.",
+                        text = "Merge all items tagged with '${selectedTagMetadata.name}' into another tag. The '${selectedTagMetadata.name}' tag will be deleted.",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
@@ -835,7 +835,7 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = if (mergeSelectedTag.isBlank()) "Choose Target Tag" else mergeSelectedTag,
+                                        text = if (mergeSelectedTag.isBlank()) "Select target tag" else mergeSelectedTag,
                                         color = if (mergeSelectedTag.isBlank()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
                                     )
                                     Icon(Icons.Rounded.ArrowDropDown, contentDescription = "Dropdown")
@@ -876,7 +876,7 @@ fun TagsHubScreen(navController: NavController, viewModel: ScholarViewModel, ini
                     enabled = mergeSelectedTag.isNotBlank(),
                     modifier = Modifier.testTag("merge_tag_confirm")
                 ) {
-                    Text("Merge & Combine")
+                    Text("Merge")
                 }
             },
             dismissButton = {

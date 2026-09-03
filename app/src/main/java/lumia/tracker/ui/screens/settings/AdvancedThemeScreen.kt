@@ -120,7 +120,7 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
                     )
                 }
                 CenterAlignedTopAppBar(
-                    title = { Text("Advanced Theme", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                    title = { Text("Custom Palette", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
@@ -140,10 +140,10 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingsCategoryHeading(title = "Auto-Generate Custom Palette", icon = Icons.Rounded.Palette)
+            SettingsCategoryHeading(title = "Palette Presets", icon = Icons.Rounded.Palette)
             
             Text(
-                text = "Tap a preset to load a beautifully calculated theme, or enter a Primary Hex below and tap 'Generate Palette' to scientifically compute matching container, surface, background, and text shades.",
+                text = "Select a preset palette or enter a primary hex color below to automatically generate matching container, surface, background, and text colors.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -202,9 +202,9 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            SettingsCategoryHeading(title = "Fine-Tune Individual Colors", icon = Icons.Rounded.Edit)
+            SettingsCategoryHeading(title = "Custom Palette Colors", icon = Icons.Rounded.Edit)
 
-            HexColorInputItem("Primary Shade", customPrimary) { viewModel.updateCustomColor("primary", it) }
+            HexColorInputItem("Primary Color", customPrimary) { viewModel.updateCustomColor("primary", it) }
             
             Button(
                 onClick = { viewModel.generatePaletteFromPrimaryHex(customPrimary) },
@@ -219,19 +219,19 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Palette,
-                    contentDescription = "Magic Wand",
+                    contentDescription = "Generate Palette",
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Generate Cohesive Palette from Primary", fontWeight = FontWeight.Bold)
+                Text("Generate Palette from Primary", fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
             
-            HexColorInputItem("Secondary/Header Shade", customPrimaryContainer) { viewModel.updateCustomColor("primary_container", it) }
-            HexColorInputItem("Background Shade", customBackground) { viewModel.updateCustomColor("background", it) }
-            HexColorInputItem("Surface/Panel Shade", customSurface) { viewModel.updateCustomColor("surface", it) }
-            HexColorInputItem("Text Shade", customText) { viewModel.updateCustomColor("text", it) }
+            HexColorInputItem("Container & Header Color", customPrimaryContainer) { viewModel.updateCustomColor("primary_container", it) }
+            HexColorInputItem("Background Color", customBackground) { viewModel.updateCustomColor("background", it) }
+            HexColorInputItem("Surface / Card Color", customSurface) { viewModel.updateCustomColor("surface", it) }
+            HexColorInputItem("Text Color", customText) { viewModel.updateCustomColor("text", it) }
             
             Spacer(modifier = Modifier.height(32.dp))
         }

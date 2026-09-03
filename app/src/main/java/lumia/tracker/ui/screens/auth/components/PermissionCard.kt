@@ -140,7 +140,7 @@ fun PermissionCard(
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.CheckCircle,
-                            contentDescription = "Active",
+                            contentDescription = "Enabled",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(14.dp)
                         )
@@ -168,7 +168,7 @@ fun PermissionCard(
                         horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            "Setup",
+                            "Enable",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold
                         )

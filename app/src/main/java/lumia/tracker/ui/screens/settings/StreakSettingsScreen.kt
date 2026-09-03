@@ -69,7 +69,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                SettingsGroupCard(title = "Live Fire Chamber Preview", icon = Icons.Rounded.LocalFireDepartment) {
+                SettingsGroupCard(title = "Streak Widget Preview", icon = Icons.Rounded.LocalFireDepartment) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -107,7 +107,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                "Live Chamber Preview",
+                                "Live Preview",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(bottom = 12.dp)
@@ -130,7 +130,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             item {
                 SettingsGroupCard(title = "Streak Goals", icon = Icons.Rounded.List) {
                     Text(
-                        "Set minimum daily requirements for a complete streak. Note: If you plan more than these limits, you'll need to complete all planned items to maintain your streak.",
+                        "Set minimum daily targets to maintain your streak. If your planned schedule exceeds these goals, all scheduled items must be completed.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -146,7 +146,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                             steps = 19,
                             modifier = Modifier.weight(2f)
                         )
-                        Text("$reqTasks", modifier = Modifier.width(30.dp), textAlign = TextAlign.End)
+                        Text("$reqTasks", modifier = Modifier.width(36.dp), textAlign = TextAlign.End)
                     }
                     // Assignments Requirement
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -158,11 +158,11 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                             steps = 9,
                             modifier = Modifier.weight(2f)
                         )
-                        Text("$reqAssignments", modifier = Modifier.width(30.dp), textAlign = TextAlign.End)
+                        Text("$reqAssignments", modifier = Modifier.width(36.dp), textAlign = TextAlign.End)
                     }
-                    // Study Mins Requirement
+                    // Study Time Requirement
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Study (Mins)", modifier = Modifier.weight(1f))
+                        Text("Study Time", modifier = Modifier.weight(1f))
                         Slider(
                             value = reqStudyMins.toFloat(),
                             onValueChange = { viewModel.updateStreakReqStudyMins(it.roundToInt()) },
@@ -170,7 +170,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                             steps = 23,
                             modifier = Modifier.weight(2f)
                         )
-                        Text("$reqStudyMins", modifier = Modifier.width(30.dp), textAlign = TextAlign.End)
+                        Text("${reqStudyMins} min", modifier = Modifier.width(56.dp), textAlign = TextAlign.End)
                     }
                 }
             }
@@ -178,14 +178,14 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             item {
                 SettingsGroupCard(title = "Streak Threshold", icon = Icons.Rounded.Speed) {
                     Text(
-                        "Set the minimum completion percentage needed for the day to count as a normal streak.",
+                        "Set the minimum daily progress required to keep your streak active.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Threshold", modifier = Modifier.weight(1f))
+                        Text("Minimum Progress", modifier = Modifier.weight(1f))
                         Slider(
                             value = partialThreshold,
                             onValueChange = { viewModel.updateStreakPartialThreshold(it) },
@@ -193,14 +193,14 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                             steps = 8,
                             modifier = Modifier.weight(2f)
                         )
-                        Text("${(partialThreshold * 100).roundToInt()}%", modifier = Modifier.width(40.dp), textAlign = TextAlign.End)
+                        Text("${(partialThreshold * 100).roundToInt()}%", modifier = Modifier.width(44.dp), textAlign = TextAlign.End)
                     }
                 }
             }
             
             item {
                 SettingsGroupCard(title = "Visuals & Animation", icon = Icons.Rounded.Palette) {
-                    Text("Streak Fire Color", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    Text("Streak Color", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                     val colors = listOf("Theme", "#FF5722", "#FF9800", "#4CAF50", "#2196F3", "#9C27B0", "#E91E63", "#F44336")
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -224,7 +224,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     }
                     
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Fire Brightness", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    Text("Flame Brightness", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Slider(
                             value = brightness,
@@ -236,12 +236,12 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Animation Style (Override)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    Text("Animation Style", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                     val stylesWithDesc = listOf(
-                        "Default" to "Classic smooth rotation and clean fire pulse.",
-                        "Material" to "Expressive segment tracker with glowing corona aura.",
-                        "Bouncy" to "Energetic dancing flames with orbiting active sparks.",
-                        "Glass Liquid" to "Glossy frosted glass container with a fluid sine wave."
+                        "Default" to "Classic smooth rotation with a subtle flame pulse.",
+                        "Material" to "Segmented progress ring with a radiant outer glow.",
+                        "Bouncy" to "Playful animated flame with orbiting sparks.",
+                        "Glass Liquid" to "Frosted glass finish with an animated fluid wave."
                     )
                     stylesWithDesc.forEach { (style, description) ->
                         Row(
@@ -274,19 +274,22 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 SettingsGroupCard(title = "Notifications", icon = Icons.Rounded.Notifications) {
                     Text("Notification Tone", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Select the tone of voice for your daily streak reminders.",
+                        "Choose the tone for your daily streak reminder and milestone alerts.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
                     )
-                    val tones = listOf("Motivational", "Aggressive")
-                    tones.forEach { tone ->
+                    val tonesWithDesc = listOf(
+                        "Motivational" to "Encouraging and positive reminders to keep your momentum.",
+                        "Aggressive" to "Direct, no-nonsense reminders to stay disciplined."
+                    )
+                    tonesWithDesc.forEach { (tone, description) ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .bouncyClick { viewModel.updateStreakNotificationTone(tone) }
-                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                                .padding(vertical = 10.dp, horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
@@ -294,7 +297,14 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                                 onClick = { viewModel.updateStreakNotificationTone(tone) }
                             )
                             Spacer(modifier = Modifier.width(16.dp))
-                            Text(tone, style = MaterialTheme.typography.bodyMedium)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(tone, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }

@@ -52,12 +52,12 @@ fun PomodoroScreen(
     } ?: MaterialTheme.colorScheme.primary
 
     val statusLabel = when {
-        pomodoroState.isAlarmActive -> "Alarm Active"
+        pomodoroState.isAlarmActive -> "Time's Up!"
         !pomodoroState.isRunning -> "Ready"
-        pomodoroState.isPaused -> "Paused"
+        pomodoroState.isPaused -> if (pomodoroState.modeString == "WORK") "Focus Paused" else "Break Paused"
         pomodoroState.modeString == "SHORT_BREAK" -> "Short Break"
-        pomodoroState.modeString == "LONG_BREAK" -> "Long Break"
-        else -> "Stay Focused"
+        pomodoroState.modeString == "LONG_BREAK" -> "Long Break (Cycle Complete)"
+        else -> "Focus Session"
     }
 
     fun sendServiceAction(action: String, extras: (Intent.() -> Unit)? = null) {
@@ -75,7 +75,7 @@ fun PomodoroScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("FOCUS SPACE", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
+                title = { Text("Focus Timer", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
@@ -121,6 +121,7 @@ fun PomodoroScreen(
                 isRunning = pomodoroState.isRunning,
                 isPaused = pomodoroState.isPaused,
                 isAlarmActive = pomodoroState.isAlarmActive,
+                alarmActionLabel = if (pomodoroState.modeString == "WORK") "Start Focus Session" else "Start Break",
                 onStart = {
                     sendServiceAction("START") {
                         putExtra("workDuration", 25 * 60)

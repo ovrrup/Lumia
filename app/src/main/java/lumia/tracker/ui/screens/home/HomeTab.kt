@@ -113,10 +113,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.border
 
-import lumia.tracker.ui.components.BouncyIconButton
-import lumia.tracker.ui.components.BouncyButton
-import lumia.tracker.ui.components.BouncyTextButton
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTab(
@@ -137,20 +133,14 @@ fun HomeTab(
 
     val featureQuickNotesEnabled by viewModel.featureQuickNotesEnabled.collectAsStateWithLifecycle()
 
-    var courseToEdit by remember { mutableStateOf<lumia.tracker.model.Course?>(null) }
-    var subjectToEdit by remember { mutableStateOf<lumia.tracker.model.Subject?>(null) }
-
     // Notifications Permission
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (!isGranted) {
-            Toast.makeText(context, "Reminders may not work properly without permission.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Notification permission is required for class and task reminders.", Toast.LENGTH_SHORT).show()
         }
     }
-
-    val betaEnhancedHeader by viewModel.betaEnhancedHeader.collectAsStateWithLifecycle()
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
     var selectedDateOffset by remember { androidx.compose.runtime.mutableIntStateOf(0) }
 
@@ -182,7 +172,8 @@ fun HomeTab(
                     GlassHeroCard(
                         modifier = Modifier
                             .weight(1f)
-                            .height(160.dp),
+                            .height(160.dp)
+                            .bouncyClick { onNavigateToTasks() },
                         shape = RoundedCornerShape(32.dp)
                     ) {
                         Column(
@@ -219,7 +210,8 @@ fun HomeTab(
                     GlassHeroCard(
                         modifier = Modifier
                             .weight(1f)
-                            .height(160.dp),
+                            .height(160.dp)
+                            .bouncyClick { viewModel.setSelectedDashboardTab(1) },
                         shape = RoundedCornerShape(32.dp)
                     ) {
                         Column(
@@ -243,7 +235,7 @@ fun HomeTab(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Text(
-                                    "Enrolled",
+                                    "Active Courses",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
@@ -278,7 +270,7 @@ fun HomeTab(
                         ) {
                             Column {
                                 Text("Quick Notes", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                                Text("Draft scratchpad canvas", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
+                                Text("Jot down quick thoughts and study notes", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f))
                             }
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.Notes,
@@ -340,7 +332,7 @@ fun HomeTab(
                             ) {
                                 Icon(
                                     Icons.Rounded.CalendarMonth,
-                                    contentDescription = "Today",
+                                    contentDescription = "Jump to Today",
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
@@ -392,6 +384,12 @@ fun HomeTab(
                         Spacer(modifier = Modifier.height(20.dp))
                         
                         if (scheduledCourses.isEmpty()) {
+                            val emptyDayLabel = when (selectedDateOffset) {
+                                0 -> "today"
+                                1 -> "tomorrow"
+                                -1 -> "yesterday"
+                                else -> "this day"
+                            }
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -400,7 +398,7 @@ fun HomeTab(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    "No classes scheduled for ${if (selectedDateOffset == 0) "today" else "this day"}.",
+                                    "No classes scheduled for $emptyDayLabel.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -463,7 +461,7 @@ fun HomeTab(
                 }
             }
 
-            item(key = "upcoming_classes_assignments") {
+            item(key = "upcoming_assignments") {
                 Spacer(modifier = Modifier.height(16.dp))
                 GlassCard(
                     modifier = Modifier.animateItem().fillMaxWidth(),
@@ -475,23 +473,27 @@ fun HomeTab(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Upcoming Classes & Assignments", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("Upcoming Assignments", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             BouncyIconButton(
-                                onClick = onAddCourseClick,
+                                onClick = onNavigateToTasks,
                                 modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
                             ) {
-                                Icon(Icons.Rounded.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "View all assignments", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                             }
                         }
                         Spacer(Modifier.height(8.dp))
                         
                         val upcomingAssigns = assignments.filter { !it.isCompleted && it.dueDateMillis > System.currentTimeMillis() }.sortedBy { it.dueDateMillis }.take(3)
                         if (upcomingAssigns.isEmpty()) {
-                            Text("No upcoming classes or assignments.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("No upcoming assignments.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         } else {
                             upcomingAssigns.forEach { assignment ->
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .bouncyClick { onNavigateToTasks() }
+                                        .padding(vertical = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Box(
@@ -535,7 +537,7 @@ fun HomeTab(
                                 onClick = onNavigateToTasks,
                                 modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f), CircleShape)
                             ) {
-                                Icon(Icons.Rounded.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Rounded.Add, contentDescription = "Add or view tasks", tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
                             }
                         }
                         Spacer(Modifier.height(8.dp))

@@ -194,7 +194,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Storage,
-                                contentDescription = "Active Database Info",
+                                contentDescription = "Local database information",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -202,13 +202,13 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                "Database Integrity Status",
+                                "Local Data Overview",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                "Secure active binary protection enabled",
+                                "Stored locally on your device",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
@@ -242,18 +242,18 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Advanced Data Management Section (Plus Feature)
-            SettingsGroupCard(title = "Advanced Schema & Diagnostics", icon = Icons.Rounded.Storage) {
+            // Database Diagnostics & Maintenance
+            SettingsGroupCard(title = "Database Diagnostics & Maintenance", icon = Icons.Rounded.Storage) {
                 
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            "SQLite Local Schema Metrics",
+                            "Table Row Counts",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            "View row counts of the physical application databases in real-time.",
+                            "View record counts stored across local database tables.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -269,7 +269,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Analyze Schema Metrics")
+                                    Text("Analyze Database")
                                 }
                             }
                         } else {
@@ -291,7 +291,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(14.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Re-Analyze Database")
+                                        Text("Refresh Statistics")
                                     }
                                 }
                             }
@@ -302,13 +302,13 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Text(
-                            "Index Pack compacting & SQLite VACUUM",
+                            "Database Optimization",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
                         )
                         Text(
-                            "Rebuild database indices, clean orphaned assignments, and run VACUUM optimization commands to decrease storage allocations.",
+                            "Rebuild indices, clean orphaned data, and run SQLite VACUUM to reclaim storage space.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -323,7 +323,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Execute SQLite Defrag")
+                                Text("Optimize Database")
                             }
                         }
 
@@ -341,17 +341,17 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Tag Connectivity & Alignment Card
-            SettingsGroupCard(title = "Tag Connectivity & Maintenance", icon = Icons.Rounded.LocalOffer) {
+            // Tag Maintenance Card
+            SettingsGroupCard(title = "Tag Maintenance", icon = Icons.Rounded.LocalOffer) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        "Align Tag Databases",
+                        "Sync Active Tags",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        "Synchronize academic entities, remove orphaned tag customizations, and verify integrity of tag associations.",
+                        "Scan courses, subjects, and tasks to remove orphaned tag styles and keep tags synchronized.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -365,7 +365,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         onClick = {
                             scope.launch {
                                 loadingAlign = true
-                                alignStatus = "Verifying tag mappings..."
+                                alignStatus = "Scanning tags..."
                                 kotlinx.coroutines.delay(1000)
                                 // Scan all tags and sync
                                 val tagsInDb = mutableSetOf<String>()
@@ -384,7 +384,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                         deletedOrphans++
                                     }
                                 }
-                                alignStatus = "Aligned! ${tagsInDb.size} active tags mapped. Cleaned $deletedOrphans orphaned customizations."
+                                alignStatus = "Synced: ${tagsInDb.size} active tags found. Removed $deletedOrphans unused customizations."
                                 loadingAlign = false
                             }
                         },
@@ -395,7 +395,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Scan & Align Tag Associations")
+                            Text("Scan & Clean Tags")
                         }
                     }
 
@@ -419,20 +419,20 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                            Text("Clear Custom Colors & Notes", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
-                            Text("Erase all tag customizations (custom colors, notes, favorite states) but keep associations intact.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Reset Tag Customizations", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            Text("Remove custom colors, notes, and favorites while keeping existing tag associations.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Button(
                             onClick = {
                                 scope.launch {
                                     tagCustomizations.forEach { viewModel.deleteTagCustomization(it.tagName) }
-                                    alignStatus = "Cleared all tag metadata customizations!"
+                                    alignStatus = "Reset all tag customizations."
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer),
                             modifier = Modifier.wrapContentSize()
                         ) {
-                            Text("Reset Metas")
+                            Text("Reset")
                         }
                     }
                 }
@@ -440,10 +440,10 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SettingsGroupCard(title = "My Data Management", icon = Icons.Rounded.Person) {
+            SettingsGroupCard(title = "Profile Data Backup", icon = Icons.Rounded.Person) {
                 SettingsActionItemInCard(
-                    title = "Export My Data",
-                    subtitle = "Back up your own profile's settings, tasks, and data",
+                    title = "Export Profile Backup",
+                    subtitle = "Save a local backup file (.bin) of your profile's data and settings",
                     icon = Icons.Rounded.Upload,
                     onClick = { 
                         exportAllMode = false
@@ -454,8 +454,8 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                 
                 SettingsActionItemInCard(
-                    title = "Import Data",
-                    subtitle = "Restore your profile's backup (Overwrites current profile)",
+                    title = "Import Profile Backup",
+                    subtitle = "Restore from a local backup file (replaces current profile)",
                     icon = Icons.Rounded.Download,
                     isDestructive = true,
                     onClick = { openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*")) }
@@ -464,8 +464,8 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                 
                 SettingsActionItemInCard(
-                    title = "Erase My Data & Delete Account",
-                    subtitle = "Permanently delete your profile and all your data",
+                    title = "Delete Current Profile",
+                    subtitle = "Permanently delete your profile and all associated data",
                     icon = Icons.Rounded.DeleteForever,
                     isDestructive = true,
                     onClick = {
@@ -481,10 +481,10 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
             if (activeProfile.isDefault) {
                 Spacer(modifier = Modifier.height(16.dp))
-                SettingsGroupCard(title = "Collective Data Management", icon = Icons.Rounded.Lock) {
+                SettingsGroupCard(title = "All Profiles & App Data", icon = Icons.Rounded.Lock) {
                     SettingsActionItemInCard(
-                        title = "Export All Accounts Data",
-                        subtitle = "Back up data for all users in the application",
+                        title = "Export All Profiles Backup",
+                        subtitle = "Save a local backup file containing all user profiles and app data",
                         icon = Icons.Rounded.Upload,
                         onClick = { 
                             exportAllMode = true
@@ -495,8 +495,8 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                     
                     SettingsActionItemInCard(
-                        title = "Factory Erase (All Accounts)",
-                        subtitle = "Permanently delete all data for all accounts",
+                        title = "Reset All App Data",
+                        subtitle = "Permanently erase all profiles and reset the application",
                         icon = Icons.Rounded.DeleteForever,
                         isDestructive = true,
                         onClick = { 
@@ -512,15 +512,15 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     if (showExportDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showExportDialog = false },
-            title = { Text("Export Data & Settings") },
-            text = { Text(if (exportAllMode) "Export a backup of ALL user accounts?" else "Export a backup of YOUR data?") },
+            title = { Text(if (exportAllMode) "Export All Data" else "Export Profile Backup") },
+            text = { Text(if (exportAllMode) "Save a local backup file containing all user profiles and app data?" else "Save a local backup file for your current profile?") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showExportDialog = false
-                        createDocumentLauncher.launch("scholar_backup.bin")
+                        createDocumentLauncher.launch(if (exportAllMode) "lumia_full_backup.bin" else "lumia_backup.bin")
                     }
-                ) { Text("Export") }
+                ) { Text("Save File") }
             },
             dismissButton = {
                 TextButton(onClick = { showExportDialog = false }) { Text("Cancel") }
@@ -531,8 +531,16 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     if (showResetDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text(if (resetTarget == "all") "Erase All App Data?" else "Erase Data & Delete Account?") },
-            text = { Text(if (resetTarget == "all") "This action cannot be undone. ALL user accounts and their data will be permanently removed." else "This action cannot be undone. Your profile and all your data will be permanently removed.", color = MaterialTheme.colorScheme.error) },
+            title = { Text(if (resetTarget == "all") "Erase All App Data?" else "Delete Current Profile?") },
+            text = {
+                Text(
+                    if (resetTarget == "all")
+                        "This action cannot be undone. All profiles, courses, tasks, and settings stored on this device will be permanently removed."
+                    else
+                        "This action cannot be undone. Your profile and all its data will be permanently removed from this device.",
+                    color = MaterialTheme.colorScheme.error
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -545,7 +553,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Erase Data", fontWeight = FontWeight.Black)
+                    Text(if (resetTarget == "all") "Erase All Data" else "Delete Profile", fontWeight = FontWeight.Black)
                 }
             },
             dismissButton = {
@@ -564,10 +572,10 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showSuccessorDialog = false },
-            title = { Text("Main Account Required", fontWeight = FontWeight.Bold) },
+            title = { Text("Primary Profile Required", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text("Since you are the main account, you must select a successor to become the new main account before you can delete yourself.")
+                    Text("This is the primary profile. Please select or create another profile to become primary before deleting this one.")
                     Spacer(Modifier.height(16.dp))
                     
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { createNew = false }) {
@@ -575,12 +583,12 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             selected = !createNew,
                             onClick = { createNew = false }
                         )
-                        Text("Select existing user")
+                        Text("Select existing profile")
                     }
                     if (!createNew) {
                         val otherProfs = allProfiles.filter { it.id != activeProfile.id }
                         if (otherProfs.isEmpty()) {
-                            Text("No other users found.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 32.dp))
+                            Text("No other profiles found.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 32.dp))
                         } else {
                             if (selectedSuccessorId.isEmpty() && otherProfs.isNotEmpty()) selectedSuccessorId = otherProfs.first().id
                             Column(modifier = Modifier.padding(start = 32.dp)) {
@@ -603,13 +611,13 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             selected = createNew,
                             onClick = { createNew = true }
                         )
-                        Text("Create new account")
+                        Text("Create new profile")
                     }
                     if (createNew) {
                         androidx.compose.material3.OutlinedTextField(
                             value = newName,
                             onValueChange = { newName = it },
-                            label = { Text("New Account Name") },
+                            label = { Text("New Profile Name") },
                             modifier = Modifier.padding(start = 32.dp).fillMaxWidth()
                         )
                     }
@@ -630,7 +638,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     enabled = canSubmit,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Delete My Account", fontWeight = FontWeight.Bold)
+                    Text("Transfer & Delete", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {

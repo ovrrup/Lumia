@@ -199,9 +199,9 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     courseId = courseId,
                     subjectId = null
                 )
-                Toast.makeText(context, "✅ Attachment successfully linked!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Attachment linked", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(context, "❌ Link failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Failed to link file: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -220,12 +220,12 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             paint.color = android.graphics.Color.WHITE
             paint.textSize = 24f
             paint.isFakeBoldText = true
-            canvas.drawText("SCHOLAR STUDY GUIDE", 40f, 60f, paint)
+            canvas.drawText("STUDY GUIDE", 40f, 60f, paint)
             
             paint.textSize = 14f
             paint.isFakeBoldText = false
             paint.color = android.graphics.Color.parseColor("#E0E7FF")
-            canvas.drawText("Linked Course: ${course?.name ?: ""}", 40f, 90f, paint)
+            canvas.drawText("Course: ${course?.name ?: ""}", 40f, 90f, paint)
             
             paint.color = android.graphics.Color.BLACK
             paint.textSize = 16f
@@ -273,7 +273,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
             
             paint.color = android.graphics.Color.GRAY
             paint.textSize = 10f
-            canvas.drawText("Generated with Scholar Companion App • page 1 of 1", 40f, 800f, paint)
+            canvas.drawText("Lumia Study Guide • page 1 of 1", 40f, 800f, paint)
             
             pdfDoc.finishPage(page)
             
@@ -289,9 +289,9 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 courseId = courseId,
                 subjectId = null
             )
-            Toast.makeText(context, "✅ Study guide PDF generated!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Study guide PDF generated", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(context, "❌ Generation failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Failed to generate PDF: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -431,7 +431,9 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize().reorderable(reorderableState)
             ) {
-                if (course.instructor.isNotBlank() || course.schedule.isNotBlank() || course.description.isNotBlank()) {
+                val daysShort = course.scheduleDays.split(",").map { it.trim().take(3) }.filter { it.isNotBlank() }.joinToString(", ")
+                val fullSchedule = listOf(daysShort, course.schedule).filter { it.isNotBlank() }.joinToString(" • ")
+                if (course.instructor.isNotBlank() || fullSchedule.isNotBlank() || course.description.isNotBlank()) {
                     item {
                         lumia.tracker.ui.components.GlassCard(
                             modifier = Modifier.fillMaxWidth(),
@@ -442,8 +444,8 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     Text("Instructor: ${course.instructor}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
-                                if (course.schedule.isNotBlank()) {
-                                    Text("Schedule: ${course.schedule}", style = MaterialTheme.typography.bodyLarge)
+                                if (fullSchedule.isNotBlank()) {
+                                    Text("Schedule: $fullSchedule", style = MaterialTheme.typography.bodyLarge)
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
                                 if (course.description.isNotBlank()) {
@@ -454,7 +456,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                 }
 
-                // Interconnected Study Subject & Synergy Score Section
+                // Linked Study Subjects Section
                 if (linkedSubjects.isNotEmpty()) {
                     item {
                         lumia.tracker.ui.components.GlassCard(
@@ -464,7 +466,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
-                                    text = "Interconnected Study Subjects",
+                                    text = "Linked Subjects",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
@@ -507,10 +509,10 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     val synergyScore = (avgScore * 100).toInt()
 
                                     val ratingClass = when {
-                                        synergyScore >= 85 -> "Gold Synergy (Elite Alignment)"
-                                        synergyScore >= 60 -> "Silver Synergy (Healthy Connection)"
-                                        synergyScore >= 30 -> "Bronze Synergy (Moderate Progress)"
-                                        else -> "Basic Synergy (Awaiting Action)"
+                                        synergyScore >= 85 -> "High Synergy"
+                                        synergyScore >= 60 -> "Good Synergy"
+                                        synergyScore >= 30 -> "Moderate Synergy"
+                                        else -> "Starting Synergy"
                                     }
 
                                     Row(
@@ -527,7 +529,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                         Spacer(modifier = Modifier.width(16.dp))
                                         Column {
                                             Text(
-                                                text = "Dynamic Synergy Index",
+                                                text = "Subject Synergy",
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                                             )
@@ -567,11 +569,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("Attendance Tracker", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                                Text("Attendance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onTertiaryContainer)
                                 BouncyIconButton(onClick = { isMonthlyView = !isMonthlyView; displayMonthOffset = 0 }) {
                                     Icon(
                                         imageVector = if (isMonthlyView) Icons.Rounded.ViewModule else Icons.Rounded.DateRange,
-                                        contentDescription = "Toggle View",
+                                        contentDescription = if (isMonthlyView) "Weekly view" else "Monthly view",
                                         tint = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
                                 }
@@ -598,11 +600,11 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     BouncyIconButton(onClick = { displayMonthOffset-- }) {
-                                        Icon(Icons.Rounded.ChevronLeft, contentDescription = "Prev", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                                        Icon(Icons.Rounded.ChevronLeft, contentDescription = "Previous month", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                     }
                                     Text(monthName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
                                     BouncyIconButton(onClick = { displayMonthOffset++ }) {
-                                        Icon(Icons.Rounded.ChevronRight, contentDescription = "Next", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                                        Icon(Icons.Rounded.ChevronRight, contentDescription = "Next month", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -637,7 +639,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                                     "Present" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
                                                     "Absent" -> androidx.compose.ui.graphics.Color(0xFFF44336)
                                                     "Late" -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-                                                    "Cancelled" -> androidx.compose.ui.graphics.Color.Gray
+                                                    "Excused", "Cancelled", "Holiday" -> androidx.compose.ui.graphics.Color(0xFF9E9E9E)
                                                     else -> androidx.compose.ui.graphics.Color.Transparent
                                                 }
 
@@ -696,7 +698,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                             "Present" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
                                             "Absent" -> androidx.compose.ui.graphics.Color(0xFFF44336)
                                             "Late" -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-                                            "Cancelled" -> androidx.compose.ui.graphics.Color.Gray
+                                            "Excused", "Cancelled", "Holiday" -> androidx.compose.ui.graphics.Color(0xFF9E9E9E)
                                             else -> MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f)
                                         }
 
@@ -730,14 +732,19 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 }
                             }
                             Spacer(modifier = Modifier.height(16.dp))
-                            val cancelled = attendanceRecords.count { it.status == "Cancelled" || it.status == "Holiday" }
-                            val effectiveTotal = attendanceRecords.size - cancelled
+                            val excused = attendanceRecords.count { it.status == "Excused" || it.status == "Cancelled" || it.status == "Holiday" }
+                            val effectiveTotal = attendanceRecords.size - excused
                             val presentCount = attendanceRecords.count { it.status == "Present" || it.status == "Late" }
                             val attendancePct = if (effectiveTotal > 0) (presentCount * 100) / effectiveTotal else 0
                             
                             Row(verticalAlignment = Alignment.CenterVertically) {
+                                val summaryText = when {
+                                    attendanceRecords.isEmpty() -> "No attendance logged yet"
+                                    effectiveTotal == 0 -> "All $excused classes excused"
+                                    else -> "Attendance: $presentCount / $effectiveTotal classes ($attendancePct%)"
+                                }
                                 Text(
-                                    "Attendance: $presentCount / $effectiveTotal classes ($attendancePct%)",
+                                    summaryText,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f)
                                 )
@@ -745,7 +752,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Icon(
                                         Icons.Rounded.Warning,
-                                        contentDescription = "Low Attendance",
+                                        contentDescription = "Low attendance warning (<75%)",
                                         tint = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -758,38 +765,75 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         val selCal = java.util.Calendar.getInstance().apply { timeInMillis = selectedDate }
                         val renderKey = "${selCal.get(java.util.Calendar.YEAR)}-${selCal.get(java.util.Calendar.DAY_OF_YEAR)}"
             val record = attendanceByDay[renderKey]
-                        val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+                        val dateFormat = java.text.SimpleDateFormat("EEEE, MMM d, yyyy", java.util.Locale.getDefault())
+
+                        val attendanceStatusList = listOf(
+                            Triple("Present", "Attended class on time", androidx.compose.ui.graphics.Color(0xFF4CAF50)),
+                            Triple("Late", "Arrived after class started", androidx.compose.ui.graphics.Color(0xFFFF9800)),
+                            Triple("Absent", "Did not attend class", androidx.compose.ui.graphics.Color(0xFFF44336)),
+                            Triple("Excused", "Absence excused or class cancelled", androidx.compose.ui.graphics.Color(0xFF9E9E9E))
+                        )
+
                         AlertDialog(
                             onDismissRequest = { showAttendanceDialog = false },
-                            title = { Text("Mark Attendance - ${dateFormat.format(java.util.Date(selectedDate))}") },
-                            text = {
+                            title = {
                                 Column {
-                                    val options = listOf("Present", "Absent", "Late", "Cancelled")
-                                    options.forEach { option ->
+                                    Text("Mark Attendance", fontWeight = FontWeight.Bold)
+                                    Text(
+                                        dateFormat.format(java.util.Date(selectedDate)),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    attendanceStatusList.forEach { (statusName, descText, colorCode) ->
+                                        val isSelected = record?.status == statusName ||
+                                            (statusName == "Excused" && (record?.status == "Cancelled" || record?.status == "Holiday"))
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
+                                                .clip(RoundedCornerShape(12.dp))
                                                 .bouncyClick {
                                                     if (record != null) {
-                                                        viewModel.updateAttendanceRecord(record.copy(status = option))
+                                                        viewModel.updateAttendanceRecord(record.copy(status = statusName))
                                                     } else {
-                                                        viewModel.addAttendanceRecord(courseId, selectedDate, option)
+                                                        viewModel.addAttendanceRecord(courseId, selectedDate, statusName)
                                                     }
                                                     showAttendanceDialog = false
                                                 }
-                                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                                                .padding(vertical = 8.dp, horizontal = 4.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             RadioButton(
-                                                selected = record?.status == option,
+                                                selected = isSelected,
                                                 onClick = null
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            Text(option, style = MaterialTheme.typography.bodyLarge)
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(10.dp)
+                                                    .background(colorCode, CircleShape)
+                                            )
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Column {
+                                                Text(
+                                                    statusName,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    descText,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
                                         }
                                     }
                                     if (record != null) {
-                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Spacer(modifier = Modifier.height(12.dp))
                                         BouncyTextButton(
                                             onClick = {
                                                 viewModel.deleteAttendanceRecord(record)
@@ -797,14 +841,14 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                             },
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Text("Clear Record", color = MaterialTheme.colorScheme.error)
+                                            Text("Clear Attendance", color = MaterialTheme.colorScheme.error)
                                         }
                                     }
                                 }
                             },
                             confirmButton = {
                                 TextButton(onClick = { showAttendanceDialog = false }) {
-                                    Text("Close")
+                                    Text("Done")
                                 }
                             }
                         )
@@ -880,7 +924,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         ) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 Text(
-                                    "No notes for this course yet.",
+                                    "No notes yet",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1019,6 +1063,12 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        "Track homework, exams, and projects here",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -1196,18 +1246,18 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                 }
 
-                // Resource Hub & Attachments Section
+                // Course Materials Section
                 item {
                     Spacer(modifier = Modifier.height(24.dp))
                     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                         Text(
-                            "Resource Hub & Attachments",
+                            "Course Materials",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "Link physical course materials, lecture slides, and notes",
+                            "Attach lecture slides, syllabus, and reference files",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1237,17 +1287,17 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         ) {
                             Icon(Icons.Rounded.AttachFile, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Browse File", style = MaterialTheme.typography.labelSmall)
+                            Text("Attach File", style = MaterialTheme.typography.labelMedium)
                         }
 
                         // Generate Study Guide PDF Button
                         BouncyButton(
                             onClick = { 
-                                attachmentTitle = "Summary of ${course.name}"
+                                attachmentTitle = "Study Guide - ${course.name}"
                                 attachmentContent = if (courseNotes.isNotEmpty()) {
                                     courseNotes.joinToString("\n\n") { "• [${it.tag}] ${it.content}" }
                                 } else {
-                                    "This is a summary guide for course ${course.name}.\n\nSchedule: ${course.schedule}\nInstructor: ${course.instructor}\n\nTasks:\n" + courseTasks.joinToString("\n") { "[] " + it.title }
+                                    "Study guide for ${course.name}.\n\nSchedule: ${course.schedule}\nInstructor: ${course.instructor}\n\nTasks:\n" + courseTasks.joinToString("\n") { "• " + it.title }
                                 }
                                 showAddAttachmentDialog = true
                             },
@@ -1260,7 +1310,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         ) {
                             Icon(Icons.Rounded.Book, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("AI Auto-Guide", style = MaterialTheme.typography.labelMedium)
+                            Text("Study Guide", style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
@@ -1277,14 +1327,14 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 Text(
-                                    "No study attachments linked.",
+                                    "No attachments yet",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    "Upload a PDF or tap AI Auto-Guide to generate study slips.",
+                                    "Attach course documents or create a study guide PDF.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -1437,17 +1487,17 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
         AlertDialog(
             onDismissRequest = { showLinkSubjectDialog = false },
-            title = { Text("Link Subjects to Course") },
+            title = { Text("Link Subjects") },
             text = {
                 Column {
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         RadioButton(selected = !createNew, onClick = { createNew = false })
-                        Text("Link Existing Subjects")
+                        Text("Select existing subjects")
                     }
                     if (!createNew) {
                         Spacer(modifier = Modifier.height(8.dp))
                         if (subjects.isEmpty()) {
-                            Text("No existing subjects.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("No subjects available.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         } else {
                             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items(subjects) { subj ->
@@ -1473,20 +1523,20 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
 
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         RadioButton(selected = createNew, onClick = { createNew = true })
-                        Text("Create New Subject")
+                        Text("Create new subject")
                     }
                     if (createNew) {
                         OutlinedTextField(
                             value = newSubjectName,
                             onValueChange = { newSubjectName = it },
-                            label = { Text("New Subject Name") },
+                            label = { Text("Subject name") },
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(
                             value = newSubjectTags,
                             onValueChange = { newSubjectTags = it },
-                            label = { Text("Tags (optional)") },
+                            label = { Text("Tags (comma separated, optional)") },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -1508,7 +1558,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         viewModel.updateCourse(course.copy(subjectIds = updatedIds, subjectId = firstId))
                         showLinkSubjectDialog = false
                     }
-                }) { Text("Confirm") }
+                }) { Text("Save") }
             },
             dismissButton = {
                 TextButton(onClick = { showLinkSubjectDialog = false }) { Text("Cancel") }
@@ -1586,19 +1636,19 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     OutlinedTextField(
                         value = desc,
                         onValueChange = { desc = it },
-                        label = { Text("Description") },
+                        label = { Text("Description (optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = tags,
                         onValueChange = { tags = it },
-                        label = { Text("Tags (Optional, comma separated)") },
+                        label = { Text("Tags (comma separated, optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    Text("Category Preset", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    Text("Category", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
                     val categoriesPresetList = listOf("Homework", "Exam", "Project", "Quiz", "Lab", "Custom")
                     var isCustomCategory by remember { mutableStateOf(!categoriesPresetList.dropLast(1).contains(category)) }
                     
@@ -1638,14 +1688,14 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         OutlinedTextField(
                             value = category,
                             onValueChange = { category = it },
-                            label = { Text("Custom Category Name") },
+                            label = { Text("Custom category name") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
                     }
                     
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Category Theme Color", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    Text("Color", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
                     
                     val presetColorsList = listOf(
                         "#E52F28", // Red/Rose
@@ -1687,7 +1737,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Link to Study Subject (Optional)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    Text("Linked Subject (Optional)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
                     androidx.compose.foundation.lazy.LazyRow(
                         modifier = Modifier.fillMaxWidth().heightIn(max = 48.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1802,19 +1852,19 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     OutlinedTextField(
                         value = desc,
                         onValueChange = { desc = it },
-                        label = { Text("Description") },
+                        label = { Text("Description (optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = tags,
                         onValueChange = { tags = it },
-                        label = { Text("Tags (Optional, comma separated)") },
+                        label = { Text("Tags (comma separated, optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    Text("Category Preset", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    Text("Category", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
                     val categoriesPresetList = listOf("Homework", "Exam", "Project", "Quiz", "Lab", "Custom")
                     var isCustomCategory by remember { mutableStateOf(!categoriesPresetList.dropLast(1).contains(category)) }
                     
@@ -1854,14 +1904,14 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                         OutlinedTextField(
                             value = category,
                             onValueChange = { category = it },
-                            label = { Text("Custom Category Name") },
+                            label = { Text("Custom category name") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
                     }
                     
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Category Theme Color", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    Text("Color", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
                     
                     val presetColorsList = listOf(
                         "#E52F28", // Red/Rose
@@ -1903,7 +1953,7 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Link to Study Subject (Optional)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                    Text("Linked Subject (Optional)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
                     androidx.compose.foundation.lazy.LazyRow(
                         modifier = Modifier.fillMaxWidth().heightIn(max = 48.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1965,14 +2015,14 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
                     OutlinedTextField(
                         value = noteText,
                         onValueChange = { noteText = it },
-                        label = { Text("Note content") },
+                        label = { Text("Note") },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3
                     )
                     OutlinedTextField(
                         value = noteCustomTag,
                         onValueChange = { noteCustomTag = it },
-                        label = { Text("Note Tag (e.g. Theory, Lab, Formula)") },
+                        label = { Text("Tag (e.g., Theory, Lab, Formula)") },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -2010,24 +2060,24 @@ fun CourseDetailScreen(navController: NavController, viewModel: ScholarViewModel
     if (showAddAttachmentDialog) {
         AlertDialog(
             onDismissRequest = { showAddAttachmentDialog = false },
-            title = { Text("Generate Study Guide PDF") },
+            title = { Text("Generate Study Guide") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        "Review or customize the automatic study booklet content. This will draft a physical PDF you can view anytime.",
+                        "Review or customize the study guide content before generating the PDF.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     OutlinedTextField(
                         value = attachmentTitle,
                         onValueChange = { attachmentTitle = it },
-                        label = { Text("Document Title") },
+                        label = { Text("Document title") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = attachmentContent,
                         onValueChange = { attachmentContent = it },
-                        label = { Text("Study Guide / Lecture Material Content") },
+                        label = { Text("Study guide content") },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 6
                     )

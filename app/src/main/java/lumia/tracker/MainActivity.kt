@@ -40,6 +40,11 @@ class MainActivity : ComponentActivity() {
         _intentFlow.value = intent
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.calculateTodayStreakProgress()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         _intentFlow.value = intent

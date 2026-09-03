@@ -17,31 +17,42 @@ fun AddSubjectDialog(
     var tags by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add New Subject") },
+        title = { Text("Add Subject") },
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Subject Name") },
-                    modifier = Modifier.fillMaxWidth()
+                    placeholder = { Text("e.g. Mathematics, Organic Chemistry") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
                 )
-                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = tags,
                     onValueChange = { tags = it },
-                    label = { Text("Tags (comma separated, optional)") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Tags (optional)") },
+                    placeholder = { Text("e.g. science, major, semester 1") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Text(
+                    text = "Subjects organize your curriculum into chapters and track individual topic completion.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         },
         confirmButton = {
-            BouncyTextButton(onClick = {
-                if (name.isNotBlank()) {
-                    viewModel.addSubject(name, tags)
-                    onDismiss()
-                }
-            }) { Text("Add") }
+            BouncyTextButton(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        viewModel.addSubject(name.trim(), tags.trim())
+                        onDismiss()
+                    }
+                },
+                enabled = name.isNotBlank()
+            ) { Text("Add") }
         },
         dismissButton = {
             BouncyTextButton(onClick = onDismiss) { Text("Cancel") }

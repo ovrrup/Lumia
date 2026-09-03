@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.Calendar
 
 class ScholarViewModel(application: Application) : AndroidViewModel(application) {
@@ -153,7 +155,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     
     private val repository = ScholarRepository(AppDatabase.getDatabase(application).scholarDao())
     
-    private val prefs = profileManager.getProfilePrefs()
+    val prefs = profileManager.getProfilePrefs()
 
     init {
         calculateTodayStreakProgress()
@@ -183,17 +185,16 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("onboarding_completed", true).apply()
     }
 
-    
-        private val _streakTotalNormal = MutableStateFlow(prefs.getInt("streak_total_normal", 0))
+    private val _streakTotalNormal = MutableStateFlow(prefs.getInt("streak_total_normal", 0))
     val streakTotalNormal = _streakTotalNormal.asStateFlow()
 
     private val _streakTotalComplete = MutableStateFlow(prefs.getInt("streak_total_complete", 0))
     val streakTotalComplete = _streakTotalComplete.asStateFlow()
 
-    private val _streakIsCompleteToday = MutableStateFlow(false)
+    private val _streakIsCompleteToday = MutableStateFlow(prefs.getBoolean("streak_is_complete_today", false))
     val streakIsCompleteToday = _streakIsCompleteToday.asStateFlow()
 
-private val _streakPercentage = MutableStateFlow(0f)
+    private val _streakPercentage = MutableStateFlow(0f)
     val streakPercentage = _streakPercentage.asStateFlow()
 
     private val _streakCurrent = MutableStateFlow(prefs.getInt("streak_current", 0))
@@ -277,137 +278,144 @@ private val _streakPercentage = MutableStateFlow(0f)
         prefs.edit().putString("streak_anim_override", anim).apply()
     }
 
-    private fun calculateTodayStreakProgress() {
+    private val streakMutex = Mutex()
+
+    fun calculateTodayStreakProgress() {
         viewModelScope.launch(Dispatchers.IO) {
-            val todayStart = java.util.Calendar.getInstance().apply {
-                set(java.util.Calendar.HOUR_OF_DAY, 0)
-                set(java.util.Calendar.MINUTE, 0)
-                set(java.util.Calendar.SECOND, 0)
-                set(java.util.Calendar.MILLISECOND, 0)
-            }.timeInMillis
-            val todayEnd = todayStart + 86400000L
+            streakMutex.withLock {
+                val calendar = Calendar.getInstance()
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                val todayStart = calendar.timeInMillis
 
-            val dao = repository.dao
-            val tasks = dao.exportAllTasks()
-            val assignments = dao.exportAllAssignments()
-            val pomodoros = dao.exportAllPomodoro()
+                calendar.add(Calendar.DAY_OF_YEAR, 1)
+                val todayEnd = calendar.timeInMillis
 
-            val tasksToday = tasks.filter { it.dueDateMillis != null && it.dueDateMillis >= todayStart && it.dueDateMillis < todayEnd }
-            val assignmentsToday = assignments.filter { it.dueDateMillis >= todayStart && it.dueDateMillis < todayEnd }
-            val pomosToday = pomodoros.filter { it.dateMillis >= todayStart && it.dateMillis < todayEnd }
+                calendar.timeInMillis = todayStart
+                calendar.add(Calendar.DAY_OF_YEAR, -1)
+                val yesterdayStart = calendar.timeInMillis
 
-            val plannedTasks = tasksToday.size
-            val plannedAssignments = assignmentsToday.size
-            
-            // Prioritize planned vs required
-            val requiredTasks = maxOf(plannedTasks, _streakRequirementTasks.value)
-            val requiredAssignments = maxOf(plannedAssignments, _streakRequirementAssignments.value)
-            val requiredPomos = _streakRequirementStudyMins.value
-            
-            val actionLogs = dao.exportAllActionLogs()
-            
-            // To prevent exploits (completing deleted or past tasks/assignments):
-            // 1. Get currently existing completed tasks and assignments
-            val existingCompletedTasks = tasks.filter { it.isCompleted }
-            val existingCompletedAssignments = assignments.filter { it.isCompleted }
+                val dao = repository.dao
+                val tasks = dao.exportAllTasks()
+                val assignments = dao.exportAllAssignments()
+                val pomodoros = dao.exportAllPomodoro()
+                val actionLogs = dao.exportAllActionLogs()
 
-            // 2. Filter existing completed elements that are NOT old:
-            // - A task is not old if its due date is today or in the future, OR if it has no due date and was created today or later.
-            val eligibleTasksCompletedTodayTitles = existingCompletedTasks.filter { task ->
-                val isNotOld = (task.dueDateMillis != null && task.dueDateMillis >= todayStart) || 
-                               (task.dueDateMillis == null && task.createdAt >= todayStart)
-                isNotOld
-            }.map { it.title }.toSet()
+                val tasksToday = tasks.filter { it.dueDateMillis != null && it.dueDateMillis >= todayStart && it.dueDateMillis < todayEnd }
+                val assignmentsToday = assignments.filter { it.dueDateMillis >= todayStart && it.dueDateMillis < todayEnd }
+                val pomosToday = pomodoros.filter { it.dateMillis >= todayStart && it.dateMillis < todayEnd }
 
-            // - An assignment is not old if its due date is today or in the future.
-            val eligibleAssignmentsCompletedTodayTitles = existingCompletedAssignments.filter { assignment ->
-                val isNotOld = assignment.dueDateMillis >= todayStart
-                isNotOld
-            }.map { it.title }.toSet()
+                val plannedTasks = tasksToday.size
+                val plannedAssignments = assignmentsToday.size
 
-            val completedTasksToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed task:") }
-            val unmarkedTasksToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked task:") }
-            
-            val completedTitles = completedTasksToday.map { it.actionText.removePrefix("Completed task: ").trim() }
-            val unmarkedTitles = unmarkedTasksToday.map { it.actionText.removePrefix("Unmarked task: ").trim() }
-            
-            val cCounts = completedTitles.groupingBy { it }.eachCount()
-            val uCounts = unmarkedTitles.groupingBy { it }.eachCount()
-            
-            var netDoneTasksToday = 0
-            for ((title, count) in cCounts) {
-                if (title in eligibleTasksCompletedTodayTitles) {
-                    val uCount = uCounts[title] ?: 0
-                    netDoneTasksToday += maxOf(0, count - uCount)
+                val existingCompletedTasks = tasks.filter { it.isCompleted }
+                val existingCompletedAssignments = assignments.filter { it.isCompleted }
+
+                val completedTasksToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed task:") }
+                val unmarkedTasksToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked task:") }
+
+                val cCounts = completedTasksToday.map { it.actionText.removePrefix("Completed task: ").trim() }.groupingBy { it }.eachCount()
+                val uCounts = unmarkedTasksToday.map { it.actionText.removePrefix("Unmarked task: ").trim() }.groupingBy { it }.eachCount()
+
+                var netDoneTasksToday = 0
+                for ((title, count) in cCounts) {
+                    val existingCount = existingCompletedTasks.count { it.title.trim() == title }
+                    if (existingCount > 0) {
+                        val uCount = uCounts[title] ?: 0
+                        val net = maxOf(0, count - uCount)
+                        netDoneTasksToday += minOf(existingCount, net)
+                    }
                 }
-            }
-            
-            val completedAssignmentsToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed assignment:") }
-            val unmarkedAssignmentsToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked assignment:") }
-            
-            val cAssignTitles = completedAssignmentsToday.map { it.actionText.removePrefix("Completed assignment: ").trim() }
-            val uAssignTitles = unmarkedAssignmentsToday.map { it.actionText.removePrefix("Unmarked assignment: ").trim() }
-            
-            val cAssignCounts = cAssignTitles.groupingBy { it }.eachCount()
-            val uAssignCounts = uAssignTitles.groupingBy { it }.eachCount()
-            
-            var netDoneAssignmentsToday = 0
-            for ((title, count) in cAssignCounts) {
-                if (title in eligibleAssignmentsCompletedTodayTitles) {
-                    val uCount = uAssignCounts[title] ?: 0
-                    netDoneAssignmentsToday += maxOf(0, count - uCount)
+
+                val completedAssignmentsToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed assignment:") }
+                val unmarkedAssignmentsToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked assignment:") }
+
+                val cAssignCounts = completedAssignmentsToday.map { it.actionText.removePrefix("Completed assignment: ").trim() }.groupingBy { it }.eachCount()
+                val uAssignCounts = unmarkedAssignmentsToday.map { it.actionText.removePrefix("Unmarked assignment: ").trim() }.groupingBy { it }.eachCount()
+
+                var netDoneAssignmentsToday = 0
+                for ((title, count) in cAssignCounts) {
+                    val existingCount = existingCompletedAssignments.count { it.title.trim() == title }
+                    if (existingCount > 0) {
+                        val uCount = uAssignCounts[title] ?: 0
+                        val net = maxOf(0, count - uCount)
+                        netDoneAssignmentsToday += minOf(existingCount, net)
+                    }
                 }
-            }
 
-            val doneTasks = maxOf(tasksToday.count { it.isCompleted }, netDoneTasksToday)
-            val doneAssignments = maxOf(assignmentsToday.count { it.isCompleted }, netDoneAssignmentsToday)
-            val donePomos = pomosToday.sumOf { it.durationMinutes }
-            
-            var totalRequired = 0f
-            var totalDone = 0f
-            
-            val hasAnyTasks = tasks.isNotEmpty() || doneTasks > 0
-            val hasAnyAssignments = assignments.isNotEmpty() || doneAssignments > 0
-            val hasAnyPomos = pomodoros.isNotEmpty() || donePomos > 0
+                val doneTasks = maxOf(tasksToday.count { it.isCompleted }, netDoneTasksToday)
+                val doneAssignments = maxOf(assignmentsToday.count { it.isCompleted }, netDoneAssignmentsToday)
+                val donePomos = pomosToday.sumOf { it.durationMinutes }
 
-            if (requiredTasks > 0 && hasAnyTasks) {
-                totalRequired += 1f
-                totalDone += (doneTasks.toFloat() / requiredTasks.toFloat()).coerceAtMost(1f)
-            }
-            if (requiredAssignments > 0 && hasAnyAssignments) {
-                totalRequired += 1f
-                totalDone += (doneAssignments.toFloat() / requiredAssignments.toFloat()).coerceAtMost(1f)
-            }
-            if (requiredPomos > 0 && hasAnyPomos) {
-                totalRequired += 1f
-                totalDone += (donePomos.toFloat() / requiredPomos.toFloat()).coerceAtMost(1f)
-            }
+                val reqTasksSetting = _streakRequirementTasks.value
+                val reqAssignmentsSetting = _streakRequirementAssignments.value
+                val reqStudyMinsSetting = _streakRequirementStudyMins.value
 
-            if (totalRequired == 0f) {
-                if (requiredTasks > 0) { totalRequired += 1f; totalDone += (doneTasks.toFloat() / requiredTasks.toFloat()).coerceAtMost(1f) }
-                if (requiredAssignments > 0) { totalRequired += 1f; totalDone += (doneAssignments.toFloat() / requiredAssignments.toFloat()).coerceAtMost(1f) }
-                if (requiredPomos > 0) { totalRequired += 1f; totalDone += (donePomos.toFloat() / requiredPomos.toFloat()).coerceAtMost(1f) }
-            }
-            
-            val percentage = if (totalRequired == 0f) 0f else (totalDone / totalRequired).coerceIn(0f, 1f)
-            
-            withContext(Dispatchers.Main) {
-                _streakPercentage.value = percentage
-                
-                // Check if streak applies
-                val lastStreakDate = prefs.getLong("streak_last_date", 0L)
+                val requiredTasks = maxOf(plannedTasks, reqTasksSetting)
+                val requiredAssignments = maxOf(plannedAssignments, reqAssignmentsSetting)
+                val requiredPomos = reqStudyMinsSetting
+
+                var totalRequired = 0f
+                var totalDone = 0f
+
+                if (requiredTasks > 0) {
+                    totalRequired += 1f
+                    totalDone += (doneTasks.toFloat() / requiredTasks.toFloat()).coerceAtMost(1f)
+                }
+
+                if (requiredAssignments > 0 && (plannedAssignments > 0 || doneAssignments > 0)) {
+                    totalRequired += 1f
+                    totalDone += (doneAssignments.toFloat() / requiredAssignments.toFloat()).coerceAtMost(1f)
+                }
+
+                if (requiredPomos > 0 && (pomodoros.isNotEmpty() || donePomos > 0)) {
+                    totalRequired += 1f
+                    totalDone += (donePomos.toFloat() / requiredPomos.toFloat()).coerceAtMost(1f)
+                }
+
+                if (totalRequired == 0f) {
+                    if (requiredTasks > 0) {
+                        totalRequired += 1f
+                        totalDone += (doneTasks.toFloat() / requiredTasks.toFloat()).coerceAtMost(1f)
+                    }
+                    if (requiredAssignments > 0 && (plannedAssignments > 0 || doneAssignments > 0)) {
+                        totalRequired += 1f
+                        totalDone += (doneAssignments.toFloat() / requiredAssignments.toFloat()).coerceAtMost(1f)
+                    }
+                    if (requiredPomos > 0) {
+                        totalRequired += 1f
+                        totalDone += (donePomos.toFloat() / requiredPomos.toFloat()).coerceAtMost(1f)
+                    }
+                }
+
+                val percentage = if (totalRequired == 0f) 0f else (totalDone / totalRequired).coerceIn(0f, 1f)
+
                 val threshold = _streakPartialThreshold.value
-                
-                val isComplete = (percentage >= threshold) && 
-                                 (plannedTasks == 0 || doneTasks >= plannedTasks) && 
-                                 (plannedAssignments == 0 || doneAssignments >= plannedAssignments) && 
-                                 (percentage >= 1.0f)
-                _streakIsCompleteToday.value = isComplete
+                val isComplete = (percentage >= 1.0f) &&
+                                 (plannedTasks == 0 || doneTasks >= plannedTasks) &&
+                                 (plannedAssignments == 0 || doneAssignments >= plannedAssignments)
 
                 val todayStr = todayDateString()
                 val statusToday = prefs.getString("streak_status_$todayStr", "none")
+                val lastStreakDate = prefs.getLong("streak_last_date", 0L)
+                var currentStreak = prefs.getInt("streak_current", 0)
 
-                if (isComplete && statusToday != "complete") {
+                // Check if streak was broken: last recorded streak day is before yesterday (and not today)
+                val isBroken = lastStreakDate > 0L && lastStreakDate < yesterdayStart
+                if (isBroken && currentStreak != 0) {
+                    currentStreak = 0
+                    prefs.edit().putInt("streak_current", 0).apply()
+                    withContext(Dispatchers.Main) {
+                        _streakCurrent.value = 0
+                    }
+                }
+
+                val notifKey = "streak_notif_sent_$todayStr"
+                val notifAlreadySent = prefs.getBoolean(notifKey, false)
+                if (isComplete && !notifAlreadySent) {
+                    prefs.edit().putBoolean(notifKey, true).apply()
                     val tone = _streakNotificationTone.value
                     val message = if (tone == "Motivational") {
                         lumia.tracker.util.StreakNotifications.motivational.random()
@@ -429,72 +437,90 @@ private val _streakPercentage = MutableStateFlow(0f)
 
                 if (percentage >= threshold) {
                     if (statusToday == "none") {
-                        val isConsecutive = (todayStart - lastStreakDate) <= 86400000L * 2
-                        val newCurrent = if (isConsecutive) _streakCurrent.value + 1 else 1
-                        
-                        _streakCurrent.value = newCurrent
-                        if (newCurrent > _streakLongest.value) {
-                            _streakLongest.value = newCurrent
+                        val isConsecutive = (lastStreakDate >= yesterdayStart && lastStreakDate < todayStart)
+                        val newCurrent = if (isConsecutive) currentStreak + 1 else 1
+
+                        val newNormal = if (isComplete) _streakTotalNormal.value else _streakTotalNormal.value + 1
+                        val newComplete = if (isComplete) _streakTotalComplete.value + 1 else _streakTotalComplete.value
+
+                        withContext(Dispatchers.Main) {
+                            _streakCurrent.value = newCurrent
+                            if (newCurrent > _streakLongest.value) {
+                                _streakLongest.value = newCurrent
+                            }
+                            _streakTotalNormal.value = newNormal
+                            _streakTotalComplete.value = newComplete
+                        }
+
+                        if (newCurrent > prefs.getInt("streak_longest", 0)) {
                             prefs.edit().putInt("streak_longest", newCurrent).apply()
                         }
-                        
-                        if (isComplete) {
-                            prefs.edit().putString("streak_status_$todayStr", "complete").apply()
-                            _streakTotalComplete.value += 1
-                        } else {
-                            prefs.edit().putString("streak_status_$todayStr", "normal").apply()
-                            _streakTotalNormal.value += 1
-                        }
-                        
+
                         prefs.edit()
+                            .putString("streak_status_$todayStr", if (isComplete) "complete" else "normal")
                             .putInt("streak_current", newCurrent)
                             .putLong("streak_last_date", todayStart)
-                            .putInt("streak_total_normal", _streakTotalNormal.value)
-                            .putInt("streak_total_complete", _streakTotalComplete.value)
+                            .putInt("streak_total_normal", newNormal)
+                            .putInt("streak_total_complete", newComplete)
+                            .putBoolean("streak_is_complete_today", isComplete)
                             .apply()
                     } else if (statusToday == "normal" && isComplete) {
-                        prefs.edit().putString("streak_status_$todayStr", "complete").apply()
-                        _streakTotalNormal.value -= 1
-                        _streakTotalComplete.value += 1
+                        val newNormal = maxOf(0, _streakTotalNormal.value - 1)
+                        val newComplete = _streakTotalComplete.value + 1
+
+                        withContext(Dispatchers.Main) {
+                            _streakTotalNormal.value = newNormal
+                            _streakTotalComplete.value = newComplete
+                        }
+
                         prefs.edit()
-                            .putInt("streak_total_normal", _streakTotalNormal.value)
-                            .putInt("streak_total_complete", _streakTotalComplete.value)
+                            .putString("streak_status_$todayStr", "complete")
+                            .putInt("streak_total_normal", newNormal)
+                            .putInt("streak_total_complete", newComplete)
+                            .putBoolean("streak_is_complete_today", true)
                             .apply()
                     } else if (statusToday == "complete" && !isComplete) {
-                        prefs.edit().putString("streak_status_$todayStr", "normal").apply()
-                        _streakTotalComplete.value -= 1
-                        _streakTotalNormal.value += 1
+                        val newComplete = maxOf(0, _streakTotalComplete.value - 1)
+                        val newNormal = _streakTotalNormal.value + 1
+
+                        withContext(Dispatchers.Main) {
+                            _streakTotalComplete.value = newComplete
+                            _streakTotalNormal.value = newNormal
+                        }
+
                         prefs.edit()
-                            .putInt("streak_total_normal", _streakTotalNormal.value)
-                            .putInt("streak_total_complete", _streakTotalComplete.value)
+                            .putString("streak_status_$todayStr", "normal")
+                            .putInt("streak_total_normal", newNormal)
+                            .putInt("streak_total_complete", newComplete)
+                            .putBoolean("streak_is_complete_today", false)
                             .apply()
                     }
                 } else {
                     if (statusToday != "none" && lastStreakDate == todayStart) {
                         val newCurrent = maxOf(0, _streakCurrent.value - 1)
-                        _streakCurrent.value = newCurrent
-                        
-                        if (statusToday == "complete") {
-                            _streakTotalComplete.value -= 1
-                        } else if (statusToday == "normal") {
-                            _streakTotalNormal.value -= 1
+                        val newComplete = if (statusToday == "complete") maxOf(0, _streakTotalComplete.value - 1) else _streakTotalComplete.value
+                        val newNormal = if (statusToday == "normal") maxOf(0, _streakTotalNormal.value - 1) else _streakTotalNormal.value
+
+                        withContext(Dispatchers.Main) {
+                            _streakCurrent.value = newCurrent
+                            _streakTotalComplete.value = newComplete
+                            _streakTotalNormal.value = newNormal
                         }
-                        
+
                         prefs.edit()
                             .putString("streak_status_$todayStr", "none")
                             .putInt("streak_current", newCurrent)
-                            .putInt("streak_total_normal", _streakTotalNormal.value)
-                            .putInt("streak_total_complete", _streakTotalComplete.value)
-                            .putLong("streak_last_date", if (newCurrent > 0) todayStart - 86400000L else 0L)
+                            .putInt("streak_total_normal", newNormal)
+                            .putInt("streak_total_complete", newComplete)
+                            .putLong("streak_last_date", if (newCurrent > 0) yesterdayStart else 0L)
+                            .putBoolean("streak_is_complete_today", false)
                             .apply()
                     }
-                    
-                    val currentLastDate = prefs.getLong("streak_last_date", 0L)
-                    val yesterday = todayStart - 86400000L
-                    if (currentLastDate < yesterday) {
-                        _streakCurrent.value = 0
-                        prefs.edit().putInt("streak_current", 0).apply()
-                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    _streakPercentage.value = percentage
+                    _streakIsCompleteToday.value = isComplete
                 }
             }
         }
@@ -1751,7 +1777,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             val newlyCompleted = !task.isCompleted
             repository.updateTask(task.copy(isCompleted = newlyCompleted))
             val actionText = if (newlyCompleted) "Completed task: ${task.title}" else "Unmarked task: ${task.title}"
-            logAction(actionText)
+            repository.insertActionLog(ActionLog(actionText = actionText))
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }
@@ -1760,7 +1786,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     fun updateTask(task: Task) {
         viewModelScope.launch {
             repository.updateTask(task)
-            logAction("Updated task: ${task.title}")
+            repository.insertActionLog(ActionLog(actionText = "Updated task: ${task.title}"))
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }
@@ -1777,7 +1803,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     fun deleteTask(task: Task) {
         viewModelScope.launch {
             repository.deleteTask(task)
-            logAction("Deleted task: ${task.title}")
+            repository.insertActionLog(ActionLog(actionText = "Deleted task: ${task.title}"))
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }
@@ -1794,7 +1820,7 @@ private val _streakPercentage = MutableStateFlow(0f)
                 courseId = courseId,
                 subjectId = subjectId
             )
-            logAction("Added assignment: $title ($category)")
+            repository.insertActionLog(ActionLog(actionText = "Added assignment: $title ($category)"))
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }
@@ -1805,7 +1831,7 @@ private val _streakPercentage = MutableStateFlow(0f)
             val newlyCompleted = !assignment.isCompleted
             repository.updateAssignment(assignment.copy(isCompleted = newlyCompleted))
             val actionText = if (newlyCompleted) "Completed assignment: ${assignment.title}" else "Unmarked assignment: ${assignment.title}"
-            logAction(actionText)
+            repository.insertActionLog(ActionLog(actionText = actionText))
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }
@@ -1814,6 +1840,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     fun deleteAssignment(assignment: PracticeAssignment) {
         viewModelScope.launch {
             repository.deleteAssignment(assignment)
+            repository.insertActionLog(ActionLog(actionText = "Deleted assignment: ${assignment.title}"))
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
             calculateTodayStreakProgress()
         }
@@ -1841,7 +1868,7 @@ private val _streakPercentage = MutableStateFlow(0f)
     val importExportStatus = _importExportStatus.asStateFlow()
 
     private fun logAction(action: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             repository.insertActionLog(ActionLog(actionText = action))
         }
     }
@@ -2887,6 +2914,13 @@ fun clearAllData() {
             _aodLockTimeout.value = 30
             _aodMotionSensitivity.value = 3.0f
             
+
+            _streakCurrent.value = 0
+            _streakLongest.value = 0
+            _streakTotalNormal.value = 0
+            _streakTotalComplete.value = 0
+            _streakPercentage.value = 0f
+            _streakIsCompleteToday.value = false
 
             _importExportStatus.value = "All data and settings erased successfully" 
             lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())

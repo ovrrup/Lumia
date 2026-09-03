@@ -116,10 +116,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.border
 
-import lumia.tracker.ui.components.BouncyIconButton
-import lumia.tracker.ui.components.BouncyButton
-import lumia.tracker.ui.components.BouncyTextButton
-
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
@@ -154,9 +150,9 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             topBar = {
                 val titleText = when (selectedTab) {
                     0 -> stringResource(id = R.string.app_name)
-                    1 -> "Your Courses"
-                    2 -> "Your Subjects"
-                    3 -> "Self Study & Tasks"
+                    1 -> "Courses"
+                    2 -> "Subjects"
+                    3 -> "Tasks"
                     else -> "Analytics"
                 }
                 androidx.compose.foundation.layout.Box {
@@ -182,7 +178,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Search,
-                                    contentDescription = "Open Global Search",
+                                    contentDescription = "Search",
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -209,7 +205,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 if (isLocalImage) {
                                     coil.compose.AsyncImage(
                                         model = activeProfile.avatarEmoji,
-                                        contentDescription = "Profile Picture",
+                                        contentDescription = "Profile",
                                         contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                         modifier = Modifier.fillMaxSize()
                                     )
@@ -272,6 +268,16 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             colors = navItemColors,
                             alwaysShowLabel = labelModeAlways
                         )
+                        if (featureSubjectEnabled && !fuseSubjectsCourses) {
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Rounded.FolderOpen, contentDescription = "Subjects") },
+                                label = if (hideLabels) null else { { Text("Subjects") } },
+                                selected = selectedTab == 2,
+                                onClick = { viewModel.setSelectedDashboardTab(2) },
+                                colors = navItemColors,
+                                alwaysShowLabel = labelModeAlways
+                            )
+                        }
                         if (featureSelfStudyEnabled) {
                             NavigationBarItem(
                                 icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Tasks") },
@@ -453,8 +459,8 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                     }
                     if (featureSelfStudyEnabled) {
                         NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Self Study") },
-                            label = if (hideLabels) null else { { Text("Self Study") } },
+                            icon = { Icon(Icons.Rounded.AutoStories, contentDescription = "Tasks") },
+                            label = if (hideLabels) null else { { Text("Tasks") } },
                             selected = selectedTab == 3,
                             onClick = { viewModel.setSelectedDashboardTab(3) },
                             colors = navItemColors,

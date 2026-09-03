@@ -128,7 +128,7 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "System Integration",
+                text = "App Permissions",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -136,7 +136,7 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Configure system access permissions to let Lumia track, schedule, and render displays accurately.",
+                text = "Configure permissions to ensure focus timers, task reminders, and display features work reliably.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
@@ -161,7 +161,7 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Core Helpers",
+                    text = "Core Permissions",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -172,7 +172,7 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     PermissionCard(
                         title = "Notifications",
-                        description = "Triggers alerts for Pomodoro timer stages and due task schedules.",
+                        description = "Alerts for study timer intervals, break reminders, and task due dates.",
                         icon = Icons.Default.Notifications,
                         isGranted = notificationsGranted,
                         onRequest = { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }
@@ -180,7 +180,7 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
                 } else {
                     PermissionCard(
                         title = "Notifications",
-                        description = "Triggers alerts for Pomodoro timer stages and due task schedules.",
+                        description = "Alerts for study timer intervals, break reminders, and task due dates.",
                         icon = Icons.Default.Notifications,
                         isGranted = true,
                         onRequest = { }
@@ -190,7 +190,7 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
                 // Exact Alarms
                 PermissionCard(
                     title = "Exact Alarms",
-                    description = "Fires high-precision timers and daily agenda reminders reliably.",
+                    description = "Ensures focus timers and scheduled study reminders trigger on time.",
                     icon = Icons.Default.Timer,
                     isGranted = alarmsGranted,
                     onRequest = {
@@ -205,8 +205,8 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
 
                 // Battery Exempt
                 PermissionCard(
-                    title = "Exempt Battery Limits",
-                    description = "Let Lumia run exact local timers and widget refreshes in idle mode.",
+                    title = "Ignore Battery Optimization",
+                    description = "Allows timers and notifications to run uninterrupted when the device is idle.",
                     icon = Icons.Rounded.FlashOn,
                     isGranted = batteryIgnoring,
                     onRequest = {
@@ -245,7 +245,7 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Always-On Displays",
+                    text = "Always-On Display (Optional)",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.tertiary,
@@ -254,8 +254,8 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
 
                 // Overlay
                 PermissionCard(
-                    title = "True AOD Overlay",
-                    description = "Advanced Overlay: Draws high-contrast screensavers over secure locks for always-on display.",
+                    title = "Display Over Other Apps",
+                    description = "Allows the always-on study clock to display over your lock screen.",
                     icon = Icons.Rounded.Layers,
                     isGranted = overlayGranted,
                     onRequest = {
@@ -268,8 +268,8 @@ fun PermissionsPage(isActive: Boolean, onComplete: () -> Unit) {
 
                 // Accessibility
                 PermissionCard(
-                    title = "AOD Accessibility",
-                    description = "Advanced Overlay Helper: Suspends system overlays safely behind secure locked views.",
+                    title = "Screen Lock Service",
+                    description = "Allows Lumia to automatically turn off and lock the screen when exiting Always-On Display.",
                     icon = Icons.Rounded.AccessibilityNew,
                     isGranted = accessibilityGranted,
                     onRequest = {

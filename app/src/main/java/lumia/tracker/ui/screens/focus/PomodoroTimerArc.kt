@@ -66,7 +66,7 @@ fun PomodoroTimerArc(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = statusLabel.uppercase(),
+                text = statusLabel,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = ringColor

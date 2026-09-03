@@ -119,7 +119,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     )
                 }
                 CenterAlignedTopAppBar(
-                    title = { Text("System Configuration", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                    title = { Text("System Settings", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
@@ -140,14 +140,14 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            SettingsCategoryHeading(title = "Interconnections", icon = Icons.Rounded.Settings)
+            SettingsCategoryHeading(title = "Course & Subject Integration", icon = Icons.Rounded.School)
 
-            SettingsGroupCard(title = "Course & Subject Integration", icon = Icons.Rounded.Settings) {
+            SettingsGroupCard(title = "Integration Rules", icon = Icons.Rounded.Settings) {
                 SettingsToggleItem(
                     title = "Auto-Link by Name",
-                    subtitle = "Automatically couple Courses and study Subjects together if they share the same name (case-insensitive) when no explicit association is set.",
+                    subtitle = "Link courses and subjects sharing the same name when no link is set.",
                     checked = autoLinkByName,
-                    icon = Icons.Rounded.Settings,
+                    icon = Icons.Rounded.Link,
                     onCheckedChange = { viewModel.updateSystemAutoLinkByName(it) }
                 )
 
@@ -155,7 +155,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
                 SettingsToggleItem(
                     title = "Course Synergy Score",
-                    subtitle = "Measure alignments between lectures and study topics using a Dynamic Synergy Gauge in details screens.",
+                    subtitle = "Display lecture and study topic alignment in course details.",
                     checked = enableSynergy,
                     icon = Icons.Rounded.Star,
                     onCheckedChange = { viewModel.updateSystemEnableSynergy(it) }
@@ -165,7 +165,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
                 SettingsToggleItem(
                     title = "Auto-Create Associated Subject",
-                    subtitle = "Automatically create a matching Study Subject whenever you enroll in/add a new academic Course.",
+                    subtitle = "Automatically create a matching subject when adding a new course.",
                     checked = autoCreateSubject,
                     icon = Icons.Rounded.School,
                     onCheckedChange = { viewModel.updateSystemAutoCreateSubject(it) }
@@ -175,7 +175,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
                 SettingsToggleItem(
                     title = "Fuse Subjects & Courses",
-                    subtitle = "Embed subjects within courses to simplify navigation. Turn off to display 'Subjects' as a separate bottom tab.",
+                    subtitle = "Embed subjects inside course views to simplify navigation.",
                     checked = fuseSubjectsCourses,
                     icon = Icons.Rounded.MergeType,
                     onCheckedChange = { viewModel.updateSystemFuseSubjectsCourses(it) }
@@ -184,8 +184,8 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                 SettingsToggleItem(
-                    title = "Advanced Tasks & Linkages",
-                    subtitle = "Enable complex task tracking, including multi-linking with courses and assignments, plus advanced sorting and cross-referencing.",
+                    title = "Advanced Tasks",
+                    subtitle = "Enable cross-linking tasks to multiple courses or assignments.",
                     checked = advancedTasks,
                     icon = Icons.Rounded.List,
                     onCheckedChange = { viewModel.updateSystemAdvancedTasks(it) }
@@ -194,12 +194,12 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
             Spacer(modifier = Modifier.height(24.dp))
             
-            SettingsCategoryHeading(title = "Pomodoro Integration", icon = Icons.Rounded.Timer)
+            SettingsCategoryHeading(title = "Focus Timer", icon = Icons.Rounded.Timer)
 
-            SettingsGroupCard(title = "Timer & Environment Behaviors", icon = Icons.Rounded.Timer) {
+            SettingsGroupCard(title = "Durations & History", icon = Icons.Rounded.Timer) {
                 SettingsToggleItem(
                     title = "Auto-Log Focus Sessions",
-                    subtitle = "Automatically register and log Pomodoro 'Work' sessions into the database productivity history log upon completion.",
+                    subtitle = "Save completed focus sessions to your productivity history.",
                     checked = viewModel.systemPomodoroAutoLog.collectAsStateWithLifecycle().value,
                     icon = Icons.Rounded.History,
                     onCheckedChange = { viewModel.updateSystemPomodoroAutoLog(it) }
@@ -209,7 +209,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 
                 Column(modifier = Modifier.padding(16.dp)) {
                     val workDur by viewModel.pomodoroWorkDuration.collectAsStateWithLifecycle()
-                    Text("Work Duration: $workDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text("Work Duration: $workDur min", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     androidx.compose.material3.Slider(
                         value = workDur.toFloat(),
                         onValueChange = { viewModel.updatePomodoroWorkDuration(it.toInt()) },
@@ -220,7 +220,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     val shortDur by viewModel.pomodoroShortBreakDuration.collectAsStateWithLifecycle()
-                    Text("Short Break: $shortDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text("Short Break: $shortDur min", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     androidx.compose.material3.Slider(
                         value = shortDur.toFloat(),
                         onValueChange = { viewModel.updatePomodoroShortBreakDuration(it.toInt()) },
@@ -231,7 +231,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     val longDur by viewModel.pomodoroLongBreakDuration.collectAsStateWithLifecycle()
-                    Text("Long Break: $longDur mins", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text("Long Break: $longDur min", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     androidx.compose.material3.Slider(
                         value = longDur.toFloat(),
                         onValueChange = { viewModel.updatePomodoroLongBreakDuration(it.toInt()) },
@@ -243,10 +243,10 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SettingsGroupCard(title = "Period Structure", icon = Icons.Rounded.List) {
+            SettingsGroupCard(title = "Interval Cycles", icon = Icons.Rounded.List) {
                 SettingsToggleItem(
-                    title = "Enable Target Periods",
-                    subtitle = "Allows restricting pomodoro loops to a fixed target instead of infinite repetetion.",
+                    title = "Target Focus Cycles",
+                    subtitle = "Stop after a set number of cycles instead of repeating indefinitely.",
                     checked = viewModel.pomodoroEnablePeriodTarget.collectAsStateWithLifecycle().value,
                     icon = Icons.Rounded.Star,
                     onCheckedChange = { viewModel.updatePomodoroEnablePeriodTarget(it) }
@@ -256,8 +256,8 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 
                 Column(modifier = Modifier.padding(16.dp)) {
                     val periodSessions by viewModel.pomodoroPeriodSessions.collectAsStateWithLifecycle()
-                    Text("Sessions per Period: $periodSessions", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text("Number of study/work sessions before a long break.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Sessions per Cycle: $periodSessions", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text("Number of focus sessions before taking a long break.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     androidx.compose.material3.Slider(
                         value = periodSessions.toFloat(),
                         onValueChange = { viewModel.updatePomodoroPeriodSessions(it.toInt()) },

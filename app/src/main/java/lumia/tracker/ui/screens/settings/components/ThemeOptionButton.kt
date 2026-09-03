@@ -96,6 +96,15 @@ fun ThemeOptionButton(title: String, isSelected: Boolean, onClick: () -> Unit) {
         selected = isSelected,
         onClick = onClick,
         label = { Text(title) },
+        leadingIcon = if (isSelected) {
+            {
+                Icon(
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                )
+            }
+        } else null,
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer

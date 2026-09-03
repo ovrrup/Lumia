@@ -126,7 +126,7 @@ fun SelfStudyTab(
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(futureTasks.size.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.height(8.dp))
-                            Text("Future Tasks", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            Text("Upcoming Tasks", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         }
                     }
                 }
@@ -160,7 +160,7 @@ fun SelfStudyTab(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Focus and link sessions",
+                                text = "Start a timed focus session",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -175,7 +175,7 @@ fun SelfStudyTab(
 
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Your Tasks", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text("Tasks", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     if (advancedTasks && tasks.isNotEmpty()) {
                         var expandSort by remember { mutableStateOf(false) }
                         Box {
@@ -195,7 +195,7 @@ fun SelfStudyTab(
 
             if (localTasks.isEmpty()) {
                 item {
-                    Text("No tasks added. Add a Task to manage your future study plans.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("No tasks yet. Tap + to add a study task.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 if (!advancedTasks || groupBy == "None") {
@@ -227,7 +227,12 @@ fun SelfStudyTab(
                         val tTasks = grouped[pLabel]
                         if (!tTasks.isNullOrEmpty()) {
                             item {
-                                Text(pLabel, style = MaterialTheme.typography.labelLarge, color = if (pLabel.startsWith("High")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(top = 8.dp))
+                                val pColor = when (pLabel) {
+                                    "High Priority" -> MaterialTheme.colorScheme.error
+                                    "Medium Priority" -> MaterialTheme.colorScheme.tertiary
+                                    else -> MaterialTheme.colorScheme.outline
+                                }
+                                Text(pLabel, style = MaterialTheme.typography.labelLarge, color = pColor, modifier = Modifier.padding(top = 8.dp))
                             }
                             items(tTasks, key = { it.id }) { task ->
                                 TaskItemCard(task = task, viewModel = viewModel, onEdit = { taskToEdit = task }, navController = navController)
@@ -281,13 +286,13 @@ fun SelfStudyTab(
                 showAddTaskDialog = false
                 taskToEdit = null
             },
-            title = { Text(if (isEdit) "Edit Task" else "Add Exclusive Task") },
+            title = { Text(if (isEdit) "Edit Task" else "Add Task") },
             text = {
                 Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
-                        label = { Text("Task Title") },
+                        label = { Text("Title") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(8.dp))
@@ -302,7 +307,7 @@ fun SelfStudyTab(
                     OutlinedTextField(
                         value = tags,
                         onValueChange = { tags = it },
-                        label = { Text("Tags (comma separated)") },
+                        label = { Text("Tags (comma-separated)") },
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 1
                     )
@@ -360,7 +365,7 @@ fun SelfStudyTab(
                     }
 
                     Spacer(Modifier.height(12.dp))
-                    Text("Link with Subject:", style = MaterialTheme.typography.labelMedium)
+                    Text("Subject:", style = MaterialTheme.typography.labelMedium)
                     Spacer(Modifier.height(4.dp))
                     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         item {
@@ -372,7 +377,7 @@ fun SelfStudyTab(
                     }
                     if (advancedTasks) {
                         Spacer(Modifier.height(12.dp))
-                        Text("Link with Course:", style = MaterialTheme.typography.labelMedium)
+                        Text("Course:", style = MaterialTheme.typography.labelMedium)
                         Spacer(Modifier.height(4.dp))
                         androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             item { FilterChip(selected = selectedCourseId == null, onClick = { selectedCourseId = null }, label = { Text("None") }) }
@@ -383,7 +388,7 @@ fun SelfStudyTab(
 
                         Spacer(Modifier.height(12.dp))
                         val courseAssignments = if (selectedCourseId != null) assignments.filter { it.courseId == selectedCourseId } else assignments
-                        Text("Link with Assignment:", style = MaterialTheme.typography.labelMedium)
+                        Text("Assignment:", style = MaterialTheme.typography.labelMedium)
                         Spacer(Modifier.height(4.dp))
                         androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             item { FilterChip(selected = selectedAssignmentId == null, onClick = { selectedAssignmentId = null }, label = { Text("None") }) }

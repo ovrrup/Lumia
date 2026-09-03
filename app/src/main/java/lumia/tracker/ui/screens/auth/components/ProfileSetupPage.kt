@@ -47,8 +47,8 @@ fun ProfileSetupPage(
 
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
 
-    var name by remember { mutableStateOf("Main User") }
-    var alias by remember { mutableStateOf("Student") }
+    var name by remember { mutableStateOf("") }
+    var alias by remember { mutableStateOf("") }
     var starterTheme by remember { mutableStateOf("Ocean") }
     var selectedImagePath by remember { mutableStateOf("") }
     val context = LocalContext.current
@@ -120,7 +120,7 @@ fun ProfileSetupPage(
             modifier = Modifier.padding(bottom = 4.dp)
         ) {
             Text(
-                text = "Identity & Style",
+                text = "Profile & Theme",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -128,7 +128,7 @@ fun ProfileSetupPage(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Configure your cockpit details and select a theme aesthetic to begin tracking your academics.",
+                text = "Set up your profile and choose an accent theme to personalize your workspace.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
@@ -224,7 +224,7 @@ fun ProfileSetupPage(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = "LUMIA COCKPIT ID",
+                                text = "STUDY PROFILE",
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace,
@@ -250,7 +250,7 @@ fun ProfileSetupPage(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = name.ifBlank { "Main User" },
+                            text = name.ifBlank { "Your Name" },
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -259,7 +259,7 @@ fun ProfileSetupPage(
                         )
 
                         Text(
-                            text = alias.ifBlank { "Lumia Student" },
+                            text = alias.ifBlank { "Student" },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -286,7 +286,7 @@ fun ProfileSetupPage(
                 modifier = Modifier.size(16.dp)
             )
             Text(
-                text = "Tap preview image circle to upload profile photo",
+                text = "Tap avatar to select a profile photo",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold
@@ -310,7 +310,7 @@ fun ProfileSetupPage(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Profile Settings",
+                    text = "Profile Details",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -321,7 +321,7 @@ fun ProfileSetupPage(
                     onValueChange = { name = it },
                     label = { Text("Display Name") },
                     singleLine = true,
-                    placeholder = { Text("e.g. Rachel") },
+                    placeholder = { Text("e.g. Alex") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -335,7 +335,7 @@ fun ProfileSetupPage(
                     onValueChange = { alias = it },
                     label = { Text("Alias / Nickname") },
                     singleLine = true,
-                    placeholder = { Text("e.g. Academic Warrior") },
+                    placeholder = { Text("e.g. Student") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -360,7 +360,7 @@ fun ProfileSetupPage(
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "Choose Your Starter Theme",
+                    text = "Choose an Accent Theme",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,

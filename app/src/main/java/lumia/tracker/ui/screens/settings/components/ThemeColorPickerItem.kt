@@ -108,6 +108,7 @@ fun ThemeColorPickerItem(name: String, color: androidx.compose.ui.graphics.Color
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
+                onClickLabel = "Select $name theme",
                 onClick = onClick
             )
             .padding(vertical = 8.dp, horizontal = 4.dp)
@@ -125,10 +126,15 @@ fun ThemeColorPickerItem(name: String, color: androidx.compose.ui.graphics.Color
             contentAlignment = Alignment.Center
         ) {
             if (isSelected) {
+                val iconTint = if (color.red * 0.299f + color.green * 0.587f + color.blue * 0.114f > 0.65f) {
+                    androidx.compose.ui.graphics.Color(0xFF1E1E1E)
+                } else {
+                    androidx.compose.ui.graphics.Color.White
+                }
                 Icon(
                     imageVector = Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = androidx.compose.ui.graphics.Color.White,
+                    contentDescription = "$name theme selected",
+                    tint = iconTint,
                     modifier = Modifier.size(24.dp)
                 )
             }
