@@ -5,32 +5,32 @@ import kotlin.math.abs
 
 /**
  * Short Authentication String (SAS) derivation for out-of-band MITM (Man-In-The-Middle) verification.
- * Derives a human-verifiable numeric code and emoji word sequence from the HKDF-derived master secret.
+ * Derives a human-verifiable numeric code and phonetic word sequence from the HKDF-derived master secret.
  */
 object SasVerification {
 
-    private val SAS_EMOJI_WORDS = listOf(
-        "🦁 Lion", "⚡ Bolt", "🛡️ Shield", "🚀 Rocket",
-        "💎 Gem", "🔥 Flame", "👑 Crown", "⚓ Anchor",
-        "🌊 Ocean", "🪐 Planet", "🦅 Falcon", "🐺 Wolf",
-        "🌲 Pine", "🌈 Prism", "🎯 Target", "🔑 Key",
-        "🌟 Star", "🧭 Compass", "🔔 Bell", "🍀 Clover",
-        "⚔️ Sword", "🦉 Owl", "🌙 Moon", "☀️ Sun",
-        "🪐 Orbit", "🧩 Puzzle", "🏰 Castle", "🌋 Volcano",
-        "🏎️ Swift", "🔮 Crystal", "⛵ Sail", "🪐 Zenith"
+    private val SAS_WORD_DICTIONARY = listOf(
+        "ALPHA", "BRAVO", "CHARLIE", "DELTA",
+        "ECHO", "FOXTROT", "GOLF", "HOTEL",
+        "INDIA", "JULIET", "KILO", "LIMA",
+        "MIKE", "NOVEMBER", "OSCAR", "PAPA",
+        "QUEBEC", "ROMEO", "SIERRA", "TANGO",
+        "UNIFORM", "VICTOR", "WHISKEY", "XRAY",
+        "YANKEE", "ZULU", "APEX", "BEACON",
+        "CIPHER", "ENCLAVE", "FALCON", "ZENITH"
     )
 
     data class SasPayload(
-        val numericCode: String,      // e.g. "849 201"
-        val rawNumeric: Int,          // e.g. 849201
-        val emojiWords: List<String>, // e.g. ["🦁 Lion", "⚡ Bolt", "🛡️ Shield", "🚀 Rocket"]
-        val emojiSummary: String      // e.g. "🦁 ⚡ 🛡️ 🚀"
+        val numericCode: String,        // e.g. "849 201"
+        val rawNumeric: Int,            // e.g. 849201
+        val wordTokens: List<String>,   // e.g. ["ALPHA", "DELTA", "FALCON", "ZENITH"]
+        val wordsSummary: String        // e.g. "ALPHA • DELTA • FALCON • ZENITH"
     )
 
     /**
      * Derives a Short Authentication String (SAS) from the HKDF-derived SAS key material.
      * Uses 8 bytes from the HKDF output to deterministically create both a 6-digit number
-     * and a 4-word emoji sequence.
+     * and a 4-word phonetic token sequence without emojis.
      */
     fun deriveSas(sasKeyMaterial: ByteArray): SasPayload {
         require(sasKeyMaterial.size >= 8) { "SAS key material must be at least 8 bytes" }
@@ -43,26 +43,26 @@ object SasVerification {
         val rawCode = (num1 % 900000) + 100000
         val formattedCode = "${rawCode.toString().take(3)} ${rawCode.toString().takeLast(3)}"
 
-        // 4 emoji words selected from the 32-word dictionary (5 bits per word, 20 bits total)
-        val idx1 = (num2 and 0x1F) % SAS_EMOJI_WORDS.size
-        val idx2 = ((num2 ushr 5) and 0x1F) % SAS_EMOJI_WORDS.size
-        val idx3 = ((num2 ushr 10) and 0x1F) % SAS_EMOJI_WORDS.size
-        val idx4 = ((num2 ushr 15) and 0x1F) % SAS_EMOJI_WORDS.size
+        // 4 phonetic words selected from the 32-word dictionary (5 bits per word, 20 bits total)
+        val idx1 = (num2 and 0x1F) % SAS_WORD_DICTIONARY.size
+        val idx2 = ((num2 ushr 5) and 0x1F) % SAS_WORD_DICTIONARY.size
+        val idx3 = ((num2 ushr 10) and 0x1F) % SAS_WORD_DICTIONARY.size
+        val idx4 = ((num2 ushr 15) and 0x1F) % SAS_WORD_DICTIONARY.size
 
         val words = listOf(
-            SAS_EMOJI_WORDS[idx1],
-            SAS_EMOJI_WORDS[idx2],
-            SAS_EMOJI_WORDS[idx3],
-            SAS_EMOJI_WORDS[idx4]
+            SAS_WORD_DICTIONARY[idx1],
+            SAS_WORD_DICTIONARY[idx2],
+            SAS_WORD_DICTIONARY[idx3],
+            SAS_WORD_DICTIONARY[idx4]
         )
 
-        val emojisOnly = words.joinToString(" ") { it.substringBefore(" ") }
+        val summary = words.joinToString(" • ")
 
         return SasPayload(
             numericCode = formattedCode,
             rawNumeric = rawCode,
-            emojiWords = words,
-            emojiSummary = emojisOnly
+            wordTokens = words,
+            wordsSummary = summary
         )
     }
 }

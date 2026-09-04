@@ -28,7 +28,7 @@ import lumia.tracker.ui.components.BouncyButton
 
 /**
  * Interactive dialog modal for HKDF-derived Short Authentication String (SAS) MITM verification.
- * Displays both 6-digit numeric code and 4-word emoji sequence for visual out-of-band confirmation.
+ * Displays both 6-digit numeric code and 4-word phonetic sequence for visual out-of-band confirmation.
  */
 @Composable
 fun SasVerificationDialog(
@@ -88,7 +88,7 @@ fun SasVerificationDialog(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Compare the code and emoji words with the other device. If identical, zero-trust cryptographic security is verified.",
+                    text = "Compare the numeric code and phonetic tokens with the other device. If identical, zero-trust cryptographic security is verified.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -132,7 +132,7 @@ fun SasVerificationDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Emoji Words SAS Display
+                // Phonetic Words SAS Display
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -147,7 +147,7 @@ fun SasVerificationDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "EMOJI SEQUENCE",
+                            text = "PHONETIC VERIFICATION TOKENS",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
@@ -155,16 +155,11 @@ fun SasVerificationDialog(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = sasPayload.emojiSummary,
-                            style = MaterialTheme.typography.headlineSmall,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = sasPayload.emojiWords.joinToString(" • "),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = sasPayload.wordsSummary,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.primary,
                             textAlign = TextAlign.Center
                         )
                     }
