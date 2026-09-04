@@ -30,7 +30,7 @@ object SasVerification {
     /**
      * Derives a Short Authentication String (SAS) from the HKDF-derived SAS key material.
      * Uses 8 bytes from the HKDF output to deterministically create both a 6-digit number
-     * and a 4-word phonetic token sequence without emojis.
+     * and a 4-word phonetic token sequence.
      */
     fun deriveSas(sasKeyMaterial: ByteArray): SasPayload {
         require(sasKeyMaterial.size >= 8) { "SAS key material must be at least 8 bytes" }
