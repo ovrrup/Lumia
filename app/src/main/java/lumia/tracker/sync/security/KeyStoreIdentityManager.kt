@@ -59,7 +59,7 @@ class KeyStoreIdentityManager(private val context: Context) {
         identityPublicKey = cert.publicKey
         isHardwareBacked = checkHardwareBacking(keyStore)
         deviceFingerprint = computeFingerprint(identityPublicKey)
-        Log.i(TAG, "Initialized KeyStore identity: $deviceFingerprint (Hardware-backed: $isHardwareBacked)")
+        Log.i(TAG, "Device security identity ready: $deviceFingerprint (Hardware security: $isHardwareBacked)")
     }
 
     /**
@@ -68,7 +68,7 @@ class KeyStoreIdentityManager(private val context: Context) {
     private fun ensureIdentityKeyPair() {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
         if (!keyStore.containsAlias(IDENTITY_KEY_ALIAS)) {
-            Log.i(TAG, "Generating new hardware-backed EC identity keypair in AndroidKeyStore...")
+            Log.i(TAG, "Generating new secure device credentials...")
             val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, ANDROID_KEYSTORE)
             val builder = KeyGenParameterSpec.Builder(
                 IDENTITY_KEY_ALIAS,
@@ -100,7 +100,7 @@ class KeyStoreIdentityManager(private val context: Context) {
                 keyInfo.isInsideSecureHardware
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Could not determine hardware backing status: ${e.message}")
+            Log.w(TAG, "Could not determine hardware security status: ${e.message}")
             false
         }
     }
@@ -137,7 +137,7 @@ class KeyStoreIdentityManager(private val context: Context) {
             signature.update(data)
             signature.verify(signatureBytes)
         } catch (e: Exception) {
-            Log.e(TAG, "Peer signature verification failed: ${e.message}")
+            Log.e(TAG, "Device signature verification failed: ${e.message}")
             false
         }
     }
@@ -201,7 +201,7 @@ class KeyStoreIdentityManager(private val context: Context) {
         // 3. Authenticate: Verify that remote ephemeral key is signed by remote identity key
         val isValid = verifyPeerSignature(peerIdentityPublicKey, peerEphemeralPubBytes, signatureBytes)
         if (!isValid) {
-            throw SecurityException("Zero-Trust Handshake Failed: Remote peer signature verification rejected! Possible MITM attack.")
+            throw SecurityException("Connection security check failed: Remote device could not be verified.")
         }
 
         val peerFingerprint = computeFingerprint(peerIdentityPublicKey)
@@ -230,7 +230,7 @@ class KeyStoreIdentityManager(private val context: Context) {
             length = 32
         )
 
-        Log.i(TAG, "Completed ECDH handshake with peer $peerFingerprint. SAS: ${sasPayload.numericCode}")
+        Log.i(TAG, "Secure connection established with device $peerFingerprint. Verification code: ${sasPayload.numericCode}")
 
         return HandshakeResult(
             sharedSessionKey = sessionKey,
@@ -304,13 +304,13 @@ class KeyStoreIdentityManager(private val context: Context) {
         val current = getPinnedPeers().filter { it.fingerprint != peer.fingerprint }.toMutableList()
         current.add(peer)
         savePinnedPeers(current)
-        Log.i(TAG, "Pinned trusted peer: ${peer.fingerprint} (${peer.customAlias})")
+        Log.i(TAG, "Added trusted device: ${peer.fingerprint} (${peer.customAlias})")
     }
 
     fun unpinPeer(fingerprint: String) {
         val updated = getPinnedPeers().filter { it.fingerprint != fingerprint }
         savePinnedPeers(updated)
-        Log.i(TAG, "Unpinned peer: $fingerprint")
+        Log.i(TAG, "Removed trusted device: $fingerprint")
     }
 
     fun isPeerPinned(fingerprint: String): Boolean {

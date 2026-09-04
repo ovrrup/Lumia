@@ -88,7 +88,7 @@ class WebRtcDataChannelTransport(
 
     override fun start() {
         if (isRunning.compareAndSet(false, true)) {
-            Log.i(TAG, "Starting WebRTC DataChannel transport...")
+            Log.i(TAG, "Starting direct connection transport...")
             _connectionState.value = TransportConnectionState.GATHERING_ICE
             bindSocket()
             gatherIceCandidates()
@@ -99,7 +99,7 @@ class WebRtcDataChannelTransport(
 
     override fun stop() {
         if (isRunning.compareAndSet(true, false)) {
-            Log.i(TAG, "Stopping WebRTC DataChannel transport...")
+            Log.i(TAG, "Stopping direct connection transport...")
             keepAliveJob?.cancel()
             keepAliveJob = null
             listenJob?.cancel()
@@ -119,7 +119,7 @@ class WebRtcDataChannelTransport(
         val sock = socket
 
         if (dest == null || key == null || sock == null || sock.isClosed) {
-            Log.w(TAG, "Cannot send packet: transport not connected or session key missing")
+            Log.w(TAG, "Cannot send data: device not connected or security key missing")
             return@withContext false
         }
 
@@ -146,7 +146,7 @@ class WebRtcDataChannelTransport(
             }
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to send packet over DataChannel: ${e.message}", e)
+            Log.e(TAG, "Failed to send data over secure connection: ${e.message}", e)
             false
         }
     }
@@ -238,11 +238,11 @@ class WebRtcDataChannelTransport(
                     isHardwareBacked = true
                 )
             )
-            Log.i(TAG, "SAS Verified and peer pinned: ${handshakeResult.peerFingerprint}")
+            Log.i(TAG, "Security verification confirmed for device: ${handshakeResult.peerFingerprint}")
         }
     }
 
-    // --- Socket & ICE Candidate Handling ---
+    // --- Socket & Connection Handling ---
 
     private fun bindSocket() {
         var port = DEFAULT_LOCAL_PORT
@@ -251,7 +251,7 @@ class WebRtcDataChannelTransport(
             try {
                 socket = DatagramSocket(port)
                 localPort = port
-                Log.i(TAG, "Bound UDP DataChannel socket on port $port")
+                Log.i(TAG, "Bound direct connection socket on port $port")
             } catch (e: Exception) {
                 port++
                 attempts++
@@ -260,7 +260,7 @@ class WebRtcDataChannelTransport(
         if (socket == null) {
             socket = DatagramSocket() // System assigned port
             localPort = socket!!.localPort
-            Log.i(TAG, "Bound UDP DataChannel socket on dynamic port $localPort")
+            Log.i(TAG, "Bound direct connection socket on dynamic port $localPort")
         }
     }
 
@@ -272,9 +272,9 @@ class WebRtcDataChannelTransport(
                 if (stunResult != null) {
                     srflxAddress = stunResult.publicAddress
                     _connectionState.value = TransportConnectionState.CGNAT_DISCOVERED
-                    Log.i(TAG, "STUN ICE discovery succeeded: $srflxAddress")
+                    Log.i(TAG, "Network discovery succeeded: $srflxAddress")
                 } else {
-                    Log.w(TAG, "STUN discovery timed out or failed. Falling back to host LAN candidates.")
+                    Log.w(TAG, "Network discovery timed out or failed. Falling back to local network.")
                 }
                 updateTelemetry {
                     it.copy(
@@ -284,7 +284,7 @@ class WebRtcDataChannelTransport(
                     )
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error during ICE candidate gathering: ${e.message}")
+                Log.e(TAG, "Error during network discovery: ${e.message}")
             }
         }
     }
@@ -308,7 +308,7 @@ class WebRtcDataChannelTransport(
         val chosen = matchingHost ?: peerCandidates.firstOrNull { it.type == "srflx" } ?: peerCandidates.firstOrNull()
         if (chosen != null) {
             remotePeerAddress = InetSocketAddress(chosen.ip, chosen.port)
-            Log.i(TAG, "Selected peer ICE candidate: $remotePeerAddress (type: ${chosen.type})")
+            Log.i(TAG, "Selected device connection endpoint: $remotePeerAddress (type: ${chosen.type})")
             updateTelemetry {
                 it.copy(
                     remotePeerAddress = remotePeerAddress.toString(),
@@ -340,7 +340,7 @@ class WebRtcDataChannelTransport(
                 } catch (e: SocketException) {
                     if (!isRunning.get()) break
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error in DataChannel receive loop: ${e.message}")
+                    Log.e(TAG, "Error in connection receive loop: ${e.message}")
                 }
             }
         }
@@ -374,7 +374,7 @@ class WebRtcDataChannelTransport(
             }
 
             FRAME_TYPE_DATA -> {
-                // Reassemble SCTP-style fragments
+                // Reassemble packet fragments
                 val fullPayload = assembleFragment(msgId, totalFragments, fragIndex, fragPayload)
                 if (fullPayload != null) {
                     val key = sessionKey
@@ -385,7 +385,7 @@ class WebRtcDataChannelTransport(
                                 _incomingPackets.emit(decrypted)
                             }
                         } catch (e: Exception) {
-                            Log.e(TAG, "Decryption error for msgId $msgId: ${e.message}")
+                            Log.e(TAG, "Decryption error for message $msgId: ${e.message}")
                         }
                     }
                 }
@@ -474,9 +474,9 @@ class WebRtcDataChannelTransport(
                                 connectionState = TransportConnectionState.KEEP_ALIVE_ACTIVE
                             )
                         }
-                        Log.d(TAG, "Sent 20s UDP keep-alive ping to $dest")
+                        Log.d(TAG, "Sent keep-alive ping to $dest")
                     } catch (e: Exception) {
-                        Log.w(TAG, "Failed to send 20s keep-alive ping: ${e.message}")
+                        Log.w(TAG, "Failed to send keep-alive ping: ${e.message}")
                     }
                 }
             }

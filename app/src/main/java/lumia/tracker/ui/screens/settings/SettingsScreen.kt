@@ -34,10 +34,12 @@ import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyOutlinedButton
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.sync.P2PSyncEngine
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.settings.components.SettingsActionItemInCard
 import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
+import lumia.tracker.ui.screens.settings.components.SettingsToggleItem
 import lumia.tracker.viewmodel.ScholarViewModel
 import java.io.File
 import java.io.FileOutputStream
@@ -59,6 +61,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     val context = LocalContext.current
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
     val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
+    val syncEngine = remember { P2PSyncEngine.getInstance(context) }
+    val isBackgroundSyncActive by syncEngine.isForegroundServiceEnabled.collectAsStateWithLifecycle()
 
     var showEditProfileSheet by remember { mutableStateOf(false) }
     var showSwitchProfileSheet by remember { mutableStateOf(false) }
@@ -360,11 +364,27 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 icon = Icons.Rounded.Storage
             ) {
                 SettingsActionItemInCard(
-                    title = "Zero-Trust P2P Sync",
-                    subtitle = "WebRTC DataChannel & Automerge CRDT",
+                    title = "Device Sync",
+                    subtitle = "Instant wireless sync between your devices",
                     icon = Icons.Rounded.Sync,
                     iconBgColor = Color(0xFFAF52DE),
                     onClick = { navController.navigate("settings/sync") }
+                )
+
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                    modifier = Modifier.padding(start = 52.dp, end = 8.dp)
+                )
+
+                SettingsToggleItem(
+                    title = "Background Sync",
+                    subtitle = "Keep data synced even when the app is closed",
+                    checked = isBackgroundSyncActive,
+                    icon = Icons.Rounded.Sync,
+                    iconBgColor = Color(0xFF5856D6),
+                    onCheckedChange = { isEnabled ->
+                        syncEngine.setForegroundServiceEnabled(isEnabled)
+                    }
                 )
 
                 HorizontalDivider(

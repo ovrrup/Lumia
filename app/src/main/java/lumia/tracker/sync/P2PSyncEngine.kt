@@ -6,10 +6,12 @@ import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import lumia.tracker.sync.crdt.AutomergeCrdtDocument
+import lumia.tracker.sync.crdt.LumiaDataSyncBridge
 import lumia.tracker.sync.reconciliation.VectorReconciliationOrchestrator
 import lumia.tracker.sync.security.KeyStoreIdentityManager
 import lumia.tracker.sync.security.SasVerification
 import lumia.tracker.sync.service.P2PSyncForegroundService
+import lumia.tracker.sync.transport.LocalPeerDiscovery
 import lumia.tracker.sync.transport.TransportConnectionState
 import lumia.tracker.sync.transport.WebRtcDataChannelTransport
 
@@ -51,6 +53,17 @@ class P2PSyncEngine private constructor(private val context: Context) {
         scope = scope
     )
 
+    // 5. Automatic Fast Local Wi-Fi Peer Discovery (<100ms)
+    val localDeviceName: String = run {
+        val model = android.os.Build.MODEL ?: "Android Device"
+        val manufacturer = android.os.Build.MANUFACTURER?.replaceFirstChar { it.uppercase() } ?: "Lumia"
+        "$manufacturer $model"
+    }
+    val discovery = LocalPeerDiscovery(context, identityManager.deviceFingerprint, localDeviceName, scope = scope)
+
+    // 6. User Data Sync Bridge (Tasks, Notes, Sessions)
+    val dataBridge = LumiaDataSyncBridge(crdtDocument)
+
     // UI SAS Verification State: Pair(SasPayload, PeerFingerprint)
     private val _activeSasVerification = MutableStateFlow<Pair<SasVerification.SasPayload, String>?>(null)
     val activeSasVerification: StateFlow<Pair<SasVerification.SasPayload, String>?> = _activeSasVerification.asStateFlow()
@@ -62,7 +75,7 @@ class P2PSyncEngine private constructor(private val context: Context) {
     val isForegroundServiceEnabled: StateFlow<Boolean> = _isForegroundServiceEnabled.asStateFlow()
 
     init {
-        Log.i(TAG, "Initializing Lumia Zero-Trust P2P Sync Engine...")
+        Log.i(TAG, "Initializing Lumia device sync engine...")
         bindDecoupledFlows()
         setupSasCallback()
 
@@ -72,33 +85,33 @@ class P2PSyncEngine private constructor(private val context: Context) {
     }
 
     /**
-     * Strictly binds the WebRTC DataChannel transport and the Automerge CRDT engine
+     * Strictly binds the transport and shared document sync engine
      * solely through ByteArray Kotlin flows.
      */
     private fun bindDecoupledFlows() {
-        // Outbound Flow: CRDT Document -> WebRTC DataChannel Transport
+        // Outbound Flow: Shared Document -> Transport
         scope.launch {
             crdtDocument.outgoingPackets.collect { packetBytes ->
                 val success = transport.sendPacket(packetBytes)
                 if (!success) {
-                    Log.d(TAG, "Queued or dropped packet: transport not currently connected")
+                    Log.d(TAG, "Queued or dropped packet: device not currently connected")
                 }
             }
         }
 
-        // Inbound Flow: WebRTC DataChannel Transport -> Vector Reconciliation & CRDT Document
+        // Inbound Flow: Transport -> Sync Reconciliation & Shared Document
         scope.launch {
             transport.incomingPackets.collect { incomingBytes ->
-                // First let the Anti-Entropy Orchestrator inspect the packet for vector reconciliation
+                // First let the Orchestrator inspect the packet for sync reconciliation
                 val handledByOrchestrator = orchestrator.handleReconciliationPacket(incomingBytes)
                 if (!handledByOrchestrator) {
-                    // Otherwise pass to CRDT document engine to merge
+                    // Otherwise pass to document engine to merge
                     crdtDocument.receiveSyncBytes(incomingBytes)
                 }
             }
         }
 
-        // Connection Lifecycle -> Vector Reconciliation Orchestrator
+        // Connection Lifecycle -> Sync Orchestrator
         scope.launch {
             transport.connectionState.collect { state ->
                 when (state) {
@@ -112,7 +125,7 @@ class P2PSyncEngine private constructor(private val context: Context) {
 
     private fun setupSasCallback() {
         transport.onSasDerived = { sasPayload, peerFingerprint, onConfirm ->
-            Log.i(TAG, "SAS derived for peer $peerFingerprint: ${sasPayload.numericCode}")
+            Log.i(TAG, "Security verification code generated for device $peerFingerprint: ${sasPayload.numericCode}")
             confirmSasAction = onConfirm
             _activeSasVerification.value = Pair(sasPayload, peerFingerprint)
         }
@@ -143,7 +156,7 @@ class P2PSyncEngine private constructor(private val context: Context) {
         try {
             P2PSyncForegroundService.start(context)
         } catch (e: Exception) {
-            Log.e(TAG, "Could not start P2PSyncForegroundService: ${e.message}")
+            Log.e(TAG, "Could not start Lumia Device Sync service: ${e.message}")
         }
     }
 
@@ -151,15 +164,17 @@ class P2PSyncEngine private constructor(private val context: Context) {
         try {
             P2PSyncForegroundService.stop(context)
         } catch (e: Exception) {
-            Log.e(TAG, "Could not stop P2PSyncForegroundService: ${e.message}")
+            Log.e(TAG, "Could not stop Lumia Device Sync service: ${e.message}")
         }
     }
 
     fun start() {
         transport.start()
+        discovery.start()
     }
 
     fun stop() {
+        discovery.stop()
         transport.stop()
         orchestrator.stop()
     }

@@ -60,7 +60,7 @@ class AutomergeCrdtDocument(
     val vectorClockState: StateFlow<VectorClock> = _vectorClockState.asStateFlow()
 
     init {
-        Log.i(TAG, "Initialized CRDT document for actor: $localActorId")
+        Log.i(TAG, "Initialized shared document sync for device ID: $localActorId")
     }
 
     /**
@@ -179,7 +179,7 @@ class AutomergeCrdtDocument(
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error decoding incoming CRDT packet: ${e.message}", e)
+            Log.e(TAG, "Error decoding incoming sync data: ${e.message}", e)
             false
         }
     }

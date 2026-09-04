@@ -52,19 +52,19 @@ class VectorReconciliationOrchestrator(
     private val isReconciling = AtomicBoolean(false)
 
     /**
-     * Called when the WebRTC DataChannel connects or reconnects after an offline partition.
+     * Called when direct connection connects or reconnects after an offline period.
      */
     fun onPeerConnected() {
-        Log.i(TAG, "Peer connected: triggering anti-entropy vector reconciliation...")
+        Log.i(TAG, "Device connected: checking sync status and catching up...")
         triggerReconciliation()
         startPeriodicAudit()
     }
 
     /**
-     * Called when peer disconnects (entering an offline partition).
+     * Called when device disconnects.
      */
     fun onPeerDisconnected() {
-        Log.i(TAG, "Peer disconnected: offline partition active")
+        Log.i(TAG, "Device disconnected: paused offline")
         periodicAuditJob?.cancel()
         periodicAuditJob = null
         _telemetry.value = _telemetry.value.copy(
@@ -74,7 +74,7 @@ class VectorReconciliationOrchestrator(
     }
 
     /**
-     * Starts anti-entropy handshake by sending our current VectorClock to the peer.
+     * Starts catch-up sync by sharing current sync status with the device.
      */
     fun triggerReconciliation() {
         scope.launch {
@@ -86,16 +86,15 @@ class VectorReconciliationOrchestrator(
                     localVectorClock = localClock
                 )
                 sendPacketAction(reqPacket)
-                Log.d(TAG, "Sent VectorClockRequest: $localClock")
+                Log.d(TAG, "Sent sync status check: $localClock")
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to send vector reconciliation request: ${e.message}", e)
+                Log.e(TAG, "Failed to send sync catch-up request: ${e.message}", e)
             }
         }
     }
 
     /**
-     * Processes an incoming CRDT packet for vector reconciliation.
-     * Evaluates causality, identifies missing operations, streams deltas, and checks convergence.
+     * Processes an incoming sync packet for catch-up and reconciliation.
      */
     suspend fun handleReconciliationPacket(bytes: ByteArray): Boolean {
         return try {
@@ -103,7 +102,7 @@ class VectorReconciliationOrchestrator(
                 is CrdtBinaryCodec.DecodedPacket.VectorClockRequest -> {
                     val remoteClock = packet.senderVectorClock
                     val localClock = crdtDocument.getVectorClock()
-                    Log.d(TAG, "Received VectorClockRequest. Remote: $remoteClock, Local: $localClock")
+                    Log.d(TAG, "Received sync status request. Remote: $remoteClock, Local: $localClock")
 
                     // Send response with our vector clock
                     val respPacket = CrdtBinaryCodec.encodeVectorClockResponse(localClock)
@@ -117,7 +116,7 @@ class VectorReconciliationOrchestrator(
                 is CrdtBinaryCodec.DecodedPacket.VectorClockResponse -> {
                     val remoteClock = packet.senderVectorClock
                     val localClock = crdtDocument.getVectorClock()
-                    Log.d(TAG, "Received VectorClockResponse. Remote: $remoteClock, Local: $localClock")
+                    Log.d(TAG, "Received sync status update. Remote: $remoteClock, Local: $localClock")
 
                     _telemetry.value = _telemetry.value.copy(
                         remoteVectorClock = remoteClock,
@@ -146,7 +145,7 @@ class VectorReconciliationOrchestrator(
                         remoteVectorClock = packet.senderVectorClock
                     )
 
-                    Log.i(TAG, "Merged $opsCount reconciliation ops. Updated clock: $updatedLocalClock")
+                    Log.i(TAG, "Merged $opsCount sync updates. Updated status: $updatedLocalClock")
                     checkConvergence(packet.senderVectorClock)
                     true
                 }
@@ -154,7 +153,7 @@ class VectorReconciliationOrchestrator(
                 is CrdtBinaryCodec.DecodedPacket.FullSnapshot -> false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error handling reconciliation packet: ${e.message}", e)
+            Log.e(TAG, "Error handling sync packet: ${e.message}", e)
             false
         }
     }
@@ -164,11 +163,11 @@ class VectorReconciliationOrchestrator(
         try {
             val missingOps = crdtDocument.getMissingOps(remoteClock)
             if (missingOps.isEmpty()) {
-                Log.d(TAG, "Remote peer is up-to-date. Zero missing ops to send.")
+                Log.d(TAG, "Remote device is up-to-date. Zero updates to send.")
                 return
             }
 
-            Log.i(TAG, "Partition reconciliation: streaming ${missingOps.size} missing ops to peer in chunks of $CHUNK_SIZE...")
+            Log.i(TAG, "Offline catch-up: sending ${missingOps.size} updates to device in chunks of $CHUNK_SIZE...")
             val localClock = crdtDocument.getVectorClock()
 
             // Stream in bounded chunks to avoid UDP fragmentation issues
@@ -194,7 +193,7 @@ class VectorReconciliationOrchestrator(
         val isConverged = localClock.isEqualTo(remoteClock)
 
         if (isConverged) {
-            Log.i(TAG, "Anti-Entropy Reconciliation Complete! Mathematical convergence reached: $localClock")
+            Log.i(TAG, "Offline catch-up complete! All devices in sync: $localClock")
             _telemetry.value = _telemetry.value.copy(
                 status = ReconciliationStatus.CONVERGED,
                 isPartitioned = false,
@@ -213,7 +212,7 @@ class VectorReconciliationOrchestrator(
         periodicAuditJob = scope.launch {
             while (isActive) {
                 delay(PERIODIC_AUDIT_INTERVAL_MS)
-                Log.d(TAG, "Running periodic anti-entropy audit check...")
+                Log.d(TAG, "Running periodic sync check...")
                 triggerReconciliation()
             }
         }

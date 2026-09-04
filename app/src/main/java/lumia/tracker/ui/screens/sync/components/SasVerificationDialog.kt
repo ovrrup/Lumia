@@ -1,7 +1,7 @@
 package lumia.tracker.ui.screens.sync.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,10 +12,10 @@ import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -27,8 +27,8 @@ import lumia.tracker.sync.security.SasVerification
 import lumia.tracker.ui.components.BouncyButton
 
 /**
- * Interactive dialog modal for HKDF-derived Short Authentication String (SAS) MITM verification.
- * Displays both 6-digit numeric code and 4-word phonetic sequence for visual out-of-band confirmation.
+ * Interactive dialog modal for security verification.
+ * Displays both 6-digit numeric code and 4-word sequence for visual confirmation.
  */
 @Composable
 fun SasVerificationDialog(
@@ -69,7 +69,7 @@ fun SasVerificationDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Shield,
-                        contentDescription = "Zero-Trust SAS Verification",
+                        contentDescription = "Security Verification",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(32.dp)
                     )
@@ -77,8 +77,9 @@ fun SasVerificationDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Title
                 Text(
-                    text = "Zero-Trust SAS Verification",
+                    text = "Security Verification Code",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Black,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -87,8 +88,9 @@ fun SasVerificationDialog(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
+                // Clear human explanation
                 Text(
-                    text = "Compare the numeric code and phonetic tokens with the other device. If identical, zero-trust cryptographic security is verified.",
+                    text = "Compare the numbers and security words with the other device. If they match, your direct connection is secure.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -97,7 +99,7 @@ fun SasVerificationDialog(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // 6-Digit Numeric SAS Display
+                // 6-Digit Numeric Display
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -112,7 +114,7 @@ fun SasVerificationDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "NUMERIC SAS CODE",
+                            text = "SECURITY CODE",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
@@ -132,7 +134,7 @@ fun SasVerificationDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Phonetic Words SAS Display
+                // Security Words Display
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -147,7 +149,7 @@ fun SasVerificationDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "PHONETIC VERIFICATION TOKENS",
+                            text = "SECURITY WORDS",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
@@ -167,7 +169,7 @@ fun SasVerificationDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Peer Fingerprint Info Chip
+                // Device ID Info Chip
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
@@ -183,7 +185,7 @@ fun SasVerificationDialog(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Peer Key: $peerFingerprint",
+                        text = "Device ID: $peerFingerprint",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = FontFamily.Monospace,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -215,7 +217,7 @@ fun SasVerificationDialog(
                     ) {
                         Icon(Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Verify & Pin", fontWeight = FontWeight.Bold)
+                        Text("Verify & Trust", fontWeight = FontWeight.Bold)
                     }
                 }
             }

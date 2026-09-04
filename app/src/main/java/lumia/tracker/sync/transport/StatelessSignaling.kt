@@ -81,7 +81,7 @@ object StatelessSignaling {
             val json = baos.toString(Charsets.UTF_8.name())
             adapter.fromJson(json)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to parse stateless signaling token: ${e.message}")
+            Log.e(TAG, "Failed to read pairing token: ${e.message}")
             null
         }
     }

@@ -14,8 +14,8 @@ import lumia.tracker.R
 import lumia.tracker.sync.P2PSyncEngine
 
 /**
- * Android Foreground Service maintaining persistent WebRTC DataChannel connectivity,
- * NAT traversal bindings, and 20-second UDP keep-alive heartbeats in the background.
+ * Android Foreground Service maintaining direct device sync
+ * and network keep-alive checks in the background.
  */
 class P2PSyncForegroundService : Service() {
 
@@ -58,13 +58,13 @@ class P2PSyncForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> {
-                Log.i(TAG, "Stopping P2P Sync Foreground Service...")
+                Log.i(TAG, "Stopping Lumia Device Sync service...")
                 stopSelf()
                 return START_NOT_STICKY
             }
             else -> {
-                Log.i(TAG, "Starting P2P Sync Foreground Service with active 20s UDP keep-alives...")
-                startForeground(NOTIFICATION_ID, buildNotification("Sync Active • 20s Keep-Alive Ticker Running"))
+                Log.i(TAG, "Starting Lumia Device Sync service...")
+                startForeground(NOTIFICATION_ID, buildNotification("Active • Connecting with nearby devices"))
                 startTelemetryMonitor()
             }
         }
@@ -78,7 +78,7 @@ class P2PSyncForegroundService : Service() {
         telemetryCollectJob?.cancel()
         serviceScope.cancel()
         releaseWakeLock()
-        Log.i(TAG, "P2P Sync Foreground Service destroyed")
+        Log.i(TAG, "Lumia Device Sync service stopped")
     }
 
     private fun startTelemetryMonitor() {
@@ -87,12 +87,12 @@ class P2PSyncForegroundService : Service() {
             val engine = P2PSyncEngine.getInstance(applicationContext)
             engine.transport.telemetry.collect { tele ->
                 val stateText = when (tele.connectionState) {
-                    lumia.tracker.sync.transport.TransportConnectionState.CONNECTED -> "P2P Connected • E2EE Mesh Active"
-                    lumia.tracker.sync.transport.TransportConnectionState.KEEP_ALIVE_ACTIVE -> "20s Keep-Alive Active • CGNAT Port Open"
-                    lumia.tracker.sync.transport.TransportConnectionState.CGNAT_DISCOVERED -> "CGNAT Traversed • Ready to Pair"
-                    lumia.tracker.sync.transport.TransportConnectionState.GATHERING_ICE -> "Gathering STUN/ICE Candidates..."
-                    lumia.tracker.sync.transport.TransportConnectionState.CONNECTING -> "Handshake in Progress..."
-                    else -> "P2P Engine Standby"
+                    lumia.tracker.sync.transport.TransportConnectionState.CONNECTED -> "Connected • Syncing notes and tasks"
+                    lumia.tracker.sync.transport.TransportConnectionState.KEEP_ALIVE_ACTIVE -> "Connected • Ready to sync"
+                    lumia.tracker.sync.transport.TransportConnectionState.CGNAT_DISCOVERED -> "Active • Ready to connect"
+                    lumia.tracker.sync.transport.TransportConnectionState.GATHERING_ICE -> "Active • Discovering network..."
+                    lumia.tracker.sync.transport.TransportConnectionState.CONNECTING -> "Active • Connecting with nearby devices"
+                    else -> "Active • Ready to sync"
                 }
                 updateNotification(stateText)
             }
@@ -109,7 +109,7 @@ class P2PSyncForegroundService : Service() {
                 setReferenceCounted(false)
                 acquire(12 * 60 * 60 * 1000L) // 12 hour max safety limit
             }
-            Log.d(TAG, "Acquired partial WakeLock for 20s keep-alives")
+            Log.d(TAG, "Acquired background lock for device sync")
         } catch (e: Exception) {
             Log.w(TAG, "Could not acquire WakeLock: ${e.message}")
         }
@@ -121,9 +121,9 @@ class P2PSyncForegroundService : Service() {
                 if (it.isHeld) it.release()
             }
             wakeLock = null
-            Log.d(TAG, "Released WakeLock")
+            Log.d(TAG, "Released background lock")
         } catch (e: Exception) {
-            Log.w(TAG, "Error releasing WakeLock: ${e.message}")
+            Log.w(TAG, "Error releasing background lock: ${e.message}")
         }
     }
 
@@ -131,10 +131,10 @@ class P2PSyncForegroundService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "P2P Live Sync Engine",
+                "Lumia Device Sync",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Maintains zero-trust P2P WebRTC DataChannel sync and 20s UDP keep-alives"
+                description = "Syncs notes and tasks directly between your devices in the background"
                 setShowBadge(false)
             }
             val manager = getSystemService(NotificationManager::class.java)
@@ -165,7 +165,7 @@ class P2PSyncForegroundService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Lumia Zero-Trust P2P Sync")
+            .setContentTitle("Lumia Device Sync")
             .setContentText(statusText)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setOngoing(true)

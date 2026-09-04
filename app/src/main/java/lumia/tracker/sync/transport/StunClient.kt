@@ -72,7 +72,7 @@ object StunClient {
 
                 val mapped = parseStunResponse(recvBuffer, recvPacket.length, txId)
                 if (mapped != null) {
-                    Log.i(TAG, "CGNAT Traversal Success! Discovered public endpoint: $mapped via $host:$port")
+                    Log.i(TAG, "Direct connection discovery successful: $mapped via $host:$port")
                     return@withContext StunDiscoveryResult(
                         publicAddress = mapped,
                         localBoundAddress = InetSocketAddress(socket.localAddress, socket.localPort),
@@ -80,7 +80,7 @@ object StunClient {
                     )
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "STUN query to $host:$port failed: ${e.message}")
+                Log.w(TAG, "Network discovery query to $host:$port failed: ${e.message}")
             }
         }
         null
