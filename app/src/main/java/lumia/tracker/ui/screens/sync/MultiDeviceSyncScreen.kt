@@ -1,22 +1,14 @@
 package lumia.tracker.ui.screens.sync
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -25,57 +17,33 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import kotlinx.coroutines.delay
-import lumia.tracker.sync.SyncManager
-import lumia.tracker.sync.model.SyncDevice
-import lumia.tracker.sync.model.SyncHistoryRecord
-import lumia.tracker.sync.model.SyncMode
-import lumia.tracker.sync.model.SyncState
-import lumia.tracker.sync.model.TrustedPeer
-import lumia.tracker.sync.qr.QrCodeCanvas
+import kotlinx.coroutines.launch
+import lumia.tracker.sync.P2PSyncEngine
+import lumia.tracker.sync.reconciliation.VectorReconciliationOrchestrator
+import lumia.tracker.sync.transport.StatelessSignaling
+import lumia.tracker.sync.transport.TransportConnectionState
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
-import lumia.tracker.ui.components.BouncyOutlinedButton
-import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.ScholarCard
-import lumia.tracker.ui.meta.Importance
-import lumia.tracker.ui.meta.ValueScore
-import lumia.tracker.ui.screens.sync.components.SyncProgressDialog
-import lumia.tracker.ui.screens.sync.components.SyncRadarView
-import lumia.tracker.ui.theme.bouncyClick
+import lumia.tracker.ui.screens.sync.components.SasVerificationDialog
+import lumia.tracker.ui.screens.sync.components.StatelessTokenDialog
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
- * MultiDeviceSyncScreen - P2P Multi-Device Sync Cockpit supporting:
- * 1. Permanent 1-Time Mutual Handshake (PSK storage).
- * 2. All-Time Continuous Background Auto-Sync on local Wi-Fi / Hotspot.
- * 3. 1-Click Instant Sync with trusted peers without repeating PINs.
- * 4. Zero-Trust AES-256-GCM encryption & HMAC verification.
- * 5. Real-time Outbox buffer tracking & telemetry telemetry.
+ * MultiDeviceSyncScreen - Master Cockpit for Lumia's Zero-Trust, Database-Free P2P Sync Engine.
+ * Provides live telemetry for WebRTC DataChannel (CGNAT/STUN/ICE, 20s keep-alives),
+ * Automerge-style CRDT Document inspection via ByteArray Kotlin flows,
+ * and hardware-backed AndroidKeyStore identity with HKDF-derived SAS MITM verification.
  */
-@ValueScore(
-    score = 95,
-    importance = Importance.HIGH,
-    description = "One-time pair live mesh multi-device synchronization cockpit with telemetry and frictionless pairing",
-    category = "Sync"
-)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MultiDeviceSyncScreen(
@@ -83,2229 +51,870 @@ fun MultiDeviceSyncScreen(
     viewModel: ScholarViewModel
 ) {
     val context = LocalContext.current
-    val syncManager = remember { SyncManager.getInstance(context.applicationContext) }
-    val prefs = remember { context.getSharedPreferences("lumia_sync_prefs", Context.MODE_PRIVATE) }
+    val scope = rememberCoroutineScope()
+    val syncEngine = remember { P2PSyncEngine.getInstance(context) }
 
-    DisposableEffect(Unit) {
-        syncManager.startHosting()
-        if (syncManager.continuousAutoSyncEnabled.value) {
-            syncManager.startDiscovery()
-        }
-        onDispose {
-            if (!syncManager.continuousAutoSyncEnabled.value) {
-                syncManager.stopDiscovery()
+    // Reactive StateFlows
+    val connectionState by syncEngine.transport.connectionState.collectAsStateWithLifecycle()
+    val transportTelemetry by syncEngine.transport.telemetry.collectAsStateWithLifecycle()
+    val crdtSnapshot by syncEngine.crdtDocument.documentState.collectAsStateWithLifecycle()
+    val vectorClock by syncEngine.crdtDocument.vectorClockState.collectAsStateWithLifecycle()
+    val reconciliationTelemetry by syncEngine.orchestrator.telemetry.collectAsStateWithLifecycle()
+    val activeSas by syncEngine.activeSasVerification.collectAsStateWithLifecycle()
+    val isFgServiceActive by syncEngine.isForegroundServiceEnabled.collectAsStateWithLifecycle()
+
+    var selectedTab by remember { mutableIntStateOf(0) }
+    var showSignalingDialog by remember { mutableStateOf(false) }
+    var generatedToken by remember { mutableStateOf("") }
+
+    // CRDT Sandbox inputs
+    var inputPath by remember { mutableStateOf("study/tasks") }
+    var inputKey by remember { mutableStateOf("task_title") }
+    var inputValue by remember { mutableStateOf("Advanced Calculus Revision") }
+
+    // Dialog: SAS Verification Modal
+    activeSas?.let { (sasPayload, peerFingerprint) ->
+        SasVerificationDialog(
+            sasPayload = sasPayload,
+            peerFingerprint = peerFingerprint,
+            onConfirm = {
+                syncEngine.confirmSasVerification()
+                Toast.makeText(context, "Peer verified and pinned!", Toast.LENGTH_SHORT).show()
+            },
+            onDismiss = {
+                syncEngine.dismissSasVerification()
+                Toast.makeText(context, "SAS rejected", Toast.LENGTH_SHORT).show()
             }
-        }
+        )
     }
 
-    val discoveredPeers by syncManager.discoveredPeers.collectAsStateWithLifecycle()
-    val trustedPeers by syncManager.trustedPeers.collectAsStateWithLifecycle()
-    val continuousAutoSync by syncManager.continuousAutoSyncEnabled.collectAsStateWithLifecycle()
-    val syncState by syncManager.syncState.collectAsStateWithLifecycle()
-    val pairingPin by syncManager.pairingPin.collectAsStateWithLifecycle()
-    val pairingToken by syncManager.pairingToken.collectAsStateWithLifecycle()
-    val syncHistory by syncManager.syncHistory.collectAsStateWithLifecycle()
-    val isServerRunning by syncManager.isServerRunning.collectAsStateWithLifecycle()
-    val isSyncing by syncManager.isSyncing.collectAsStateWithLifecycle()
-    val pendingOutboxCount by syncManager.pendingOutboxCount.collectAsStateWithLifecycle()
-    val activePassphraseRoom by syncManager.syncPassphrase.collectAsStateWithLifecycle()
-    val isPassphraseRoomActive by syncManager.isPassphraseRoomActive.collectAsStateWithLifecycle()
-
-    var wifiOnlySync by remember { mutableStateOf(prefs.getBoolean("wifi_only_sync", true)) }
-    var showPairNewSheet by remember { mutableStateOf(false) }
-    var showPassphraseSheet by remember { mutableStateOf(false) }
-    var showPinDialogForPeer by remember { mutableStateOf<SyncDevice?>(null) }
-    var showHelpDialog by remember { mutableStateOf(false) }
-    var peerToUnpair by remember { mutableStateOf<TrustedPeer?>(null) }
-
-    val isScanning = syncState is SyncState.Discovering
-    val onlineTrustedCount = trustedPeers.count { peer -> discoveredPeers.any { it.id == peer.deviceId } }
+    // Dialog: Stateless Signaling Dialog
+    if (showSignalingDialog) {
+        StatelessTokenDialog(
+            myToken = generatedToken,
+            onConnectWithToken = { tokenString ->
+                showSignalingDialog = false
+                scope.launch {
+                    val payload = StatelessSignaling.parseToken(tokenString)
+                    if (payload != null) {
+                        if (payload.role == "OFFERER") {
+                            val answer = syncEngine.transport.acceptSignalingOffer(payload)
+                            generatedToken = StatelessSignaling.createToken(answer)
+                            Toast.makeText(context, "Offer accepted! Share your answer token.", Toast.LENGTH_LONG).show()
+                            showSignalingDialog = true
+                        } else {
+                            syncEngine.transport.applySignalingAnswer(payload)
+                            Toast.makeText(context, "Answer applied! WebRTC DataChannel connected.", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(context, "Invalid signaling token", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            onDismiss = { showSignalingDialog = false }
+        )
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
-                    Text(
-                        "Device Sync",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "Zero-Trust P2P Sync",
+                            fontWeight = FontWeight.Black,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "WebRTC DataChannel • Automerge CRDT",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 },
                 navigationIcon = {
-                    BouncyIconButton(onClick = { navController.navigateUp() }) {
+                    BouncyIconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
                 actions = {
-                    BouncyIconButton(onClick = {
-                        if (isScanning) syncManager.stopDiscovery() else syncManager.startDiscovery()
+                    IconButton(onClick = {
+                        scope.launch {
+                            val offer = syncEngine.transport.createSignalingOffer()
+                            generatedToken = StatelessSignaling.createToken(offer)
+                            showSignalingDialog = true
+                        }
                     }) {
                         Icon(
-                            if (isScanning) Icons.Rounded.Sensors else Icons.Rounded.SensorsOff,
-                            contentDescription = "Toggle Radar",
-                            tint = if (isScanning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    BouncyIconButton(onClick = { showHelpDialog = true }) {
-                        Icon(
-                            Icons.Rounded.HelpOutline,
-                            contentDescription = "Help & Architecture",
+                            imageVector = Icons.Rounded.QrCode,
+                            contentDescription = "Signaling QR",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showPairNewSheet = true },
-                icon = { Icon(Icons.Rounded.AddLink, contentDescription = null) },
-                text = { Text("Pair New Device", fontWeight = FontWeight.Bold) },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         }
     ) { padding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
+                .padding(padding)
                 .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            // 1. Live Sync Status Pill & Cockpit Hero
-            item {
-                MeshCockpitHeader(
-                    onlineCount = onlineTrustedCount,
-                    totalPaired = trustedPeers.size,
-                    isScanning = isScanning,
-                    isServerRunning = isServerRunning,
-                    pendingOutboxCount = pendingOutboxCount,
-                    continuousAutoSync = continuousAutoSync,
-                    isSyncing = isSyncing,
-                    syncManager = syncManager,
-                    onOpenPairSheet = { showPairNewSheet = true }
-                )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Navigation Pill Switcher
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+            ) {
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    indicator = {},
+                    divider = {}
+                ) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = {
+                            Text(
+                                "WebRTC",
+                                fontWeight = if (selectedTab == 0) FontWeight.Black else FontWeight.Medium,
+                                fontSize = 13.sp
+                            )
+                        }
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        text = {
+                            Text(
+                                "CRDT Engine",
+                                fontWeight = if (selectedTab == 1) FontWeight.Black else FontWeight.Medium,
+                                fontSize = 13.sp
+                            )
+                        }
+                    )
+                    Tab(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
+                        text = {
+                            Text(
+                                "Security & SAS",
+                                fontWeight = if (selectedTab == 2) FontWeight.Black else FontWeight.Medium,
+                                fontSize = 13.sp
+                            )
+                        }
+                    )
+                }
             }
 
-            // 1.5. Zero-Cloud Passphrase Relay Mesh Room Card
-            item {
-                PassphraseMeshRoomCard(
-                    activeRoom = activePassphraseRoom ?: "",
-                    onlinePeersCount = onlineTrustedCount,
-                    isSyncing = isSyncing,
-                    onOpenRoomSheet = { showPassphraseSheet = true },
-                    onSyncNow = {
-                        syncManager.syncPassphraseRoomNow()
-                        Toast.makeText(context, "Broadcasting sync across passphrase room...", Toast.LENGTH_SHORT).show()
+            Spacer(modifier = Modifier.height(16.dp))
+
+            when (selectedTab) {
+                0 -> WebRtcTransportTab(
+                    connectionState = connectionState,
+                    telemetry = transportTelemetry,
+                    isFgServiceActive = isFgServiceActive,
+                    onToggleFgService = { syncEngine.setForegroundServiceEnabled(it) },
+                    onInitiatePairing = {
+                        scope.launch {
+                            val offer = syncEngine.transport.createSignalingOffer()
+                            generatedToken = StatelessSignaling.createToken(offer)
+                            showSignalingDialog = true
+                        }
                     },
-                    onCopyPassphrase = { room ->
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("Lumia Passphrase", room))
-                        Toast.makeText(context, "Passphrase copied to clipboard!", Toast.LENGTH_SHORT).show()
+                    onRestartTransport = {
+                        syncEngine.transport.stop()
+                        syncEngine.transport.start()
+                        Toast.makeText(context, "Restarted WebRTC transport", Toast.LENGTH_SHORT).show()
+                    }
+                )
+                1 -> CrdtDocumentTab(
+                    snapshot = crdtSnapshot,
+                    vectorClock = vectorClock,
+                    reconciliation = reconciliationTelemetry,
+                    inputPath = inputPath,
+                    onPathChange = { inputPath = it },
+                    inputKey = inputKey,
+                    onKeyChange = { inputKey = it },
+                    inputValue = inputValue,
+                    onValueChange = { inputValue = it },
+                    onApplyMutation = {
+                        syncEngine.crdtDocument.set(inputPath, inputKey, inputValue)
+                        Toast.makeText(context, "Applied CRDT Mutation (ByteArray Flow)", Toast.LENGTH_SHORT).show()
                     },
-                    onLeaveRoom = {
-                        syncManager.setPassphraseMeshRoom(null)
-                        Toast.makeText(context, "Disconnected from passphrase room.", Toast.LENGTH_SHORT).show()
+                    onTriggerReconciliation = {
+                        syncEngine.orchestrator.triggerReconciliation()
+                        Toast.makeText(context, "Triggered Anti-Entropy Reconciliation", Toast.LENGTH_SHORT).show()
+                    }
+                )
+                2 -> SecurityIdentityTab(
+                    identityManager = syncEngine.identityManager,
+                    onUnpinPeer = { fp ->
+                        syncEngine.identityManager.unpinPeer(fp)
+                        Toast.makeText(context, "Unpinned peer: $fp", Toast.LENGTH_SHORT).show()
                     }
                 )
             }
 
-            // 2. Paired Devices Fleet Card Header
-            item {
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+// =========================================================================
+// TAB 0: WebRTC DataChannel & Transport Telemetry
+// =========================================================================
+
+@Composable
+private fun WebRtcTransportTab(
+    connectionState: TransportConnectionState,
+    telemetry: lumia.tracker.sync.transport.TransportTelemetry,
+    isFgServiceActive: Boolean,
+    onToggleFgService: (Boolean) -> Unit,
+    onInitiatePairing: () -> Unit,
+    onRestartTransport: () -> Unit
+) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+
+        // Hero Connection Card
+        ScholarCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "PAIRED FLEET (${trustedPeers.size})",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 1.1.sp
-                    )
-                    if (trustedPeers.isNotEmpty() && onlineTrustedCount > 0) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF4CAF50).copy(alpha = 0.15f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .background(Color(0xFF4CAF50), CircleShape)
-                                )
-                                Text(
-                                    text = "$onlineTrustedCount Online",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2E7D32)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (trustedPeers.isEmpty()) {
-                item {
-                    ScholarCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Devices,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                            Text(
-                                "No Paired Devices",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "Pair with a phone or tablet using QR Code or 6-digit PIN for automatic, silent local Wi-Fi sync.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            BouncyButton(onClick = { showPairNewSheet = true }) {
-                                Icon(Icons.Rounded.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Pair Your First Device")
-                            }
-                        }
-                    }
-                }
-            } else {
-                items(trustedPeers, key = { it.deviceId }) { peer ->
-                    val isOnline = discoveredPeers.any { it.id == peer.deviceId }
-                    val matchingDiscovered = discoveredPeers.find { it.id == peer.deviceId }
-                    PairedDeviceFleetCard(
-                        peer = peer,
-                        isOnline = isOnline,
-                        onSyncNow = {
-                            if (matchingDiscovered != null) {
-                                syncManager.connectToTrustedPeer(matchingDiscovered, peer)
-                                Toast.makeText(context, "Initiated sync with ${peer.deviceName}", Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "${peer.deviceName} is offline or not detected on local Wi-Fi.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        },
-                        onToggleAutoSync = { enabled ->
-                            syncManager.toggleTrustedPeerAutoSync(peer.deviceId, enabled)
-                        },
-                        onRemove = { peerToUnpair = peer }
-                    )
-                }
-            }
-
-            // 3. Live Radar & Discovered Devices Card
-            item {
-                ScholarCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        SyncRadarView(
-                            isScanning = isScanning,
-                            primaryColor = MaterialTheme.colorScheme.primary
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(MaterialTheme.colorScheme.primary, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = if (isScanning) Icons.Rounded.Sensors else Icons.Rounded.Wifi,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-
+                    Column {
                         Text(
-                            text = if (isScanning) "Scanning local Wi-Fi & Hotspot..." else "Radar Discovery Ready",
+                            text = "WebRTC DataChannel",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = if (isScanning) "Listening for nearby Lumia mesh peers broadcasting on the network" else "Start the radar scan to discover nearby unpaired Lumia devices",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            BouncyButton(
-                                onClick = {
-                                    if (isScanning) syncManager.stopDiscovery() else syncManager.startDiscovery()
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    if (isScanning) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(if (isScanning) "Stop Radar" else "Start Radar Scan")
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 4. Discovered Nearby Devices Section
-            if (discoveredPeers.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "NEARBY DETECTED DEVICES (${discoveredPeers.size})",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 1.1.sp
-                    )
-                }
-
-                items(discoveredPeers, key = { it.id }) { peer ->
-                    val isTrusted = syncManager.isPeerTrusted(peer.id)
-                    ScholarCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = getDeviceIcon(peer.name),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(peer.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                                    if (isTrusted) {
-                                        Surface(
-                                            shape = RoundedCornerShape(4.dp),
-                                            color = MaterialTheme.colorScheme.primaryContainer
-                                        ) {
-                                            Text(
-                                                "Paired",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                                Text(
-                                    "${peer.ipAddress}:${peer.port}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontFamily = FontFamily.Monospace,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            BouncyButton(
-                                onClick = {
-                                    if (isTrusted) {
-                                        syncManager.connectToTrustedPeer(peer)
-                                    } else {
-                                        showPinDialogForPeer = peer
-                                    }
-                                }
-                            ) {
-                                Text(if (isTrusted) "1-Click Sync" else "Pair & Sync")
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 5. Settings / Preferences Section
-            item {
-                Text(
-                    text = "MESH PREFERENCES & CONTROLS",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    letterSpacing = 1.1.sp
-                )
-            }
-
-            item {
-                ScholarCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        // Background Auto-Sync
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.Sync,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Column {
-                                    Text("Background Auto-Sync", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
-                                    Text(
-                                        "Continuously syncs in background when paired devices connect to local Wi-Fi.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            Switch(
-                                checked = continuousAutoSync,
-                                onCheckedChange = { syncManager.setContinuousAutoSyncEnabled(it) }
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                        // Wi-Fi Only Toggle
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.Wifi,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Column {
-                                    Text("Wi-Fi Only Sync", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
-                                    Text(
-                                        "Restrict P2P sync traffic to unmetered local Wi-Fi or hotspot connections.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            Switch(
-                                checked = wifiOnlySync,
-                                onCheckedChange = {
-                                    wifiOnlySync = it
-                                    prefs.edit().putBoolean("wifi_only_sync", it).apply()
-                                }
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                        // Force Full Sync Button
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.Bolt,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.tertiary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Column {
-                                    Text("Force Full Mesh Sync", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
-                                    Text(
-                                        "Trigger an immediate bi-directional smart-merge with all active online mesh peers.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            BouncyOutlinedButton(
-                                onClick = {
-                                    syncManager.triggerAutoSyncToAllTrustedPeers()
-                                    Toast.makeText(context, "Triggered full sync with all online peers", Toast.LENGTH_SHORT).show()
-                                }
-                            ) {
-                                Icon(Icons.Rounded.SyncLock, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Sync All")
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 6. Sync History Log
-            if (syncHistory.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "FLEET SYNC ACTIVITY (${syncHistory.size})",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 1.1.sp
-                    )
-                }
-
-                items(syncHistory.take(5), key = { it.id }) { record ->
-                    ScholarCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(
-                                        if (record.isSuccess) Color(0xFF4CAF50).copy(alpha = 0.2f) else MaterialTheme.colorScheme.errorContainer,
-                                        CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = if (record.isSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Error,
-                                    contentDescription = null,
-                                    tint = if (record.isSuccess) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(record.peerDeviceName, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                                Text(record.summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Text(
-                                text = formatRelativeTime(record.timestamp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Modal Bottom Sheet for "Pair New Device"
-    if (showPairNewSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showPairNewSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-        ) {
-            PairNewDeviceBottomSheetContent(
-                pairingPin = pairingPin,
-                pairingToken = pairingToken,
-                discoveredPeers = discoveredPeers,
-                onRegeneratePin = { syncManager.regeneratePin() },
-                onShareToken = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText("Lumia Sync Token", pairingToken))
-                    Toast.makeText(context, "Pairing token copied to clipboard!", Toast.LENGTH_SHORT).show()
-                },
-                onCopyPin = { pinToCopy ->
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText("Lumia Pairing PIN", pinToCopy))
-                    Toast.makeText(context, "Pairing PIN ($pinToCopy) copied!", Toast.LENGTH_SHORT).show()
-                },
-                onPairDiscoveredPeer = { peer, pin, mode ->
-                    showPairNewSheet = false
-                    syncManager.connectToPeer(peer, pin, mode)
-                },
-                onPairToken = { token, mode ->
-                    showPairNewSheet = false
-                    syncManager.pairWithToken(token, mode)
-                },
-                onDirectConnect = { ip, port, pin, mode ->
-                    showPairNewSheet = false
-                    val peer = SyncDevice(id = "manual_$ip", name = "Manual Peer ($ip)", ipAddress = ip, port = port)
-                    syncManager.connectToPeer(peer, pin, mode)
-                }
-            )
-        }
-    }
-
-    // Modal Bottom Sheet for "Join / Create Passphrase Room"
-    if (showPassphraseSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showPassphraseSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-        ) {
-            PassphraseRoomBottomSheetContent(
-                activeRoom = activePassphraseRoom ?: "",
-                onJoinRoom = { newRoom ->
-                    syncManager.setPassphraseMeshRoom(newRoom)
-                    showPassphraseSheet = false
-                    Toast.makeText(context, "Joined Passphrase Room: $newRoom", Toast.LENGTH_SHORT).show()
-                },
-                onGenerateRandomRoom = {
-                    val generated = syncManager.generateAndSetNewPassphraseRoom()
-                    Toast.makeText(context, "Generated room: $generated", Toast.LENGTH_SHORT).show()
-                    generated
-                },
-                onLeaveRoom = {
-                    syncManager.setPassphraseMeshRoom(null)
-                    showPassphraseSheet = false
-                    Toast.makeText(context, "Disconnected from passphrase room.", Toast.LENGTH_SHORT).show()
-                },
-                onCopyText = { label, text ->
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
-                    Toast.makeText(context, "$label copied to clipboard!", Toast.LENGTH_SHORT).show()
-                },
-                onDismiss = { showPassphraseSheet = false }
-            )
-        }
-    }
-
-    // Active Sync Progress Modal
-    SyncProgressDialog(
-        syncState = syncState,
-        onDismiss = { syncManager.resetSyncState() }
-    )
-
-    // Unpair Confirmation Dialog
-    peerToUnpair?.let { peer ->
-        AlertDialog(
-            onDismissRequest = { peerToUnpair = null },
-            icon = { Icon(Icons.Rounded.LinkOff, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text("Unpair ${peer.deviceName}?") },
-            text = {
-                Text("Removing this device will revoke continuous synchronization and delete the stored Pre-Shared Key (PSK). You will need to perform a new 1-time handshake to sync again in the future.")
-            },
-            confirmButton = {
-                BouncyButton(
-                    onClick = {
-                        syncManager.removeTrustedPeer(peer.deviceId)
-                        peerToUnpair = null
-                        Toast.makeText(context, "Device unpaired successfully.", Toast.LENGTH_SHORT).show()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Unpair Device")
-                }
-            },
-            dismissButton = {
-                BouncyTextButton(onClick = { peerToUnpair = null }) { Text("Cancel") }
-            }
-        )
-    }
-
-    // Peer PIN Auth Dialog
-    showPinDialogForPeer?.let { peer ->
-        PeerPinAuthDialog(
-            peer = peer,
-            onDismiss = { showPinDialogForPeer = null },
-            onConnect = { pin, mode ->
-                showPinDialogForPeer = null
-                syncManager.connectToPeer(peer, pin, mode)
-            }
-        )
-    }
-
-    // Help Dialog
-    if (showHelpDialog) {
-        SyncHelpDialog(onDismiss = { showHelpDialog = false })
-    }
-}
-
-/**
- * Cockpit Header with Animated Live Beacon, Host Details, Connection Telemetry, and Outbox Status.
- */
-@ValueScore(
-    score = 95,
-    importance = Importance.HIGH,
-    description = "Animated live beacon radar header displaying connected mesh fleet status, outbox telemetry, and host daemon endpoint",
-    category = "UI"
-)
-@Composable
-private fun MeshCockpitHeader(
-    onlineCount: Int,
-    totalPaired: Int,
-    isScanning: Boolean,
-    isServerRunning: Boolean,
-    pendingOutboxCount: Int,
-    continuousAutoSync: Boolean,
-    isSyncing: Boolean,
-    syncManager: SyncManager,
-    onOpenPairSheet: () -> Unit
-) {
-    val context = LocalContext.current
-    val localDevice = remember(isServerRunning) { syncManager.getLocalDevice() }
-
-    val infiniteTransition = rememberInfiniteTransition(label = "BeaconAura")
-    val auraScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 2.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1600, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "AuraScale"
-    )
-    val auraAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.65f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1600, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "AuraAlpha"
-    )
-
-    val beaconColor = when {
-        onlineCount > 0 -> Color(0xFF4CAF50)
-        isScanning -> Color(0xFF00B0FF)
-        isServerRunning -> Color(0xFFFFA000)
-        else -> Color(0xFF9E9E9E)
-    }
-
-    val statusText = when {
-        onlineCount > 0 -> "Online Mesh Active • $onlineCount Connected"
-        isScanning -> "Radar Searching • Scanning Mesh"
-        isServerRunning -> "Local Wi-Fi Ready • Standby"
-        else -> "Mesh Standby • 0 Online"
-    }
-
-    ScholarCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // Live Status Pill
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(beaconColor.copy(alpha = 0.12f))
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(modifier = Modifier.size(16.dp), contentAlignment = Alignment.Center) {
-                        if (isServerRunning || isScanning) {
-                            Box(
-                                modifier = Modifier
-                                    .size(14.dp * auraScale)
-                                    .background(beaconColor.copy(alpha = auraAlpha), CircleShape)
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .size(9.dp)
-                                .background(beaconColor, CircleShape)
-                        )
-                    }
-                    Text(
-                        text = statusText,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = beaconColor
-                    )
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
-                ) {
-                    Text(
-                        text = "Zero-Cloud",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
-            }
-
-            // Cockpit Telemetry Grid (2x2)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Outbox status chip
-                Surface(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (pendingOutboxCount == 0) Icons.Rounded.DoneAll else Icons.Rounded.ScheduleSend,
-                            contentDescription = null,
-                            tint = if (pendingOutboxCount == 0) Color(0xFF4CAF50) else Color(0xFFFFA000),
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Column {
-                            Text(
-                                text = "OUTBOX",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = if (pendingOutboxCount == 0) "All Synced" else "$pendingOutboxCount Queued",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-
-                // Auto-Sync Status chip
-                Surface(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (continuousAutoSync) Icons.Rounded.Sync else Icons.Rounded.SyncDisabled,
-                            contentDescription = null,
-                            tint = if (continuousAutoSync) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Column {
-                            Text(
-                                text = "AUTO-SYNC",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = if (continuousAutoSync) "Continuous" else "Manual",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Local Host Info Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = getDeviceIcon(localDevice.name),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(
-                                text = localDevice.name,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                            ) {
-                                Text(
-                                    text = "This Device",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
-                                )
-                            }
-                        }
-                        Text(
-                            text = if (isServerRunning) "P2P Daemon Active • Port ${localDevice.port}" else "Starting Daemon...",
+                            text = "Native SCTP over DTLS transport",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                }
 
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.clickable {
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("Local Endpoint", "${localDevice.ipAddress}:${localDevice.port}"))
-                        Toast.makeText(context, "Host endpoint copied to clipboard!", Toast.LENGTH_SHORT).show()
+                    // Connection State Badge
+                    val (badgeText, badgeColor) = when (connectionState) {
+                        TransportConnectionState.CONNECTED -> "CONNECTED" to Color(0xFF34C759)
+                        TransportConnectionState.KEEP_ALIVE_ACTIVE -> "20s KEEP-ALIVE" to Color(0xFF34C759)
+                        TransportConnectionState.CGNAT_DISCOVERED -> "CGNAT MAPPED" to Color(0xFF007AFF)
+                        TransportConnectionState.CONNECTING, TransportConnectionState.SIGNOD_EXCHANGE -> "CONNECTING" to Color(0xFFFF9500)
+                        TransportConnectionState.GATHERING_ICE -> "GATHERING ICE" to Color(0xFFAF52DE)
+                        else -> "STANDBY" to MaterialTheme.colorScheme.onSurfaceVariant
                     }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = badgeColor.copy(alpha = 0.15f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, badgeColor.copy(alpha = 0.3f))
                     ) {
                         Text(
-                            text = "${localDevice.ipAddress}:${localDevice.port}",
+                            text = badgeText,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Icon(
-                            Icons.Rounded.ContentCopy,
-                            contentDescription = "Copy Endpoint",
-                            modifier = Modifier.size(12.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontWeight = FontWeight.Black,
+                            color = badgeColor
                         )
                     }
                 }
-            }
 
-            // Quick Actions in Cockpit
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                BouncyButton(
-                    onClick = {
-                        syncManager.triggerAutoSyncToAllTrustedPeers()
-                        Toast.makeText(context, "Synchronizing mesh fleet...", Toast.LENGTH_SHORT).show()
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        if (isSyncing) Icons.Rounded.Autorenew else Icons.Rounded.Sync,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(if (isSyncing) "Syncing..." else "Sync Fleet Now")
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Network Telemetry Matrix
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    TelemetryRow(label = "Local Host Endpoint", value = telemetry.localHostAddress ?: "Querying...")
+                    TelemetryRow(label = "Public srflx Endpoint (STUN)", value = telemetry.publicReflexiveAddress ?: "Traversing CGNAT...")
+                    TelemetryRow(label = "Remote Peer Endpoint", value = telemetry.remotePeerAddress ?: "None connected")
+                    TelemetryRow(label = "Selected ICE Type", value = telemetry.selectedIceCandidateType)
+                    TelemetryRow(label = "20s UDP Keep-Alive Interval", value = "${telemetry.keepAliveIntervalSeconds}s (Active)")
                 }
 
-                BouncyOutlinedButton(
-                    onClick = onOpenPairSheet,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Rounded.QrCode, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Pair Device")
-                }
-            }
-        }
-    }
-}
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+                Spacer(modifier = Modifier.height(16.dp))
 
-/**
- * Paired Device Fleet Card Item with Crisp Online/Offline Badges, Relative Timestamps, and Instant Sync.
- */
-@ValueScore(
-    score = 94,
-    importance = Importance.HIGH,
-    description = "Fleet device card rendering paired peer status, 1-click instant sync action, relative timestamps, and auto-sync toggles",
-    category = "UI"
-)
-@Composable
-private fun PairedDeviceFleetCard(
-    peer: TrustedPeer,
-    isOnline: Boolean,
-    onSyncNow: () -> Unit,
-    onToggleAutoSync: (Boolean) -> Unit,
-    onRemove: () -> Unit
-) {
-    ScholarCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(
-                                if (isOnline) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                                CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = getDeviceIcon(peer.deviceName),
-                            contentDescription = null,
-                            tint = if (isOnline) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(peer.deviceName, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = if (isOnline) Color(0xFF4CAF50).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(6.dp)
-                                            .background(if (isOnline) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), CircleShape)
-                                    )
-                                    Text(
-                                        text = if (isOnline) "Online" else "Offline",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = if (isOnline) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                Icons.Rounded.Schedule,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = if (peer.lastSyncAt > 0) "Last synced ${formatRelativeTime(peer.lastSyncAt)}" else "Never synced yet",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                // 1-Click Instant Sync Button
-                BouncyButton(
-                    onClick = onSyncNow,
-                    enabled = isOnline
-                ) {
-                    Icon(Icons.Rounded.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Sync Now")
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
-            // Controls Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Switch(
-                        checked = peer.autoSyncEnabled,
-                        onCheckedChange = onToggleAutoSync,
-                        modifier = Modifier.size(width = 44.dp, height = 24.dp)
-                    )
-                    Text("Auto-Sync on Connect", style = MaterialTheme.typography.labelMedium)
-                }
-
-                BouncyTextButton(
-                    onClick = onRemove,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Unpair", style = MaterialTheme.typography.labelMedium)
-                }
-            }
-        }
-    }
-}
-
-/**
- * Frictionless Modal Bottom Sheet Content for Pairing New Devices with Segmented PIN and High-Contrast QR.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PairNewDeviceBottomSheetContent(
-    pairingPin: String,
-    pairingToken: String,
-    discoveredPeers: List<SyncDevice>,
-    onRegeneratePin: () -> Unit,
-    onShareToken: () -> Unit,
-    onCopyPin: (String) -> Unit,
-    onPairDiscoveredPeer: (SyncDevice, String, SyncMode) -> Unit,
-    onPairToken: (String, SyncMode) -> Unit,
-    onDirectConnect: (String, Int, String, SyncMode) -> Unit
-) {
-    var tabIndex by remember { mutableIntStateOf(0) } // 0: My QR & PIN, 1: Enter Peer PIN, 2: Direct IP
-    var inputPin by remember { mutableStateOf("") }
-    var rawTokenInput by remember { mutableStateOf("") }
-    var selectedPeerId by remember { mutableStateOf<String?>(discoveredPeers.firstOrNull()?.id) }
-    var manualIp by remember { mutableStateOf("") }
-    var manualPort by remember { mutableStateOf("52934") }
-    var syncMode by remember { mutableStateOf(SyncMode.SMART_MERGE) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .padding(bottom = 36.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Pair New Device",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primaryContainer) {
-                Text(
-                    text = "1-Time Handshake",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
-        }
-
-        PrimaryTabRow(selectedTabIndex = tabIndex) {
-            Tab(selected = tabIndex == 0, onClick = { tabIndex = 0 }, text = { Text("My QR & PIN") }, icon = { Icon(Icons.Rounded.QrCode, contentDescription = null) })
-            Tab(selected = tabIndex == 1, onClick = { tabIndex = 1 }, text = { Text("Enter PIN") }, icon = { Icon(Icons.Rounded.Key, contentDescription = null) })
-            Tab(selected = tabIndex == 2, onClick = { tabIndex = 2 }, text = { Text("Direct IP") }, icon = { Icon(Icons.Rounded.Cable, contentDescription = null) })
-        }
-
-        when (tabIndex) {
-            0 -> {
-                // Host QR Code & PIN Display
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text(
-                        "Scan this QR code from Lumia on your second device to establish permanent mutual trust:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-
-                    // High-Contrast QR Code Card
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color.White,
-                        shadowElevation = 2.dp,
-                        modifier = Modifier.size(220.dp)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize().padding(12.dp)) {
-                            QrCodeCanvas(
-                                content = pairingToken,
-                                darkColor = Color.Black,
-                                lightColor = Color.White
-                            )
-                        }
-                    }
-
-                    // PIN Container
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                "ONE-TIME PAIRING PIN",
-                                style = MaterialTheme.typography.labelSmall,
-                                letterSpacing = 1.2.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = "${pairingPin.take(3)}  ${pairingPin.takeLast(3)}",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Black,
-                                fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Spacer(Modifier.height(10.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                BouncyButton(
-                                    onClick = { onCopyPin(pairingPin) },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Copy PIN")
-                                }
-                                Spacer(Modifier.width(8.dp))
-                                BouncyOutlinedButton(
-                                    onClick = onShareToken,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Copy Token")
-                                }
-                                Spacer(Modifier.width(8.dp))
-                                BouncyIconButton(onClick = onRegeneratePin) {
-                                    Icon(Icons.Rounded.Refresh, contentDescription = "Regenerate PIN")
-                                }
-                            }
-                        }
-                    }
-
-                    Text(
-                        "Zero-Trust E2EE • Cryptographic PSK stored on-device only",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            1 -> {
-                // Client PIN Input for Discovered or Target Peer
-                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text(
-                        "Enter the 6-digit security PIN displayed on the other device's screen:",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    // Frictionless Segmented 6-Digit PIN Box Input
-                    PinCodeInputView(
-                        pin = inputPin,
-                        onPinChange = { inputPin = it },
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-
-                    if (discoveredPeers.isNotEmpty()) {
-                        Text("Select Target Discovered Device:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                        discoveredPeers.forEach { peer ->
-                            val isSelected = selectedPeerId == peer.id
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { selectedPeerId = peer.id }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = getDeviceIcon(peer.name),
-                                            contentDescription = null,
-                                            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Column {
-                                            Text(peer.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                                            Text("${peer.ipAddress}:${peer.port}", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
-                                        }
-                                    }
-                                    if (isSelected) {
-                                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Text("Sync Strategy Mode:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FilterChip(
-                            selected = syncMode == SyncMode.SMART_MERGE,
-                            onClick = { syncMode = SyncMode.SMART_MERGE },
-                            label = { Text("Smart Merge") }
-                        )
-                        FilterChip(
-                            selected = syncMode == SyncMode.PUSH_TO_PEER,
-                            onClick = { syncMode = SyncMode.PUSH_TO_PEER },
-                            label = { Text("Push to Peer") }
-                        )
-                        FilterChip(
-                            selected = syncMode == SyncMode.PULL_FROM_PEER,
-                            onClick = { syncMode = SyncMode.PULL_FROM_PEER },
-                            label = { Text("Pull from Peer") }
-                        )
-                    }
-
-                    BouncyButton(
-                        onClick = {
-                            val targetPeer = discoveredPeers.find { it.id == selectedPeerId } ?: discoveredPeers.firstOrNull()
-                            if (targetPeer != null && inputPin.length >= 4) {
-                                onPairDiscoveredPeer(targetPeer, inputPin, syncMode)
-                            }
-                        },
-                        enabled = inputPin.length >= 4 && (selectedPeerId != null || discoveredPeers.isNotEmpty()),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Pair & Establish Trust")
-                    }
-                }
-            }
-            2 -> {
-                // Direct IP & Token Input
-                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Paste Token String:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    OutlinedTextField(
-                        value = rawTokenInput,
-                        onValueChange = { rawTokenInput = it },
-                        label = { Text("Base64 Pairing Token") },
-                        maxLines = 3,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    BouncyButton(
-                        onClick = { if (rawTokenInput.isNotBlank()) onPairToken(rawTokenInput, syncMode) },
-                        enabled = rawTokenInput.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Authenticate Token")
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                    Text("Or Direct IP Connect:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    OutlinedTextField(
-                        value = manualIp,
-                        onValueChange = { manualIp = it },
-                        label = { Text("Peer IP Address") },
-                        placeholder = { Text("e.g. 192.168.1.50") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = manualPort,
-                        onValueChange = { manualPort = it },
-                        label = { Text("Port") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Text("Device PIN for Direct IP:")
-                    PinCodeInputView(
-                        pin = inputPin,
-                        onPinChange = { inputPin = it }
-                    )
-
-                    BouncyOutlinedButton(
-                        onClick = {
-                            val port = manualPort.toIntOrNull() ?: 52934
-                            if (manualIp.isNotBlank() && inputPin.isNotBlank()) {
-                                onDirectConnect(manualIp, port, inputPin, syncMode)
-                            }
-                        },
-                        enabled = manualIp.isNotBlank() && inputPin.length >= 4,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Connect by IP")
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Frictionless Segmented 6-Digit PIN Code Input View with auto-focus and tactile box styling.
- */
-@Composable
-fun PinCodeInputView(
-    pin: String,
-    onPinChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    pinLength: Int = 6,
-    isError: Boolean = false
-) {
-    val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    LaunchedEffect(Unit) {
-        delay(200)
-        focusRequester.requestFocus()
-        keyboardController?.show()
-    }
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable {
-                focusRequester.requestFocus()
-                keyboardController?.show()
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        // Hidden BasicTextField driving numeric input
-        BasicTextField(
-            value = pin,
-            onValueChange = { newValue ->
-                val filtered = newValue.filter { it.isDigit() }.take(pinLength)
-                onPinChange(filtered)
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.NumberPassword,
-                imeAction = ImeAction.Done
-            ),
-            modifier = Modifier
-                .size(1.dp)
-                .alpha(0f)
-                .focusRequester(focusRequester)
-        )
-
-        // Visual 6-digit boxes
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            for (i in 0 until pinLength) {
-                val isFocused = pin.length == i || (i == pinLength - 1 && pin.length == pinLength)
-                val digit = pin.getOrNull(i)?.toString() ?: ""
-                val boxBorderColor = when {
-                    isError -> MaterialTheme.colorScheme.error
-                    isFocused -> MaterialTheme.colorScheme.primary
-                    digit.isNotEmpty() -> MaterialTheme.colorScheme.outline
-                    else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                }
-
-                Surface(
-                    modifier = Modifier.size(46.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isFocused) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                    border = BorderStroke(if (isFocused) 2.dp else 1.dp, boxBorderColor)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = digit,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Peer PIN Auth Dialog with Segmented 6-digit PIN entry.
- */
-@Composable
-private fun PeerPinAuthDialog(
-    peer: SyncDevice,
-    onDismiss: () -> Unit,
-    onConnect: (String, SyncMode) -> Unit
-) {
-    var pin by remember { mutableStateOf("") }
-    var syncMode by remember { mutableStateOf(SyncMode.SMART_MERGE) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("1-Time Pair with ${peer.name}") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    "Enter the 6-digit security PIN displayed on ${peer.name}'s screen. Once paired, mutual PSKs are stored and future syncs are 100% automatic:",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                PinCodeInputView(
-                    pin = pin,
-                    onPinChange = { pin = it }
-                )
-
-                Text("Sync Mode:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FilterChip(
-                        selected = syncMode == SyncMode.SMART_MERGE,
-                        onClick = { syncMode = SyncMode.SMART_MERGE },
-                        label = { Text("Smart Merge") }
-                    )
-                    FilterChip(
-                        selected = syncMode == SyncMode.PUSH_TO_PEER,
-                        onClick = { syncMode = SyncMode.PUSH_TO_PEER },
-                        label = { Text("Push") }
-                    )
-                    FilterChip(
-                        selected = syncMode == SyncMode.PULL_FROM_PEER,
-                        onClick = { syncMode = SyncMode.PULL_FROM_PEER },
-                        label = { Text("Pull") }
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            BouncyButton(
-                onClick = { if (pin.length >= 4) onConnect(pin, syncMode) },
-                enabled = pin.length >= 4
-            ) {
-                Text("Pair & Start Sync")
-            }
-        },
-        dismissButton = {
-            BouncyTextButton(onClick = onDismiss) { Text("Cancel") }
-        }
-    )
-}
-
-/**
- * Sync Architecture & Help Dialog.
- */
-@Composable
-private fun SyncHelpDialog(onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("About Live Mesh Sync") },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    "Lumia Multi-Device Sync allows you to synchronize your courses, tasks, subjects, notes, and pomodoro sessions directly between phones and tablets without sending any data to third-party cloud servers.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(Modifier.height(6.dp))
-                Text("1-Time Handshake & Permanent Trust:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                Text("Pair two devices once via QR code or 6-digit PIN. Both devices securely derive and store a cryptographic Pre-Shared Key (PSK). After this initial pairing, subsequent syncs occur automatically and silently with zero PIN entry.", style = MaterialTheme.typography.bodySmall)
-
-                Spacer(Modifier.height(6.dp))
-                Text("End-to-End Encryption:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                Text("All sync payloads are protected with AES-256-GCM encryption with keys derived from zero-trust HMAC challenge-response.", style = MaterialTheme.typography.bodySmall)
-
-                Spacer(Modifier.height(6.dp))
-                Text("Smart Data Merge:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                Text("Combines datasets without deleting existing records. Tasks and assignments maintain their latest completion state.", style = MaterialTheme.typography.bodySmall)
-
-                Spacer(Modifier.height(6.dp))
-                Text("Local Peer Discovery:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                Text("Uses local mDNS / NSD over Wi-Fi, Ethernet, or mobile hotspot for instant peer detection.", style = MaterialTheme.typography.bodySmall)
-            }
-        },
-        confirmButton = {
-            BouncyButton(onClick = onDismiss) { Text("Got it") }
-        }
-    )
-}
-
-private fun getDeviceIcon(name: String): ImageVector {
-    val lower = name.lowercase()
-    return when {
-        lower.contains("tab") || lower.contains("pad") -> Icons.Rounded.TabletAndroid
-        lower.contains("pc") || lower.contains("mac") || lower.contains("laptop") || lower.contains("desktop") -> Icons.Rounded.Laptop
-        else -> Icons.Rounded.PhoneAndroid
-    }
-}
-
-private fun formatTimestamp(timeMillis: Long): String {
-    val date = java.util.Date(timeMillis)
-    val sdf = java.text.SimpleDateFormat("MMM dd, HH:mm", java.util.Locale.getDefault())
-    return sdf.format(date)
-}
-
-private fun formatRelativeTime(timeMillis: Long): String {
-    val diff = System.currentTimeMillis() - timeMillis
-    return when {
-        diff < 60_000 -> "just now"
-        diff < 3600_000 -> "${diff / 60_000}m ago"
-        diff < 86400_000 -> "${diff / 3600_000}h ago"
-        else -> "${diff / 86400_000}d ago"
-    }
-}
-
-/**
- * Passphrase Relay Mesh Room Cockpit Card.
- */
-@ValueScore(
-    score = 96,
-    importance = Importance.HIGH,
-    description = "Passphrase Relay Mesh room card displaying active room badge, E2EE zero-cloud relay indicator, connected peers, and 1-tap actions",
-    category = "UI"
-)
-@Composable
-private fun PassphraseMeshRoomCard(
-    activeRoom: String,
-    onlinePeersCount: Int,
-    isSyncing: Boolean,
-    onOpenRoomSheet: () -> Unit,
-    onSyncNow: () -> Unit,
-    onCopyPassphrase: (String) -> Unit,
-    onLeaveRoom: () -> Unit
-) {
-    val hasActiveRoom = activeRoom.isNotBlank()
-
-    ScholarCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // Top Row: Title + E2EE Indicator Badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+                // Bandwidth & Packets Counter
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .background(
-                                if (hasActiveRoom) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                                CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (hasActiveRoom) Icons.Rounded.Hub else Icons.Rounded.VpnKey,
-                            contentDescription = null,
-                            tint = if (hasActiveRoom) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = "Passphrase Relay Mesh",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = if (hasActiveRoom) "E2EE Room Connected" else "Zero-Cloud Relay Standby",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                // E2EE Zero-Cloud Relay Indicator Pill
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (hasActiveRoom) Color(0xFF4CAF50).copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Security,
-                            contentDescription = null,
-                            tint = if (hasActiveRoom) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            text = "E2EE Relay",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = if (hasActiveRoom) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            // Room Badge Container
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = if (hasActiveRoom) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                border = BorderStroke(
-                    1.dp,
-                    if (hasActiveRoom) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(
-                                        if (hasActiveRoom) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                        CircleShape
-                                    )
-                            )
-                            Text(
-                                text = if (hasActiveRoom) "ACTIVE ROOM" else "STATUS",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontSize = 9.sp,
-                                letterSpacing = 1.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (hasActiveRoom) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        if (hasActiveRoom) {
-                            Text(
-                                text = if (onlinePeersCount > 0) "$onlinePeersCount Peer${if (onlinePeersCount > 1) "s" else ""} Online" else "Relay Active (0 Peers)",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = if (onlinePeersCount > 0) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    if (hasActiveRoom) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = activeRoom,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            BouncyIconButton(
-                                onClick = { onCopyPassphrase(activeRoom) },
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.ContentCopy,
-                                    contentDescription = "Copy Passphrase",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    } else {
-                        Text(
-                            text = "No Passphrase Room Joined",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "Join or create a room to sync with devices across mobile data or remote Wi-Fi.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                        )
-                    }
-                }
-            }
-
-            // Actions Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Action 1: Join / Change Room
-                BouncyButton(
-                    onClick = onOpenRoomSheet,
-                    modifier = Modifier.weight(1.2f)
-                ) {
-                    Icon(
-                        imageVector = if (hasActiveRoom) Icons.Rounded.Edit else Icons.Rounded.AddLink,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(if (hasActiveRoom) "Change Room" else "Join Room")
-                }
-
-                // Action 2: Sync Room Now
-                BouncyOutlinedButton(
-                    onClick = onSyncNow,
-                    modifier = Modifier.weight(1.1f),
-                    enabled = hasActiveRoom
-                ) {
-                    Icon(
-                        imageVector = if (isSyncing) Icons.Rounded.Autorenew else Icons.Rounded.Sync,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(if (isSyncing) "Syncing..." else "Sync Room")
-                }
-
-                // Action 3: 1-Tap Copy / Share
-                if (hasActiveRoom) {
-                    BouncyIconButton(
-                        onClick = { onCopyPassphrase(activeRoom) },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Share,
-                            contentDescription = "Share Room",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                    MetricCounter(label = "Packets Sent", value = telemetry.packetsSent.toString())
+                    MetricCounter(label = "Packets Recv", value = telemetry.packetsReceived.toString())
+                    MetricCounter(label = "Bytes In", value = formatBytes(telemetry.bytesReceived))
+                    MetricCounter(label = "Bytes Out", value = formatBytes(telemetry.bytesSent))
                 }
             }
         }
-    }
-}
 
-/**
- * Join / Create Passphrase Room Modal Bottom Sheet Content.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PassphraseRoomBottomSheetContent(
-    activeRoom: String,
-    onJoinRoom: (String) -> Unit,
-    onGenerateRandomRoom: () -> String,
-    onLeaveRoom: () -> Unit,
-    onCopyText: (String, String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    var tabIndex by remember { mutableIntStateOf(0) } // 0: Enter or Generate, 1: Share via QR
-    var passphraseInput by remember { mutableStateOf(activeRoom) }
-    val keyboardController = LocalSoftwareKeyboardController.current
+        Spacer(modifier = Modifier.height(16.dp))
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .padding(bottom = 36.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Sheet Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
+        // Connection Action Card
+        ScholarCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "Passphrase Relay Mesh",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = "Stateless Pairing & Signaling",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Zero-Cloud E2EE Sync Room",
+                    text = "Establish a zero-trust WebRTC connection without database or centralized coordination",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
 
-            Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(Icons.Rounded.Lock, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.primary)
+                    BouncyButton(
+                        onClick = onInitiatePairing,
+                        modifier = Modifier.weight(1.2f),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Rounded.QrCode, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Pair via QR / Token", fontWeight = FontWeight.Bold)
+                    }
+
+                    OutlinedButton(
+                        onClick = onRestartTransport,
+                        modifier = Modifier.weight(0.8f),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Reset")
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Foreground Service & Keep-Alives Toggle Card
+        ScholarCard(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
                     Text(
-                        text = "AES-256-GCM",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        text = "Persistent 20s Keep-Alives",
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                }
-            }
-        }
-
-        // Primary Tab Row
-        PrimaryTabRow(selectedTabIndex = tabIndex) {
-            Tab(
-                selected = tabIndex == 0,
-                onClick = { tabIndex = 0 },
-                text = { Text("Enter / Generate") },
-                icon = { Icon(Icons.Rounded.Key, contentDescription = null) }
-            )
-            Tab(
-                selected = tabIndex == 1,
-                onClick = { tabIndex = 1 },
-                text = { Text("Share via QR") },
-                icon = { Icon(Icons.Rounded.QrCode2, contentDescription = null) }
-            )
-        }
-
-        when (tabIndex) {
-            0 -> {
-                // Tab 1: Enter or Generate Passphrase
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
                     Text(
-                        text = "Enter a shared secret passphrase or generate a random one to connect devices across any network:",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Maintains UDP NAT port bindings in background via Android Foreground Service and partial WakeLock.",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    // Text field with Paste & Clear actions
-                    OutlinedTextField(
-                        value = passphraseInput,
-                        onValueChange = { passphraseInput = it.lowercase().replace(" ", "-") },
-                        label = { Text("Passphrase Room Key") },
-                        placeholder = { Text("e.g. zen-falcon-atlas-88") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        leadingIcon = {
-                            Icon(
-                                Icons.Rounded.VpnKey,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        trailingIcon = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(end = 4.dp)
-                            ) {
-                                if (passphraseInput.isNotBlank()) {
-                                    IconButton(onClick = { passphraseInput = "" }) {
-                                        Icon(Icons.Rounded.Close, contentDescription = "Clear")
-                                    }
-                                }
-                                IconButton(
-                                    onClick = {
-                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                        val clipText = clipboard.primaryClip?.getItemAt(0)?.text?.toString()?.trim()
-                                        if (!clipText.isNullOrBlank()) {
-                                            // Handle if pasted string is a URI like lumia-sync://mesh?passphrase=...
-                                            val extracted = if (clipText.contains("passphrase=")) {
-                                                clipText.substringAfter("passphrase=").substringBefore("&")
-                                            } else {
-                                                clipText
-                                            }
-                                            passphraseInput = extracted.lowercase().replace(" ", "-")
-                                            Toast.makeText(context, "Pasted from clipboard", Toast.LENGTH_SHORT).show()
-                                        } else {
-                                            Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                ) {
-                                    Icon(Icons.Rounded.ContentPaste, contentDescription = "Paste from Clipboard", tint = MaterialTheme.colorScheme.primary)
-                                }
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            imeAction = ImeAction.Done
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // Generate Random Passphrase Button
-                    BouncyOutlinedButton(
-                        onClick = {
-                            val generated = onGenerateRandomRoom()
-                            passphraseInput = generated
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Generate Random Passphrase")
-                    }
-
-                    Spacer(Modifier.height(4.dp))
-
-                    // 1-Tap Join Mesh Room Button
-                    BouncyButton(
-                        onClick = {
-                            if (passphraseInput.isNotBlank()) {
-                                keyboardController?.hide()
-                                onJoinRoom(passphraseInput.trim())
-                            }
-                        },
-                        enabled = passphraseInput.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.Hub, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            if (passphraseInput.trim() == activeRoom && activeRoom.isNotBlank()) "Room Active • Re-Sync Now"
-                            else "Join Mesh Room"
-                        )
-                    }
-
-                    // Leave Room option if active
-                    if (activeRoom.isNotBlank()) {
-                        BouncyTextButton(
-                            onClick = {
-                                onLeaveRoom()
-                                passphraseInput = ""
-                            },
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        ) {
-                            Icon(Icons.Rounded.LinkOff, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("Disconnect from Current Room")
-                        }
-                    }
-
-                    // Explanatory footnote
-                    Text(
-                        text = "Zero-Cloud Relay: All payloads are encrypted client-side with AES-256-GCM. The relay server routes blinded packets and cannot read your data.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
                 }
+
+                Switch(
+                    checked = isFgServiceActive,
+                    onCheckedChange = onToggleFgService
+                )
             }
-            1 -> {
-                // Tab 2: Share via QR Code
-                val targetPassphrase = passphraseInput.trim().ifBlank { activeRoom.trim() }
-                val shareUri = if (targetPassphrase.isNotBlank()) "lumia-sync://mesh?passphrase=$targetPassphrase" else ""
+        }
+    }
+}
 
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    if (targetPassphrase.isNotBlank()) {
-                        Text(
-                            text = "Scan this QR code from Lumia on another device to instantly join this encrypted mesh room:",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
+// =========================================================================
+// TAB 1: Automerge CRDT Document Studio
+// =========================================================================
+
+@Composable
+private fun CrdtDocumentTab(
+    snapshot: lumia.tracker.sync.crdt.CrdtDocumentSnapshot,
+    vectorClock: lumia.tracker.sync.crdt.VectorClock,
+    reconciliation: VectorReconciliationOrchestrator.ReconciliationTelemetry,
+    inputPath: String,
+    onPathChange: (String) -> Unit,
+    inputKey: String,
+    onKeyChange: (String) -> Unit,
+    inputValue: String,
+    onValueChange: (String) -> Unit,
+    onApplyMutation: () -> Unit,
+    onTriggerReconciliation: () -> Unit
+) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+
+        // Explainer Banner
+        ScholarCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Rounded.AccountTree,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
                         )
-
-                        // High-Contrast Crisp QR Code Card
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color.White,
-                            shadowElevation = 2.dp,
-                            modifier = Modifier.size(220.dp)
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize().padding(12.dp)) {
-                                QrCodeCanvas(
-                                    content = shareUri,
-                                    darkColor = Color.Black,
-                                    lightColor = Color.White
-                                )
-                            }
-                        }
-
-                        // Monospace Passphrase Pill
-                        Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(12.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "ROOM PASSPHRASE",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    text = targetPassphrase,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = FontFamily.Monospace,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        }
-
-                        // 1-Tap Copy Link & Copy Passphrase Buttons
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            BouncyButton(
-                                onClick = { onCopyText("Lumia Mesh Link", shareUri) },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(Icons.Rounded.Link, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Copy Link")
-                            }
-
-                            BouncyOutlinedButton(
-                                onClick = { onCopyText("Lumia Passphrase", targetPassphrase) },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Copy Key")
-                            }
-                        }
-
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
                         Text(
-                            text = "URI Scheme: lumia-sync://mesh?passphrase=...",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        // Empty state when no passphrase entered
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.QrCodeScanner,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-                        Text(
-                            text = "No Passphrase Available",
+                            text = "Database-Free Automerge CRDT",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Enter or generate a passphrase in the first tab to view and share its QR code.",
+                            text = "Communicating solely via ByteArray Kotlin flows",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        BouncyButton(onClick = {
-                            val gen = onGenerateRandomRoom()
-                            passphraseInput = gen
-                            tabIndex = 0
-                        }) {
-                            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("Generate Passphrase")
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "State is tracked purely in memory with Lamport total ordering, causality vector clocks, and Last-Write-Wins (LWW). Zero SQLite or Room database queries.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 18.sp
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Anti-Entropy Vector Reconciliation Status Card
+        ScholarCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Anti-Entropy Reconciliation",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    val (reconText, reconColor) = when (reconciliation.status) {
+                        VectorReconciliationOrchestrator.ReconciliationStatus.CONVERGED -> "CONVERGED" to Color(0xFF34C759)
+                        VectorReconciliationOrchestrator.ReconciliationStatus.RECONCILING -> "RECONCILING" to Color(0xFF007AFF)
+                        VectorReconciliationOrchestrator.ReconciliationStatus.PARTITION_DETECTED -> "PARTITION ACTIVE" to Color(0xFFFF9500)
+                        else -> "IDLE" to MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = reconColor.copy(alpha = 0.15f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, reconColor.copy(alpha = 0.3f))
+                    ) {
+                        Text(
+                            text = reconText,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Black,
+                            color = reconColor
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    MetricCounter(label = "Total Ops", value = snapshot.totalOpsCount.toString())
+                    MetricCounter(label = "Lamport Clock", value = snapshot.maxLamportClock.toString())
+                    MetricCounter(label = "Reconciled Ops", value = reconciliation.totalOpsReconciled.toString())
+                    MetricCounter(label = "Partitions", value = reconciliation.totalPartitionsResolved.toString())
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedButton(
+                    onClick = onTriggerReconciliation,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Rounded.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Trigger Anti-Entropy Reconciliation")
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Interactive Mutation Sandbox Card
+        ScholarCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = "CRDT Mutation Sandbox",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Apply local mutations to test real-time ByteArray flow broadcasting",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedTextField(
+                    value = inputPath,
+                    onValueChange = onPathChange,
+                    label = { Text("Object Path") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = inputKey,
+                        onValueChange = onKeyChange,
+                        label = { Text("Field Key") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    OutlinedTextField(
+                        value = inputValue,
+                        onValueChange = onValueChange,
+                        label = { Text("Value") },
+                        modifier = Modifier.weight(1.3f),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                BouncyButton(
+                    onClick = onApplyMutation,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Apply CRDT Mutation", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Live Document Tree Inspector Card
+        ScholarCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = "Live In-Memory Document Tree",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Materialized hierarchical view of the conflict-free state",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        if (snapshot.documentData.isEmpty()) {
+                            Text(
+                                text = "{ } (Empty CRDT Document)",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            RenderDocumentMap(snapshot.documentData, indent = 0)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Active Vector Clock Matrix:",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                if (vectorClock.clockMap.isEmpty()) {
+                    Text(
+                        text = "Vector clock is unseeded",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    vectorClock.clockMap.forEach { (actor, seq) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Replica: ${actor.take(8)}...",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Text(
+                                text = "Seq: $seq",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+// =========================================================================
+// TAB 2: Hardware Identity & SAS MITM Verification
+// =========================================================================
+
+@Composable
+private fun SecurityIdentityTab(
+    identityManager: lumia.tracker.sync.security.KeyStoreIdentityManager,
+    onUnpinPeer: (String) -> Unit
+) {
+    val pinnedPeers = remember { identityManager.getPinnedPeers() }
+
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+
+        // Local Device Hardware Identity Card
+        ScholarCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Rounded.Shield,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Hardware KeyStore Identity",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (identityManager.isHardwareBacked) "TEE / StrongBox Enclave Protected" else "Software Fallback Enclave",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (identityManager.isHardwareBacked) Color(0xFF34C759) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    TelemetryRow(label = "Device Fingerprint", value = identityManager.deviceFingerprint)
+                    TelemetryRow(label = "Algorithm", value = "EC secp256r1 (SHA256withECDSA)")
+                    TelemetryRow(label = "Key Agreement", value = "ECDH + HKDF (RFC 5869)")
+                    TelemetryRow(label = "Frame Encryption", value = "AES-256-GCM (128-bit Tag)")
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Pinned Trusted Peers Card
+        ScholarCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = "Pinned Trusted Peers",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Devices verified via HKDF Short Authentication String (SAS)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                if (pinnedPeers.isEmpty()) {
+                    Text(
+                        text = "No pinned peers yet. Connect and verify SAS to establish zero-trust pairing.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    pinnedPeers.forEach { peer ->
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(12.dp)
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = peer.customAlias,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "FP: ${peer.fingerprint}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+
+                                IconButton(onClick = { onUnpinPeer(peer.fingerprint) }) {
+                                    Icon(
+                                        Icons.Rounded.DeleteOutline,
+                                        contentDescription = "Unpin peer",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// =========================================================================
+// Helper Composable Components
+// =========================================================================
+
+@Composable
+private fun TelemetryRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace
+        )
+    }
+}
+
+@Composable
+private fun MetricCounter(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun RenderDocumentMap(map: Map<String, Any?>, indent: Int) {
+    val indentSpace = "  ".repeat(indent)
+    map.forEach { (k, v) ->
+        if (v is Map<*, *>) {
+            Text(
+                text = "$indentSpace$k: {",
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold
+            )
+            @Suppress("UNCHECKED_CAST")
+            RenderDocumentMap(v as Map<String, Any?>, indent + 1)
+            Text(
+                text = "$indentSpace}",
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace
+            )
+        } else {
+            Text(
+                text = "$indentSpace$k: \"$v\"",
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+private fun formatBytes(bytes: Long): String {
+    return when {
+        bytes >= 1024 * 1024 -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
+        bytes >= 1024 -> "%.1f KB".format(bytes / 1024.0)
+        else -> "$bytes B"
     }
 }

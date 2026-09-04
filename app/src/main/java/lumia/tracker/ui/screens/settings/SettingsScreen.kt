@@ -360,8 +360,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 icon = Icons.Rounded.Storage
             ) {
                 SettingsActionItemInCard(
-                    title = "Multi-Device P2P Sync",
-                    subtitle = "Local device synchronization",
+                    title = "Zero-Trust P2P Sync",
+                    subtitle = "WebRTC DataChannel & Automerge CRDT",
                     icon = Icons.Rounded.Sync,
                     iconBgColor = Color(0xFFAF52DE),
                     onClick = { navController.navigate("settings/sync") }
