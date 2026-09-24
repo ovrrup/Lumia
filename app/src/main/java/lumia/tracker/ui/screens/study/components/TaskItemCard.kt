@@ -128,11 +128,11 @@ fun TaskItemCard(
                             else -> Triple("Low", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = CircleShape,
                             color = pBg
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
@@ -201,7 +201,7 @@ fun TaskItemCard(
                         task.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { tag ->
                             val colors = getTagColors(tag)
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = CircleShape,
                                 color = colors.first
                             ) {
                                 Text(
@@ -209,7 +209,7 @@ fun TaskItemCard(
                                     style = MaterialTheme.typography.labelSmall,
                                     color = colors.second,
                                     fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                 )
                             }
                         }

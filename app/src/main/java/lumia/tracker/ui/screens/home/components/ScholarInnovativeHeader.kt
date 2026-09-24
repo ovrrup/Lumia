@@ -35,14 +35,14 @@ import lumia.tracker.viewmodel.ScholarViewModel
 import java.util.Locale
 
 /**
- * ScholarInnovativeHeader - Dynamic Island & Action Capsule Bar.
- * Unifies context-aware tab title/search capsule, responsive Focus pill with live countdown,
- * streak widget, and iOS avatar capsule in uniform 42dp height.
+ * ScholarInnovativeHeader - Modern Glassmorphic Action Capsule Header.
+ * Unifies minimalist tab title, responsive Focus live pill, streak widget,
+ * search circular capsule button, and profile avatar in sleek capsule design.
  */
 @ValueScore(
     score = 96,
     importance = Importance.CRITICAL,
-    description = "Dynamic Island inspired action capsule header unifying tab-aware search capsule, focus pill, streak widget, and profile avatar with 42dp uniform capsule height",
+    description = "Modern glassmorphic capsule header unifying minimalist tab title, live focus pill, streak widget, and profile avatar",
     category = "Navigation"
 )
 @Composable
@@ -63,56 +63,37 @@ fun ScholarInnovativeHeader(
         else -> "Home"
     }
 
-    val tabSubtitle = when (selectedTab) {
-        0 -> if (activeProfile.alias.isNotBlank()) "Welcome, ${activeProfile.alias}" else "Today's Overview"
-        1 -> "Courses and Subjects"
-        2 -> "To-Do List"
-        3 -> "Focus Time & Finished Tasks"
-        else -> ""
-    }
-
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.background,
+        color = MaterialTheme.colorScheme.background.copy(alpha = 0.82f),
+        border = BorderStroke(
+            0.5.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+        ),
         tonalElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .padding(horizontal = 20.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                AnimatedContent(
-                    targetState = tabTitle,
-                    transitionSpec = {
-                        (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
-                            .togetherWith(fadeOut(tween(140)) + slideOutVertically(tween(140)) { -it / 3 })
-                    },
-                    label = "header_title"
-                ) { title ->
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-
-                AnimatedContent(
-                    targetState = tabSubtitle,
-                    transitionSpec = { fadeIn(tween(180)).togetherWith(fadeOut(tween(140))) },
-                    label = "header_subtitle"
-                ) { subtitle ->
-                    if (subtitle.isNotBlank()) {
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+            AnimatedContent(
+                targetState = tabTitle,
+                transitionSpec = {
+                    (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
+                        .togetherWith(fadeOut(tween(140)) + slideOutVertically(tween(140)) { -it / 3 })
+                },
+                label = "header_title",
+                modifier = Modifier.weight(1f)
+            ) { title ->
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             }
 
             Row(
@@ -127,15 +108,31 @@ fun ScholarInnovativeHeader(
                     )
                 }
 
-                IconButton(
-                    onClick = { navController.navigate("search") },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Search,
-                        contentDescription = "Search",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                StreakWidget(
+                    viewModel = viewModel,
+                    navController = navController
+                )
+
+                Surface(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .bouncyClick(onClick = { navController.navigate("search") }),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f),
+                    border = BorderStroke(
+                        0.5.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                     )
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
 
                 ScholarProfileAvatar(
@@ -167,7 +164,7 @@ fun ScholarSearchCapsule(
 ) {
     Surface(
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.70f),
         border = BorderStroke(
             0.5.dp,
             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
@@ -249,7 +246,7 @@ fun ScholarSearchCapsule(
 @ValueScore(
     score = 93,
     importance = Importance.CRITICAL,
-    description = "Live Focus/Pomodoro countdown pill with active equalizer wave animation, smooth color transitions, and uniform 42dp height",
+    description = "Live Focus/Pomodoro countdown pill with active equalizer wave animation, smooth color transitions, and uniform 40dp height",
     category = "Focus"
 )
 @Composable
@@ -263,7 +260,7 @@ fun ScholarFocusPill(
         targetValue = if (isRunning) {
             MaterialTheme.colorScheme.primary
         } else {
-            MaterialTheme.colorScheme.surfaceContainerHigh
+            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.70f)
         },
         animationSpec = tween(300, easing = FastOutSlowInEasing),
         label = "focus_pill_color"
@@ -304,7 +301,7 @@ fun ScholarFocusPill(
         shadowElevation = 0.dp,
         tonalElevation = 0.dp,
         modifier = modifier
-            .height(42.dp)
+            .height(40.dp)
             .clip(CircleShape)
             .bouncyClick(onClick = onClick)
             .testTag("open_pomodoro_button")
@@ -317,7 +314,6 @@ fun ScholarFocusPill(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             if (isRunning) {
-                // Simplified pulsing dot indicator
                 Box(
                     modifier = Modifier
                         .size(6.dp)
@@ -332,7 +328,7 @@ fun ScholarFocusPill(
                     imageVector = Icons.Rounded.Timer,
                     contentDescription = "Focus Space",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(17.dp)
+                    modifier = Modifier.size(16.dp)
                 )
             }
 
@@ -366,7 +362,7 @@ fun ScholarFocusPill(
 @ValueScore(
     score = 82,
     importance = Importance.HIGH,
-    description = "Avatar capsule displaying user profile emoji, photo, or monogram with direct settings navigation and uniform 42dp diameter",
+    description = "Avatar capsule displaying user profile emoji, photo, or monogram with direct settings navigation and uniform 40dp diameter",
     category = "Navigation"
 )
 @Composable
@@ -378,9 +374,9 @@ fun ScholarProfileAvatar(
 ) {
     Box(
         modifier = modifier
-            .size(42.dp)
+            .size(40.dp)
             .shadow(elevation = 0.dp, shape = CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.70f), CircleShape)
             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), CircleShape)
             .clip(CircleShape)
             .bouncyClick(onClick = onClick)
@@ -415,4 +411,3 @@ fun ScholarProfileAvatar(
         }
     }
 }
-

@@ -154,14 +154,6 @@ fun ProfileSplashLoadingScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            // Greeting layout
-            Text(
-                text = "Welcome Back",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-            )
-            
             Text(
                 text = activeProfile.name,
                 style = MaterialTheme.typography.headlineLarge,
@@ -172,12 +164,20 @@ fun ProfileSplashLoadingScreen(
             )
 
             if (activeProfile.alias.isNotBlank()) {
-                Text(
-                    text = "@${activeProfile.alias}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+                    Text(
+                        text = "@${activeProfile.alias}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                }
             }
 
             Spacer(Modifier.height(40.dp))
@@ -192,7 +192,7 @@ fun ProfileSplashLoadingScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp)),
+                        .clip(CircleShape),
                     color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 )
@@ -200,26 +200,26 @@ fun ProfileSplashLoadingScreen(
                 Spacer(Modifier.height(12.dp))
                 
                 Text(
-                    text = "Logging in...",
+                    text = "Loading workspace...",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Medium
                 )
             }
 
-            Spacer(Modifier.height(64.dp))
+            Spacer(Modifier.height(48.dp))
 
-            // Bouncy button offering a fast and responsive toggle to user settings
+            // Capsule button offering a fast and responsive toggle to user profile switch
             BouncyButton(
                 onClick = onSwitchAccount,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f),
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 ),
-                shape = RoundedCornerShape(16.dp),
+                shape = CircleShape,
                 modifier = Modifier
                     .widthIn(min = 200.dp)
-                    .heightIn(min = 52.dp)
+                    .heightIn(min = 48.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -228,13 +228,13 @@ fun ProfileSplashLoadingScreen(
                     Icon(
                         imageVector = Icons.Rounded.SwapHoriz,
                         contentDescription = "Switch Account",
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = "Change Profile",
                         style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

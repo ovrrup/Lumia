@@ -228,5 +228,53 @@ class ScholarRepository(val dao: ScholarDao) {
     suspend fun restoreBackupToDao(backup: ScholarBackup, targetDao: ScholarDao) = withContext(Dispatchers.IO) {
         targetDao.restoreBackup(backup)
     }
+
+    // =========================================================================
+    // SAFETY SNAPSHOTS & RECOVERY
+    // =========================================================================
+
+    suspend fun createSafetySnapshot(context: android.content.Context, profileId: String = ProfileManager.DEFAULT_PROFILE_ID): java.io.File = withContext(Dispatchers.IO) {
+        val backupDir = java.io.File(context.filesDir, "database_backups").apply { mkdirs() }
+        val snapshotFile = java.io.File(backupDir, "lumia_safety_snapshot_${profileId}.bak")
+        val dbName = if (profileId == ProfileManager.DEFAULT_PROFILE_ID) "scholar_sync_database" else "scholar_sync_$profileId"
+        val dbFile = context.getDatabasePath(dbName)
+        if (dbFile.exists() && dbFile.length() > 0L) {
+            dbFile.copyTo(snapshotFile, overwrite = true)
+            val walFile = java.io.File(dbFile.path + "-wal")
+            if (walFile.exists()) walFile.copyTo(java.io.File(backupDir, "lumia_safety_snapshot_${profileId}.bak-wal"), overwrite = true)
+            val shmFile = java.io.File(dbFile.path + "-shm")
+            if (shmFile.exists()) shmFile.copyTo(java.io.File(backupDir, "lumia_safety_snapshot_${profileId}.bak-shm"), overwrite = true)
+            android.util.Log.i("ScholarRepository", "Safety snapshot created for $profileId (${dbFile.length()} bytes)")
+        }
+        snapshotFile
+    }
+
+    suspend fun restoreSafetySnapshot(context: android.content.Context, profileId: String = ProfileManager.DEFAULT_PROFILE_ID): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val backupDir = java.io.File(context.filesDir, "database_backups")
+            val snapshotFile = java.io.File(backupDir, "lumia_safety_snapshot_${profileId}.bak")
+            if (!snapshotFile.exists() || snapshotFile.length() == 0L) return@withContext false
+
+            AppDatabase.closeDatabase(profileId)
+            val dbName = if (profileId == ProfileManager.DEFAULT_PROFILE_ID) "scholar_sync_database" else "scholar_sync_$profileId"
+            val dbFile = context.getDatabasePath(dbName)
+            snapshotFile.copyTo(dbFile, overwrite = true)
+
+            val walSnapshot = java.io.File(backupDir, "lumia_safety_snapshot_${profileId}.bak-wal")
+            val targetWal = java.io.File(dbFile.path + "-wal")
+            if (walSnapshot.exists()) walSnapshot.copyTo(targetWal, overwrite = true) else targetWal.delete()
+
+            val shmSnapshot = java.io.File(backupDir, "lumia_safety_snapshot_${profileId}.bak-shm")
+            val targetShm = java.io.File(dbFile.path + "-shm")
+            if (shmSnapshot.exists()) shmSnapshot.copyTo(targetShm, overwrite = true) else targetShm.delete()
+
+            android.util.Log.i("ScholarRepository", "Safety snapshot successfully restored for $profileId")
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("ScholarRepository", "Failed to restore safety snapshot for $profileId", e)
+            false
+        }
+    }
 }
+
 

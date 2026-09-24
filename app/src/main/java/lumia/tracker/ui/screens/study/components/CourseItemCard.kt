@@ -25,7 +25,9 @@ import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.util.getTagColors
 import lumia.tracker.viewmodel.ScholarViewModel
+import java.util.Calendar
 import kotlin.math.roundToInt
+
 
 /**
  * CourseItemCard - Modern Academic Course Overview Card with Color Accent,
@@ -118,7 +120,7 @@ fun CourseItemCard(
     ScholarCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -130,11 +132,11 @@ fun CourseItemCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Course Code / Initials Monogram Badge
+                // Course Code / Initials Monogram Capsule Badge
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .background(courseColor.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
+                        .background(courseColor.copy(alpha = 0.15f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -238,11 +240,11 @@ fun CourseItemCard(
                         val statusColor = if (isGood) Color(0xFF10B981) else if (isWarning) Color(0xFFF59E0B) else Color(0xFFEF4444)
 
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
+                            shape = CircleShape,
                             color = statusColor.copy(alpha = 0.12f)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
@@ -264,11 +266,11 @@ fun CourseItemCard(
                     // Pending Assignments Badge
                     if (pendingAssignmentsCount > 0) {
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
+                            shape = CircleShape,
                             color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
@@ -287,15 +289,15 @@ fun CourseItemCard(
                         }
                     } else if (courseAssignments.isNotEmpty()) {
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
+                            shape = CircleShape,
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         ) {
                             Text(
                                 text = "${courseAssignments.size} tasks done",
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
                     }
@@ -347,7 +349,7 @@ fun CourseItemCard(
                     tagsList.forEach { tag ->
                         val (bgColor, textColor) = getTagColors(tag)
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = CircleShape,
                             color = bgColor
                         ) {
                             Text(
@@ -355,7 +357,7 @@ fun CourseItemCard(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = textColor,
                                 fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
                         }
                     }
@@ -372,12 +374,15 @@ fun CourseItemCard(
                 ) {
                     for (subj in linkedSubjects) {
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.clickable { onSubjectClick(subj.id) }
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .clickable { onSubjectClick(subj.id) }
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {

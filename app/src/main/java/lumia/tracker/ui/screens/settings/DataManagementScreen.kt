@@ -31,7 +31,9 @@ import androidx.navigation.NavController
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.components.GlassCapsule
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.settings.components.SettingsActionItemInCard
@@ -39,9 +41,9 @@ import lumia.tracker.ui.screens.settings.components.SettingsGroupCard
 import lumia.tracker.viewmodel.ScholarViewModel
 
 @ValueScore(
-    score = 92,
-    importance = Importance.HIGH,
-    description = "Data management, database integrity metrics, backup export/import and maintenance",
+    score = 96,
+    importance = Importance.CRITICAL,
+    description = "Modern data management, zero-data-loss database migrations, safety snapshots, and vault export/import",
     category = "Settings"
 )
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,8 +51,9 @@ import lumia.tracker.viewmodel.ScholarViewModel
 fun DataManagementScreen(navController: NavController, viewModel: ScholarViewModel) {
     val status by viewModel.importExportStatus.collectAsStateWithLifecycle()
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
-    val dbStats by viewModel.dbStatistics.collectAsStateWithLifecycle()
     val defragText by viewModel.defragStatus.collectAsStateWithLifecycle()
+    val safetyInfo by viewModel.safetySnapshotInfo.collectAsStateWithLifecycle()
+    val hasSnapshot by viewModel.hasSafetySnapshot.collectAsStateWithLifecycle()
 
     val coursesCount by viewModel.courses.collectAsStateWithLifecycle()
     val assignmentsCount by viewModel.assignments.collectAsStateWithLifecycle()
@@ -60,6 +63,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     val context = LocalContext.current
     var showResetDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
+    var showRestoreSnapshotDialog by remember { mutableStateOf(false) }
     var exportAllMode by remember { mutableStateOf(false) }
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
@@ -80,6 +84,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
     LaunchedEffect(Unit) {
         viewModel.loadDBStatistics()
+        viewModel.checkSafetySnapshot()
     }
 
     LaunchedEffect(status) {
@@ -125,62 +130,70 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // 1. Database Integrity & Storage Metrics Hero Card
+            // 1. Hero Storage & Database Integrity Card
             ScholarCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(20.dp)
+                shape = ScholarCardDefaults.shape,
+                glassmorphic = true
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(42.dp)
-                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Storage,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
                                 Text(
                                     "Your Data",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = Color(0xFF34C759).copy(alpha = 0.15f)
+                                GlassCapsule(
+                                    containerColor = Color(0xFF34C759).copy(alpha = 0.15f),
+                                    border = BorderStroke(0.5.dp, Color(0xFF34C759).copy(alpha = 0.4f))
                                 ) {
                                     Text(
-                                        text = "Healthy",
+                                        text = "Protected",
                                         style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.ExtraBold,
                                         color = Color(0xFF34C759),
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                     )
                                 }
                             }
                             Text(
-                                "${activeProfile.name} • Saved on this phone",
+                                "${activeProfile.name} • Local SQLite Storage",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
-                    // Storage Distribution Breakdown Bar
+                    // Storage distribution bar
                     val totalRecords = coursesCount.size + subjectsCount.size + assignmentsCount.size + pomodoroSessionsCount.size
                     if (totalRecords > 0) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -190,13 +203,13 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    "What is Saved",
+                                    "Saved Items",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    "$totalRecords items saved",
+                                    "$totalRecords total records",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
@@ -206,7 +219,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp))
+                                    .clip(CircleShape)
                             ) {
                                 val cWeight = (coursesCount.size.toFloat() / totalRecords).coerceAtLeast(0.02f)
                                 val sWeight = (subjectsCount.size.toFloat() / totalRecords).coerceAtLeast(0.02f)
@@ -221,60 +234,139 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         }
                     }
 
-                    // Metrics Grid
+                    // Modern Capsule Metrics Grid
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                        MetricPill(
+                            count = coursesCount.size,
+                            label = "Courses",
+                            accentColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MetricPill(
+                            count = subjectsCount.size,
+                            label = "Subjects",
+                            accentColor = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MetricPill(
+                            count = assignmentsCount.size,
+                            label = "Tasks",
+                            accentColor = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MetricPill(
+                            count = pomodoroSessionsCount.size,
+                            label = "Focus",
+                            accentColor = Color(0xFFFF9500),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            // 2. Data Safety & Migration Vault (Zero data loss guarantee across stable releases)
+            SettingsGroupCard(title = "Safety & Rollback Protection", icon = Icons.Rounded.Security) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Rounded.VerifiedUser,
+                            contentDescription = null,
+                            tint = Color(0xFF34C759),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Release Migration Guard Active",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Text(
+                        text = "Continuous schema migration protects your data when upgrading from main branch releases. Automatic safety backups are created before any database upgrade or import.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
+                    )
+
+                    if (!safetyInfo.isNullOrBlank()) {
+                        GlassCapsule(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${coursesCount.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-                                Text("Courses", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.History,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = safetyInfo ?: "",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
-                        Surface(
+                    }
+
+                    // Action buttons in capsule format
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        BouncyButton(
+                            onClick = { viewModel.createManualSafetySnapshot() },
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                            shape = CircleShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         ) {
-                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${subjectsCount.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.secondary)
-                                Text("Subjects", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                            Icon(Icons.Rounded.Shield, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Create Snapshot", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                         }
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                        ) {
-                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${assignmentsCount.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.tertiary)
-                                Text("Tasks", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                        ) {
-                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${pomodoroSessionsCount.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = Color(0xFFFF9500))
-                                Text("Sessions", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                        if (hasSnapshot) {
+                            BouncyButton(
+                                onClick = { showRestoreSnapshotDialog = true },
+                                modifier = Modifier.weight(1f),
+                                shape = CircleShape,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            ) {
+                                Icon(Icons.Rounded.Restore, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Restore Snapshot", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
                 }
             }
 
-            // 2. Backup & Restore Group
+            // 3. Save & Restore Group
             SettingsGroupCard(title = "Save & Restore", icon = Icons.Rounded.SaveAlt) {
                 SettingsActionItemInCard(
                     title = "Save a Backup File",
-                    subtitle = "Save all your data to a file you can restore anytime",
+                    subtitle = "Export all classes, tasks, and notes to a secure backup file",
                     icon = Icons.Rounded.UploadFile,
                     iconBgColor = Color(0xFF007AFF),
                     onClick = { showExportDialog = true }
@@ -287,18 +379,18 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
                 SettingsActionItemInCard(
                     title = "Restore from Backup",
-                    subtitle = "Load your saved classes and tasks from a backup file",
+                    subtitle = "Load saved classes and tasks from a backup file with auto-rollback protection",
                     icon = Icons.Rounded.FileDownload,
                     iconBgColor = Color(0xFF34C759),
                     onClick = { openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*")) }
                 )
             }
 
-            // 3. Storage & Cleanup
-            SettingsGroupCard(title = "Storage & Cleanup", icon = Icons.Rounded.CleaningServices) {
+            // 4. Storage & Performance
+            SettingsGroupCard(title = "Storage & Maintenance", icon = Icons.Rounded.CleaningServices) {
                 SettingsActionItemInCard(
                     title = "Clean Up App Storage",
-                    subtitle = if (defragText.isNotBlank()) defragText else "Free up unused space and keep the app running fast",
+                    subtitle = if (defragText.isNotBlank()) defragText else "Defragment SQLite database and reclaim unused disk space",
                     icon = Icons.Rounded.CleaningServices,
                     iconBgColor = Color(0xFFFF9500),
                     onClick = { viewModel.defragmentDatabase() }
@@ -311,14 +403,14 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
                 SettingsActionItemInCard(
                     title = "Delete All Data",
-                    subtitle = "Erase all saved classes, tasks, and focus time",
+                    subtitle = "Permanently erase classes, tasks, and history (Safety snapshot created first)",
                     icon = Icons.Rounded.DeleteForever,
                     isDestructive = true,
                     onClick = { showResetDialog = true }
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 
@@ -329,12 +421,12 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             shape = RoundedCornerShape(24.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = { Icon(Icons.Rounded.SaveAlt, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-            title = { Text("Save a Backup", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
+            title = { Text("Save Backup Package", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Select what to save:", style = MaterialTheme.typography.bodyMedium)
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Select what you would like to export:", style = MaterialTheme.typography.bodyMedium)
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surface,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
                         modifier = Modifier
@@ -342,16 +434,16 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             .clickable {
                                 exportAllMode = false
                                 showExportDialog = false
-                                createDocumentLauncher.launch("lumia_${activeProfile.name.lowercase()}_backup.lumia")
+                                createDocumentLauncher.launch("lumia_${activeProfile.name.lowercase().replace(" ", "_")}_backup.lumia")
                             }
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(modifier = Modifier.padding(14.dp)) {
                             Text("Current Profile (${activeProfile.name})", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                            Text("Save data for this profile only.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Saves courses, syllabus, tasks, attendance, and tags for this workspace.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surface,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
                         modifier = Modifier
@@ -362,9 +454,9 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                 createDocumentLauncher.launch("lumia_full_vault_backup.lumia")
                             }
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text("All Profiles & Data", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                            Text("Save everything across all profiles and settings.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text("Complete Vault (All Profiles)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                            Text("Saves everything across all tenant profiles and global settings.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -372,6 +464,37 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             confirmButton = {},
             dismissButton = {
                 BouncyTextButton(onClick = { showExportDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    // Restore Snapshot Confirmation Dialog
+    if (showRestoreSnapshotDialog) {
+        AlertDialog(
+            onDismissRequest = { showRestoreSnapshotDialog = false },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            icon = { Icon(Icons.Rounded.Restore, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text("Restore Safety Snapshot", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
+            text = {
+                Text(
+                    "This will restore your database to the last verified safe state ($safetyInfo). Current modifications made since the snapshot will be replaced.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                BouncyButton(
+                    onClick = {
+                        viewModel.restoreLatestSafetySnapshot()
+                        showRestoreSnapshotDialog = false
+                    },
+                    shape = CircleShape
+                ) {
+                    Text("Restore State", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                BouncyTextButton(onClick = { showRestoreSnapshotDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -386,7 +509,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             title = { Text("Delete All Data", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error) },
             text = {
                 Text(
-                    "Are you sure? This will permanently delete all your classes, tasks, and focus history on this phone.",
+                    "Are you sure? This will permanently delete your classes, syllabus, tasks, and focus history. A recovery snapshot will be saved in case you need to revert.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -397,7 +520,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         showResetDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = CircleShape
                 ) {
                     Text("Delete Everything", fontWeight = FontWeight.Bold)
                 }
@@ -409,3 +532,35 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     }
 }
 
+@Composable
+private fun MetricPill(
+    count: Int,
+    label: String,
+    accentColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "$count",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Black,
+                color = accentColor
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}

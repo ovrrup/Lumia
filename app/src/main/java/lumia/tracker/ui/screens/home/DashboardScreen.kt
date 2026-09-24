@@ -221,8 +221,8 @@ private fun rememberDashboardNavBarColors(indicatorAlpha: Float): NavigationBarI
     return NavigationBarItemDefaults.colors(
         selectedIconColor = MaterialTheme.colorScheme.primary,
         selectedTextColor = MaterialTheme.colorScheme.primary,
-        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
         indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = clampedAlpha)
     )
 }
@@ -245,12 +245,12 @@ private fun StandardDashboardBottomBar(
 ) {
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
         border = BorderStroke(
             0.5.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)
         )
     ) {
         NavigationBar(
@@ -290,6 +290,7 @@ private fun BoxScope.FloatingDashboardBottomBar(
     featureSelfStudyEnabled: Boolean,
     featureAnalyticsEnabled: Boolean
 ) {
+    val effectiveCornerRadius = if (navBarCornerRadius > 0) navBarCornerRadius.dp else 32.dp
     Surface(
         modifier = Modifier
             .align(Alignment.BottomCenter)
@@ -299,13 +300,13 @@ private fun BoxScope.FloatingDashboardBottomBar(
                 bottom = navBarPaddingBottom.dp
             )
             .windowInsetsPadding(WindowInsets.navigationBars),
-        shape = RoundedCornerShape(navBarCornerRadius.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(effectiveCornerRadius),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
         border = BorderStroke(
-            0.5.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
         ),
-        shadowElevation = 2.dp,
+        shadowElevation = 0.dp,
         tonalElevation = 0.dp
     ) {
         NavigationBar(

@@ -201,6 +201,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         calculateTodayStreakProgress()
+        checkSafetySnapshot()
     }
 
     private val initiallyCompleted = run {
@@ -1858,6 +1859,70 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _importExportStatus = MutableStateFlow<String?>(null)
     val importExportStatus = _importExportStatus.asStateFlow()
 
+    private val _safetySnapshotInfo = MutableStateFlow<String?>(null)
+    val safetySnapshotInfo = _safetySnapshotInfo.asStateFlow()
+
+    private val _hasSafetySnapshot = MutableStateFlow<Boolean>(false)
+    val hasSafetySnapshot = _hasSafetySnapshot.asStateFlow()
+
+    fun checkSafetySnapshot() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val backupDir = java.io.File(getApplication<Application>().filesDir, "database_backups")
+                val activeId = profileManager.getActiveProfileId()
+                val snapshotFile = java.io.File(backupDir, "lumia_safety_snapshot_${activeId}.bak")
+                val preUpgradeFile = java.io.File(backupDir, "${if (activeId == lumia.tracker.data.ProfileManager.DEFAULT_PROFILE_ID) "scholar_sync_database" else "scholar_sync_$activeId"}_pre_upgrade.bak")
+                val effectiveFile = if (snapshotFile.exists() && snapshotFile.length() > 0L) snapshotFile else if (preUpgradeFile.exists() && preUpgradeFile.length() > 0L) preUpgradeFile else null
+
+                val exists = effectiveFile != null && effectiveFile.length() > 0L
+                _hasSafetySnapshot.value = exists
+                if (exists && effectiveFile != null) {
+                    val dateStr = java.text.SimpleDateFormat("MMM dd, HH:mm", java.util.Locale.getDefault()).format(java.util.Date(effectiveFile.lastModified()))
+                    val sizeKb = effectiveFile.length() / 1024
+                    _safetySnapshotInfo.value = "Safe snapshot ready • $dateStr (${sizeKb} KB)"
+                } else {
+                    _safetySnapshotInfo.value = null
+                }
+            } catch (e: Exception) {
+                _hasSafetySnapshot.value = false
+                _safetySnapshotInfo.value = null
+            }
+        }
+    }
+
+    fun createManualSafetySnapshot() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val activeId = profileManager.getActiveProfileId()
+                val file = repository.createSafetySnapshot(getApplication(), activeId)
+                checkSafetySnapshot()
+                _importExportStatus.value = "Safety snapshot saved (${file.length() / 1024} KB)"
+            } catch (e: Exception) {
+                _importExportStatus.value = "Failed to create snapshot: ${e.message}"
+            }
+        }
+    }
+
+    fun restoreLatestSafetySnapshot() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val activeId = profileManager.getActiveProfileId()
+                val success = repository.restoreSafetySnapshot(getApplication(), activeId)
+                if (success) {
+                    lumia.tracker.data.AppDatabase.clearInstances()
+                    _importExportStatus.value = "Safety snapshot restored successfully"
+                    withContext(Dispatchers.Main) {
+                        switchProfileAndRestart(getApplication(), activeId)
+                    }
+                } else {
+                    _importExportStatus.value = "No valid safety snapshot found to restore"
+                }
+            } catch (e: Exception) {
+                _importExportStatus.value = "Restore failed: ${e.message}"
+            }
+        }
+    }
+
     private fun logAction(action: String) {
         viewModelScope.launch {
             repository.insertActionLog(ActionLog(actionText = action))
@@ -2092,6 +2157,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                             tasks = profDao.exportAllTasks(),
                             attachments = profDao.exportAllAttachments(),
                             testRecords = profDao.exportAllTestRecords(),
+                            tagCustomizations = profDao.exportAllTagCustomizations(),
                             profile = prof
                         )
                         profileBackupsJson[prof.id] = backupAdapter.toJson(pBackup)
@@ -2140,6 +2206,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                         tasks = repository.dao.exportAllTasks(),
                         attachments = repository.dao.exportAllAttachments(),
                         testRecords = repository.dao.exportAllTestRecords(),
+                        tagCustomizations = repository.dao.exportAllTagCustomizations(),
                         profile = currentProfWithPic
                     )
                     getApplication<Application>().contentResolver.openOutputStream(uri)?.use { os ->
@@ -2175,6 +2242,10 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun importData(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
+            val activeId = profileManager.getActiveProfileId()
+            // Automatic safety snapshot prior to import to guarantee rollback if corrupted
+            repository.createSafetySnapshot(getApplication(), activeId)
+
             try {
                 var mainBackup: lumia.tracker.model.ScholarBackup? = null
                 getApplication<Application>().contentResolver.openInputStream(uri)?.use { ins ->
@@ -2216,8 +2287,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                     }
                     
                     // Refresh current active UI with restored settings
-                    val activeId = fullBackup.activeProfileId
-                    val activeBackupJson = fullBackup.profileBackupsJson[activeId]
+                    val activeIdToLoad = fullBackup.activeProfileId
+                    val activeBackupJson = fullBackup.profileBackupsJson[activeIdToLoad]
                     if (activeBackupJson != null) {
                         val activeBackup = backupAdapter.fromJson(activeBackupJson)
                         if (activeBackup != null) {
@@ -2245,17 +2316,21 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
                 verifyFeatureEntitlements()
                 _importExportStatus.value = "Secure backup package imported and restored successfully"
+                checkSafetySnapshot()
                 activeProfile.value = profileManager.getActiveProfile()
                 allProfiles.value = profileManager.getAllProfiles()
                 lumia.tracker.util.WidgetUpdateHelper.updateAllWidgets(getApplication())
                 calculateTodayStreakProgress()
 
                 withContext(Dispatchers.Main) {
-                    val activeId = profileManager.getActiveProfileId()
-                    switchProfileAndRestart(getApplication(), activeId)
+                    val finalActiveId = profileManager.getActiveProfileId()
+                    switchProfileAndRestart(getApplication(), finalActiveId)
                 }
             } catch (e: Exception) {
-                _importExportStatus.value = "Import failed: ${e.message}"
+                android.util.Log.e("ScholarViewModel", "Import failed, auto-recovering from safety snapshot", e)
+                repository.restoreSafetySnapshot(getApplication(), activeId)
+                lumia.tracker.data.AppDatabase.clearInstances()
+                _importExportStatus.value = "Import failed: ${e.message}. Original data preserved."
             }
         }
     }
@@ -2584,6 +2659,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val prof = activeProfile.value
+                // Create automatic safety snapshot before clearing
+                repository.createSafetySnapshot(getApplication(), prof.id)
                 if (prof.isDefault) {
                     val allProfs = profileManager.getAllProfiles()
                     for (p in allProfs) {

@@ -169,7 +169,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
 
                 SettingsToggleItem(
                     title = "Daily Digest Morning Summary",
-                    subtitle = "Daily morning briefing of approaching deadlines in next 24 hours",
+                    subtitle = "Approaching deadlines in next 24 hours",
                     checked = enableDailyDigest,
                     icon = Icons.Rounded.Today,
                     onCheckedChange = { viewModel.updateNotifEnableDailyDigest(it) }

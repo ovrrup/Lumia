@@ -77,7 +77,7 @@ fun SubjectItemCard(
     ScholarCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -92,7 +92,7 @@ fun SubjectItemCard(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(14.dp)),
+                        .background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -127,7 +127,7 @@ fun SubjectItemCard(
                             tagsList.take(2).forEach { tag ->
                                 val (bgColor, textColor) = getTagColors(tag)
                                 Surface(
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = CircleShape,
                                     color = bgColor
                                 ) {
                                     Text(
@@ -135,7 +135,7 @@ fun SubjectItemCard(
                                         style = MaterialTheme.typography.labelSmall,
                                         color = textColor,
                                         fontWeight = FontWeight.SemiBold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                     )
                                 }
                             }
@@ -218,7 +218,7 @@ fun SubjectItemCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp)),
+                            .clip(CircleShape),
                         color = progressColor,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
@@ -258,12 +258,15 @@ fun SubjectItemCard(
                             MaterialTheme.colorScheme.secondary
                         }
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
+                            shape = CircleShape,
                             color = courseColor.copy(alpha = 0.12f),
-                            modifier = Modifier.clickable { onCourseClick(course.id) }
+                            border = BorderStroke(0.5.dp, courseColor.copy(alpha = 0.3f)),
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .clickable { onCourseClick(course.id) }
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {

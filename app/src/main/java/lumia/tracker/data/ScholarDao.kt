@@ -483,22 +483,114 @@ interface ScholarDao {
         clearTestRecords()
         clearTagCustomizations()
 
-        // Insert parents first, then children to respect SQLite foreign key constraints
-        backup.courses?.forEach { insertCourse(it) }
-        backup.subjects?.forEach { insertSubject(it) }
-        backup.chapters?.forEach { insertChapter(it) }
-        backup.topics?.forEach { insertTopic(it) }
-        backup.assignments?.forEach { insertAssignment(it) }
-        backup.attendance?.forEach { insertAttendanceRecord(it) }
+        // 1. Sanitize and insert courses
+        val validCourseIds = mutableSetOf<Int>()
+        backup.courses?.forEach { rawCourse ->
+            val sanitizedCourse = rawCourse.copy(
+                name = rawCourse.name.ifBlank { "Course" },
+                code = rawCourse.code,
+                colorHex = rawCourse.colorHex.ifBlank { "#3197D6" },
+                scheduleDays = rawCourse.scheduleDays,
+                scheduleStartTime = rawCourse.scheduleStartTime,
+                scheduleEndTime = rawCourse.scheduleEndTime,
+                instructor = rawCourse.instructor,
+                schedule = rawCourse.schedule,
+                description = rawCourse.description,
+                tags = rawCourse.tags,
+                subjectIds = rawCourse.subjectIds
+            )
+            val generatedId = insertCourse(sanitizedCourse)
+            validCourseIds.add(if (rawCourse.id != 0) rawCourse.id else generatedId.toInt())
+        }
 
-        // Insert remaining non-constrained tables
+        // 2. Sanitize and insert subjects
+        val validSubjectIds = mutableSetOf<Int>()
+        backup.subjects?.forEach { rawSubject ->
+            val sanitizedSubject = rawSubject.copy(
+                name = rawSubject.name.ifBlank { "Subject" },
+                tags = rawSubject.tags
+            )
+            val generatedId = insertSubject(sanitizedSubject)
+            validSubjectIds.add(if (rawSubject.id != 0) rawSubject.id else generatedId.toInt())
+        }
+
+        // 3. Resolve and insert chapters (prevent orphan foreign keys)
+        backup.chapters?.forEach { rawChapter ->
+            if (rawChapter.subjectId !in validSubjectIds && rawChapter.subjectId != 0) {
+                // Insert placeholder subject to satisfy foreign key constraint
+                insertSubject(lumia.tracker.model.Subject(id = rawChapter.subjectId, name = "Imported Subject", tags = ""))
+                validSubjectIds.add(rawChapter.subjectId)
+            }
+            if (validSubjectIds.isNotEmpty()) {
+                val safeSubjectId = if (rawChapter.subjectId in validSubjectIds) rawChapter.subjectId else validSubjectIds.first()
+                insertChapter(rawChapter.copy(
+                    subjectId = safeSubjectId,
+                    name = rawChapter.name.ifBlank { "Chapter" },
+                    description = rawChapter.description,
+                    tags = rawChapter.tags
+                ))
+            }
+        }
+
+        // 4. Resolve and insert topics (prevent orphan foreign keys)
+        backup.topics?.forEach { rawTopic ->
+            if (rawTopic.subjectId !in validSubjectIds && rawTopic.subjectId != 0) {
+                insertSubject(lumia.tracker.model.Subject(id = rawTopic.subjectId, name = "Imported Subject", tags = ""))
+                validSubjectIds.add(rawTopic.subjectId)
+            }
+            if (validSubjectIds.isNotEmpty()) {
+                val safeSubjectId = if (rawTopic.subjectId in validSubjectIds) rawTopic.subjectId else validSubjectIds.first()
+                insertTopic(rawTopic.copy(
+                    subjectId = safeSubjectId,
+                    title = rawTopic.title.ifBlank { "Topic" },
+                    tags = rawTopic.tags
+                ))
+            }
+        }
+
+        // 5. Resolve and insert assignments (prevent orphan course foreign keys)
+        backup.assignments?.forEach { rawAssignment ->
+            if (rawAssignment.courseId !in validCourseIds && rawAssignment.courseId != 0) {
+                insertCourse(lumia.tracker.model.Course(id = rawAssignment.courseId, name = "Imported Course"))
+                validCourseIds.add(rawAssignment.courseId)
+            }
+            if (validCourseIds.isNotEmpty()) {
+                val safeCourseId = if (rawAssignment.courseId in validCourseIds) rawAssignment.courseId else validCourseIds.first()
+                insertAssignment(rawAssignment.copy(
+                    courseId = safeCourseId,
+                    title = rawAssignment.title.ifBlank { "Assignment" },
+                    description = rawAssignment.description,
+                    category = rawAssignment.category.ifBlank { "Homework" },
+                    categoryColor = rawAssignment.categoryColor.ifBlank { "#3197D6" },
+                    tags = rawAssignment.tags
+                ))
+            }
+        }
+
+        // 6. Resolve and insert attendance records
+        backup.attendance?.forEach { rawAttendance ->
+            if (rawAttendance.courseId !in validCourseIds && rawAttendance.courseId != 0) {
+                insertCourse(lumia.tracker.model.Course(id = rawAttendance.courseId, name = "Imported Course"))
+                validCourseIds.add(rawAttendance.courseId)
+            }
+            if (validCourseIds.isNotEmpty()) {
+                val safeCourseId = if (rawAttendance.courseId in validCourseIds) rawAttendance.courseId else validCourseIds.first()
+                insertAttendanceRecord(rawAttendance.copy(courseId = safeCourseId))
+            }
+        }
+
+        // 7. Insert remaining non-constrained tables
         backup.pomodoro?.forEach { insertPomodoroSession(it) }
         backup.actionLogs?.forEach { insertActionLog(it) }
-        backup.notes?.forEach { insertNote(it) }
-        backup.tasks?.forEach { insertTask(it) }
+        backup.notes?.forEach { insertNote(it.copy(content = it.content, tag = it.tag)) }
+        backup.tasks?.forEach { insertTask(it.copy(title = it.title.ifBlank { "Task" }, description = it.description, tags = it.tags)) }
         backup.attachments?.forEach { insertAttachment(it) }
-        backup.testRecords?.forEach { insertTestRecord(it) }
-        backup.tagCustomizations?.forEach { insertTagCustomization(it) }
+        backup.testRecords?.forEach { insertTestRecord(it.copy(title = it.title.ifBlank { "Test" }, notes = it.notes, tags = it.tags)) }
+        backup.tagCustomizations?.forEach { rawTag ->
+            if (rawTag.tagName.isNotBlank()) {
+                insertTagCustomization(rawTag.copy(tagName = rawTag.tagName.trim().lowercase()))
+            }
+        }
     }
 }
 

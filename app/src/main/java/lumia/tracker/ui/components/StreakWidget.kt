@@ -101,7 +101,7 @@ fun StreakWidget(
         label = "flame_scale"
     )
 
-    // Streak Widget Pill
+    // Streak Widget Capsule Pill
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -110,12 +110,12 @@ fun StreakWidget(
             .clip(CircleShape)
             .background(
                 if (isCompleteToday) color.copy(alpha = 0.16f)
-                else MaterialTheme.colorScheme.surfaceContainerHigh
+                else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
             )
             .border(
                 0.8.dp,
                 if (isCompleteToday) color.copy(alpha = 0.45f)
-                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 CircleShape
             )
             .bouncyClick(onClick = { showStreakSheet = true })
@@ -172,12 +172,12 @@ fun StreakWidget(
         ModalBottomSheet(
             onDismissRequest = { showStreakSheet = false },
             sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            tonalElevation = 6.dp,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+            tonalElevation = 0.dp,
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
             dragHandle = {
                 BottomSheetDefaults.DragHandle(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
                 )
             }
         ) {
@@ -219,7 +219,7 @@ fun StreakWidget(
                 // Today's Progress Card
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(22.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -250,7 +250,7 @@ fun StreakWidget(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp)),
+                                .clip(CircleShape),
                             color = color,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
@@ -295,7 +295,7 @@ fun StreakWidget(
                     )
                 }
 
-                // Action Buttons
+                // Action Buttons as sleek capsules
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -308,7 +308,7 @@ fun StreakWidget(
                         modifier = Modifier
                             .weight(1f)
                             .height(46.dp),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = CircleShape,
                     ) {
                         Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
@@ -320,7 +320,7 @@ fun StreakWidget(
                         modifier = Modifier
                             .weight(1f)
                             .height(46.dp),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(containerColor = color)
                     ) {
                         Text(
