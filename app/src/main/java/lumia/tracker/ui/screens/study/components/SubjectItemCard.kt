@@ -76,15 +76,13 @@ fun SubjectItemCard(
 
     ScholarCard(
         onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        shape = RoundedCornerShape(20.dp)
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp)
+                .padding(16.dp)
         ) {
             // Header Row: Subject Avatar, Title & Tags, Menu
             Row(
@@ -93,8 +91,8 @@ fun SubjectItemCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(12.dp)),
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -129,7 +127,7 @@ fun SubjectItemCard(
                             tagsList.take(2).forEach { tag ->
                                 val (bgColor, textColor) = getTagColors(tag)
                                 Surface(
-                                    shape = RoundedCornerShape(4.dp),
+                                    shape = RoundedCornerShape(6.dp),
                                     color = bgColor
                                 ) {
                                     Text(
@@ -137,7 +135,7 @@ fun SubjectItemCard(
                                         style = MaterialTheme.typography.labelSmall,
                                         color = textColor,
                                         fontWeight = FontWeight.SemiBold,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                     )
                                 }
                             }
@@ -149,7 +147,7 @@ fun SubjectItemCard(
                 Box {
                     BouncyIconButton(
                         onClick = { expanded = true },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,
@@ -194,24 +192,24 @@ fun SubjectItemCard(
             }
 
             // Topic Coverage Progress Bar
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             if (totalTopicsCount > 0) {
-                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Syllabus Coverage",
-                            style = MaterialTheme.typography.labelSmall,
+                            text = "Topics Covered",
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
                             text = "$completedTopicsCount/$totalTopicsCount (${(rawProgress * 100).toInt()}%)",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
                             color = progressColor
                         )
                     }
@@ -219,7 +217,7 @@ fun SubjectItemCard(
                         progress = { animatedProgress },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(5.dp)
+                            .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
                         color = progressColor,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant
@@ -235,11 +233,11 @@ fun SubjectItemCard(
                         imageVector = Icons.Rounded.MenuBook,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        modifier = Modifier.size(13.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "No syllabus topics yet",
-                        style = MaterialTheme.typography.labelSmall,
+                        text = "No topics added yet",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 }
@@ -247,10 +245,10 @@ fun SubjectItemCard(
 
             // Connected Courses Chips
             if (linkedCourses.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     for (course in linkedCourses) {
@@ -260,18 +258,18 @@ fun SubjectItemCard(
                             MaterialTheme.colorScheme.secondary
                         }
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(8.dp),
                             color = courseColor.copy(alpha = 0.12f),
                             modifier = Modifier.clickable { onCourseClick(course.id) }
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(5.dp)
+                                        .size(6.dp)
                                         .background(courseColor, CircleShape)
                                 )
                                 Text(

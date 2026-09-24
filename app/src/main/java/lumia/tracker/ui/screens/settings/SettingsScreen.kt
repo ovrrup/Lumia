@@ -34,7 +34,6 @@ import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyOutlinedButton
 import lumia.tracker.ui.components.BouncyTextButton
-import lumia.tracker.sync.P2PSyncEngine
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.settings.components.SettingsActionItemInCard
@@ -61,8 +60,6 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     val context = LocalContext.current
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
     val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
-    val syncEngine = remember { P2PSyncEngine.getInstance(context) }
-    val isBackgroundSyncActive by syncEngine.isForegroundServiceEnabled.collectAsStateWithLifecycle()
 
     var showEditProfileSheet by remember { mutableStateOf(false) }
     var showSwitchProfileSheet by remember { mutableStateOf(false) }
@@ -299,28 +296,15 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
 
             // ==========================================
-            // 3. ACADEMIC & STUDY SYSTEM
+            // 3. GENERAL SETTINGS
             // ==========================================
             SettingsGroupCard(
-                title = "Academic & Study System",
-                icon = Icons.Rounded.School
+                title = "General",
+                icon = Icons.Rounded.Tune
             ) {
                 SettingsActionItemInCard(
-                    title = "Tag Management",
-                    subtitle = "Organize academic tags",
-                    icon = Icons.Rounded.LocalOffer,
-                    iconBgColor = Color(0xFF30B0C7),
-                    onClick = { navController.navigate("tags_hub") }
-                )
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                    modifier = Modifier.padding(start = 52.dp, end = 8.dp)
-                )
-
-                SettingsActionItemInCard(
-                    title = "System Configuration",
-                    subtitle = "App behavior & defaults",
+                    title = "App Preferences",
+                    subtitle = "Study options & behavior",
                     icon = Icons.Rounded.Tune,
                     iconBgColor = Color(0xFF5856D6),
                     onClick = { navController.navigate("settings/system") }
@@ -328,25 +312,12 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
 
             // ==========================================
-            // 4. SECURITY & ALERTS
+            // 4. NOTIFICATIONS
             // ==========================================
             SettingsGroupCard(
-                title = "Security & Alerts",
-                icon = Icons.Rounded.Shield
+                title = "Alerts & Reminders",
+                icon = Icons.Rounded.Notifications
             ) {
-                SettingsActionItemInCard(
-                    title = "Safety System Guard",
-                    subtitle = "Biometrics & app security",
-                    icon = Icons.Rounded.Security,
-                    iconBgColor = Color(0xFFFF3B30),
-                    onClick = { navController.navigate("settings/safety") }
-                )
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                    modifier = Modifier.padding(start = 52.dp, end = 8.dp)
-                )
-
                 SettingsActionItemInCard(
                     title = "Notifications & Reminders",
                     subtitle = "Alerts & study alarms",
@@ -357,41 +328,12 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
 
             // ==========================================
-            // 5. DATA & CONNECTIVITY
+            // 5. DATA & BACKUPS
             // ==========================================
             SettingsGroupCard(
-                title = "Data & Connectivity",
+                title = "Data & Backups",
                 icon = Icons.Rounded.Storage
             ) {
-                SettingsActionItemInCard(
-                    title = "Device Sync",
-                    subtitle = "Instant wireless sync between your devices",
-                    icon = Icons.Rounded.Sync,
-                    iconBgColor = Color(0xFFAF52DE),
-                    onClick = { navController.navigate("settings/sync") }
-                )
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                    modifier = Modifier.padding(start = 52.dp, end = 8.dp)
-                )
-
-                SettingsToggleItem(
-                    title = "Background Sync",
-                    subtitle = "Keep data synced even when the app is closed",
-                    checked = isBackgroundSyncActive,
-                    icon = Icons.Rounded.Sync,
-                    iconBgColor = Color(0xFF5856D6),
-                    onCheckedChange = { isEnabled ->
-                        syncEngine.setForegroundServiceEnabled(isEnabled)
-                    }
-                )
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                    modifier = Modifier.padding(start = 52.dp, end = 8.dp)
-                )
-
                 SettingsActionItemInCard(
                     title = "Data & Backups",
                     subtitle = "Export, import & storage",
@@ -402,25 +344,12 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
 
             // ==========================================
-            // 6. ABOUT & LABS
+            // 6. ABOUT
             // ==========================================
             SettingsGroupCard(
-                title = "About & Labs",
-                icon = Icons.Rounded.Science
+                title = "About",
+                icon = Icons.Rounded.Info
             ) {
-                SettingsActionItemInCard(
-                    title = "Experimental Features & Labs",
-                    subtitle = "Beta features & previews",
-                    icon = Icons.Rounded.Science,
-                    iconBgColor = Color(0xFFE040FB),
-                    onClick = { navController.navigate("settings/beta") }
-                )
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                    modifier = Modifier.padding(start = 52.dp, end = 8.dp)
-                )
-
                 SettingsActionItemInCard(
                     title = "About Lumia",
                     subtitle = "Version, build & licenses",

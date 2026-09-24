@@ -14,7 +14,6 @@ import lumia.tracker.ui.screens.*
 import lumia.tracker.ui.screens.search.SearchScreen
 import lumia.tracker.ui.screens.settings.*
 import lumia.tracker.ui.screens.study.*
-import lumia.tracker.ui.screens.sync.MultiDeviceSyncScreen
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
@@ -91,18 +90,6 @@ fun AppNavigationGraph(
             SearchScreen(navController = navController, viewModel = viewModel)
         }
 
-        // Tags Organization Hub
-        composable(
-            "tags_hub?selectedTag={selectedTag}",
-            arguments = listOf(navArgument("selectedTag") { type = NavType.StringType; defaultValue = "" })
-        ) { backStackEntry ->
-            val selectedTag = backStackEntry.arguments?.getString("selectedTag") ?: ""
-            TagsHubScreen(
-                navController = navController,
-                viewModel = viewModel,
-                initialTag = selectedTag
-            )
-        }
 
         // Pomodoro Focus Timer Session
         composable(
@@ -195,25 +182,7 @@ fun AppNavigationGraph(
             AboutAppScreen(navController = navController, viewModel = viewModel)
         }
 
-        // Multi-Device P2P / WebRTC Synchronization Hub
-        composable("settings/sync") {
-            MultiDeviceSyncScreen(navController = navController, viewModel = viewModel)
-        }
 
-        composable("p2p_sync") {
-            MultiDeviceSyncScreen(navController = navController, viewModel = viewModel)
-        }
-
-        // In-App Document & Syllabus PDF Viewer
-        composable("pdf_viewer?filePath={filePath}&fileName={fileName}") { backStackEntry ->
-            val filePath = backStackEntry.arguments?.getString("filePath")
-            val fileName = backStackEntry.arguments?.getString("fileName")
-            PdfViewerScreen(
-                navController = navController,
-                filePath = filePath,
-                fileName = fileName
-            )
-        }
 
         // User Profile & Account Settings
         composable("profile_menu") {

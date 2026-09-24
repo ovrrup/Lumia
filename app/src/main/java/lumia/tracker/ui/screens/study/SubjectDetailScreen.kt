@@ -433,9 +433,6 @@ fun SubjectDetailScreen(
                                             Box(
                                                 modifier = Modifier
                                                     .background(colors.first, RoundedCornerShape(6.dp))
-                                                    .clickable {
-                                                        navController.navigate("tags_hub?selectedTag=$tag")
-                                                    }
                                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                                             ) {
                                                 Text(
@@ -467,7 +464,7 @@ fun SubjectDetailScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Syllabus Coverage",
+                                    text = "Topics Covered",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -1425,7 +1422,7 @@ fun SubjectDetailScreen(
                             attachmentContent = if (subjectNotes.isNotEmpty()) {
                                 subjectNotes.joinToString("\n\n") { "• ${it.content}" }
                             } else {
-                                "Subject syllabus outline for ${subject.name}.\n\nChapters:\n" +
+                                "Study topic outline for ${subject.name}.\n\nChapters:\n" +
                                         subjectChapters.joinToString("\n") { "• " + it.name } +
                                         "\n\nTopics:\n" + subjectTopics.joinToString("\n") { "[] " + it.title }
                             }
@@ -1486,21 +1483,17 @@ fun SubjectDetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    if (attachment.filePath.endsWith(".pdf", ignoreCase = true)) {
-                                        val encodedPath = Uri.encode(attachment.filePath)
-                                        val encodedName = Uri.encode(attachment.name)
-                                        navController.navigate("pdf_viewer?filePath=$encodedPath&fileName=$encodedName")
-                                    } else {
-                                        try {
-                                            val file = File(attachment.filePath)
-                                            if (!file.exists()) {
-                                                Toast.makeText(context, "File does not exist or was deleted", Toast.LENGTH_SHORT).show()
-                                            } else {
-                                                val authority = "${context.packageName}.provider"
-                                                val uri = androidx.core.content.FileProvider.getUriForFile(context, authority, file)
-                                                val mimeType = when (extension) {
-                                                    "txt" -> "text/plain"
-                                                    "md" -> "text/markdown"
+                                    try {
+                                        val file = File(attachment.filePath)
+                                        if (!file.exists()) {
+                                            Toast.makeText(context, "File does not exist or was deleted", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            val authority = "${context.packageName}.provider"
+                                            val uri = androidx.core.content.FileProvider.getUriForFile(context, authority, file)
+                                            val mimeType = when (extension) {
+                                                "pdf" -> "application/pdf"
+                                                "txt" -> "text/plain"
+                                                "md" -> "text/markdown"
                                                     "png" -> "image/png"
                                                     "jpg", "jpeg" -> "image/jpeg"
                                                     "gif" -> "image/gif"
@@ -1528,9 +1521,9 @@ fun SubjectDetailScreen(
                                         } catch (e: Exception) {
                                             Toast.makeText(context, "Could not open file: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                                         }
-                                    }
                                 }
                                 .padding(12.dp),
+
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
@@ -2216,14 +2209,14 @@ fun SubjectDetailScreen(
                         value = attachmentTitle,
                         onValueChange = { attachmentTitle = it },
                         label = { Text("Document Title") },
-                        placeholder = { Text("e.g. Syllabus Summary - ${subject.name}") },
+                        placeholder = { Text("e.g. Study Summary - ${subject.name}") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
                     OutlinedTextField(
                         value = attachmentContent,
                         onValueChange = { attachmentContent = it },
-                        label = { Text("Study Guide / Syllabus Material Content") },
+                        label = { Text("Study Notes & Summary") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         minLines = 5

@@ -923,8 +923,8 @@ fun AiStudyGuideExportDialog(
                 OutlinedTextField(
                     value = content,
                     onValueChange = { content = it },
-                    label = { Text("Study Guide & Lecture Content") },
-                    placeholder = { Text("Study notes, syllabus checklist, and key concepts...") },
+                    label = { Text("Notes & Summary") },
+                    placeholder = { Text("Study notes, topic checklist, and key ideas...") },
                     leadingIcon = {
                         Icon(Icons.Rounded.Article, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     },

@@ -55,50 +55,94 @@ fun ScholarInnovativeHeader(
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
     val pomodoroState by PomodoroService.state.collectAsStateWithLifecycle()
 
+    val tabTitle = when (selectedTab) {
+        0 -> "Home"
+        1 -> "Classes"
+        2 -> "Tasks"
+        3 -> "Progress"
+        else -> "Home"
+    }
+
+    val tabSubtitle = when (selectedTab) {
+        0 -> if (activeProfile.alias.isNotBlank()) "Welcome, ${activeProfile.alias}" else "Today's Overview"
+        1 -> "Courses and Subjects"
+        2 -> "To-Do List"
+        3 -> "Focus Time & Finished Tasks"
+        else -> ""
+    }
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.background,
         tonalElevation = 0.dp
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Column(modifier = Modifier.weight(1f)) {
+                AnimatedContent(
+                    targetState = tabTitle,
+                    transitionSpec = {
+                        (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
+                            .togetherWith(fadeOut(tween(140)) + slideOutVertically(tween(140)) { -it / 3 })
+                    },
+                    label = "header_title"
+                ) { title ->
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                AnimatedContent(
+                    targetState = tabSubtitle,
+                    transitionSpec = { fadeIn(tween(180)).togetherWith(fadeOut(tween(140))) },
+                    label = "header_subtitle"
+                ) { subtitle ->
+                    if (subtitle.isNotBlank()) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(42.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 1. Search / Tab Title Action Capsule (Reflects active tab context)
-                ScholarSearchCapsule(
-                    selectedTab = selectedTab,
+                if (pomodoroState.isRunning) {
+                    ScholarFocusPill(
+                        isRunning = true,
+                        timeLeft = pomodoroState.timeLeft,
+                        onClick = { navController.navigate("pomodoro") }
+                    )
+                }
+
+                IconButton(
                     onClick = { navController.navigate("search") },
-                    modifier = Modifier.weight(1f)
-                )
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Search,
+                        contentDescription = "Search",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
-                // 2. Responsive Live Focus Countdown Pill
-                ScholarFocusPill(
-                    isRunning = pomodoroState.isRunning,
-                    timeLeft = pomodoroState.timeLeft,
-                    onClick = { navController.navigate("pomodoro") }
-                )
-
-                // 3. Streak Flame Badge Widget (Interactive bottom sheet)
-                StreakWidget(
-                    viewModel = viewModel,
-                    navController = navController,
-                    modifier = Modifier.height(42.dp)
-                )
-
-                // 4. iOS Profile Avatar Capsule (Settings navigation)
                 ScholarProfileAvatar(
                     avatarEmoji = activeProfile.avatarEmoji,
                     displayName = activeProfile.name,
-                    onClick = { navController.navigate("settings") }
+                    onClick = { navController.navigate("settings") },
+                    modifier = Modifier.size(40.dp)
                 )
             }
         }

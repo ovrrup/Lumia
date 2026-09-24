@@ -152,7 +152,7 @@ fun AddCourseDialog(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Description (Optional)") },
-                    placeholder = { Text("Add course syllabus, objectives, or lecture room info") },
+                    placeholder = { Text("Add class notes, room number, or teacher info") },
                     leadingIcon = {
                         Icon(Icons.Rounded.Notes, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     },

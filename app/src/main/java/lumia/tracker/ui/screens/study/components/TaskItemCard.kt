@@ -44,24 +44,32 @@ fun TaskItemCard(
         targetValue = if (isCompleted) 0.55f else 1.0f,
         label = "taskAlpha"
     )
+    val checkScale by animateFloatAsState(
+        targetValue = if (isCompleted) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
+        ),
+        label = "taskCheckScale"
+    )
 
     ScholarCard(
         onClick = onEdit,
         modifier = modifier
             .fillMaxWidth()
             .alpha(contentAlpha),
-        shape = RoundedCornerShape(18.dp)
+        shape = RoundedCornerShape(20.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Animated Checkbox Circle Button
+            // Animated Checkbox Circle Button with 48dp accessible touch target
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(48.dp)
                     .clickable { viewModel.toggleTaskCompleted(task) },
                 contentAlignment = Alignment.Center
             ) {
@@ -69,13 +77,13 @@ fun TaskItemCard(
                     targetValue = if (isCompleted) MaterialTheme.colorScheme.primary else Color.Transparent,
                     label = "checkBg"
                 )
-                val borderColor = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                val borderColor = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
 
                 Box(
                     modifier = Modifier
-                        .size(22.dp)
+                        .size(24.dp)
                         .background(checkColor, CircleShape)
-                        .border(1.5.dp, borderColor, CircleShape),
+                        .border(2.dp, borderColor, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isCompleted) {
@@ -83,13 +91,15 @@ fun TaskItemCard(
                             imageVector = Icons.Rounded.Check,
                             contentDescription = "Completed",
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier
+                                .size(15.dp)
+                                .scale(checkScale)
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
 
             // Task Body
             Column(modifier = Modifier.weight(1f)) {
@@ -101,7 +111,7 @@ fun TaskItemCard(
                     Text(
                         text = task.title,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                         textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
                         maxLines = 2,
@@ -111,24 +121,24 @@ fun TaskItemCard(
 
                     // Priority Badge
                     if (task.priority > 0) {
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(8.dp))
                         val (pText, pBg, pTint) = when (task.priority) {
-                            2 -> Triple("High", MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f), MaterialTheme.colorScheme.error)
-                            1 -> Triple("Med", MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f), MaterialTheme.colorScheme.secondary)
+                            2 -> Triple("High", MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f), MaterialTheme.colorScheme.error)
+                            1 -> Triple("Medium", MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f), MaterialTheme.colorScheme.secondary)
                             else -> Triple("Low", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Surface(
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(6.dp),
                             color = pBg
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(4.dp)
+                                        .size(6.dp)
                                         .background(pTint, CircleShape)
                                 )
                                 Text(
@@ -144,7 +154,7 @@ fun TaskItemCard(
 
                 // Description
                 if (task.description.isNotBlank()) {
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(3.dp))
                     Text(
                         text = task.description,
                         style = MaterialTheme.typography.bodySmall,
@@ -156,24 +166,24 @@ fun TaskItemCard(
 
                 // Due Date
                 if (task.dueDateMillis != null) {
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(6.dp))
                     val isOverdue = task.dueDateMillis < System.currentTimeMillis() && !isCompleted
                     val df = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
                     val dateFormatted = df.format(Date(task.dueDateMillis))
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
                         Icon(
                             imageVector = if (isOverdue) Icons.Rounded.EventBusy else Icons.Rounded.DateRange,
                             contentDescription = null,
-                            modifier = Modifier.size(12.dp),
+                            modifier = Modifier.size(15.dp),
                             tint = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = if (isOverdue) "Overdue • $dateFormatted" else dateFormatted,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.bodySmall,
                             color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Medium
                         )
@@ -182,36 +192,33 @@ fun TaskItemCard(
 
                 // Tags Chips
                 if (task.tags.isNotBlank()) {
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(6.dp))
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         task.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { tag ->
                             val colors = getTagColors(tag)
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = colors.first,
-                                modifier = Modifier.clickable {
-                                    navController?.navigate("tags_hub?selectedTag=$tag")
-                                }
+                                shape = RoundedCornerShape(6.dp),
+                                color = colors.first
                             ) {
                                 Text(
                                     text = tag,
                                     style = MaterialTheme.typography.labelSmall,
                                     color = colors.second,
                                     fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                                 )
                             }
                         }
                     }
                 }
 
-                // Linked Entities Row (clean text without redundant link icon)
+                // Linked Entities Row
                 if (task.subjectId != null || task.courseId != null || task.assignmentId != null) {
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(6.dp))
                     val linkText = listOfNotNull(
                         if (task.subjectId != null) "Subject" else null,
                         if (task.courseId != null) "Course" else null,
@@ -231,12 +238,13 @@ fun TaskItemCard(
             // Delete Action Button
             BouncyIconButton(
                 onClick = { viewModel.deleteTask(task) },
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.DeleteOutline,
                     contentDescription = "Delete Task",
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

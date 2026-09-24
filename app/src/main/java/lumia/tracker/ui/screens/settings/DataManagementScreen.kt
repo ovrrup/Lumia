@@ -154,7 +154,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         Column(modifier = Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(
-                                    "Active Workspace",
+                                    "Your Data",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -173,7 +173,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                 }
                             }
                             Text(
-                                "${activeProfile.name} • SQLite Engine v3.45",
+                                "${activeProfile.name} • Saved on this phone",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -190,13 +190,13 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    "Storage Distribution",
+                                    "What is Saved",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    "$totalRecords Total Entities",
+                                    "$totalRecords items saved",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
@@ -270,11 +270,11 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 }
             }
 
-            // 2. Backup & Export Group
-            SettingsGroupCard(title = "Backup & Portability", icon = Icons.Rounded.SaveAlt) {
+            // 2. Backup & Restore Group
+            SettingsGroupCard(title = "Save & Restore", icon = Icons.Rounded.SaveAlt) {
                 SettingsActionItemInCard(
-                    title = "Export Workspace Backup",
-                    subtitle = "Export encrypted snapshot (.lumia)",
+                    title = "Save a Backup File",
+                    subtitle = "Save all your data to a file you can restore anytime",
                     icon = Icons.Rounded.UploadFile,
                     iconBgColor = Color(0xFF007AFF),
                     onClick = { showExportDialog = true }
@@ -286,19 +286,19 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 )
 
                 SettingsActionItemInCard(
-                    title = "Import & Restore Snapshot",
-                    subtitle = "Restore database from backup file",
+                    title = "Restore from Backup",
+                    subtitle = "Load your saved classes and tasks from a backup file",
                     icon = Icons.Rounded.FileDownload,
                     iconBgColor = Color(0xFF34C759),
                     onClick = { openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*")) }
                 )
             }
 
-            // 3. Maintenance & Optimizations
-            SettingsGroupCard(title = "Maintenance & Optimization", icon = Icons.Rounded.Build) {
+            // 3. Storage & Cleanup
+            SettingsGroupCard(title = "Storage & Cleanup", icon = Icons.Rounded.CleaningServices) {
                 SettingsActionItemInCard(
-                    title = "Optimize & Defragment Database",
-                    subtitle = if (defragText.isNotBlank()) defragText else "Rebuild SQLite indexes, vacuum tables, and reclaim free pages",
+                    title = "Clean Up App Storage",
+                    subtitle = if (defragText.isNotBlank()) defragText else "Free up unused space and keep the app running fast",
                     icon = Icons.Rounded.CleaningServices,
                     iconBgColor = Color(0xFFFF9500),
                     onClick = { viewModel.defragmentDatabase() }
@@ -310,8 +310,8 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 )
 
                 SettingsActionItemInCard(
-                    title = "Reset Workspace Data",
-                    subtitle = "Clear records or reset database",
+                    title = "Delete All Data",
+                    subtitle = "Erase all saved classes, tasks, and focus time",
                     icon = Icons.Rounded.DeleteForever,
                     isDestructive = true,
                     onClick = { showResetDialog = true }
@@ -329,10 +329,10 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             shape = RoundedCornerShape(24.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = { Icon(Icons.Rounded.SaveAlt, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-            title = { Text("Export Backup", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
+            title = { Text("Save a Backup", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Select backup scope:", style = MaterialTheme.typography.bodyMedium)
+                    Text("Select what to save:", style = MaterialTheme.typography.bodyMedium)
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.surface,
@@ -347,7 +347,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text("Current Profile (${activeProfile.name})", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                            Text("Export data linked to this workspace only.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Save data for this profile only.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Surface(
@@ -364,7 +364,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text("All Profiles & Data", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                            Text("Export all scholar profiles, tags, and settings.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Save everything across all profiles and settings.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -383,10 +383,10 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
             shape = RoundedCornerShape(24.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = { Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text("Reset Academic Data", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error) },
+            title = { Text("Delete All Data", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error) },
             text = {
                 Text(
-                    "Are you sure? This will permanently delete course records, tasks, and focus logs in this workspace.",
+                    "Are you sure? This will permanently delete all your classes, tasks, and focus history on this phone.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -399,7 +399,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Confirm Reset", fontWeight = FontWeight.Bold)
+                    Text("Delete Everything", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {

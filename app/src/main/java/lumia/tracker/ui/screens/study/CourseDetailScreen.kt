@@ -76,7 +76,7 @@ import kotlin.math.roundToInt
  * CourseDetailTab - Represents distinct decluttered sections of the Course workspace.
  */
 enum class CourseDetailTab(val title: String, val icon: ImageVector) {
-    CURRICULUM("Curriculum", Icons.Rounded.Checklist),
+    CURRICULUM("Topics", Icons.Rounded.Checklist),
     ATTENDANCE("Attendance", Icons.Rounded.EventAvailable),
     ASSIGNMENTS("Assignments", Icons.AutoMirrored.Rounded.LibraryBooks),
     NOTES("Notes", Icons.Rounded.Notes),
@@ -748,7 +748,7 @@ fun CourseDetailScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = "Syllabus Progress",
+                                            text = "Topics Progress",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -848,7 +848,7 @@ fun CourseDetailScreen(
                                     verticalArrangement = Arrangement.Center
                                 ) {
                                     Text(
-                                        "No curriculum topics linked",
+                                        "No topics linked yet",
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1771,12 +1771,7 @@ fun CourseDetailScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            if (attachment.filePath.endsWith(".pdf", ignoreCase = true)) {
-                                                val encodedPath = Uri.encode(attachment.filePath)
-                                                val encodedName = Uri.encode(attachment.name)
-                                                navController.navigate("pdf_viewer?filePath=$encodedPath&fileName=$encodedName")
-                                            } else {
-                                                try {
+                                            try {
                                                     val file = File(attachment.filePath)
                                                     if (!file.exists()) {
                                                         Toast.makeText(context, "File does not exist or was deleted", Toast.LENGTH_SHORT).show()
@@ -1784,6 +1779,7 @@ fun CourseDetailScreen(
                                                         val authority = "${context.packageName}.provider"
                                                         val uri = androidx.core.content.FileProvider.getUriForFile(context, authority, file)
                                                         val mimeType = when (extension) {
+                                                            "pdf" -> "application/pdf"
                                                             "txt" -> "text/plain"
                                                             "md" -> "text/markdown"
                                                             "png" -> "image/png"
@@ -1813,9 +1809,9 @@ fun CourseDetailScreen(
                                                 } catch (e: Exception) {
                                                     Toast.makeText(context, "Could not open file: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                                                 }
-                                            }
                                         }
                                         .padding(12.dp),
+
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Box(

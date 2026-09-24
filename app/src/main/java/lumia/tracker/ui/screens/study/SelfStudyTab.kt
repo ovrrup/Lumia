@@ -4,10 +4,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +34,7 @@ import lumia.tracker.ui.screens.study.components.MetricSummaryTile
 import lumia.tracker.ui.screens.study.components.TaskItemCard
 import lumia.tracker.ui.screens.study.dialogs.AddTaskDialog
 import lumia.tracker.ui.theme.bouncyScale
+import lumia.tracker.ui.util.getTagColors
 import lumia.tracker.viewmodel.ScholarViewModel
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
@@ -68,14 +71,19 @@ fun SelfStudyTab(
     var groupBy by remember { mutableStateOf("None") }
     var selectedFilterTab by remember { mutableStateOf(TaskFilterTab.ALL) }
     var selectedPriorityFilter by remember { mutableStateOf<Int?>(null) }
+    var selectedTagFilter by remember { mutableStateOf<String?>(null) }
 
     var localTasks by remember(tasks) { mutableStateOf(tasks) }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val reorderableState = rememberReorderableLazyListState(
         listState = listState,
         onMove = { from, to ->
-            localTasks = localTasks.toMutableList().apply {
-                add(to.index, removeAt(from.index))
+            val fromPos = localTasks.indexOfFirst { it.id == from.key }
+            val toPos = localTasks.indexOfFirst { it.id == to.key }
+            if (fromPos >= 0 && toPos >= 0) {
+                localTasks = localTasks.toMutableList().apply {
+                    add(toPos, removeAt(fromPos))
+                }
             }
         },
         canDragOver = { draggedOver, _ -> localTasks.any { it.id == draggedOver.key } }
@@ -96,8 +104,19 @@ fun SelfStudyTab(
     val completedTasks = tasks.filter { it.isCompleted }
     val futureTasks = tasks.filter { !it.isCompleted && it.dueDateMillis != null && it.dueDateMillis > System.currentTimeMillis() }
 
-    // Filtered tasks based on active filter tab and priority chip
-    val filteredTasks = remember(localTasks, selectedFilterTab, selectedPriorityFilter) {
+    // Collect all distinct tags with counts for inline tag filtering
+    val allTagsWithCounts = remember(localTasks) {
+        localTasks.flatMap { it.tags.split(",") }
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .groupingBy { it }
+            .eachCount()
+            .toList()
+            .sortedByDescending { it.second }
+    }
+
+    // Filtered tasks based on active filter tab, priority chip, and selected tag
+    val filteredTasks = remember(localTasks, selectedFilterTab, selectedPriorityFilter, selectedTagFilter) {
         localTasks.filter { task ->
             val matchesTab = when (selectedFilterTab) {
                 TaskFilterTab.ALL -> true
@@ -105,27 +124,12 @@ fun SelfStudyTab(
                 TaskFilterTab.COMPLETED -> task.isCompleted
             }
             val matchesPriority = selectedPriorityFilter == null || task.priority == selectedPriorityFilter
-            matchesTab && matchesPriority
+            val matchesTag = selectedTagFilter == null || task.tags.split(",").map { it.trim() }.contains(selectedTagFilter)
+            matchesTab && matchesPriority && matchesTag
         }
     }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        floatingActionButton = {
-            val src = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-            BouncyFloatingActionButton(
-                onClick = { showAddTaskDialog = true },
-                interactionSource = src,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier
-                    .padding(bottom = bottomPadding.calculateBottomPadding())
-                    .bouncyScale(src)
-            ) {
-                Icon(Icons.Rounded.AddTask, contentDescription = "Add Task")
-            }
-        }
-    ) { padding ->
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -134,10 +138,10 @@ fun SelfStudyTab(
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
-                top = bottomPadding.calculateTopPadding() + 12.dp,
-                bottom = bottomPadding.calculateBottomPadding() + 80.dp
+                top = 16.dp,
+                bottom = bottomPadding.calculateBottomPadding() + 88.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Task Breakdown Metrics Hero Row
             item(key = "task_metrics") {
@@ -145,26 +149,26 @@ fun SelfStudyTab(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Upcoming Assignments
+                    // Due Soon Assignments
                     MetricSummaryTile(
                         value = upcomingAssignments.size.toString(),
-                        label = "Upcoming",
+                        label = "Due Soon",
                         valueColor = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.weight(1f)
                     )
 
-                    // Pending Tasks
+                    // To-Do Tasks
                     MetricSummaryTile(
                         value = pendingTasks.size.toString(),
-                        label = "Pending",
+                        label = "To-Do",
                         valueColor = MaterialTheme.colorScheme.error,
                         modifier = Modifier.weight(1f)
                     )
 
-                    // Scheduled Tasks
+                    // Later Tasks
                     MetricSummaryTile(
                         value = futureTasks.size.toString(),
-                        label = "Scheduled",
+                        label = "Later",
                         valueColor = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
@@ -186,7 +190,7 @@ fun SelfStudyTab(
                     ) {
                         listOf(
                             TaskFilterTab.ALL to "All (${tasks.size})",
-                            TaskFilterTab.IN_PROGRESS to "Active (${pendingTasks.size})",
+                            TaskFilterTab.IN_PROGRESS to "To-Do (${pendingTasks.size})",
                             TaskFilterTab.COMPLETED to "Done (${completedTasks.size})"
                         ).forEach { (tab, label) ->
                             val isSelected = selectedFilterTab == tab
@@ -318,6 +322,65 @@ fun SelfStudyTab(
                 }
             }
 
+            // Inline Tag Filter Chips Row
+            if (allTagsWithCounts.isNotEmpty()) {
+                item(key = "inline_tag_filter_row") {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        item(key = "tag_filter_all") {
+                            val isAllSelected = selectedTagFilter == null
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isAllSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                                modifier = Modifier.clickable { selectedTagFilter = null }
+                            ) {
+                                Text(
+                                    text = "All Tags",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (isAllSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isAllSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+
+                        items(allTagsWithCounts, key = { it.first }) { (tag, count) ->
+                            val isSelected = selectedTagFilter == tag
+                            val (tagBg, tagText) = getTagColors(tag)
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) tagBg else MaterialTheme.colorScheme.surfaceContainerLow,
+                                border = if (isSelected) BorderStroke(1.dp, tagText.copy(alpha = 0.5f)) else null,
+                                modifier = Modifier.clickable {
+                                    selectedTagFilter = if (isSelected) null else tag
+                                }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = "#$tag",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) tagText else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "($count)",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = (if (isSelected) tagText else MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // Task Items / Empty State
             if (filteredTasks.isEmpty()) {
                 item(key = "empty_filtered_tasks") {
@@ -351,7 +414,7 @@ fun SelfStudyTab(
                             Text(
                                 text = when (selectedFilterTab) {
                                     TaskFilterTab.IN_PROGRESS -> "All caught up"
-                                    TaskFilterTab.COMPLETED -> "No completed tasks"
+                                    TaskFilterTab.COMPLETED -> "No completed tasks yet"
                                     TaskFilterTab.ALL -> "No tasks yet"
                                 },
                                 style = MaterialTheme.typography.titleMedium,
@@ -361,9 +424,9 @@ fun SelfStudyTab(
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = when (selectedFilterTab) {
-                                    TaskFilterTab.IN_PROGRESS -> "No active study tasks remaining."
-                                    TaskFilterTab.COMPLETED -> "Completed tasks will appear here."
-                                    TaskFilterTab.ALL -> "Add a task to start tracking your study goals."
+                                    TaskFilterTab.IN_PROGRESS -> "No to-do tasks right now."
+                                    TaskFilterTab.COMPLETED -> "Tasks you check off will appear here."
+                                    TaskFilterTab.ALL -> "Add a task to start tracking what you need to do."
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -381,7 +444,7 @@ fun SelfStudyTab(
                                 ) {
                                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Create Task", fontWeight = FontWeight.SemiBold)
+                                    Text("Add Task", fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -495,6 +558,21 @@ fun SelfStudyTab(
                     }
                 }
             }
+        }
+
+
+        val fabSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+        BouncyFloatingActionButton(
+            onClick = { showAddTaskDialog = true },
+            interactionSource = fabSource,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = bottomPadding.calculateBottomPadding() + 16.dp)
+                .bouncyScale(fabSource)
+        ) {
+            Icon(Icons.Rounded.Add, contentDescription = "Add Task", modifier = Modifier.size(24.dp))
         }
     }
 

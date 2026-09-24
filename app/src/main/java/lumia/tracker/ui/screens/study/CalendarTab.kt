@@ -78,10 +78,15 @@ fun CalendarTab(
         Spacer(modifier = Modifier.height(16.dp))
 
         val sortedCoursesForDay = remember(courses, selectedDay) {
+            val shortSelected = selectedDay.take(3).lowercase(java.util.Locale.US)
             courses.filter { course ->
-                course.scheduleDays.split(",").any { it.trim().equals(selectedDay, ignoreCase = true) }
+                course.scheduleDays.split(",").any {
+                    val trimmed = it.trim().lowercase(java.util.Locale.US)
+                    trimmed == selectedDay.lowercase(java.util.Locale.US) || trimmed.startsWith(shortSelected) || shortSelected.startsWith(trimmed)
+                }
             }.sortedBy { it.scheduleStartTime }
         }
+
 
         if (sortedCoursesForDay.isEmpty()) {
             Box(

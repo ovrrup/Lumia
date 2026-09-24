@@ -69,30 +69,14 @@ fun CoursesTab(
         } else null
     }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        floatingActionButton = {
-            val src = remember { MutableInteractionSource() }
-            BouncyFloatingActionButton(
-                onClick = onAddCourseClick,
-                interactionSource = src,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier
-                    .padding(bottom = bottomPadding.calculateBottomPadding())
-                    .bouncyScale(src)
-            ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Add Course")
-            }
-        }
-    ) { padding ->
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
-                top = bottomPadding.calculateTopPadding() + 12.dp,
-                bottom = bottomPadding.calculateBottomPadding() + 80.dp
+                top = 12.dp,
+                bottom = bottomPadding.calculateBottomPadding() + 88.dp
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -133,7 +117,7 @@ fun CoursesTab(
                         icon = Icons.AutoMirrored.Rounded.MenuBook,
                         title = "No courses enrolled yet",
                         description = "Add your courses to track lectures, attendance, and assignments.",
-                        buttonText = "Add Your First Course",
+                        buttonText = "Add Course",
                         onButtonClick = onAddCourseClick,
                         modifier = Modifier.padding(top = 16.dp),
                         accentColor = MaterialTheme.colorScheme.primary,
@@ -154,6 +138,21 @@ fun CoursesTab(
                     }
                 }
             }
+        }
+
+
+        val fabSource = remember { MutableInteractionSource() }
+        BouncyFloatingActionButton(
+            onClick = onAddCourseClick,
+            interactionSource = fabSource,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = bottomPadding.calculateBottomPadding() + 16.dp)
+                .bouncyScale(fabSource)
+        ) {
+            Icon(Icons.Rounded.Add, contentDescription = "Add Course", modifier = Modifier.size(24.dp))
         }
     }
 

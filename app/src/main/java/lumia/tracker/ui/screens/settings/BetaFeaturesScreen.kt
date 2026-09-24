@@ -110,11 +110,11 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 )
             }
 
-            // 2. Telemetry & Diagnostics
-            SettingsGroupCard(title = "Display Settings & Hooks", icon = Icons.Rounded.Analytics) {
+            // 2. Activity & History
+            SettingsGroupCard(title = "Activity & History", icon = Icons.Rounded.History) {
                 SettingsToggleItem(
-                    title = "Display Action History",
-                    subtitle = "Show audit history in analytics",
+                    title = "Show Recent Activity",
+                    subtitle = "Show recent activity log in the Progress tab",
                     checked = showActionHistory,
                     icon = Icons.Rounded.HistoryToggleOff,
                     onCheckedChange = { viewModel.updateShowActionHistory(it) }

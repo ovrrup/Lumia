@@ -174,13 +174,13 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     fun defragmentDatabase() {
         viewModelScope.launch(Dispatchers.IO) {
-            _defragStatus.value = "Running SQLite VACUUM optimization..."
+            _defragStatus.value = "Cleaning up storage..."
             try {
                 val db = AppDatabase.getDatabase(getApplication()).openHelper.writableDatabase
                 db.execSQL("VACUUM")
-                _defragStatus.value = "Optimized! Database compacted successfully."
+                _defragStatus.value = "All clean! Space freed up successfully."
             } catch (e: Exception) {
-                _defragStatus.value = "Optimization failed: ${e.message}"
+                _defragStatus.value = "Cleanup failed: ${e.message}"
             }
             loadDBStatistics()
         }

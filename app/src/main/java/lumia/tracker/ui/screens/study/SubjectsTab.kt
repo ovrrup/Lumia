@@ -65,26 +65,14 @@ fun SubjectsTab(
         if (totalTopics > 0) ((completedTopics.toFloat() / totalTopics) * 100).toInt() else null
     }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        floatingActionButton = {
-            BouncyFloatingActionButton(
-                onClick = onAddSubjectClick,
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = Modifier.padding(bottom = bottomPadding.calculateBottomPadding())
-            ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Add Subject")
-            }
-        }
-    ) { padding ->
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
-                top = bottomPadding.calculateTopPadding() + 12.dp,
-                bottom = bottomPadding.calculateBottomPadding() + 80.dp
+                top = 12.dp,
+                bottom = bottomPadding.calculateBottomPadding() + 88.dp
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -121,9 +109,9 @@ fun SubjectsTab(
                 item(key = "empty_subjects") {
                     StudyEmptyStateCard(
                         icon = Icons.AutoMirrored.Rounded.MenuBook,
-                        title = "No subjects registered yet",
-                        description = "Organize your academic curriculum and track syllabus topics by subject.",
-                        buttonText = "Create First Subject",
+                        title = "No subjects added yet",
+                        description = "Organize your study topics and track your learning progress by subject.",
+                        buttonText = "Add Subject",
                         onButtonClick = onAddSubjectClick,
                         modifier = Modifier.padding(top = 16.dp),
                         accentColor = MaterialTheme.colorScheme.tertiary,
@@ -152,6 +140,18 @@ fun SubjectsTab(
                     }
                 }
             }
+        }
+
+
+        BouncyFloatingActionButton(
+            onClick = onAddSubjectClick,
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = bottomPadding.calculateBottomPadding() + 16.dp)
+        ) {
+            Icon(Icons.Rounded.Add, contentDescription = "Add Subject", modifier = Modifier.size(24.dp))
         }
     }
 

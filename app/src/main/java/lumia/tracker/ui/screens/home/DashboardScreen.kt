@@ -124,24 +124,9 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                 AnimatedContent(
                     targetState = selectedTab,
                     transitionSpec = {
-                        val isForward = targetState > initialState
-                        val direction = if (isForward) 1 else -1
-                        val slideDistanceFraction = 0.12f
-                        val duration = 200
-
-                        (slideInHorizontally(
-                            animationSpec = tween(durationMillis = duration, easing = FastOutSlowInEasing),
-                            initialOffsetX = { fullWidth -> (fullWidth * slideDistanceFraction * direction).toInt() }
-                        ) + fadeIn(
-                            animationSpec = tween(durationMillis = duration, easing = LinearOutSlowInEasing)
-                        )).togetherWith(
-                            slideOutHorizontally(
-                                animationSpec = tween(durationMillis = duration, easing = FastOutSlowInEasing),
-                                targetOffsetX = { fullWidth -> (-fullWidth * slideDistanceFraction * direction).toInt() }
-                            ) + fadeOut(
-                                animationSpec = tween(durationMillis = duration, easing = FastOutLinearInEasing)
-                            )
-                        )
+                        (fadeIn(animationSpec = tween(180, easing = LinearOutSlowInEasing)) +
+                         scaleIn(initialScale = 0.98f, animationSpec = tween(180, easing = FastOutSlowInEasing)))
+                            .togetherWith(fadeOut(animationSpec = tween(140, easing = FastOutLinearInEasing)))
                     },
                     label = "DashboardTabContent",
                     modifier = Modifier.fillMaxSize()
@@ -385,7 +370,7 @@ private fun RowScope.DashboardNavItems(
         alwaysShowLabel = alwaysShowLabel
     )
 
-    // 1: Academics (Courses & Subjects Unified)
+    // 1: Classes (Courses & Subjects)
     val academicsSelected = selectedTab == 1
     val academicsScale by animateFloatAsState(
         targetValue = if (academicsSelected) 1.05f else 1.0f,
@@ -396,21 +381,21 @@ private fun RowScope.DashboardNavItems(
         icon = {
             Icon(
                 Icons.AutoMirrored.Rounded.MenuBook,
-                contentDescription = "Academics",
+                contentDescription = "Classes",
                 modifier = Modifier.graphicsLayer {
                     scaleX = academicsScale
                     scaleY = academicsScale
                 }
             )
         },
-        label = if (hideLabels) null else { { Text("Academics", fontWeight = if (academicsSelected) FontWeight.Bold else FontWeight.Medium) } },
+        label = if (hideLabels) null else { { Text("Classes", fontWeight = if (academicsSelected) FontWeight.Bold else FontWeight.Medium) } },
         selected = academicsSelected,
         onClick = { onSelectTab(1) },
         colors = navItemColors,
         alwaysShowLabel = alwaysShowLabel
     )
 
-    // 2: Tasks (SelfStudy)
+    // 2: Tasks
     if (featureSelfStudyEnabled) {
         val tasksSelected = selectedTab == 2
         val tasksScale by animateFloatAsState(
@@ -437,7 +422,7 @@ private fun RowScope.DashboardNavItems(
         )
     }
 
-    // 3: Analytics
+    // 3: Progress
     if (featureAnalyticsEnabled) {
         val analyticsSelected = selectedTab == 3
         val analyticsScale by animateFloatAsState(
@@ -449,14 +434,14 @@ private fun RowScope.DashboardNavItems(
             icon = {
                 Icon(
                     Icons.Rounded.Analytics,
-                    contentDescription = "Analytics",
+                    contentDescription = "Progress",
                     modifier = Modifier.graphicsLayer {
                         scaleX = analyticsScale
                         scaleY = analyticsScale
                     }
                 )
             },
-            label = if (hideLabels) null else { { Text("Analytics", fontWeight = if (analyticsSelected) FontWeight.Bold else FontWeight.Medium) } },
+            label = if (hideLabels) null else { { Text("Progress", fontWeight = if (analyticsSelected) FontWeight.Bold else FontWeight.Medium) } },
             selected = analyticsSelected,
             onClick = { onSelectTab(3) },
             colors = navItemColors,

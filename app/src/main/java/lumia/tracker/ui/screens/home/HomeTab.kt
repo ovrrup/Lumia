@@ -83,6 +83,20 @@ private fun parseTimeToDayMillis(timeStr: String, baseCal: Calendar): Long? {
 }
 
 /**
+ * Accurately determines if a course schedule includes the specified day,
+ * supporting full names ('Monday'), abbreviations ('Mon'), single letters, and comma-separated lists.
+ */
+private fun isCourseScheduledForDay(scheduleDays: String, targetDay: String): Boolean {
+    if (scheduleDays.isBlank() || targetDay.isBlank()) return false
+    val shortTarget = targetDay.take(3).lowercase(Locale.US)
+    return scheduleDays.split(",").any { day ->
+        val trimmed = day.trim().lowercase(Locale.US)
+        trimmed == targetDay.lowercase(Locale.US) || trimmed.startsWith(shortTarget) || shortTarget.startsWith(trimmed)
+    }
+}
+
+/**
+
  * HomeTab - Interactive Academic Command Center with modern Bento Grid layout.
  * Combines personalized time-aware greeting, 1-tap focus session launching,
  * interactive task objectives, dynamic timetable browser, real-time attendance recording,
@@ -143,15 +157,27 @@ fun HomeTab(
     }
 
     // Pending scheduled lectures for today where attendance has not yet been marked
-    val todayDayOfWeekStr = remember { SimpleDateFormat("EEEE", Locale.getDefault()).format(Date()) }
-    val pendingAttendanceCoursesToday = remember(courses, todayDayOfWeekStr, allAttendanceRecords) {
-        val todayCourses = courses.filter { it.scheduleDays.contains(todayDayOfWeekStr, ignoreCase = true) }
-        todayCourses.filter { course ->
-            allAttendanceRecords.none { record ->
-                record.courseId == course.id && record.dateMillis == todayStartMillis
-            }
+    val todayDayOfWeekStr = remember {
+        when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> "Monday"
+            Calendar.TUESDAY -> "Tuesday"
+            Calendar.WEDNESDAY -> "Wednesday"
+            Calendar.THURSDAY -> "Thursday"
+            Calendar.FRIDAY -> "Friday"
+            Calendar.SATURDAY -> "Saturday"
+            Calendar.SUNDAY -> "Sunday"
+            else -> ""
         }
     }
+    val pendingAttendanceCoursesToday = remember(courses, todayDayOfWeekStr, allAttendanceRecords) {
+        courses.filter { course ->
+            isCourseScheduledForDay(course.scheduleDays, todayDayOfWeekStr) &&
+                allAttendanceRecords.none { record ->
+                    record.courseId == course.id && record.dateMillis == todayStartMillis
+                }
+        }
+    }
+
 
     val isFocusRunning = pomodoroState.isRunning
 
@@ -160,10 +186,10 @@ fun HomeTab(
         contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
-            top = bottomPadding.calculateTopPadding() + 8.dp,
-            bottom = bottomPadding.calculateBottomPadding() + 32.dp
+            top = 16.dp,
+            bottom = bottomPadding.calculateBottomPadding() + 24.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // 1. Personalized Time-Aware Greeting Section
         item(key = "greeting_section") {
@@ -187,7 +213,7 @@ fun HomeTab(
             ) {
                 Text(
                     text = greetingHeadline,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
@@ -196,40 +222,275 @@ fun HomeTab(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = todayDateFormatted,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        // 2. Permission Health Check Panels
-        item(key = "permissions") {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                NotificationPermissionPanel()
-                ExactAlarmPermissionPanel()
-                BatteryOptimizationPermissionPanel()
+        // 2. Smart Daily Briefing Hero Card
+        item(key = "smart_daily_briefing") {
+            val nowMillis = System.currentTimeMillis()
+            val todayCalendar = Calendar.getInstance()
+            val todayCoursesList = remember(courses, todayDayOfWeekStr) {
+                courses.filter { isCourseScheduledForDay(it.scheduleDays, todayDayOfWeekStr) }
+            }
+
+
+            val liveCourse = remember(todayCoursesList, nowMillis) {
+                todayCoursesList.find { course ->
+                    val s = parseTimeToDayMillis(course.scheduleStartTime, todayCalendar)
+                    val e = parseTimeToDayMillis(course.scheduleEndTime, todayCalendar)
+                    s != null && e != null && nowMillis in s..e
+                }
+            }
+
+            val nextCourse = remember(todayCoursesList, nowMillis) {
+                todayCoursesList.filter { course ->
+                    val s = parseTimeToDayMillis(course.scheduleStartTime, todayCalendar)
+                    s != null && nowMillis < s
+                }.minByOrNull {
+                    parseTimeToDayMillis(it.scheduleStartTime, todayCalendar) ?: Long.MAX_VALUE
+                }
+            }
+
+            val allCoursesEnded = remember(todayCoursesList, nowMillis) {
+                todayCoursesList.isNotEmpty() && todayCoursesList.all { course ->
+                    val e = parseTimeToDayMillis(course.scheduleEndTime, todayCalendar)
+                    e != null && nowMillis > e
+                }
+            }
+
+            val dueTodayTasksCount = remember(tasks, todayStartMillis) {
+                tasks.count { !it.isCompleted && it.dueDateMillis != null && it.dueDateMillis in todayStartMillis until (todayStartMillis + 86400000L) }
+            }
+            val overdueTasksCount = remember(tasks, todayStartMillis) {
+                tasks.count { !it.isCompleted && it.dueDateMillis != null && it.dueDateMillis < todayStartMillis }
+            }
+
+            ScholarCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp),
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp)
+                ) {
+                    // Header Row: Sparkle Icon + Title + Action Pill
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.AutoAwesome,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = "DAILY BRIEFING",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                letterSpacing = 1.sp
+                            )
+                        }
+
+                        // Quick 1-tap Action
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable {
+                                if (!isFocusRunning) {
+                                    val intent = Intent(context, PomodoroService::class.java).apply {
+                                        action = "START"
+                                        putExtra("workDuration", workDurationMin * 60)
+                                        putExtra("shortBreakDuration", 5 * 60)
+                                        putExtra("longBreakDuration", 15 * 60)
+                                        putExtra("periodSessions", 4)
+                                    }
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                        context.startForegroundService(intent)
+                                    } else {
+                                        context.startService(intent)
+                                    }
+                                }
+                                navController.navigate("pomodoro") { launchSingleTop = true }
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isFocusRunning) Icons.Rounded.GraphicEq else Icons.Rounded.PlayArrow,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = if (isFocusRunning) "Focusing" else "Start Focus",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+
+                    // Smart Main Context Headline
+                    val briefingHeadline = when {
+                        liveCourse != null -> "Live Now: ${liveCourse.name}"
+                        nextCourse != null -> "Next: ${nextCourse.name} at ${nextCourse.scheduleStartTime}"
+                        allCoursesEnded -> "All classes finished for today"
+                        todayCoursesList.isNotEmpty() -> "${todayCoursesList.size} classes scheduled today"
+                        else -> "No classes scheduled today"
+                    }
+
+                    Text(
+                        text = briefingHeadline,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(Modifier.height(4.dp))
+
+                    // Dynamic Smart Subtitle
+                    val briefingSubtitle = when {
+                        overdueTasksCount > 0 -> "$overdueTasksCount overdue tasks need attention • $todayFocusMinutes mins focused today"
+                        dueTodayTasksCount > 0 -> "$dueTodayTasksCount tasks due today • Keep up the great pace!"
+                        pendingTasksCount > 0 -> "$pendingTasksCount tasks to do • ${120 - todayFocusMinutes.coerceAtMost(120)}m left to study goal"
+                        else -> "All caught up on tasks! Great time to study or review notes."
+                    }
+
+                    Text(
+                        text = briefingSubtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(Modifier.height(14.dp))
+
+                    // 3 Glanceable Metric Pills
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Classes pill
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.MenuBook,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "${todayCoursesList.size} Classes",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        // Tasks pill
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.TaskAlt,
+                                    contentDescription = null,
+                                    tint = if (overdueTasksCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "$pendingTasksCount Tasks",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        // Focus pill
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Timer,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "${todayFocusMinutes}m Focus",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        // 3. Bento Grid Section (Focus Hero + Split Cards)
+        // 3. Focus Station & Quick Cards
         item(key = "bento_grid_section") {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Bento 1: Focus Hero Card
+                // Focus Hero Card
                 ScholarCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .bouncyClick(onClick = {
                             navController.navigate("pomodoro") { launchSingleTop = true }
                         }),
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(22.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(20.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -245,11 +506,11 @@ fun HomeTab(
                                         imageVector = Icons.Rounded.Timer,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                     Text(
-                                        text = if (isFocusRunning) "Focusing" else "Focus",
-                                        style = MaterialTheme.typography.labelMedium,
+                                        text = if (isFocusRunning) "Focus Session Active" else "Study Focus",
+                                        style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -271,14 +532,16 @@ fun HomeTab(
 
                                 Text(
                                     text = focusDisplayTime,
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.displayMedium,
+                                    fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
 
+                                Spacer(Modifier.height(2.dp))
+
                                 Text(
-                                    text = if (isFocusRunning) "Session in progress" else "Today's focus time",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    text = if (isFocusRunning) "Timer is running • Keep going!" else "Daily study target: 2 hours",
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -301,7 +564,7 @@ fun HomeTab(
                                     }
                                     navController.navigate("pomodoro") { launchSingleTop = true }
                                 },
-                                modifier = Modifier.size(46.dp),
+                                modifier = Modifier.size(56.dp),
                                 shape = CircleShape,
                                 colors = IconButtonDefaults.filledIconButtonColors(
                                     containerColor = MaterialTheme.colorScheme.primary,
@@ -311,12 +574,12 @@ fun HomeTab(
                                 Icon(
                                     imageVector = if (isFocusRunning) Icons.Rounded.GraphicEq else Icons.Rounded.PlayArrow,
                                     contentDescription = if (isFocusRunning) "Focus in progress" else "Start Focus",
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(32.dp)
                                 )
                             }
                         }
 
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(16.dp))
 
                         val focusProgress = remember(todayFocusMinutes) {
                             (todayFocusMinutes.toFloat() / 120f).coerceIn(0f, 1f)
@@ -325,20 +588,20 @@ fun HomeTab(
                             progress = { focusProgress },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(4.dp)
-                                .clip(RoundedCornerShape(2.dp)),
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp)),
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     }
                 }
 
-                // Bento Row 2: Split Cards (Tasks Objectives & Academic Courses)
+                // Row 2: Split Cards (Tasks & Courses)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    // Bento 2: Tasks Objectives Tile
+                    // Tasks Card
                     ScholarCard(
                         modifier = Modifier
                             .weight(1f)
@@ -376,7 +639,7 @@ fun HomeTab(
                                 ) {
                                     Icon(
                                         Icons.Rounded.AddCircleOutline,
-                                        contentDescription = "Quick Add Task",
+                                        contentDescription = "Add Task",
                                         tint = MaterialTheme.colorScheme.secondary,
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -385,7 +648,7 @@ fun HomeTab(
 
                             Column {
                                 Text(
-                                    text = "$pendingTasksCount Pending",
+                                    text = "$pendingTasksCount To Do",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -503,17 +766,14 @@ fun HomeTab(
         item(key = "today_classes_calendar") {
             val baseCalendar = Calendar.getInstance()
             baseCalendar.add(Calendar.DAY_OF_MONTH, selectedDateOffset)
-            val currentDayOfWeekStr = SimpleDateFormat("EEEE", Locale.getDefault()).format(baseCalendar.time)
-            val currentShortDayStr = SimpleDateFormat("EEE", Locale.getDefault()).format(baseCalendar.time)
+            val currentDayOfWeekStr = SimpleDateFormat("EEEE", Locale.US).format(baseCalendar.time)
 
-            val scheduledCourses = remember(courses, currentDayOfWeekStr, currentShortDayStr) {
+            val scheduledCourses = remember(courses, currentDayOfWeekStr) {
                 courses.filter { course ->
-                    course.scheduleDays.isNotBlank() && (
-                        course.scheduleDays.contains(currentDayOfWeekStr, ignoreCase = true) ||
-                        course.scheduleDays.contains(currentShortDayStr, ignoreCase = true)
-                    )
+                    isCourseScheduledForDay(course.scheduleDays, currentDayOfWeekStr)
                 }
             }
+
 
             val isSelectedDayToday = selectedDateOffset == 0
             val currentTimeMillis = System.currentTimeMillis()
@@ -545,7 +805,7 @@ fun HomeTab(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Text(
-                                    text = "Timetable & Schedule",
+                                    text = "Class Schedule",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -630,15 +890,13 @@ fun HomeTab(
 
                             val dayLetter = SimpleDateFormat("EEE", Locale.getDefault()).format(calOffset.time)
                             val dayNumber = calOffset.get(Calendar.DAY_OF_MONTH).toString()
-                            val fullDayName = SimpleDateFormat("EEEE", Locale.getDefault()).format(calOffset.time)
+                            val fullDayName = SimpleDateFormat("EEEE", Locale.US).format(calOffset.time)
 
                             // Find courses scheduled for this specific day to render dots
                             val dayCourses = courses.filter { c ->
-                                c.scheduleDays.isNotBlank() && (
-                                    c.scheduleDays.contains(fullDayName, ignoreCase = true) ||
-                                    c.scheduleDays.contains(dayLetter, ignoreCase = true)
-                                )
+                                isCourseScheduledForDay(c.scheduleDays, fullDayName)
                             }
+
 
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -721,13 +979,13 @@ fun HomeTab(
                                     modifier = Modifier.size(28.dp)
                                 )
                                 Text(
-                                    text = "No Lectures Scheduled",
+                                    text = "No Classes Today",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = "Enjoy your free day or prepare ahead for upcoming assignments.",
+                                    text = "Enjoy your free time or catch up on your tasks.",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
@@ -871,7 +1129,7 @@ fun HomeTab(
                                                     else -> MaterialTheme.colorScheme.primary
                                                 }
                                                 Surface(
-                                                    shape = RoundedCornerShape(8.dp),
+                                                    shape = RoundedCornerShape(10.dp),
                                                     color = statusColor.copy(alpha = 0.15f),
                                                     modifier = Modifier.clickable {
                                                         // Toggle between Present -> Absent -> Late
@@ -884,41 +1142,41 @@ fun HomeTab(
                                                     }
                                                 ) {
                                                     Row(
-                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                                         verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                                                     ) {
                                                         Icon(
                                                             if (existingAttendance.status.equals("present", true)) Icons.Rounded.Check else Icons.Rounded.Edit,
                                                             contentDescription = null,
                                                             tint = statusColor,
-                                                            modifier = Modifier.size(12.dp)
+                                                            modifier = Modifier.size(14.dp)
                                                         )
                                                         Text(
                                                             text = existingAttendance.status,
-                                                            style = MaterialTheme.typography.labelSmall,
+                                                            style = MaterialTheme.typography.labelMedium,
                                                             fontWeight = FontWeight.Bold,
                                                             color = statusColor
                                                         )
                                                     }
                                                 }
                                             } else {
-                                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                     // Quick 1-tap Present
                                                     FilledTonalIconButton(
                                                         onClick = {
-                                                            viewModel.addAttendanceRecord(course.id, selectedDateStartMillis, "Present")
+                                                             viewModel.addAttendanceRecord(course.id, selectedDateStartMillis, "Present")
                                                         },
                                                         colors = IconButtonDefaults.filledTonalIconButtonColors(
                                                             containerColor = Color(0xFF34C759).copy(alpha = 0.15f),
                                                             contentColor = Color(0xFF34C759)
                                                         ),
-                                                        modifier = Modifier.size(32.dp)
+                                                        modifier = Modifier.size(40.dp)
                                                     ) {
                                                         Icon(
                                                             Icons.Rounded.Check,
                                                             contentDescription = "Present",
-                                                            modifier = Modifier.size(16.dp)
+                                                            modifier = Modifier.size(20.dp)
                                                         )
                                                     }
 
@@ -931,12 +1189,12 @@ fun HomeTab(
                                                             containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
                                                             contentColor = MaterialTheme.colorScheme.error
                                                         ),
-                                                        modifier = Modifier.size(32.dp)
+                                                        modifier = Modifier.size(40.dp)
                                                     ) {
                                                         Icon(
                                                             Icons.Rounded.Close,
                                                             contentDescription = "Absent",
-                                                            modifier = Modifier.size(16.dp)
+                                                            modifier = Modifier.size(20.dp)
                                                         )
                                                     }
                                                 }
@@ -1147,18 +1405,18 @@ fun HomeTab(
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        // Minimal Checkbox
+                                        // Clear, Accessible Checkbox
                                         Box(
                                             modifier = Modifier
-                                                .size(20.dp)
+                                                .size(24.dp)
                                                 .clip(CircleShape)
                                                 .border(
-                                                    width = 1.5.dp,
-                                                    color = if (task.isCompleted) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline,
+                                                    width = 2.dp,
+                                                    color = if (task.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                                                     shape = CircleShape
                                                 )
                                                 .background(
-                                                    if (task.isCompleted) MaterialTheme.colorScheme.tertiary else Color.Transparent
+                                                    if (task.isCompleted) MaterialTheme.colorScheme.primary else Color.Transparent
                                                 ),
                                             contentAlignment = Alignment.Center
                                         ) {
@@ -1166,13 +1424,13 @@ fun HomeTab(
                                                 Icon(
                                                     Icons.Rounded.Check,
                                                     contentDescription = null,
-                                                    tint = Color.White,
-                                                    modifier = Modifier.size(12.dp)
+                                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                                    modifier = Modifier.size(14.dp)
                                                 )
                                             }
                                         }
 
-                                        Spacer(Modifier.width(10.dp))
+                                        Spacer(Modifier.width(12.dp))
 
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(

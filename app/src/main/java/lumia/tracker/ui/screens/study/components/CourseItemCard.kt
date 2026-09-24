@@ -71,8 +71,10 @@ fun CourseItemCard(
         attendanceList.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
     }
     val effectiveTotal = attendanceList.size - cancelledCount
-    val attendancePercentage = if (effectiveTotal > 0) {
-        ((attendedCount.toFloat() / effectiveTotal) * 100).roundToInt()
+    val finalAttended = if (effectiveTotal > 0) attendedCount else course.attendedClasses
+    val finalTotal = if (effectiveTotal > 0) effectiveTotal else course.totalClasses
+    val attendancePercentage = if (finalTotal > 0) {
+        ((finalAttended.toFloat() / finalTotal) * 100).roundToInt()
     } else null
 
     // Course assignments
@@ -91,19 +93,39 @@ fun CourseItemCard(
         }
     }
 
+    // Attendance calculation with exact integer mathematics (target: 75% attendance)
+    val safeToMiss = if (finalTotal > 0 && finalAttended * 4 >= finalTotal * 3) {
+        (4 * finalAttended - 3 * finalTotal) / 3
+    } else 0
+    val neededToAttend = if (finalTotal > 0 && finalAttended * 4 < finalTotal * 3) {
+        3 * finalTotal - 4 * finalAttended
+    } else 0
+    val attendanceRecommendation = if (attendancePercentage != null) {
+        if (attendancePercentage >= 75) {
+            if (safeToMiss > 0) {
+                val classWord = if (safeToMiss == 1) "class" else "classes"
+                "Safe to miss $safeToMiss $classWord"
+            } else {
+                "On track"
+            }
+        } else {
+            val classWord = if (neededToAttend == 1) "class" else "classes"
+            "Need $neededToAttend more $classWord"
+        }
+    } else ""
+
+
     ScholarCard(
         onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        shape = RoundedCornerShape(20.dp)
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp)
+                .padding(16.dp)
         ) {
-            // Header Row: Initials Badge, Course Name & Code/Instructor, Menu
+            // Header Row: Monogram Badge, Course Name & Instructor, Menu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -111,8 +133,8 @@ fun CourseItemCard(
                 // Course Code / Initials Monogram Badge
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .background(courseColor.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
+                        .size(48.dp)
+                        .background(courseColor.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -142,7 +164,7 @@ fun CourseItemCard(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = subtitle,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -154,7 +176,7 @@ fun CourseItemCard(
                 Box {
                     BouncyIconButton(
                         onClick = { expanded = true },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,
@@ -198,40 +220,40 @@ fun CourseItemCard(
                 }
             }
 
-            // Badges Section: Attendance Health Gauge & Pending Assignments
+            // Badges Section: Smart Attendance Health Gauge & Pending Assignments
             val hasAttendance = attendancePercentage != null
             val hasAssignments = courseAssignments.isNotEmpty()
 
             if (hasAttendance || hasAssignments) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Attendance Status Badge
+                    // Smart Attendance Status Badge
                     if (attendancePercentage != null) {
                         val isGood = attendancePercentage >= 75
                         val isWarning = attendancePercentage in 50..74
                         val statusColor = if (isGood) Color(0xFF10B981) else if (isWarning) Color(0xFFF59E0B) else Color(0xFFEF4444)
 
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(8.dp),
                             color = statusColor.copy(alpha = 0.12f)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(5.dp)
+                                        .size(6.dp)
                                         .background(statusColor, CircleShape)
                                 )
                                 Text(
-                                    text = "$attendancePercentage% Attendance",
-                                    style = MaterialTheme.typography.labelSmall,
+                                    text = "$attendancePercentage% • $attendanceRecommendation",
+                                    style = MaterialTheme.typography.labelMedium,
                                     color = statusColor,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -242,22 +264,22 @@ fun CourseItemCard(
                     // Pending Assignments Badge
                     if (pendingAssignmentsCount > 0) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(5.dp)
+                                        .size(6.dp)
                                         .background(MaterialTheme.colorScheme.secondary, CircleShape)
                                 )
                                 Text(
-                                    text = "$pendingAssignmentsCount Pending",
-                                    style = MaterialTheme.typography.labelSmall,
+                                    text = "$pendingAssignmentsCount to do",
+                                    style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -265,15 +287,15 @@ fun CourseItemCard(
                         }
                     } else if (courseAssignments.isNotEmpty()) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         ) {
                             Text(
-                                text = "${courseAssignments.size} Assignments",
-                                style = MaterialTheme.typography.labelSmall,
+                                text = "${courseAssignments.size} tasks done",
+                                style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                     }
@@ -283,7 +305,7 @@ fun CourseItemCard(
             // Schedule Row
             val hasSchedule = course.scheduleDays.isNotBlank() || course.schedule.isNotBlank() || course.scheduleStartTime.isNotBlank()
             if (hasSchedule) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 val daysShort = course.scheduleDays.split(",").map { it.trim().take(3) }.filter { it.isNotBlank() }.joinToString(", ")
                 val timeRange = if (course.scheduleStartTime.isNotBlank()) {
                     "${course.scheduleStartTime} - ${course.scheduleEndTime}".trim()
@@ -292,17 +314,17 @@ fun CourseItemCard(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Schedule,
                         contentDescription = null,
-                        modifier = Modifier.size(13.dp),
+                        modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
                         text = scheduleStr.ifBlank { "Schedule set" },
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
@@ -316,16 +338,16 @@ fun CourseItemCard(
                 course.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }
             }
             if (tagsList.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     tagsList.forEach { tag ->
                         val (bgColor, textColor) = getTagColors(tag)
                         Surface(
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(6.dp),
                             color = bgColor
                         ) {
                             Text(
@@ -333,7 +355,7 @@ fun CourseItemCard(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = textColor,
                                 fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                             )
                         }
                     }
@@ -344,24 +366,24 @@ fun CourseItemCard(
             if (linkedSubjects.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     for (subj in linkedSubjects) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(8.dp),
                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier.clickable { onSubjectClick(subj.id) }
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(5.dp)
+                                        .size(6.dp)
                                         .background(MaterialTheme.colorScheme.primary, CircleShape)
                                 )
                                 Text(

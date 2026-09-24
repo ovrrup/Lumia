@@ -72,10 +72,11 @@ fun ScholarCard(
     border: BorderStroke? = null,
     shadowElevation: Dp = ScholarCardDefaults.shadowElevation,
     tonalElevation: Dp = ScholarCardDefaults.tonalElevation,
+    animateSize: Boolean = false,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val targetColor = containerColor ?: MaterialTheme.colorScheme.surface
+    val targetColor = containerColor ?: MaterialTheme.colorScheme.surfaceContainerLow
     val targetBorder = border ?: ScholarCardDefaults.border()
     
     val cardModifier = if (onClick != null) {
@@ -94,15 +95,19 @@ fun ScholarCard(
         shadowElevation = shadowElevation,
         tonalElevation = tonalElevation
     ) {
-        Box(
-            modifier = Modifier.animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioLowBouncy,
-                    stiffness = Spring.StiffnessMediumLow
-                )
-            ),
-            content = content
-        )
+        if (animateSize) {
+            Box(
+                modifier = Modifier.animateContentSize(
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = 200,
+                        easing = androidx.compose.animation.core.FastOutSlowInEasing
+                    )
+                ),
+                content = content
+            )
+        } else {
+            Box(content = content)
+        }
     }
 }
 

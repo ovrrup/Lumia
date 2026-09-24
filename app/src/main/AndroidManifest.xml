@@ -221,12 +221,6 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
-        <service
-            android:name=".sync.service.P2PSyncForegroundService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync">
-        </service>
-
     </application>
 
 </manifest>
