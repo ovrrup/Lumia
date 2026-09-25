@@ -32,8 +32,14 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import lumia.tracker.viewmodel.ScholarViewModel
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import lumia.tracker.ui.components.BouncyButton
+import lumia.tracker.ui.components.GlassCapsule
+import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.components.ScholarCardDefaults
 
 @Composable
 fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) {
@@ -106,36 +112,54 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                 }
             }
 
-            // Bottom navigation bar
+            // Modern Bottom Navigation Bar with Capsule Elements
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Page Indicators
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    repeat(6) { index ->
-                        val isSelected = pagerState.currentPage == index
-                        val width by animateDpAsState(if (isSelected) 24.dp else 8.dp, label = "indicator_width")
-                        val color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                        Box(
-                            modifier = Modifier
-                                .height(8.dp)
-                                .width(width)
-                                .clip(CircleShape)
-                                .background(color)
-                        )
+                // Modern Pager Indicator Capsule Pill
+                GlassCapsule(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        repeat(6) { index ->
+                            val isSelected = pagerState.currentPage == index
+                            val width by animateDpAsState(
+                                targetValue = if (isSelected) 24.dp else 8.dp,
+                                animationSpec = tween(300),
+                                label = "indicator_width"
+                            )
+                            val color = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .height(8.dp)
+                                    .width(width)
+                                    .clip(CircleShape)
+                                    .background(color)
+                            )
+                        }
                     }
                 }
 
-                // Check general button visibility
+                // Action Button in CircleShape Capsule Pill
                 val isButtonVisible = pagerState.currentPage in listOf(0, 1, 2, 4, 5)
                 
                 if (isButtonVisible) {
-                    Button(
+                    BouncyButton(
                         onClick = {
                             if (pagerState.currentPage == 4) {
                                 viewModel.setupFirstProfile(
@@ -156,10 +180,24 @@ fun OnboardingScreen(navController: NavController, viewModel: ScholarViewModel) 
                                 }
                             }
                         },
-                        shape = RoundedCornerShape(24.dp),
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)
                     ) {
-                        Text(if (pagerState.currentPage == 5) "Let's Go!" else "Next", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if (pagerState.currentPage == 5) "Let's Go!" else "Next",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(
+                            imageVector = if (pagerState.currentPage == 5) Icons.Rounded.RocketLaunch else Icons.Rounded.ArrowForward,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 } else {
                     Spacer(modifier = Modifier.width(64.dp))
@@ -227,21 +265,11 @@ fun BackupOptionPage(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Welcome Back?",
+            text = "Data & Workspace",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Restore academic data from a previous backup file, or start fresh with a clean profile setup.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center,
-            lineHeight = 20.sp
         )
         
         Spacer(modifier = Modifier.height(24.dp))
@@ -250,61 +278,85 @@ fun BackupOptionPage(
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                shape = RoundedCornerShape(12.dp)
+                shape = CircleShape
             ) {
                 Text(
                     text = importExportStatus ?: "",
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     textAlign = TextAlign.Center
                 )
             }
         }
 
-        // Two beautifully styled choice cards for representation
-        Card(
+        val isDark = isSystemInDarkTheme()
+
+        // Modern Glassmorphic Choice Card: Import Backup
+        ScholarCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-            ),
-            border = androidx.compose.foundation.BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-            ),
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isDark) 0.2f else 0.3f),
+            border = ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.primary),
             onClick = { filePickerLauncher.launch(arrayOf("*/*")) }
         ) {
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Circular icon ring
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(52.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                        .border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), CircleShape)
+                        .padding(4.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.FolderOpen,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.FolderOpen,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Import Local Backup",
                         fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Restore all courses, settings, profiles, and logs instantly via your .bin or .json file.",
+                        text = "Restore courses, profiles, and logs from backup file.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                GlassCapsule(
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+                ) {
+                    Text(
+                        text = "Import",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                     )
                 }
             }
@@ -312,48 +364,71 @@ fun BackupOptionPage(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Card(
+        // Modern Glassmorphic Choice Card: New Profile
+        ScholarCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-            ),
-            border = androidx.compose.foundation.BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-            ),
+            containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+            border = ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.tertiary),
             onClick = onSkip
         ) {
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Circular icon ring
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(52.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.tertiary),
+                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f))
+                        .border(2.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f), CircleShape)
+                        .padding(4.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.AutoAwesome,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.tertiary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.AutoAwesome,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onTertiary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "I'm a New User",
                         fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Create a beautiful custom student profile and start tracking your academic journey from scratch.",
+                        text = "Create a custom profile and configure academic goals.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                GlassCapsule(
+                    containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f))
+                ) {
+                    Text(
+                        text = "Fresh",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                     )
                 }
             }
@@ -399,18 +474,10 @@ fun VisualTourPage(isActive: Boolean) {
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground
         )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Lumia is ready. Explore key features:",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Visual Tour Cards in Grid or beautiful rows
+        // Visual Tour Cards with Glassmorphism and Circular Rings
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
@@ -445,26 +512,24 @@ fun VisualTourPage(isActive: Boolean) {
 
 @Composable
 fun TourItemCard(icon: ImageVector, title: String, desc: String, tint: Color) {
-    Card(
+    val isDark = isSystemInDarkTheme()
+    ScholarCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
-        ),
-        border = androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
-        )
+        shape = RoundedCornerShape(20.dp),
+        containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
+        border = ScholarCardDefaults.glassBorder(isDark, accentColor = tint)
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Circular avatar/icon ring
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
-                    .background(tint.copy(alpha = 0.12f)),
+                    .background(tint.copy(alpha = 0.12f))
+                    .border(1.5.dp, tint.copy(alpha = 0.4f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

@@ -19,6 +19,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -36,7 +37,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -97,6 +101,7 @@ fun CourseDetailScreen(
     courseId: Int
 ) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val course = courses.find { it.id == courseId }
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
@@ -537,177 +542,373 @@ fun CourseDetailScreen(
                 .fillMaxSize()
                 .reorderable(reorderableState)
         ) {
-            // 1. STREAMLINED COURSE HERO SUMMARY CARD
+            // 1. MODERNIZED GLASSMORPHIC COURSE HERO WITH AMBIENT AURA & CAPSULES
             item {
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    containerColor = MaterialTheme.colorScheme.surface
+                    shape = RoundedCornerShape(26.dp),
+                    glassmorphic = true,
+                    containerColor = if (isDark) {
+                        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.60f)
+                    } else {
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
+                    },
+                    border = ScholarCardDefaults.glassBorder(isDark, accentColor = courseColor)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .background(courseColor.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.School,
-                                    contentDescription = null,
-                                    tint = courseColor,
-                                    modifier = Modifier.size(22.dp)
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        // Radiant Ambient Glowing Aura in the background
+                        Box(
+                            modifier = Modifier
+                                .size(190.dp)
+                                .align(Alignment.TopEnd)
+                                .offset(x = 50.dp, y = (-35).dp)
+                                .blur(48.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                                .background(
+                                    courseColor.copy(alpha = if (isDark) 0.28f else 0.20f),
+                                    CircleShape
                                 )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = course.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(130.dp)
+                                .align(Alignment.BottomStart)
+                                .offset(x = (-30).dp, y = 30.dp)
+                                .blur(42.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                                .background(
+                                    courseColor.copy(alpha = if (isDark) 0.16f else 0.10f),
+                                    CircleShape
                                 )
-                                if (course.code.isNotBlank()) {
-                                    Text(
-                                        text = course.code,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = courseColor,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                        }
+                        )
 
-                        if (course.instructor.isNotBlank() || course.schedule.isNotBlank() || course.tags.isNotBlank()) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            // Top Row: Glowing Icon Avatar + Title + Code Capsule Pill
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(14.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                if (course.instructor.isNotBlank()) {
-                                    DetailMetaBadge(
-                                        icon = Icons.Rounded.Person,
-                                        text = course.instructor,
-                                        tint = courseColor
+                                Box(
+                                    modifier = Modifier
+                                        .size(50.dp)
+                                        .background(
+                                            Brush.radialGradient(
+                                                listOf(
+                                                    courseColor.copy(alpha = 0.25f),
+                                                    courseColor.copy(alpha = 0.08f)
+                                                )
+                                            ),
+                                            CircleShape
+                                        )
+                                        .border(1.dp, courseColor.copy(alpha = 0.35f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.School,
+                                        contentDescription = null,
+                                        tint = courseColor,
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
-                                if (course.schedule.isNotBlank()) {
-                                    DetailMetaBadge(
-                                        icon = Icons.Rounded.Schedule,
-                                        text = course.schedule,
-                                        tint = courseColor
-                                    )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = course.name,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Black,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
+                                        if (course.code.isNotBlank()) {
+                                            GlassCapsule(
+                                                containerColor = courseColor.copy(alpha = 0.15f),
+                                                border = BorderStroke(0.8.dp, courseColor.copy(alpha = 0.35f))
+                                            ) {
+                                                Text(
+                                                    text = course.code,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Black,
+                                                    color = courseColor,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    if (course.description.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = course.description,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
                                 }
-                                if (course.tags.isNotBlank()) {
-                                    course.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { tag ->
-                                        val tagColors = getTagColors(tag)
-                                        Box(
-                                            modifier = Modifier
-                                                .background(tagColors.first, RoundedCornerShape(6.dp))
-                                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                                        ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(Icons.Rounded.Sell, contentDescription = null, modifier = Modifier.size(10.dp), tint = tagColors.second)
-                                                Spacer(Modifier.width(3.dp))
-                                                Text(tag, style = MaterialTheme.typography.labelSmall, color = tagColors.second, fontWeight = FontWeight.SemiBold)
+                            }
+
+                            // Capsule Status Pills
+                            if (course.instructor.isNotBlank() || course.schedule.isNotBlank() || course.tags.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    if (course.instructor.isNotBlank()) {
+                                        DetailMetaBadge(
+                                            icon = Icons.Rounded.Person,
+                                            text = course.instructor,
+                                            tint = courseColor
+                                        )
+                                    }
+                                    if (course.schedule.isNotBlank()) {
+                                        DetailMetaBadge(
+                                            icon = Icons.Rounded.Schedule,
+                                            text = course.schedule,
+                                            tint = courseColor
+                                        )
+                                    }
+                                    if (course.tags.isNotBlank()) {
+                                        course.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { tag ->
+                                            val tagColors = getTagColors(tag)
+                                            GlassCapsule(
+                                                containerColor = tagColors.first.copy(alpha = 0.85f),
+                                                border = BorderStroke(0.8.dp, tagColors.second.copy(alpha = 0.3f))
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                ) {
+                                                    Box(modifier = Modifier.size(5.dp).background(tagColors.second, CircleShape))
+                                                    Text(
+                                                        tag,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = tagColors.second,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 10.sp
+                                                    )
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        if (course.description.isNotBlank()) {
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(
-                                text = course.description,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        // Interconnected Subjects & Synergy
-                        if (linkedSubjects.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(10.dp))
+                            // Clean Icon-Number Pairings Metric Bar
+                            Spacer(modifier = Modifier.height(14.dp))
                             Row(
-                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f)
+                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                        RoundedCornerShape(16.dp)
+                                    )
+                                    .border(
+                                        0.8.dp,
+                                        if (isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.35f),
+                                        RoundedCornerShape(16.dp)
+                                    )
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                modifier = Modifier.fillMaxWidth()
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "Linked Subjects",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                BouncyTextButton(onClick = { showLinkSubjectDialog = true }) {
-                                    Text("Manage", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                // Topics icon-number pairing
+                                val completedTopicCount = topics.count { it.isCompleted }
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Checklist, contentDescription = null, tint = courseColor, modifier = Modifier.size(16.dp))
+                                    Text(
+                                        text = "$completedTopicCount/${topics.size}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Topics",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 10.sp
+                                    )
+                                }
+
+                                // Attendance rate pairing
+                                val cancelledRecs = attendanceRecords.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
+                                val effectiveAtt = attendanceRecords.size - cancelledRecs
+                                val attendedCount = attendanceRecords.count { it.status.equals("Present", ignoreCase = true) || it.status.equals("Late", ignoreCase = true) }
+                                val heroAttPct = if (effectiveAtt > 0) ((attendedCount.toFloat() / effectiveAtt) * 100).roundToInt() else 100
+                                val attColor = when {
+                                    effectiveAtt == 0 -> courseColor
+                                    heroAttPct >= 75 -> Color(0xFF10B981)
+                                    heroAttPct >= 50 -> Color(0xFFF59E0B)
+                                    else -> Color(0xFFEF4444)
+                                }
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                ) {
+                                    Icon(Icons.Rounded.EventAvailable, contentDescription = null, tint = attColor, modifier = Modifier.size(16.dp))
+                                    Text(
+                                        text = "$heroAttPct%",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = attColor
+                                    )
+                                    Text(
+                                        text = "Att.",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 10.sp
+                                    )
+                                }
+
+                                // Assignments pairing
+                                val pendingAssignments = localAssignments.count { !it.isCompleted }
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                ) {
+                                    Icon(Icons.AutoMirrored.Rounded.LibraryBooks, contentDescription = null, tint = courseColor, modifier = Modifier.size(16.dp))
+                                    Text(
+                                        text = "$pendingAssignments",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Pending",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 10.sp
+                                    )
                                 }
                             }
 
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                items(linkedSubjects) { subj ->
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                        modifier = Modifier.bouncyClick {
-                                            navController.navigate("subjectDetail/${subj.id}")
-                                        }
+                            // Interconnected Subjects & Synergy
+                            if (linkedSubjects.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = "Linked Subjects",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    GlassCapsule(
+                                        onClick = { showLinkSubjectDialog = true },
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                                     ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        Text(
+                                            "Manage",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = courseColor,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    items(linkedSubjects) { subj ->
+                                        GlassCapsule(
+                                            onClick = {
+                                                navController.navigate("subjectDetail/${subj.id}")
+                                            },
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                            border = BorderStroke(0.8.dp, courseColor.copy(alpha = 0.25f))
                                         ) {
-                                            Icon(Icons.Rounded.AutoStories, contentDescription = null, tint = courseColor, modifier = Modifier.size(12.dp))
-                                            Text(
-                                                text = subj.name,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                            ) {
+                                                Icon(Icons.Rounded.AutoStories, contentDescription = null, tint = courseColor, modifier = Modifier.size(12.dp))
+                                                Text(
+                                                    text = subj.name,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Icon(
+                                                    Icons.Rounded.ChevronRight,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            if (enableSynergy && topics.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(10.dp))
-                                val completedTopics = topics.count { it.isCompleted }
-                                val totalTopics = topics.size
-                                val topicPercent = if (totalTopics > 0) completedTopics.toFloat() / totalTopics else 0f
-                                val synergyScore = (topicPercent * 100).toInt()
+                                if (enableSynergy && topics.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    val completedTopics = topics.count { it.isCompleted }
+                                    val totalTopics = topics.size
+                                    val topicPercent = if (totalTopics > 0) completedTopics.toFloat() / totalTopics else 0f
+                                    val synergyScore = (topicPercent * 100).toInt()
 
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
-                                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    LinearProgressIndicator(
-                                        progress = { topicPercent },
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier
-                                            .weight(1f)
-                                            .height(6.dp)
-                                            .clip(CircleShape),
-                                        color = courseColor,
-                                        trackColor = courseColor.copy(alpha = 0.15f),
-                                        strokeCap = StrokeCap.Round
-                                    )
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Text(
-                                        text = "Synergy $synergyScore%",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = courseColor
-                                    )
+                                            .fillMaxWidth()
+                                            .background(
+                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                                                CircleShape
+                                            )
+                                            .border(
+                                                0.8.dp,
+                                                courseColor.copy(alpha = 0.20f),
+                                                CircleShape
+                                            )
+                                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        LinearProgressIndicator(
+                                            progress = { topicPercent },
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(6.dp)
+                                                .clip(CircleShape),
+                                            color = courseColor,
+                                            trackColor = courseColor.copy(alpha = 0.15f),
+                                            strokeCap = StrokeCap.Round
+                                        )
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        GlassCapsule(
+                                            containerColor = courseColor.copy(alpha = 0.14f),
+                                            border = BorderStroke(0.8.dp, courseColor.copy(alpha = 0.3f))
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                            ) {
+                                                Icon(Icons.Rounded.Bolt, contentDescription = null, tint = courseColor, modifier = Modifier.size(11.dp))
+                                                Text(
+                                                    text = "Synergy $synergyScore%",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = courseColor,
+                                                    fontSize = 10.sp
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -738,8 +939,12 @@ fun CourseDetailScreen(
 
                             ScholarCard(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                containerColor = MaterialTheme.colorScheme.surface
+                                shape = RoundedCornerShape(20.dp),
+                                glassmorphic = true,
+                                border = ScholarCardDefaults.glassBorder(
+                                    isDark,
+                                    accentColor = if (completedTopics == totalTopics) Color(0xFF10B981) else courseColor
+                                )
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Row(
@@ -747,20 +952,49 @@ fun CourseDetailScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(
-                                            text = "Topics Progress",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = "$completedTopics/$totalTopics (${(progress * 100).toInt()}%)",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (completedTopics == totalTopics) Color(0xFF10B981) else courseColor
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Checklist,
+                                                contentDescription = null,
+                                                tint = if (completedTopics == totalTopics) Color(0xFF10B981) else courseColor,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Text(
+                                                text = "Topics Progress",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+
+                                        GlassCapsule(
+                                            containerColor = (if (completedTopics == totalTopics) Color(0xFF10B981) else courseColor).copy(alpha = 0.12f),
+                                            border = BorderStroke(0.8.dp, (if (completedTopics == totalTopics) Color(0xFF10B981) else courseColor).copy(alpha = 0.3f))
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                Text(
+                                                    text = "$completedTopics/$totalTopics",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Black,
+                                                    color = if (completedTopics == totalTopics) Color(0xFF10B981) else courseColor
+                                                )
+                                                Text(
+                                                    text = "• ${(progress * 100).toInt()}%",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
                                     }
 
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Spacer(modifier = Modifier.height(10.dp))
                                     LinearProgressIndicator(
                                         progress = { animatedChecklistProgress },
                                         modifier = Modifier
@@ -778,27 +1012,56 @@ fun CourseDetailScreen(
                         items(topics, key = { "top_${it.id}" }) { topic ->
                             ScholarCard(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(14.dp),
-                                containerColor = if (topic.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface
+                                shape = RoundedCornerShape(16.dp),
+                                glassmorphic = true,
+                                containerColor = if (topic.isCompleted) {
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.20f)
+                                } else {
+                                    if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f)
+                                    else MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+                                },
+                                border = ScholarCardDefaults.glassBorder(
+                                    isDark = isDark,
+                                    accentColor = if (topic.isCompleted) Color(0xFF10B981).copy(alpha = 0.35f) else null
+                                )
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        .padding(horizontal = 14.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    IconButton(
-                                        onClick = { viewModel.toggleTopicCompleted(topic) },
-                                        modifier = Modifier.size(32.dp)
+                                    // Sleek circular completion toggle
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                if (topic.isCompleted) Color(0xFF10B981).copy(alpha = 0.15f)
+                                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                                CircleShape
+                                            )
+                                            .border(
+                                                1.dp,
+                                                if (topic.isCompleted) Color(0xFF10B981)
+                                                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                                CircleShape
+                                            )
+                                            .bouncyClick { viewModel.toggleTopicCompleted(topic) },
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(
-                                            imageVector = if (topic.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
-                                            contentDescription = "Toggle Complete",
-                                            tint = if (topic.isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(20.dp)
-                                        )
+                                        if (topic.isCompleted) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Check,
+                                                contentDescription = "Completed",
+                                                tint = Color(0xFF10B981),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
                                     }
-                                    Spacer(modifier = Modifier.width(6.dp))
+
+                                    Spacer(modifier = Modifier.width(10.dp))
+
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = topic.title,
@@ -808,30 +1071,57 @@ fun CourseDetailScreen(
                                             color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
                                         )
                                         if (topic.tags.isNotBlank()) {
+                                            Spacer(modifier = Modifier.height(4.dp))
                                             Row(
-                                                modifier = Modifier.padding(top = 2.dp),
                                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                                             ) {
                                                 topic.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.take(3).forEach { tag ->
                                                     val colors = getTagColors(tag)
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .background(colors.first, RoundedCornerShape(4.dp))
-                                                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                                                    GlassCapsule(
+                                                        containerColor = colors.first.copy(alpha = 0.85f),
+                                                        border = BorderStroke(0.8.dp, colors.second.copy(alpha = 0.25f))
                                                     ) {
-                                                        Text(tag, style = MaterialTheme.typography.labelSmall, color = colors.second, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                                        Text(
+                                                            tag,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = colors.second,
+                                                            fontSize = 9.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        )
                                                     }
                                                 }
                                             }
                                         }
                                     }
-                                    BouncyIconButton(
+
+                                    // Smooth capsule action: Focus Timer
+                                    GlassCapsule(
                                         onClick = {
                                             navController.navigate("pomodoro?courseId=${courseId}&topicId=${topic.id}")
                                         },
-                                        modifier = Modifier.size(32.dp)
+                                        containerColor = courseColor.copy(alpha = 0.12f),
+                                        border = BorderStroke(0.8.dp, courseColor.copy(alpha = 0.3f))
                                     ) {
-                                        Icon(Icons.Rounded.Timer, contentDescription = "Study Pomodoro", tint = courseColor, modifier = Modifier.size(16.dp))
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Timer,
+                                                contentDescription = "Study Pomodoro",
+                                                tint = courseColor,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                            Text(
+                                                "Focus",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = courseColor,
+                                                fontSize = 10.sp
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -839,8 +1129,9 @@ fun CourseDetailScreen(
                     } else {
                         item {
                             ScholarCard(
-                                modifier = Modifier.fillMaxWidth().height(110.dp),
-                                shape = RoundedCornerShape(16.dp)
+                                modifier = Modifier.fillMaxWidth().height(120.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                glassmorphic = true
                             ) {
                                 Column(
                                     modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -853,9 +1144,20 @@ fun CourseDetailScreen(
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    BouncyTextButton(onClick = { showLinkSubjectDialog = true }) {
-                                        Text("+ Link Study Subject", fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    GlassCapsule(
+                                        onClick = { showLinkSubjectDialog = true },
+                                        containerColor = courseColor.copy(alpha = 0.14f),
+                                        border = BorderStroke(0.8.dp, courseColor.copy(alpha = 0.35f))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(Icons.Rounded.Add, contentDescription = null, tint = courseColor, modifier = Modifier.size(14.dp))
+                                            Text("Link Study Subject", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = courseColor)
+                                        }
                                     }
                                 }
                             }
@@ -865,12 +1167,32 @@ fun CourseDetailScreen(
                     // Related Course Tasks
                     if (localTasks.isNotEmpty()) {
                         item {
-                            Text(
-                                text = "Course Tasks",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 6.dp)
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Course Tasks",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                GlassCapsule(
+                                    containerColor = courseColor.copy(alpha = 0.12f),
+                                    border = BorderStroke(0.8.dp, courseColor.copy(alpha = 0.25f))
+                                ) {
+                                    Text(
+                                        text = "${localTasks.count { !it.isCompleted }}/${localTasks.size}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Black,
+                                        color = courseColor,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
                         }
                         items(localTasks, key = { "task_${it.id}" }) { task ->
                             ReorderableItem(reorderableState, key = "task_${task.id}") { isDragging ->
@@ -879,17 +1201,53 @@ fun CourseDetailScreen(
                                         .detectReorderAfterLongPress(reorderableState)
                                         .animateItem()
                                         .fillMaxWidth(),
-                                    shape = RoundedCornerShape(14.dp)
+                                    shape = RoundedCornerShape(16.dp),
+                                    glassmorphic = true,
+                                    containerColor = if (task.isCompleted) {
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.20f)
+                                    } else {
+                                        if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f)
+                                        else MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+                                    },
+                                    border = ScholarCardDefaults.glassBorder(
+                                        isDark = isDark,
+                                        accentColor = if (task.isCompleted) Color(0xFF10B981).copy(alpha = 0.35f) else null
+                                    )
                                 ) {
                                     Row(
-                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Checkbox(
-                                            checked = task.isCompleted,
-                                            onCheckedChange = { viewModel.toggleTaskCompleted(task) }
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        // Sleek circular checkbox toggle
+                                        Box(
+                                            modifier = Modifier
+                                                .size(24.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    if (task.isCompleted) Color(0xFF10B981).copy(alpha = 0.15f)
+                                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                                    CircleShape
+                                                )
+                                                .border(
+                                                    1.dp,
+                                                    if (task.isCompleted) Color(0xFF10B981)
+                                                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                                    CircleShape
+                                                )
+                                                .bouncyClick { viewModel.toggleTaskCompleted(task) },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (task.isCompleted) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Check,
+                                                    contentDescription = "Completed",
+                                                    tint = Color(0xFF10B981),
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.width(10.dp))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = task.title,
@@ -902,14 +1260,24 @@ fun CourseDetailScreen(
                                                 Text(task.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
-                                        IconButton(
+
+                                        // Smooth capsule action: Focus Timer
+                                        GlassCapsule(
                                             onClick = {
                                                 val subjectParam = course.subjectId?.let { "&subjectId=$it" } ?: ""
                                                 navController.navigate("pomodoro?courseId=${courseId}&taskId=${task.id}$subjectParam")
                                             },
-                                            modifier = Modifier.size(32.dp)
+                                            containerColor = courseColor.copy(alpha = 0.12f),
+                                            border = BorderStroke(0.8.dp, courseColor.copy(alpha = 0.3f))
                                         ) {
-                                            Icon(Icons.Rounded.Timer, contentDescription = "Start Pomodoro", tint = courseColor, modifier = Modifier.size(16.dp))
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                            ) {
+                                                Icon(Icons.Rounded.Timer, contentDescription = "Start Pomodoro", tint = courseColor, modifier = Modifier.size(13.dp))
+                                                Text("Focus", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = courseColor, fontSize = 10.sp)
+                                            }
                                         }
                                     }
                                 }
@@ -974,136 +1342,214 @@ fun CourseDetailScreen(
                             // Attendance Health Gauge Card
                             ScholarCard(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(18.dp)
+                                shape = RoundedCornerShape(22.dp),
+                                glassmorphic = true,
+                                border = ScholarCardDefaults.glassBorder(isDark, accentColor = thresholdColor)
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text("Attendance Health", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                        BouncyIconButton(onClick = { isMonthlyView = !isMonthlyView; displayMonthOffset = 0 }) {
-                                            Icon(
-                                                imageVector = if (isMonthlyView) Icons.Rounded.ViewWeek else Icons.Rounded.DateRange,
-                                                contentDescription = "Toggle View",
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(12.dp))
-
-                                    Row(
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    // Ambient glowing blur aura behind the attendance gauge
+                                    Box(
                                         modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(thresholdColor.copy(alpha = 0.08f), RoundedCornerShape(14.dp))
-                                            .padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier.size(80.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            CircularProgressIndicator(
-                                                progress = { gaugeProgress },
-                                                modifier = Modifier.fillMaxSize(),
-                                                color = thresholdColor,
-                                                trackColor = thresholdColor.copy(alpha = 0.15f),
-                                                strokeWidth = 7.dp,
-                                                strokeCap = StrokeCap.Round
-                                            )
-                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Text(
-                                                    text = "$attendancePct%",
-                                                    style = MaterialTheme.typography.titleMedium,
-                                                    fontWeight = FontWeight.Black,
-                                                    color = thresholdColor
-                                                )
-                                                Text(
-                                                    text = "$totalAttended/$effectiveTotal",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                        }
-
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = thresholdColor.copy(alpha = 0.15f)
-                                            ) {
-                                                Text(
-                                                    text = thresholdLabel,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = thresholdColor,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
-                                            }
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween
-                                            ) {
-                                                AttendanceCounterItem(label = "Present", count = presentCount, color = Color(0xFF10B981))
-                                                AttendanceCounterItem(label = "Late", count = lateCount, color = Color(0xFFF59E0B))
-                                                AttendanceCounterItem(label = "Absent", count = absentCount, color = Color(0xFFEF4444))
-                                                AttendanceCounterItem(label = "Off", count = cancelled, color = Color.Gray)
-                                            }
-                                        }
-                                    }
-
-                                    // Fast Mark Today
-                                    Spacer(modifier = Modifier.height(14.dp))
-                                    Text(
-                                        text = "Today's Status",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            .size(120.dp)
+                                            .align(Alignment.TopStart)
+                                            .offset(x = 10.dp, y = 30.dp)
+                                            .blur(40.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                                            .background(thresholdColor.copy(alpha = if (isDark) 0.22f else 0.15f), CircleShape)
                                     )
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        listOf("Present" to Color(0xFF10B981), "Late" to Color(0xFFF59E0B), "Absent" to Color(0xFFEF4444)).forEach { (statusOpt, col) ->
-                                            val isSelected = todayRecord?.status.equals(statusOpt, ignoreCase = true)
-                                            Surface(
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .bouncyClick {
+
+                                    Column(modifier = Modifier.padding(18.dp)) {
+                                        // Header Row: Attendance Health Title + Capsule Status Pill + View Toggle Capsule
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Text("Attendance Health", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                                GlassCapsule(
+                                                    containerColor = thresholdColor.copy(alpha = 0.14f),
+                                                    border = BorderStroke(0.8.dp, thresholdColor.copy(alpha = 0.35f))
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        Box(modifier = Modifier.size(5.dp).background(thresholdColor, CircleShape))
+                                                        Text(
+                                                            text = thresholdLabel,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = thresholdColor,
+                                                            fontSize = 10.sp
+                                                        )
+                                                    }
+                                                }
+                                            }
+
+                                            GlassCapsule(
+                                                onClick = { isMonthlyView = !isMonthlyView; displayMonthOffset = 0 },
+                                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = if (isMonthlyView) Icons.Rounded.ViewWeek else Icons.Rounded.DateRange,
+                                                        contentDescription = "Toggle View",
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(14.dp)
+                                                    )
+                                                    Text(
+                                                        if (isMonthlyView) "Month" else "Week",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        fontSize = 10.sp
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(14.dp))
+
+                                        // Metric Body: Gauge & Clean Icon-Number Capsule Badges
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(
+                                                    if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.45f)
+                                                    else thresholdColor.copy(alpha = 0.06f),
+                                                    RoundedCornerShape(18.dp)
+                                                )
+                                                .border(
+                                                    0.8.dp,
+                                                    thresholdColor.copy(alpha = 0.20f),
+                                                    RoundedCornerShape(18.dp)
+                                                )
+                                                .padding(14.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.size(80.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    progress = { gaugeProgress },
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    color = thresholdColor,
+                                                    trackColor = thresholdColor.copy(alpha = 0.14f),
+                                                    strokeWidth = 7.dp,
+                                                    strokeCap = StrokeCap.Round
+                                                )
+                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    Text(
+                                                        text = "$attendancePct%",
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        fontWeight = FontWeight.Black,
+                                                        color = thresholdColor
+                                                    )
+                                                    Text(
+                                                        text = "$totalAttended/$effectiveTotal",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+
+                                            // Clean icon-number pairings in capsule format
+                                            Column(
+                                                modifier = Modifier.weight(1f),
+                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    Box(modifier = Modifier.weight(1f)) {
+                                                        AttendanceCounterItem(label = "Present", count = presentCount, color = Color(0xFF10B981))
+                                                    }
+                                                    Box(modifier = Modifier.weight(1f)) {
+                                                        AttendanceCounterItem(label = "Late", count = lateCount, color = Color(0xFFF59E0B))
+                                                    }
+                                                }
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    Box(modifier = Modifier.weight(1f)) {
+                                                        AttendanceCounterItem(label = "Absent", count = absentCount, color = Color(0xFFEF4444))
+                                                    }
+                                                    Box(modifier = Modifier.weight(1f)) {
+                                                        AttendanceCounterItem(label = "Off", count = cancelled, color = Color(0xFF6B7280))
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        // Fast Mark Today
+                                        Spacer(modifier = Modifier.height(14.dp))
+                                        Text(
+                                            text = "Today's Status",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            listOf(
+                                                Triple("Present", Color(0xFF10B981), Icons.Rounded.CheckCircle),
+                                                Triple("Late", Color(0xFFF59E0B), Icons.Rounded.Schedule),
+                                                Triple("Absent", Color(0xFFEF4444), Icons.Rounded.Cancel)
+                                            ).forEach { (statusOpt, col, statusIcon) ->
+                                                val isSelected = todayRecord?.status.equals(statusOpt, ignoreCase = true)
+                                                GlassCapsule(
+                                                    modifier = Modifier.weight(1f),
+                                                    containerColor = if (isSelected) col else col.copy(alpha = 0.08f),
+                                                    border = BorderStroke(if (isSelected) 1.2.dp else 0.8.dp, if (isSelected) col else col.copy(alpha = 0.25f)),
+                                                    onClick = {
                                                         if (todayRecord != null) {
                                                             viewModel.updateAttendanceRecord(todayRecord.copy(status = statusOpt))
                                                         } else {
                                                             viewModel.addAttendanceRecord(courseId, todayCal.timeInMillis, statusOpt)
                                                         }
-                                                    },
-                                                shape = RoundedCornerShape(10.dp),
-                                                color = if (isSelected) col else col.copy(alpha = 0.1f)
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.Center
-                                                ) {
-                                                    if (isSelected) {
-                                                        Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
-                                                        Spacer(Modifier.width(3.dp))
                                                     }
-                                                    Text(
-                                                        text = statusOpt,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = if (isSelected) Color.White else col
-                                                    )
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(vertical = 8.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.Center
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = if (isSelected) Icons.Rounded.Check else statusIcon,
+                                                            contentDescription = null,
+                                                            tint = if (isSelected) Color.White else col,
+                                                            modifier = Modifier.size(13.dp)
+                                                        )
+                                                        Spacer(Modifier.width(4.dp))
+                                                        Text(
+                                                            text = statusOpt,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = if (isSelected) Color.White else col
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
 
                                     // Compact Timeline or Calendar View
                                     Spacer(modifier = Modifier.height(14.dp))
@@ -1362,6 +1808,7 @@ fun CourseDetailScreen(
                         }
                     }
                 }
+            }
 
                 CourseDetailTab.ASSIGNMENTS -> {
                     // Assignments Header & Add Button
@@ -1371,23 +1818,52 @@ fun CourseDetailScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "Assignments",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            BouncyButton(
-                                onClick = { showAddAssignmentDialog = true },
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                ),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text("Add", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = "Assignments",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                GlassCapsule(
+                                    containerColor = courseColor.copy(alpha = 0.12f),
+                                    border = BorderStroke(0.8.dp, courseColor.copy(alpha = 0.25f))
+                                ) {
+                                    Text(
+                                        text = "${localAssignments.size}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Black,
+                                        color = courseColor,
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 1.dp),
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
+                            GlassCapsule(
+                                onClick = { showAddAssignmentDialog = true },
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.Add,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Text(
+                                        "Add",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
                             }
                         }
                     }
@@ -1395,8 +1871,9 @@ fun CourseDetailScreen(
                     if (localAssignments.isEmpty()) {
                         item(key = "assignments_empty") {
                             ScholarCard(
-                                modifier = Modifier.fillMaxWidth().height(110.dp),
-                                shape = RoundedCornerShape(16.dp)
+                                modifier = Modifier.fillMaxWidth().height(120.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                glassmorphic = true
                             ) {
                                 Column(
                                     modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -1409,9 +1886,20 @@ fun CourseDetailScreen(
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    BouncyTextButton(onClick = { showAddAssignmentDialog = true }) {
-                                        Text("+ Add First Assignment", fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    GlassCapsule(
+                                        onClick = { showAddAssignmentDialog = true },
+                                        containerColor = courseColor.copy(alpha = 0.14f),
+                                        border = BorderStroke(0.8.dp, courseColor.copy(alpha = 0.35f))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(Icons.Rounded.Add, contentDescription = null, tint = courseColor, modifier = Modifier.size(14.dp))
+                                            Text("Add First Assignment", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = courseColor)
+                                        }
                                     }
                                 }
                             }
@@ -1420,64 +1908,137 @@ fun CourseDetailScreen(
                         items(localAssignments, key = { "assignment_${it.id}" }) { assignment ->
                             ReorderableItem(reorderableState, key = "assignment_${assignment.id}") { isDragging ->
                                 val cardColor by animateColorAsState(
-                                    if (assignment.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface
+                                    if (assignment.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.20f)
+                                    else if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f)
+                                    else MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
                                 )
                                 ScholarCard(
                                     modifier = Modifier
                                         .detectReorderAfterLongPress(reorderableState)
                                         .animateItem()
                                         .fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp),
-                                    containerColor = cardColor
+                                    shape = RoundedCornerShape(18.dp),
+                                    glassmorphic = true,
+                                    containerColor = cardColor,
+                                    border = ScholarCardDefaults.glassBorder(
+                                        isDark = isDark,
+                                        accentColor = if (assignment.isCompleted) Color(0xFF10B981).copy(alpha = 0.35f) else null
+                                    )
                                 ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(12.dp),
+                                            .padding(14.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Checkbox(
-                                            checked = assignment.isCompleted,
-                                            onCheckedChange = { viewModel.toggleAssignmentCompleted(assignment) }
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        // Sleek circular completion toggle
+                                        Box(
+                                            modifier = Modifier
+                                                .size(26.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    if (assignment.isCompleted) Color(0xFF10B981).copy(alpha = 0.15f)
+                                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                                    CircleShape
+                                                )
+                                                .border(
+                                                    1.dp,
+                                                    if (assignment.isCompleted) Color(0xFF10B981)
+                                                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                                    CircleShape
+                                                )
+                                                .bouncyClick { viewModel.toggleAssignmentCompleted(assignment) },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (assignment.isCompleted) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Check,
+                                                    contentDescription = "Completed",
+                                                    tint = Color(0xFF10B981),
+                                                    modifier = Modifier.size(15.dp)
+                                                )
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.width(10.dp))
+
                                         Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = assignment.title,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                textDecoration = if (assignment.isCompleted) TextDecoration.LineThrough else null
+                                            )
+
+                                            Spacer(modifier = Modifier.height(4.dp))
+
+                                            // Capsule Badges Row: Category pill + Due date badge
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                modifier = Modifier.fillMaxWidth()
                                             ) {
-                                                Text(
-                                                    text = assignment.title,
-                                                    style = MaterialTheme.typography.bodyLarge,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = MaterialTheme.colorScheme.onSurface,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                    textDecoration = if (assignment.isCompleted) TextDecoration.LineThrough else null,
-                                                    modifier = Modifier.weight(1f, fill = false)
-                                                )
                                                 if (assignment.category.isNotEmpty()) {
                                                     val catCol = try {
                                                         Color(android.graphics.Color.parseColor(assignment.categoryColor))
                                                     } catch (e: Exception) {
                                                         courseColor
                                                     }
-                                                    Surface(
-                                                        color = catCol.copy(alpha = 0.12f),
-                                                        shape = RoundedCornerShape(6.dp)
+                                                    GlassCapsule(
+                                                        containerColor = catCol.copy(alpha = 0.14f),
+                                                        border = BorderStroke(0.8.dp, catCol.copy(alpha = 0.35f))
                                                     ) {
-                                                        Text(
-                                                            text = assignment.category,
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            fontWeight = FontWeight.Bold,
-                                                            color = catCol,
-                                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
-                                                        )
+                                                        Row(
+                                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                        ) {
+                                                            Box(modifier = Modifier.size(5.dp).background(catCol, CircleShape))
+                                                            Text(
+                                                                text = assignment.category,
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = catCol,
+                                                                fontSize = 10.sp
+                                                            )
+                                                        }
+                                                    }
+                                                }
+
+                                                if (assignment.dueDateMillis > 0) {
+                                                    val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
+                                                    GlassCapsule(
+                                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                                        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+                                                    ) {
+                                                        Row(
+                                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Rounded.Event,
+                                                                contentDescription = null,
+                                                                tint = MaterialTheme.colorScheme.primary,
+                                                                modifier = Modifier.size(11.dp)
+                                                            )
+                                                            Text(
+                                                                text = dateFormat.format(Date(assignment.dueDateMillis)),
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = MaterialTheme.colorScheme.primary,
+                                                                fontWeight = FontWeight.SemiBold,
+                                                                fontSize = 10.sp
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
+
                                             if (assignment.description.isNotEmpty()) {
-                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Spacer(modifier = Modifier.height(3.dp))
                                                 Text(
                                                     text = assignment.description,
                                                     style = MaterialTheme.typography.bodySmall,
@@ -1486,38 +2047,41 @@ fun CourseDetailScreen(
                                                     overflow = TextOverflow.Ellipsis
                                                 )
                                             }
-                                            if (assignment.dueDateMillis > 0) {
-                                                Spacer(modifier = Modifier.height(4.dp))
-                                                val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                                                Text(
-                                                    text = "Due: ${dateFormat.format(Date(assignment.dueDateMillis))}",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.primary,
-                                                    fontWeight = FontWeight.SemiBold
-                                                )
-                                            }
                                         }
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            IconButton(
+
+                                        Spacer(modifier = Modifier.width(6.dp))
+
+                                        // Smooth capsule actions
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                        ) {
+                                            GlassCapsule(
                                                 onClick = {
                                                     val subjectParam = course.subjectId?.let { "&subjectId=$it" } ?: ""
                                                     navController.navigate("pomodoro?courseId=${courseId}&assignmentId=${assignment.id}$subjectParam")
                                                 },
-                                                modifier = Modifier.size(32.dp)
+                                                containerColor = courseColor.copy(alpha = 0.12f),
+                                                border = BorderStroke(0.8.dp, courseColor.copy(alpha = 0.25f))
                                             ) {
-                                                Icon(Icons.Rounded.Timer, contentDescription = "Start Pomodoro", tint = courseColor, modifier = Modifier.size(16.dp))
+                                                Icon(
+                                                    Icons.Rounded.Timer,
+                                                    contentDescription = "Start Pomodoro",
+                                                    tint = courseColor,
+                                                    modifier = Modifier.padding(6.dp).size(15.dp)
+                                                )
                                             }
                                             IconButton(
                                                 onClick = { assignmentToEdit = assignment },
-                                                modifier = Modifier.size(32.dp)
+                                                modifier = Modifier.size(30.dp)
                                             ) {
-                                                Icon(Icons.Rounded.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                                Icon(Icons.Rounded.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(15.dp))
                                             }
                                             IconButton(
                                                 onClick = { viewModel.deleteAssignment(assignment) },
-                                                modifier = Modifier.size(32.dp)
+                                                modifier = Modifier.size(30.dp)
                                             ) {
-                                                Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                                Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(15.dp))
                                             }
                                         }
                                     }

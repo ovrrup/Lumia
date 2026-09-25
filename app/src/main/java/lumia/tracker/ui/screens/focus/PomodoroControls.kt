@@ -7,7 +7,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +17,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -24,8 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.service.AodAccessibilityService
-import lumia.tracker.ui.components.BouncyButton
-import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.theme.bouncyClick
@@ -33,14 +34,14 @@ import lumia.tracker.util.TrueAodManager
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
- * PomodoroControls - Clean, modern tactile interaction suite for focus sessions.
- * Features a balanced primary action cluster (Start / Pause / Skip / Stop),
- * minimalist utility chips, and True AOD engine selection.
+ * PomodoroControls - Modern capsule action suite with frosted specular glass borders and tactile bouncy clicks.
+ * Features capsule action pills (CircleShape), fluid pause/resume states, minimalist utility chips,
+ * and OLED True AOD engine launcher.
  */
 @ValueScore(
-    score = 92,
+    score = 95,
     importance = Importance.CRITICAL,
-    description = "Clean primary start/pause/skip action cluster with utility chips and True AOD launcher",
+    description = "Modern capsule action suite with frosted specular glass borders, fluid animations, and True AOD launcher",
     category = "Focus"
 )
 @Composable
@@ -60,6 +61,7 @@ fun PomodoroControls(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
     var showAodEngineDialog by remember { mutableStateOf(false) }
 
     // Read AOD preferences if viewModel is provided
@@ -87,24 +89,25 @@ fun PomodoroControls(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 1. Alarm Dismiss Alert Banner (if alarm is firing)
+        // 1. Alarm Dismiss Alert Banner (Sleek Floating Capsule)
         AnimatedVisibility(
             visible = isAlarmActive,
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically()
         ) {
             Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.errorContainer,
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = if (isDark) 0.70f else 0.85f),
+                border = ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -112,147 +115,196 @@ fun PomodoroControls(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.NotificationsActive,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.20f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.NotificationsActive,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                         Text(
                             text = "Timer Complete",
-                            style = MaterialTheme.typography.titleSmall,
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
 
-                    BouncyButton(
-                        onClick = onStopAlarm,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError
-                        ),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.error,
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                        modifier = Modifier.bouncyClick(onClick = onStopAlarm)
                     ) {
-                        Text("Dismiss", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Dismiss",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onError,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                        )
                     }
                 }
             }
         }
 
-        // 2. Primary Action Controls (Start / Pause / Resume / Skip / Stop)
+        // 2. Primary Action Controls (Capsule Action Pills with Frosted Specular Borders)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (!isRunning) {
-                // PRIMARY START BUTTON
-                BouncyButton(
-                    onClick = onStart,
+                // PRIMARY START CAPSULE PILL
+                val startSpecularBorder = BorderStroke(
+                    width = 1.dp,
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = if (isDark) 0.40f else 0.55f),
+                            Color.White.copy(alpha = if (isDark) 0.08f else 0.16f)
+                        )
+                    )
+                )
+
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary,
+                    border = startSpecularBorder,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(54.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
+                        .height(56.dp)
+                        .bouncyClick(onClick = onStart)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.PlayArrow,
-                        contentDescription = "Start Focus",
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Start Focus",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.PlayArrow,
+                            contentDescription = "Start Focus",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Start Focus",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             } else {
-                // RUNNING STATE: Clean Pause/Resume + Skip + Stop
+                // RUNNING STATE: Modern Capsule Action Pills (Pause/Resume + Skip + Stop)
                 val pauseButtonBg by animateColorAsState(
                     targetValue = if (isPaused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
-                    animationSpec = tween(200),
+                    animationSpec = tween(220),
                     label = "pause_btn_bg"
                 )
                 val pauseButtonContent by animateColorAsState(
                     targetValue = if (isPaused) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
-                    animationSpec = tween(200),
+                    animationSpec = tween(220),
                     label = "pause_btn_content"
                 )
+                val pauseSpecularBorder = BorderStroke(
+                    width = 1.dp,
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            if (isPaused) Color.White.copy(alpha = 0.40f) else (if (isDark) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.45f)),
+                            if (isPaused) Color.White.copy(alpha = 0.08f) else (if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.12f))
+                        )
+                    )
+                )
 
-                BouncyButton(
-                    onClick = onPauseResume,
+                // Pause / Resume Capsule Action Pill
+                Surface(
+                    shape = CircleShape,
+                    color = pauseButtonBg,
+                    border = pauseSpecularBorder,
                     modifier = Modifier
                         .weight(1.8f)
-                        .height(54.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = pauseButtonBg,
-                        contentColor = pauseButtonContent
-                    )
+                        .height(56.dp)
+                        .bouncyClick(onClick = onPauseResume)
                 ) {
-                    AnimatedContent(
-                        targetState = isPaused,
-                        transitionSpec = {
-                            fadeIn(animationSpec = tween(180)).togetherWith(fadeOut(animationSpec = tween(120)))
-                        },
-                        label = "pause_resume_animated_content"
-                    ) { paused ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
-                                contentDescription = if (paused) "Resume" else "Pause",
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (paused) "Resume" else "Pause",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        AnimatedContent(
+                            targetState = isPaused,
+                            transitionSpec = {
+                                fadeIn(animationSpec = tween(180)).togetherWith(fadeOut(animationSpec = tween(120)))
+                            },
+                            label = "pause_resume_animated_content"
+                        ) { paused ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
+                                    contentDescription = if (paused) "Resume" else "Pause",
+                                    tint = pauseButtonContent,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (paused) "Resume" else "Pause",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = pauseButtonContent
+                                )
+                            }
                         }
                     }
                 }
 
-                // Skip Button
+                // Skip Capsule Pill
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = CircleShape,
+                    color = if (isDark) {
+                        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
+                    } else {
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+                    },
+                    border = ScholarCardDefaults.glassBorder(isDark),
                     modifier = Modifier
-                        .size(54.dp)
+                        .size(56.dp)
                         .bouncyClick(onClick = onSkip)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Rounded.SkipNext,
                             contentDescription = "Skip Interval",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(24.dp)
                         )
                     }
                 }
 
-                // Stop / Reset Button
+                // Stop / Reset Capsule Pill
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = if (isDark) 0.40f else 0.60f),
+                    border = ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier
-                        .size(54.dp)
+                        .size(56.dp)
                         .bouncyClick(onClick = onStop)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Rounded.Stop,
                             contentDescription = "Stop Timer",
-                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -260,10 +312,10 @@ fun PomodoroControls(
             }
         }
 
-        // 3. Secondary Utility Row (True AOD, Zen Mode, Intervals)
+        // 3. Secondary Utility Row (Capsule Action Chips with Frosted Specular Borders)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // True AOD Low-Power Mode
@@ -312,7 +364,7 @@ fun PomodoroControls(
                 icon = {
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(44.dp)
                             .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -334,10 +386,10 @@ fun PomodoroControls(
                 text = {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text(
-                            text = "Select OLED Always-On Display rendering engine:",
+                            text = "Choose OLED display engine:",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -345,8 +397,8 @@ fun PomodoroControls(
                         // Option 1: Display Over Other Apps
                         val isOverlaySelected = selectedEngine == "overlay"
                         EngineSelectionCard(
-                            title = "Display Over Apps",
-                            subtitle = "Window Overlay",
+                            title = "Window Overlay",
+                            subtitle = "Display over applications",
                             icon = Icons.Rounded.ViewQuilt,
                             isSelected = isOverlaySelected,
                             isGranted = hasOverlay,
@@ -371,7 +423,7 @@ fun PomodoroControls(
                         val isAccessSelected = selectedEngine == "accessibility"
                         EngineSelectionCard(
                             title = "Accessibility Service",
-                            subtitle = "Hardware Screen Lock",
+                            subtitle = "Hardware screen lock",
                             icon = Icons.Rounded.Accessibility,
                             isSelected = isAccessSelected,
                             isGranted = hasAccessibility,
@@ -393,23 +445,43 @@ fun PomodoroControls(
                 confirmButton = {
                     val canLaunch = (selectedEngine == "overlay" && hasOverlay) ||
                                     (selectedEngine == "accessibility" && hasAccessibility)
-                    BouncyButton(
-                        onClick = {
-                            showAodEngineDialog = false
-                            launchTrueAod(useAccessibility = selectedEngine == "accessibility")
-                        },
-                        enabled = canLaunch,
-                        shape = RoundedCornerShape(14.dp)
+                    Surface(
+                        shape = CircleShape,
+                        color = if (canLaunch) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        border = if (canLaunch) BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)) else null,
+                        modifier = Modifier.bouncyClick(
+                            enabled = canLaunch,
+                            onClick = {
+                                showAodEngineDialog = false
+                                launchTrueAod(useAccessibility = selectedEngine == "accessibility")
+                            }
+                        )
                     ) {
-                        Text("Launch True AOD", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Launch",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (canLaunch) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                        )
                     }
                 },
                 dismissButton = {
-                    BouncyTextButton(onClick = { showAodEngineDialog = false }) {
-                        Text("Cancel")
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.Transparent,
+                        modifier = Modifier.bouncyClick(onClick = { showAodEngineDialog = false })
+                    ) {
+                        Text(
+                            text = "Cancel",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                        )
                     }
                 },
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(26.dp),
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
         }
@@ -419,7 +491,7 @@ fun PomodoroControls(
 @ValueScore(
     score = 68,
     importance = Importance.MEDIUM,
-    description = "Clean utility chip for launching Zen mode, True AOD, or interval configuration",
+    description = "Clean modern capsule utility chip for launching Zen mode, True AOD, or interval configuration",
     category = "Focus"
 )
 @Composable
@@ -429,13 +501,23 @@ private fun UtilityFilterChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
     Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = modifier.bouncyClick(onClick = onClick)
+        shape = CircleShape,
+        color = if (isDark) {
+            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f)
+        } else {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+        },
+        border = ScholarCardDefaults.glassBorder(isDark),
+        modifier = modifier
+            .height(42.dp)
+            .bouncyClick(onClick = onClick)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -450,7 +532,8 @@ private fun UtilityFilterChip(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
             )
         }
     }
@@ -472,18 +555,21 @@ private fun EngineSelectionCard(
     onClick: () -> Unit,
     onGrantPermission: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
     Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-        else MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(
-            width = if (isSelected) 1.5.dp else 1.dp,
-            color = if (isSelected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+        shape = RoundedCornerShape(18.dp),
+        color = if (isSelected) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isDark) 0.35f else 0.45f)
+        } else {
+            ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.5f)
+        },
+        border = ScholarCardDefaults.glassBorder(
+            isDark = isDark,
+            accentColor = if (isSelected) MaterialTheme.colorScheme.primary else null
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .bouncyClick(onClick = onClick)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -498,10 +584,10 @@ private fun EngineSelectionCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(34.dp)
+                            .size(36.dp)
+                            .clip(CircleShape)
                             .background(
-                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                CircleShape
+                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -527,33 +613,52 @@ private fun EngineSelectionCard(
                     }
                 }
 
-                // Live Permission Badge
+                // Live Permission Badge Capsule
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (isGranted) Color(0xFF34C759).copy(alpha = 0.15f) else MaterialTheme.colorScheme.errorContainer
+                    shape = CircleShape,
+                    color = if (isGranted) Color(0xFF34C759).copy(alpha = 0.15f) else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+                    border = BorderStroke(1.dp, if (isGranted) Color(0xFF34C759).copy(alpha = 0.35f) else MaterialTheme.colorScheme.error.copy(alpha = 0.35f))
                 ) {
                     Text(
                         text = if (isGranted) "Granted" else "Required",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (isGranted) Color(0xFF34C759) else MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        color = if (isGranted) Color(0xFF34C759) else MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }
             }
 
             if (!isGranted && isSelected) {
-                Spacer(Modifier.height(6.dp))
-                BouncyTextButton(
-                    onClick = onGrantPermission,
-                    contentPadding = PaddingValues(0.dp)
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                    modifier = Modifier.bouncyClick(onClick = onGrantPermission)
                 ) {
-                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Grant in Settings", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Rounded.OpenInNew,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            "Grant Permission",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
     }
 }
+
 

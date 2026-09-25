@@ -5,6 +5,7 @@ import android.view.WindowManager
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -13,7 +14,6 @@ import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Pause
@@ -23,28 +23,27 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.theme.bouncyClick
 
 /**
  * PomodoroZenOverlay - Pure OLED black immersion overlay for deep focus sessions.
- * Features 100% #000000 true black background, minimalist timer arc display,
- * tap-to-toggle HUD, and deliberate touch-and-hold to exit.
+ * Features 100% #000000 true black background, ambient breathing glow,
+ * minimalist timer arc, capsule control chips (CircleShape), and glassmorphic quick-quit pills.
  */
 @ValueScore(
-    score = 92,
+    score = 96,
     importance = Importance.CRITICAL,
-    description = "Minimalist OLED Pure Black immersion overlay with touch-and-hold exit bar",
+    description = "Ultra-minimalist OLED immersion overlay with subtle ambient breathing glow, capsule controls, and glassmorphic quick-quit pills",
     category = "Focus"
 )
 @Composable
@@ -74,6 +73,27 @@ fun PomodoroZenOverlay(
     // Touch-and-Hold Progress Animatable
     val holdProgress = remember { Animatable(0f) }
 
+    // Subtle Ambient Breathing Glow Animation (meditative organic cycle)
+    val infiniteTransition = rememberInfiniteTransition(label = "zen_ambient_glow")
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.04f,
+        targetValue = 0.14f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 4000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "zen_glow_alpha"
+    )
+    val glowScale by infiniteTransition.animateFloat(
+        initialValue = 0.90f,
+        targetValue = 1.15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 4000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "zen_glow_scale"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -85,6 +105,28 @@ fun PomodoroZenOverlay(
             ),
         contentAlignment = Alignment.Center
     ) {
+        // Subtle Ambient Breathing Glow Behind Timer
+        Canvas(
+            modifier = Modifier.size(360.dp)
+        ) {
+            val activeAlpha = if (isRunning && !isPaused) glowAlpha else 0.05f
+            val activeScale = if (isRunning && !isPaused) glowScale else 0.95f
+            val radius = (size.minDimension / 2f) * activeScale
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        ringColor.copy(alpha = activeAlpha),
+                        ringColor.copy(alpha = activeAlpha * 0.35f),
+                        Color.Transparent
+                    ),
+                    center = center,
+                    radius = radius
+                ),
+                radius = radius,
+                center = center
+            )
+        }
+
         // Center Countdown Arc (Crisp & Clean)
         PomodoroTimerArc(
             timeLeftSeconds = timeLeftSeconds,
@@ -95,81 +137,113 @@ fun PomodoroZenOverlay(
             isPaused = isPaused
         )
 
-        // Top Navigation: Minimal Close Button
+        // Top Navigation: Glassmorphic Quick-Quit Pill
         AnimatedVisibility(
             visible = showControls,
-            enter = fadeIn() + slideInVertically { -it / 2 },
-            exit = fadeOut() + slideOutVertically { -it / 2 },
+            enter = fadeIn(animationSpec = tween(220)) + slideInVertically(animationSpec = tween(220)) { -it / 2 },
+            exit = fadeOut(animationSpec = tween(180)) + slideOutVertically(animationSpec = tween(180)) { -it / 2 },
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .statusBarsPadding()
-                .padding(16.dp)
+                .padding(20.dp)
         ) {
             Surface(
                 shape = CircleShape,
-                color = Color.White.copy(alpha = 0.12f)
+                color = Color.White.copy(alpha = 0.08f),
+                border = BorderStroke(
+                    width = 1.dp,
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.22f),
+                            Color.White.copy(alpha = 0.04f)
+                        )
+                    )
+                ),
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .bouncyClick(onClick = onClose)
             ) {
-                BouncyIconButton(
-                    onClick = onClose,
-                    modifier = Modifier.size(40.dp)
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
                         contentDescription = "Exit Zen Mode",
-                        tint = Color.White.copy(alpha = 0.9f),
-                        modifier = Modifier.size(18.dp)
+                        tint = Color.White.copy(alpha = 0.85f),
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Text(
+                        text = "Exit",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White.copy(alpha = 0.85f),
+                        letterSpacing = 0.2.sp
                     )
                 }
             }
         }
 
-        // Bottom HUD: Pause/Resume + Touch-and-Hold to Exit Bar
+        // Bottom Controls: Capsule Control Chips (CircleShape) & Glassmorphic Quick-Quit Pills
         AnimatedVisibility(
             visible = showControls,
-            enter = fadeIn() + slideInVertically { it / 2 },
-            exit = fadeOut() + slideOutVertically { it / 2 },
+            enter = fadeIn(animationSpec = tween(220)) + slideInVertically(animationSpec = tween(220)) { it / 2 },
+            exit = fadeOut(animationSpec = tween(180)) + slideOutVertically(animationSpec = tween(180)) { it / 2 },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = 24.dp, start = 24.dp, end = 24.dp)
+                .padding(bottom = 32.dp, start = 24.dp, end = 24.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Secondary Pause/Resume Pill
+                // Capsule Control Chip: Pause / Resume (CircleShape)
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color.White.copy(alpha = 0.12f),
-                    modifier = Modifier.bouncyClick(onClick = onPauseResume)
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.10f),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.22f),
+                                Color.White.copy(alpha = 0.05f)
+                            )
+                        )
+                    ),
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .bouncyClick(onClick = onPauseResume)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                        modifier = Modifier.padding(horizontal = 22.dp, vertical = 11.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
                             imageVector = if (isPaused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
-                            contentDescription = null,
+                            contentDescription = if (isPaused) "Resume" else "Pause",
                             tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(17.dp)
                         )
                         Text(
                             text = if (isPaused) "Resume" else "Pause",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.White
+                            color = Color.White,
+                            letterSpacing = 0.2.sp
                         )
                     }
                 }
 
-                // Touch-and-Hold to Exit Interactive Progress Bar
-                HoldToExitBar(
+                // Interactive Glassmorphic Quick-Quit Hold Pill (CircleShape)
+                HoldToExitPill(
                     progress = holdProgress.value,
                     ringColor = ringColor,
                     modifier = Modifier
-                        .fillMaxWidth(0.78f)
+                        .fillMaxWidth(0.70f)
                         .height(44.dp)
                         .pointerInput(Unit) {
                             awaitEachGesture {
@@ -200,29 +274,22 @@ fun PomodoroZenOverlay(
                             }
                         }
                 )
-
-                Text(
-                    text = "Tap screen to toggle controls",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.35f),
-                    textAlign = TextAlign.Center
-                )
             }
         }
     }
 }
 
 /**
- * HoldToExitBar - Clean progress bar filling up as the user holds down.
+ * HoldToExitPill - Glassmorphic quick-quit capsule pill filling up as the user holds down.
  */
 @ValueScore(
-    score = 78,
+    score = 82,
     importance = Importance.HIGH,
-    description = "Touch-and-hold progress bar for deliberate Zen mode exit",
+    description = "Glassmorphic capsule quick-quit pill with touch-and-hold progress fill",
     category = "Focus"
 )
 @Composable
-private fun HoldToExitBar(
+private fun HoldToExitPill(
     progress: Float,
     ringColor: Color,
     modifier: Modifier = Modifier
@@ -230,13 +297,27 @@ private fun HoldToExitBar(
     val isHolding = progress > 0.05f
 
     Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = Color.White.copy(alpha = 0.08f),
+        shape = CircleShape,
+        color = Color.White.copy(alpha = 0.07f),
         border = BorderStroke(
-            1.dp,
-            if (isHolding) ringColor.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.15f)
+            width = 1.dp,
+            brush = if (isHolding) {
+                Brush.verticalGradient(
+                    listOf(
+                        ringColor.copy(alpha = 0.70f),
+                        ringColor.copy(alpha = 0.30f)
+                    )
+                )
+            } else {
+                Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.20f),
+                        Color.White.copy(alpha = 0.05f)
+                    )
+                )
+            }
         ),
-        modifier = modifier
+        modifier = modifier.clip(CircleShape)
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -248,12 +329,19 @@ private fun HoldToExitBar(
                     modifier = Modifier
                         .fillMaxHeight()
                         .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(ringColor.copy(alpha = 0.35f))
+                        .clip(CircleShape)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    ringColor.copy(alpha = 0.30f),
+                                    ringColor.copy(alpha = 0.55f)
+                                )
+                            )
+                        )
                 )
             }
 
-            // Central Informational Label
+            // Central Minimal Informational Label
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -265,18 +353,20 @@ private fun HoldToExitBar(
                     Icon(
                         imageVector = Icons.Rounded.Close,
                         contentDescription = null,
-                        tint = if (isHolding) Color.White else Color.White.copy(alpha = 0.70f),
-                        modifier = Modifier.size(15.dp)
+                        tint = if (isHolding) Color.White else Color.White.copy(alpha = 0.65f),
+                        modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = if (isHolding) "Hold to Exit..." else "Hold to Exit",
-                        style = MaterialTheme.typography.labelMedium,
+                        text = if (isHolding) "Release to cancel" else "Hold to exit",
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isHolding) Color.White else Color.White.copy(alpha = 0.75f)
+                        color = if (isHolding) Color.White else Color.White.copy(alpha = 0.70f),
+                        letterSpacing = 0.3.sp
                     )
                 }
             }
         }
     }
 }
+
 

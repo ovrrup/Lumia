@@ -25,12 +25,17 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
+import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.components.ScholarCardDefaults
+import lumia.tracker.ui.components.GlassCapsule
 
 @Composable
 fun OnboardingPage(icon: ImageVector, title: String, description: String, isActive: Boolean) {
     val scale by animateFloatAsState(if (isActive) 1f else 0.85f, tween(600), label = "page_scale")
     val alpha by animateFloatAsState(if (isActive) 1f else 0f, tween(600), label = "page_alpha")
+    val isDark = isSystemInDarkTheme()
 
     Column(
         modifier = Modifier
@@ -41,20 +46,15 @@ fun OnboardingPage(icon: ImageVector, title: String, description: String, isActi
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // High-fidelity Hero Card representing the feature
-        Card(
+        // High-fidelity Glassmorphic Hero Card representing the feature
+        ScholarCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1.1f)
-                .padding(bottom = 24.dp),
+                .weight(1.15f)
+                .padding(bottom = 20.dp),
             shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-            ),
-            border = androidx.compose.foundation.BorderStroke(
-                width = 1.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-            )
+            containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.55f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
+            border = ScholarCardDefaults.glassBorder(isDark)
         ) {
             Box(
                 modifier = Modifier
@@ -72,31 +72,30 @@ fun OnboardingPage(icon: ImageVector, title: String, description: String, isActi
             }
         }
 
-        // Feature Text details
-        Card(
+        // Feature Text details in Glassmorphic Container
+        ScholarCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.9f),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-            ),
-            border = androidx.compose.foundation.BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-            )
+                .weight(0.85f),
+            shape = RoundedCornerShape(26.dp),
+            containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
+            border = ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.primary)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                // Circular icon ring
+                Box(
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                        .border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
@@ -104,14 +103,19 @@ fun OnboardingPage(icon: ImageVector, title: String, description: String, isActi
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(28.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = description,
@@ -265,7 +269,7 @@ fun PersonalizationRepresentation() {
                 }
             }
 
-            // 2. Mock Welcome Mesh Banner (Actual Welcome Banner look)
+            // 2. Mock Mesh Focus Banner
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -288,18 +292,37 @@ fun PersonalizationRepresentation() {
                     .padding(horizontal = 12.dp, vertical = 6.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                Column {
-                    Text(
-                        text = "Welcome to Lumia",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Your personalized companion",
-                        fontSize = 8.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Semester Overview",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "4 Enrolled Modules • 85% On Track",
+                            fontSize = 8.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(primaryColor.copy(alpha = 0.2f))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "ACTIVE",
+                            fontSize = 7.sp,
+                            fontWeight = FontWeight.Black,
+                            color = primaryColor
+                        )
+                    }
                 }
             }
 

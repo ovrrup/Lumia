@@ -33,8 +33,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.viewmodel.ScholarViewModel
+import lumia.tracker.ui.components.BouncyButton
+import lumia.tracker.ui.components.GlassCapsule
+import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.components.ScholarCardDefaults
 
 @Composable
 fun ProfileSetupPage(
@@ -44,6 +50,7 @@ fun ProfileSetupPage(
 ) {
     val scale by animateFloatAsState(if (isActive) 1f else 0.85f, tween(600), label = "profile_scale")
     val alpha by animateFloatAsState(if (isActive) 1f else 0f, tween(600), label = "profile_alpha")
+    val isDark = isSystemInDarkTheme()
 
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
 
@@ -114,7 +121,7 @@ fun ProfileSetupPage(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Form Title
+        // Modern Form Title without cluttered introductory paragraph
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(bottom = 4.dp)
@@ -126,129 +133,135 @@ fun ProfileSetupPage(
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Configure your cockpit details and select a theme aesthetic to begin tracking your academics.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center,
-                lineHeight = 20.sp
-            )
         }
 
-        // Live Real-Time ID Card Preview
-        Card(
+        // Live Real-Time ID Card Preview with Glassmorphic Styling
+        ScholarCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-            ),
-            border = androidx.compose.foundation.BorderStroke(
-                width = 1.dp,
-                color = selectedThemeColor.copy(alpha = 0.5f)
-            )
+            shape = RoundedCornerShape(26.dp),
+            containerColor = if (isDark) {
+                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f)
+            } else {
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+            },
+            border = ScholarCardDefaults.glassBorder(isDark, accentColor = selectedThemeColor)
         ) {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(130.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .padding(20.dp)
             ) {
-                // Subtle color gradient bar representing theme color
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(8.dp)
-                        .background(selectedThemeColor)
-                        .align(Alignment.CenterStart)
-                )
-
+                // Top Header Row with Capsule Badges
                 Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(start = 24.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Left: Clickable Avatar circle
+                    GlassCapsule(
+                        containerColor = selectedThemeColor.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, selectedThemeColor.copy(alpha = 0.35f))
+                    ) {
+                        Text(
+                            text = "LUMIA COCKPIT ID",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            color = selectedThemeColor,
+                            letterSpacing = 1.sp,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+
+                    GlassCapsule(
+                        containerColor = selectedThemeColor.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, selectedThemeColor.copy(alpha = 0.4f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(selectedThemeColor)
+                            )
+                            Text(
+                                text = starterTheme.uppercase(),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Black,
+                                color = selectedThemeColor
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Profile Avatar & Info Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Circular Avatar Ring
                     Box(
                         modifier = Modifier
-                            .size(72.dp)
+                            .size(76.dp)
                             .clip(CircleShape)
-                            .background(selectedThemeColor.copy(alpha = 0.15f))
-                            .border(1.5.dp, selectedThemeColor, CircleShape)
+                            .background(selectedThemeColor.copy(alpha = 0.12f))
+                            .border(2.dp, selectedThemeColor.copy(alpha = 0.6f), CircleShape)
+                            .padding(4.dp)
                             .clickable { pickerLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (selectedImagePath.isNotEmpty()) {
-                            coil.compose.AsyncImage(
-                                model = selectedImagePath,
-                                contentDescription = "Avatar Preview",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                            )
-                        } else {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Face,
-                                    contentDescription = "Upload",
-                                    tint = selectedThemeColor,
-                                    modifier = Modifier.size(24.dp)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .background(selectedThemeColor.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (selectedImagePath.isNotEmpty()) {
+                                coil.compose.AsyncImage(
+                                    model = selectedImagePath,
+                                    contentDescription = "Avatar Preview",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
                                 )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    "ADD",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = selectedThemeColor,
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = 8.sp
-                                )
+                            } else {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Face,
+                                        contentDescription = "Upload",
+                                        tint = selectedThemeColor,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        "ADD",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = selectedThemeColor,
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 8.sp
+                                    )
+                                }
                             }
                         }
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    // Right: User Details Info
+                    // User Details Info
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "LUMIA COCKPIT ID",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace,
-                                color = selectedThemeColor,
-                                letterSpacing = 1.sp
-                            )
-                            
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(selectedThemeColor.copy(alpha = 0.1f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = starterTheme.uppercase(),
-                                    fontSize = 8.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = selectedThemeColor
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
                         Text(
                             text = name.ifBlank { "Main User" },
                             style = MaterialTheme.typography.titleMedium,
@@ -257,6 +270,8 @@ fun ProfileSetupPage(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+
+                        Spacer(modifier = Modifier.height(2.dp))
 
                         Text(
                             text = alias.ifBlank { "Lumia Student" },
@@ -270,40 +285,42 @@ fun ProfileSetupPage(
             }
         }
 
-        // Action guidance to upload
-        Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .clickable { pickerLauncher.launch("image/*") }
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        // Capsule Action Button for Photo Upload
+        GlassCapsule(
+            containerColor = selectedThemeColor.copy(alpha = 0.12f),
+            border = BorderStroke(1.dp, selectedThemeColor.copy(alpha = 0.35f)),
+            onClick = { pickerLauncher.launch("image/*") }
         ) {
-            Icon(
-                imageVector = Icons.Rounded.PhotoCamera,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp)
-            )
-            Text(
-                text = "Tap preview image circle to upload profile photo",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold
-            )
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.PhotoCamera,
+                    contentDescription = null,
+                    tint = selectedThemeColor,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = if (selectedImagePath.isNotEmpty()) "Change Photo" else "Upload Photo",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = selectedThemeColor
+                )
+            }
         }
 
-        // Form fields Card
-        Card(
+        // Form Fields in Glassmorphic Card
+        ScholarCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
-            ),
-            border = androidx.compose.foundation.BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
-            )
+            containerColor = if (isDark) {
+                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.45f)
+            } else {
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.65f)
+            },
+            border = ScholarCardDefaults.glassBorder(isDark)
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -346,21 +363,20 @@ fun ProfileSetupPage(
             }
         }
 
-        // Theme Selector Card
-        Card(
+        // Theme Selector in Glassmorphic Card
+        ScholarCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
-            ),
-            border = androidx.compose.foundation.BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
-            )
+            containerColor = if (isDark) {
+                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.45f)
+            } else {
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.65f)
+            },
+            border = ScholarCardDefaults.glassBorder(isDark)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "Choose Your Starter Theme",
+                    text = "Starter Theme",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,

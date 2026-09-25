@@ -1,5 +1,10 @@
 package lumia.tracker.ui.screens.focus
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,7 +18,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,13 +36,13 @@ import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
- * PomodoroSettingsDialog - Clean configuration modal for Pomodoro intervals,
- * cycle lengths, and automation preferences.
+ * PomodoroSettingsDialog - Modern glassmorphic configuration modal for Pomodoro intervals,
+ * cycle lengths, capsule toggle pills, and tactile controls.
  */
 @ValueScore(
-    score = 86,
+    score = 92,
     importance = Importance.HIGH,
-    description = "Modal configuration sheet for focus intervals, breaks, and auto-logging preferences",
+    description = "Modern glassmorphic modal with capsule toggle pills, slider controls, and CircleShape confirm buttons",
     category = "Focus"
 )
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,7 +79,7 @@ fun PomodoroSettingsDialog(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Header Row with Title and Reset Button
+            // Header Row: Title & Modern Reset Capsule
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -100,19 +109,39 @@ fun PomodoroSettingsDialog(
                     )
                 }
 
-                TextButton(
-                    onClick = {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.60f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)),
+                    modifier = Modifier.bouncyClick {
                         tempWork = 25f
                         tempShort = 5f
                         tempLong = 15f
                         tempSessions = 4f
                     }
                 ) {
-                    Text("Reset", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.RestartAlt,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Reset",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f))
 
             // 1. Focus Interval Slider Card
             DurationSettingCard(
@@ -170,73 +199,110 @@ fun PomodoroSettingsDialog(
                 onSelectPreset = { tempSessions = it.toFloat() }
             )
 
-            // 5. Automation & Logging Preferences
+            // 5. Automation & Logging Preferences Card with Capsule Toggle Pills
             ScholarCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                shape = RoundedCornerShape(20.dp),
+                glassmorphic = true
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Text(
-                        text = "PREFERENCES",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 0.5.sp
-                    )
-
-                    // Auto-Log Toggle
+                    // Auto-Log Toggle Row
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bouncyClick { tempAutoLog = !tempAutoLog },
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = "Auto-Log Focus Sessions",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Switch(
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.HistoryEdu,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Text(
+                                text = "Auto-log sessions",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        CapsuleTogglePill(
                             checked = tempAutoLog,
-                            onCheckedChange = { tempAutoLog = it }
+                            onCheckedChange = { tempAutoLog = it },
+                            activeColor = MaterialTheme.colorScheme.primary
                         )
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
 
-                    // Cycle Target Alert Toggle
+                    // Cycle Target Alert Toggle Row
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bouncyClick { tempPeriodTarget = !tempPeriodTarget },
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = "Cycle Complete Notification",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Switch(
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.NotificationsActive,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Text(
+                                text = "Cycle complete alert",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        CapsuleTogglePill(
                             checked = tempPeriodTarget,
-                            onCheckedChange = { tempPeriodTarget = it }
+                            onCheckedChange = { tempPeriodTarget = it },
+                            activeColor = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
             }
 
-            // Bottom Action Buttons
+            // Bottom Action Buttons with CircleShape
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BouncyTextButton(
                     onClick = onDismiss,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    shape = CircleShape
                 ) {
                     Text("Cancel", fontWeight = FontWeight.SemiBold)
                 }
@@ -252,8 +318,14 @@ fun PomodoroSettingsDialog(
                         onDismiss()
                     },
                     modifier = Modifier.weight(1.5f),
-                    shape = RoundedCornerShape(14.dp)
+                    shape = CircleShape
                 ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text("Apply", fontWeight = FontWeight.Bold)
                 }
             }
@@ -261,16 +333,82 @@ fun PomodoroSettingsDialog(
     }
 }
 
+/**
+ * CapsuleTogglePill - Tactile capsule switch pill with animated sliding indicator.
+ */
+@Composable
+fun CapsuleTogglePill(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    activeColor: Color = MaterialTheme.colorScheme.primary
+) {
+    val haptic = LocalHapticFeedback.current
+    val thumbOffset by animateDpAsState(
+        targetValue = if (checked) 20.dp else 0.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "pill_thumb_offset"
+    )
+    val pillBg by animateColorAsState(
+        targetValue = if (checked) activeColor else MaterialTheme.colorScheme.surfaceContainerHighest,
+        animationSpec = tween(durationMillis = 200),
+        label = "pill_bg_color"
+    )
+    val thumbBg by animateColorAsState(
+        targetValue = if (checked) Color.White else MaterialTheme.colorScheme.outline.copy(alpha = 0.8f),
+        animationSpec = tween(durationMillis = 200),
+        label = "pill_thumb_color"
+    )
+
+    Box(
+        modifier = modifier
+            .width(48.dp)
+            .height(28.dp)
+            .clip(CircleShape)
+            .background(pillBg)
+            .bouncyClick {
+                haptic.performHapticFeedback(HapticFeedbackType.LightImpact)
+                onCheckedChange(!checked)
+            }
+            .padding(horizontal = 3.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Box(
+            modifier = Modifier
+                .offset(x = thumbOffset)
+                .size(22.dp)
+                .clip(CircleShape)
+                .background(thumbBg),
+            contentAlignment = Alignment.Center
+        ) {
+            if (checked) {
+                Icon(
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = activeColor,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * DurationSettingCard - Glassmorphic card for duration and cycle length sliders with capsule preset pills.
+ */
 @ValueScore(
-    score = 70,
+    score = 80,
     importance = Importance.HIGH,
-    description = "Clean slider and preset chip card for duration settings",
+    description = "Modern glassmorphic slider card with capsule preset pills and crisp status indicator",
     category = "Focus"
 )
 @Composable
 private fun DurationSettingCard(
     title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     iconTint: Color,
     valueText: String,
     sliderValue: Float,
@@ -282,14 +420,14 @@ private fun DurationSettingCard(
 ) {
     ScholarCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
+        shape = RoundedCornerShape(20.dp),
+        glassmorphic = true
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -298,20 +436,20 @@ private fun DurationSettingCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(30.dp)
-                            .background(iconTint.copy(alpha = 0.15f), CircleShape),
+                            .size(32.dp)
+                            .background(iconTint.copy(alpha = 0.12f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
                             tint = iconTint,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(17.dp)
                         )
                     }
                     Text(
@@ -322,15 +460,16 @@ private fun DurationSettingCard(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = iconTint.copy(alpha = 0.12f)
+                    shape = CircleShape,
+                    color = iconTint.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, iconTint.copy(alpha = 0.22f))
                 ) {
                     Text(
                         text = valueText,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = iconTint,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }
             }
@@ -344,36 +483,36 @@ private fun DurationSettingCard(
                 colors = SliderDefaults.colors(
                     thumbColor = iconTint,
                     activeTrackColor = iconTint,
-                    inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                    inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
                 )
             )
 
-            // Preset Quick Selection Chips
+            // Preset Quick Selection Capsule Pills
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 presets.forEach { preset ->
                     val isSelected = sliderValue.toInt() == preset
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (isSelected) iconTint else MaterialTheme.colorScheme.surface,
+                        shape = CircleShape,
+                        color = if (isSelected) iconTint else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.50f),
                         border = BorderStroke(
                             1.dp,
-                            if (isSelected) iconTint else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                            if (isSelected) iconTint else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
                         ),
                         modifier = Modifier
                             .weight(1f)
                             .bouncyClick { onSelectPreset(preset) }
                     ) {
                         Box(
-                            modifier = Modifier.padding(vertical = 5.dp),
+                            modifier = Modifier.padding(vertical = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "$preset",
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }

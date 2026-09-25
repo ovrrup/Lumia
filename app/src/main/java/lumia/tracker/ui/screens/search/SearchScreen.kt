@@ -345,20 +345,20 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                         )
                     }
 
-                    // Full-width Search Input Bar
+                    // Full-width Search Input Bar - sleek capsule pill (CircleShape) with glass border
                     Surface(
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f),
                         border = BorderStroke(
-                            width = 0.8.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
                         )
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 2.dp),
+                                .padding(horizontal = 16.dp, vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
@@ -441,7 +441,7 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                         val chipBg = if (isSelected) {
                             MaterialTheme.colorScheme.primary
                         } else {
-                            MaterialTheme.colorScheme.surfaceContainerHigh
+                            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
                         }
                         val chipContentColor = if (isSelected) {
                             MaterialTheme.colorScheme.onPrimary
@@ -450,18 +450,20 @@ fun SearchScreen(navController: NavController, viewModel: ScholarViewModel) {
                         }
 
                         Surface(
-                            shape = RoundedCornerShape(16.dp),
+                            shape = CircleShape,
                             color = chipBg,
                             border = if (!isSelected) {
-                                BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                            } else null,
+                                BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+                            } else {
+                                BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.7f))
+                            },
                             modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(CircleShape)
                                 .clickable { selectedFilter = catItem.name }
                                 .testTag("filter_chip_${catItem.name}")
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
@@ -581,11 +583,12 @@ private fun SearchResultItemCard(
             ) {
                 // Entity Type Pill
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = typeConfig.color.copy(alpha = 0.1f)
+                    shape = CircleShape,
+                    color = typeConfig.color.copy(alpha = 0.12f),
+                    border = BorderStroke(0.6.dp, typeConfig.color.copy(alpha = 0.25f))
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -608,11 +611,12 @@ private fun SearchResultItemCard(
                 if (result.isCompleted) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                        border = BorderStroke(0.6.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
@@ -695,10 +699,10 @@ private fun SearchResultItemCard(
                         val colors = getTagColors(tag)
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(CircleShape)
                                 .background(colors.first)
                                 .clickable { onTagClick(tag) }
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text = "#$tag",
@@ -783,10 +787,10 @@ private fun SearchInitialWorkspaceView(
                     Box(
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(CircleShape)
                             .background(colors.first)
                             .clickable { onTagClick(tag) }
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
                             text = "#$tag",
@@ -927,12 +931,12 @@ fun SearchDetailDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = CircleShape,
                         color = typeConfig.color.copy(alpha = 0.15f),
-                        border = BorderStroke(0.5.dp, typeConfig.color.copy(alpha = 0.3f))
+                        border = BorderStroke(0.6.dp, typeConfig.color.copy(alpha = 0.3f))
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
@@ -1029,9 +1033,9 @@ fun SearchDetailDialog(
                                 val colors = getTagColors(tag)
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
+                                        .clip(CircleShape)
                                         .background(colors.first)
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
                                 ) {
                                     Text(
                                         text = "#$tag",

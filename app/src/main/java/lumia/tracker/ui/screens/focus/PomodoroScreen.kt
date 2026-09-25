@@ -11,6 +11,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +24,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -39,6 +42,7 @@ import lumia.tracker.service.PomodoroMode
 import lumia.tracker.service.PomodoroService
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.focus.*
@@ -127,6 +131,12 @@ fun PomodoroScreen(
         else -> MaterialTheme.colorScheme.primary
     }
 
+    val animatedRingColor by animateColorAsState(
+        targetValue = ringColor,
+        animationSpec = tween(500, easing = FastOutSlowInEasing),
+        label = "pomodoro_ring_color"
+    )
+
     val statusLabel = when {
         pomodoroState.isAlarmActive -> "Alarm Firing"
         !pomodoroState.isRunning -> "Ready to Focus"
@@ -153,6 +163,7 @@ fun PomodoroScreen(
     if (isAodModeActive) {
         PomodoroAodOverlay(
             timeLeftSeconds = if (pomodoroState.isRunning) pomodoroState.timeLeft else workDurationMin * 60,
+            originalTimeSeconds = if (pomodoroState.isRunning) pomodoroState.originalTime else workDurationMin * 60,
             sessionsCompleted = pomodoroState.sessionsCompleted,
             modeString = currentMode.name,
             isRunning = pomodoroState.isRunning,
@@ -169,7 +180,7 @@ fun PomodoroScreen(
             timeLeftSeconds = if (pomodoroState.isRunning) pomodoroState.timeLeft else workDurationMin * 60,
             originalTimeSeconds = if (pomodoroState.isRunning) pomodoroState.originalTime else workDurationMin * 60,
             statusLabel = statusLabel,
-            ringColor = ringColor,
+            ringColor = animatedRingColor,
             isRunning = pomodoroState.isRunning,
             isPaused = pomodoroState.isPaused,
             onPauseResume = { sendServiceAction("PAUSE_RESUME") },
@@ -226,17 +237,44 @@ fun PomodoroScreen(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = Color.Transparent
                 )
             )
         }
     ) { padding ->
+        val isDark = isSystemInDarkTheme()
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Subtle ambient mode background glow
+            // 1. Live Blurred Ambient Glow Orb behind the Timer Arc
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(380.dp)
+                    .blur(radius = 48.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(280.dp)
+                        .align(Alignment.TopCenter)
+                        .offset(y = 20.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    animatedRingColor.copy(alpha = if (isDark) 0.18f else 0.14f),
+                                    animatedRingColor.copy(alpha = 0.04f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+            }
+
+            // 2. Subtle Ambient Vertical Gradient Wash
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -244,7 +282,7 @@ fun PomodoroScreen(
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                ringColor.copy(alpha = 0.08f),
+                                animatedRingColor.copy(alpha = if (isDark) 0.08f else 0.05f),
                                 Color.Transparent
                             )
                         )
@@ -255,7 +293,7 @@ fun PomodoroScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
@@ -285,34 +323,53 @@ fun PomodoroScreen(
                         )
                         presets.forEach { preset ->
                             val isSelected = workDurationMin == preset.work && shortBreakDurationMin == preset.shortBreak
+                            val presetBg = if (isSelected) {
+                                animatedRingColor.copy(alpha = if (isDark) 0.20f else 0.14f)
+                            } else {
+                                ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.50f)
+                            }
+                            val presetBorder = if (isSelected) {
+                                BorderStroke(1.dp, animatedRingColor.copy(alpha = 0.65f))
+                            } else {
+                                ScholarCardDefaults.glassBorder(isDark)
+                            }
+
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isSelected) ringColor.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surfaceContainer,
-                                border = if (isSelected) BorderStroke(1.5.dp, ringColor) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                                shape = CircleShape,
+                                color = presetBg,
+                                border = presetBorder,
                                 modifier = Modifier
                                     .weight(1f)
+                                    .height(36.dp)
                                     .bouncyClick {
                                         viewModel.updatePomodoroWorkDuration(preset.work)
                                         viewModel.updatePomodoroShortBreakDuration(preset.shortBreak)
                                         viewModel.updatePomodoroLongBreakDuration(preset.longBreak)
                                     }
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                    if (isSelected) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(5.dp)
+                                                .clip(CircleShape)
+                                                .background(animatedRingColor)
+                                        )
+                                        Spacer(modifier = Modifier.width(5.dp))
+                                    }
                                     Text(
-                                        text = preset.name,
+                                        text = "${preset.name} · ${preset.work}m",
                                         style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                                        color = if (isSelected) ringColor else MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "${preset.work}m / ${preset.shortBreak}m",
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (isSelected) ringColor.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) animatedRingColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -331,7 +388,7 @@ fun PomodoroScreen(
                     timeLeftSeconds = if (pomodoroState.isRunning) pomodoroState.timeLeft else defaultDurationSec,
                     originalTimeSeconds = if (pomodoroState.isRunning) pomodoroState.originalTime else defaultDurationSec,
                     statusLabel = statusLabel,
-                    ringColor = ringColor,
+                    ringColor = animatedRingColor,
                     sessionsCompleted = pomodoroState.sessionsCompleted,
                     periodSessions = periodSessions,
                     isRunning = pomodoroState.isRunning,
@@ -399,11 +456,11 @@ fun PomodoroScreen(
                     viewModel = viewModel
                 )
 
-                // 5. Daily Metrics Row (Sessions Today, Total Focus, Streak)
+                // 5. Daily Metrics Row (Sessions, Focus Time, Streak)
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(22.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    shape = ScholarCardDefaults.shape,
+                    glassmorphic = true
                 ) {
                     Row(
                         modifier = Modifier
@@ -416,38 +473,38 @@ fun PomodoroScreen(
                         MetricBadgeItem(
                             icon = Icons.Rounded.CheckCircle,
                             value = "${pomodoroState.sessionsCompleted}",
-                            label = "Sessions Today",
+                            label = "Sessions",
                             tintColor = MaterialTheme.colorScheme.primary
                         )
 
                         VerticalDivider(
-                            modifier = Modifier.height(34.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                            modifier = Modifier.height(32.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
                         )
 
                         // 2. Total Focus Time
                         val totalMins = pomodoroState.sessionsCompleted * workDurationMin
                         val timeDisplay = if (totalMins >= 60) {
-                            String.format("%.1fh", totalMins / 60.0f)
+                            String.format(java.util.Locale.US, "%.1fh", totalMins / 60.0f)
                         } else {
                             "${totalMins}m"
                         }
                         MetricBadgeItem(
                             icon = Icons.Rounded.Timer,
                             value = timeDisplay,
-                            label = "Total Focus",
+                            label = "Focus Time",
                             tintColor = MaterialTheme.colorScheme.secondary
                         )
 
                         VerticalDivider(
-                            modifier = Modifier.height(34.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                            modifier = Modifier.height(32.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
                         )
 
                         // 3. Current Streak
                         MetricBadgeItem(
                             icon = Icons.Rounded.LocalFireDepartment,
-                            value = "$streakDays Days",
+                            value = "$streakDays d",
                             label = "Streak",
                             tintColor = Color(0xFFFF9500)
                         )
@@ -461,12 +518,12 @@ fun PomodoroScreen(
 }
 
 /**
- * FluidPillModeSelector - Mode selector with fluid animated sliding pill indicator.
+ * FluidPillModeSelector - Mode selector with fluid animated sliding capsule pill indicator.
  */
 @ValueScore(
-    score = 88,
+    score = 90,
     importance = Importance.HIGH,
-    description = "Fluid sliding pill mode switcher for Work, Short Break, and Long Break intervals",
+    description = "Fluid sliding capsule pill mode switcher for Work, Short Break, and Long Break intervals",
     category = "Focus"
 )
 @Composable
@@ -478,6 +535,7 @@ fun FluidPillModeSelector(
     onSelectMode: (PomodoroMode) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
     val selectedIndex = when (currentMode) {
         PomodoroMode.WORK -> 0
         PomodoroMode.SHORT_BREAK -> 1
@@ -495,14 +553,15 @@ fun FluidPillModeSelector(
     )
 
     Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = modifier
+        shape = CircleShape,
+        color = ScholarCardDefaults.glassContainerColor(isDark, alpha = if (isDark) 0.60f else 0.80f),
+        border = ScholarCardDefaults.glassBorder(isDark),
+        modifier = modifier.height(48.dp)
     ) {
         BoxWithConstraints(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp)
+                .fillMaxSize()
+                .padding(3.dp)
         ) {
             val tabWidth = (maxWidth - 8.dp) / 3
             val animatedOffset by animateDpAsState(
@@ -514,19 +573,32 @@ fun FluidPillModeSelector(
                 label = "pill_sliding_offset"
             )
 
-            // Sliding Indicator Background Pill
+            // Sliding Indicator Background Capsule Pill with Frosted Highlight
             Box(
                 modifier = Modifier
                     .offset(x = animatedOffset)
                     .width(tabWidth)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(CircleShape)
                     .background(activeColor)
-            )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.25f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+            }
 
             // Interactive Tab Items
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 PillModeTabItem(
@@ -559,12 +631,12 @@ fun FluidPillModeSelector(
 }
 
 /**
- * PillModeTabItem - Content layer for individual mode tab with animated text/icon colors.
+ * PillModeTabItem - Content layer for individual mode tab with animated text/icon colors in a capsule.
  */
 @ValueScore(
-    score = 70,
+    score = 72,
     importance = Importance.MEDIUM,
-    description = "Individual mode tab item for the fluid pill mode switcher",
+    description = "Individual capsule mode tab item for the fluid pill mode switcher",
     category = "Focus"
 )
 @Composable
@@ -582,20 +654,21 @@ fun PillModeTabItem(
         label = "pill_tab_content_color"
     )
     val subtitleColor by animateColorAsState(
-        targetValue = if (isSelected) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.70f),
+        targetValue = if (isSelected) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
         animationSpec = tween(250),
         label = "pill_tab_sub_color"
     )
 
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
+            .fillMaxHeight()
+            .clip(CircleShape)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick
             )
-            .padding(vertical = 10.dp, horizontal = 4.dp),
+            .padding(vertical = 5.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -606,13 +679,13 @@ fun PillModeTabItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(14.dp),
+                modifier = Modifier.size(13.dp),
                 tint = contentColor
             )
             Text(
                 text = title,
                 style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (isSelected) FontWeight.Black else FontWeight.SemiBold,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                 color = contentColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -620,7 +693,7 @@ fun PillModeTabItem(
         }
         Text(
             text = durationText,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
             fontWeight = FontWeight.Medium,
             color = subtitleColor
         )
@@ -628,9 +701,9 @@ fun PillModeTabItem(
 }
 
 @ValueScore(
-    score = 62,
+    score = 65,
     importance = Importance.LOW,
-    description = "Daily metric badge item for completed sessions, total focus time, and streaks",
+    description = "Daily metric badge item with circular icon pill and clean typography",
     category = "Focus"
 )
 @Composable
@@ -642,22 +715,30 @@ private fun MetricBadgeItem(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = tintColor
-            )
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(tintColor.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = tintColor
+                )
+            }
             Text(
                 text = value,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Black,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }

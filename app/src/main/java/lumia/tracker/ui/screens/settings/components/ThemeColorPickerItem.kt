@@ -57,6 +57,9 @@ fun ThemeColorPickerItem(
         label = "scale"
     )
 
+    val auraColor = if (name == "Dynamic") MaterialTheme.colorScheme.primary else color
+    val auraAlpha = if (isSelected) 0.40f else 0.12f
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -66,7 +69,7 @@ fun ThemeColorPickerItem(
                 indication = null,
                 onClick = onClick
             )
-            .padding(vertical = 6.dp, horizontal = 4.dp)
+            .padding(vertical = 4.dp, horizontal = 2.dp)
     ) {
         val backgroundModifier = if (name == "Dynamic") {
             Modifier.background(
@@ -90,49 +93,102 @@ fun ThemeColorPickerItem(
             Modifier.background(color)
         }
 
+        // Outer subtle glowing aura
         Box(
             modifier = Modifier
-                .size(52.dp)
-                .clip(CircleShape)
-                .then(backgroundModifier)
-                .border(
-                    width = if (isSelected) 3.5.dp else 1.dp,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                .size(58.dp)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            auraColor.copy(alpha = auraAlpha),
+                            auraColor.copy(alpha = auraAlpha * 0.45f),
+                            Color.Transparent
+                        )
+                    ),
                     shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
         ) {
-            if (isSelected) {
+            // Main circular swatch with frosted glass border
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .then(backgroundModifier)
+                    .border(
+                        width = if (isSelected) 2.5.dp else 1.dp,
+                        brush = Brush.verticalGradient(
+                            colors = if (isSelected) {
+                                listOf(
+                                    Color.White.copy(alpha = 0.90f),
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.70f)
+                                )
+                            } else {
+                                listOf(
+                                    Color.White.copy(alpha = 0.45f),
+                                    Color.White.copy(alpha = 0.12f)
+                                )
+                            }
+                        ),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                // Circular glass specular highlight
                 Box(
                     modifier = Modifier
-                        .size(26.dp)
-                        .background(Color.Black.copy(alpha = 0.35f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(
+                            Brush.verticalGradient(
+                                0.0f to Color.White.copy(alpha = 0.40f),
+                                0.45f to Color.White.copy(alpha = 0.12f),
+                                0.85f to Color.Transparent
+                            )
+                        )
+                )
+
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.White.copy(alpha = 0.35f),
+                                        Color.Black.copy(alpha = 0.45f)
+                                    )
+                                ),
+                                CircleShape
+                            )
+                            .border(0.75.dp, Color.White.copy(alpha = 0.65f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = "Selected",
+                            tint = Color.White,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                } else if (name == "Dynamic") {
                     Icon(
-                        imageVector = Icons.Rounded.Check,
-                        contentDescription = "Selected",
+                        imageVector = Icons.Rounded.AutoAwesome,
+                        contentDescription = "Dynamic Material You",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                } else if (name == "Custom") {
+                    Icon(
+                        imageVector = Icons.Rounded.Colorize,
+                        contentDescription = "Custom Palette",
                         tint = Color.White,
                         modifier = Modifier.size(18.dp)
                     )
                 }
-            } else if (name == "Dynamic") {
-                Icon(
-                    imageVector = Icons.Rounded.AutoAwesome,
-                    contentDescription = "Dynamic Material You",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-            } else if (name == "Custom") {
-                Icon(
-                    imageVector = Icons.Rounded.Colorize,
-                    contentDescription = "Custom Palette",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
             }
         }
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(3.dp))
         Text(
             text = name,
             style = MaterialTheme.typography.labelMedium,

@@ -1,12 +1,16 @@
 package lumia.tracker.ui.components
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -22,9 +26,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -34,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import lumia.tracker.model.TestRecord
 import lumia.tracker.model.Topic
+import lumia.tracker.ui.theme.bouncyClick
 import kotlin.math.max
 import kotlin.math.min
 
@@ -46,11 +53,17 @@ fun TestCornerCard(
     onDeleteTest: (TestRecord) -> Unit
 ) {
     var showAddTestDialog by remember { mutableStateOf(false) }
+    val isDark = isSystemInDarkTheme()
 
         ScholarCard(
         modifier = Modifier.fillMaxWidth().animateContentSize(),
         shape = RoundedCornerShape(32.dp),
-        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
+        containerColor = ScholarCardDefaults.glassContainerColor(isDark).copy(
+            red = ScholarCardDefaults.glassContainerColor(isDark).red * 0.9f + MaterialTheme.colorScheme.tertiaryContainer.red * 0.1f,
+            green = ScholarCardDefaults.glassContainerColor(isDark).green * 0.9f + MaterialTheme.colorScheme.tertiaryContainer.green * 0.1f,
+            blue = ScholarCardDefaults.glassContainerColor(isDark).blue * 0.9f + MaterialTheme.colorScheme.tertiaryContainer.blue * 0.1f
+        ),
+        glassmorphic = true
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -78,24 +91,53 @@ fun TestCornerCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    AnalyticsStatItem(label = "Average", value = "${avgMarks.toInt()}%")
-                    AnalyticsStatItem(label = "Best", value = "${bestMark.toInt()}%")
+                    GlassCapsule(
+                        containerColor = ScholarCardDefaults.glassContainerColor(isDark)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text("Average", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("${avgMarks.toInt()}%", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        }
+                    }
+                    GlassCapsule(
+                        containerColor = ScholarCardDefaults.glassContainerColor(isDark)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text("Best", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("${bestMark.toInt()}%", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        }
+                    }
                     
                     val trendColor = if (trend > 0) MaterialTheme.colorScheme.tertiary else if (trend < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onTertiaryContainer
                     val trendIcon = if (trend > 0) Icons.Rounded.TrendingUp else if (trend < 0) Icons.Rounded.TrendingDown else Icons.Rounded.TrendingFlat
                     
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Trend", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(trendIcon, contentDescription = "Trend", tint = trendColor, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "${if (trend > 0) "+" else ""}${trend.toInt()}%",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = trendColor
-                            )
+                    GlassCapsule(
+                        containerColor = ScholarCardDefaults.glassContainerColor(isDark)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text("Trend", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.7f))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(trendIcon, contentDescription = "Trend", tint = trendColor, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "${if (trend > 0) "+" else ""}${trend.toInt()}%",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = trendColor
+                                )
+                            }
                         }
                     }
                 }
@@ -158,9 +200,10 @@ fun TestCornerCard(
                     items(sortedRecords.reversed()) { test ->
                         var showEditDialog by remember { mutableStateOf(false) }
                             ScholarCard(
-                            modifier = Modifier.width(200.dp).clickable { showEditDialog = true },
-                            shape = RoundedCornerShape(16.dp),
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
+                            modifier = Modifier.width(200.dp).bouncyClick { showEditDialog = true },
+                            shape = ScholarCardDefaults.shape,
+                            containerColor = ScholarCardDefaults.glassContainerColor(isDark),
+                            glassmorphic = true
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(test.title, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -171,7 +214,7 @@ fun TestCornerCard(
                                 val pctColor = if (pct >= 80) MaterialTheme.colorScheme.tertiary else if (pct >= 50) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
                                 LinearProgressIndicator(
                                     progress = if (test.totalMarks > 0) (test.marksObtained / test.totalMarks) else 0f,
-                                    modifier = Modifier.fillMaxWidth().height(4.dp).padding(top = 8.dp),
+                                    modifier = Modifier.fillMaxWidth().height(6.dp).padding(top = 8.dp).clip(CircleShape),
                                     color = pctColor,
                                     trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                                 )
@@ -206,17 +249,16 @@ fun TestCornerCard(
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         test.tags.split(",").map { it.trim() }.filter { it.isNotEmpty() }.take(2).forEach { tag ->
-                                            Box(
-                                                modifier = Modifier
-                                                    .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f), RoundedCornerShape(6.dp))
-                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            GlassCapsule(
+                                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                                             ) {
                                                 Text(
                                                     text = tag,
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                                                     maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                                 )
                                             }
                                         }
@@ -243,7 +285,6 @@ fun TestCornerCard(
                 }
             } else {
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("No tests recorded yet. Add one!", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha=0.6f))
             }
         }
     }
@@ -280,6 +321,9 @@ fun AddEditTestRecordDialog(
     onSave: (TestRecord) -> Unit,
     onDelete: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
+    val dialogShape = RoundedCornerShape(28.dp)
+
     var title by remember(testToEdit) { mutableStateOf(testToEdit?.title ?: "") }
     var marksObtained by remember(testToEdit) { mutableStateOf(testToEdit?.marksObtained?.toString() ?: "0") }
     var totalMarks by remember(testToEdit) { mutableStateOf(testToEdit?.totalMarks?.toString() ?: "100") }
@@ -295,6 +339,13 @@ fun AddEditTestRecordDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.border(
+            border = ScholarCardDefaults.glassBorder(isDark),
+            shape = dialogShape
+        ),
+        shape = dialogShape,
+        containerColor = ScholarCardDefaults.glassContainerColor(isDark, alpha = if (isDark) 0.88f else 0.94f),
+        tonalElevation = 0.dp,
         title = { Text(if (testToEdit == null) "Add Test Record" else "Edit Test Record") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -304,10 +355,11 @@ fun AddEditTestRecordDialog(
                         title = it
                         if (it.isNotBlank()) titleError = null
                     },
-                    label = { Text("Test Name (e.g. Midterm 1)") },
+                    label = { Text("Test Name") },
                     isError = titleError != null,
                     supportingText = titleError?.let { { Text(it) } },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = CircleShape
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
@@ -320,7 +372,8 @@ fun AddEditTestRecordDialog(
                         isError = marksObtainedError != null,
                         supportingText = marksObtainedError?.let { { Text(it) } },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = CircleShape
                     )
                     OutlinedTextField(
                         value = totalMarks,
@@ -332,27 +385,28 @@ fun AddEditTestRecordDialog(
                         isError = totalMarksError != null,
                         supportingText = totalMarksError?.let { { Text(it) } },
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = CircleShape
                     )
                 }
 
                 OutlinedTextField(
                     value = tags,
                     onValueChange = { tags = it },
-                    label = { Text("Tags (comma separated, e.g. final, unit-1)") },
-                    placeholder = { Text("exam, unit-2, tricky") },
+                    label = { Text("Tags") },
                     leadingIcon = { Icon(Icons.Rounded.Label, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = CircleShape
                 )
 
                 if (topics.isNotEmpty()) {
                     val currentSelection = topics.find { it.id == selectedTopicId }
                     Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedTextField(
-                            value = currentSelection?.title ?: "No associated concept (General)",
+                            value = currentSelection?.title ?: "None",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Assessed Concept / Topic") },
+                            label = { Text("Topic") },
                             leadingIcon = { Icon(Icons.Rounded.Category, contentDescription = null) },
                             trailingIcon = {
                                 IconButton(onClick = { topicDropdownExpanded = !topicDropdownExpanded }) {
@@ -362,7 +416,8 @@ fun AddEditTestRecordDialog(
                                     )
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth().clickable { topicDropdownExpanded = true }
+                            modifier = Modifier.fillMaxWidth().clickable { topicDropdownExpanded = true },
+                            shape = CircleShape
                         )
                         DropdownMenu(
                             expanded = topicDropdownExpanded,
@@ -370,7 +425,7 @@ fun AddEditTestRecordDialog(
                             modifier = Modifier.fillMaxWidth(0.9f)
                         ) {
                             DropdownMenuItem(
-                                text = { Text("No associated concept (General)") },
+                                text = { Text("None") },
                                 onClick = {
                                     selectedTopicId = null
                                     topicDropdownExpanded = false
@@ -392,9 +447,10 @@ fun AddEditTestRecordDialog(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Reflection / Improvement Notes") },
+                    label = { Text("Notes") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
+                    minLines = 2,
+                    shape = RoundedCornerShape(14.dp)
                 )
             }
         },

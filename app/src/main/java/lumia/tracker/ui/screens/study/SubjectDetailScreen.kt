@@ -12,7 +12,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -32,6 +34,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -391,7 +394,8 @@ fun SubjectDetailScreen(
 
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(22.dp)
+                    shape = RoundedCornerShape(26.dp),
+                    glassmorphic = true
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         // Subject Header Row
@@ -402,12 +406,12 @@ fun SubjectDetailScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(48.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)),
+                                    .size(52.dp)
+                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = subject.name.take(1).uppercase(),
+                                    text = subject.name.take(2).uppercase(),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -417,7 +421,7 @@ fun SubjectDetailScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = subject.name,
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Black,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -430,17 +434,18 @@ fun SubjectDetailScreen(
                                     ) {
                                         subject.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { tag ->
                                             val colors = getTagColors(tag)
-                                            Box(
-                                                modifier = Modifier
-                                                    .background(colors.first, RoundedCornerShape(6.dp))
-                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = colors.first.copy(alpha = 0.16f),
+                                                border = BorderStroke(0.5.dp, colors.second.copy(alpha = 0.35f))
                                             ) {
                                                 Text(
                                                     text = tag,
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = colors.second,
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 10.sp
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 10.sp,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                                 )
                                             }
                                         }
@@ -451,42 +456,89 @@ fun SubjectDetailScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Clean Syllabus Coverage Gauge
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
-                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                        // Capsule Curriculum Progress Pill
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                            border = ScholarCardDefaults.glassBorder(accentColor = MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Topics Covered",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = if (totalTopics > 0) "$completedTopics/$totalTopics Topics • $topicPct%" else "0 Topics",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (topicPct == 100) Color(0xFF10B981) else MaterialTheme.colorScheme.primary
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(32.dp)
+                                                .background(
+                                                    if (topicPct == 100) Color(0xFF10B981).copy(alpha = 0.18f)
+                                                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                                                    CircleShape
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = if (topicPct == 100) Icons.Rounded.CheckCircle else Icons.Rounded.PieChart,
+                                                contentDescription = null,
+                                                tint = if (topicPct == 100) Color(0xFF10B981) else MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        Column {
+                                            Text(
+                                                text = "Curriculum Coverage",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = if (totalTopics > 0) "$completedTopics of $totalTopics topics completed" else "0 topics added",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+
+                                    // Capsule progress pill badge
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = if (topicPct == 100) Color(0xFF10B981).copy(alpha = 0.16f)
+                                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                        border = BorderStroke(
+                                            0.5.dp,
+                                            if (topicPct == 100) Color(0xFF10B981).copy(alpha = 0.4f)
+                                            else MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                                        )
+                                    ) {
+                                        Text(
+                                            text = "$topicPct%",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = if (topicPct == 100) Color(0xFF10B981) else MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                LinearProgressIndicator(
+                                    progress = { progressFloat },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(6.dp)
+                                        .clip(CircleShape),
+                                    color = if (topicPct == 100) Color(0xFF10B981) else MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    strokeCap = StrokeCap.Round
                                 )
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            LinearProgressIndicator(
-                                progress = { progressFloat },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(6.dp)
-                                    .clip(CircleShape),
-                                color = if (topicPct == 100) Color(0xFF10B981) else MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                                strokeCap = StrokeCap.Round
-                            )
                         }
 
                         Spacer(modifier = Modifier.height(14.dp))
@@ -584,22 +636,51 @@ fun SubjectDetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Rounded.List, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Text("Study Outline", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.AccountTree,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Text(
+                            "Study Outline",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Black
+                        )
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                        ) {
+                            Text(
+                                text = "${subjectChapters.size} Chapters · ${subjectTopics.size} Topics",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         BouncyTextButton(onClick = { showAddChapterDialog = true }) {
-                            Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(15.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
                             Text("Chapter", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                         BouncyTextButton(onClick = {
                             selectedChapterForNewTopic = null
                             showAddTopicDialog = true
                         }) {
-                            Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(15.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
                             Text("Topic", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
@@ -609,7 +690,7 @@ fun SubjectDetailScreen(
             if (subjectChapters.isEmpty() && subjectTopics.isEmpty()) {
                 item {
                     EmptySectionCard(
-                        text = "No chapters or topics added yet.",
+                        text = "No chapters or curriculum topics added yet.",
                         buttonText = "Add Chapter",
                         onClick = { showAddChapterDialog = true }
                     )
@@ -622,14 +703,26 @@ fun SubjectDetailScreen(
                     }
                     val chapterCompletedCount = chapterTopics.count { it.isCompleted }
                     val chapterProgress = if (chapterTopics.isNotEmpty()) chapterCompletedCount.toFloat() / chapterTopics.size else 0f
-                    val animatedChapterProgress by animateFloatAsState(targetValue = chapterProgress, label = "ch_progress_${chapter.id}")
+                    val animatedChapterProgress by animateFloatAsState(
+                        targetValue = chapterProgress,
+                        animationSpec = tween(500),
+                        label = "ch_progress_${chapter.id}"
+                    )
                     var showChapterMenu by remember { mutableStateOf(false) }
 
                     ScholarCard(
-                        modifier = Modifier.fillMaxWidth().animateContentSize(),
-                        shape = RoundedCornerShape(18.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateContentSize(
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioLowBouncy,
+                                    stiffness = Spring.StiffnessMediumLow
+                                )
+                            ),
+                        shape = RoundedCornerShape(22.dp),
+                        glassmorphic = true
                     ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             // Chapter Header Row
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -639,55 +732,124 @@ fun SubjectDetailScreen(
                                 Row(
                                     modifier = Modifier
                                         .weight(1f)
+                                        .clip(RoundedCornerShape(12.dp))
                                         .clickable { expandedChapters[chapter.id] = !isExpanded },
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = if (isExpanded) Icons.Rounded.KeyboardArrowDown else Icons.Rounded.KeyboardArrowRight,
-                                        contentDescription = if (isExpanded) "Collapse" else "Expand",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Rounded.Folder,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Text(
-                                        text = chapter.name,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.weight(1f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Surface(
-                                        color = if (chapterTopics.isNotEmpty() && chapterCompletedCount == chapterTopics.size) {
-                                            Color(0xFF10B981).copy(alpha = 0.15f)
-                                        } else {
-                                            MaterialTheme.colorScheme.surfaceVariant
-                                        },
-                                        shape = RoundedCornerShape(6.dp)
+                                    // Folder / Completion Icon Container
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .background(
+                                                if (chapterCompletedCount == chapterTopics.size && chapterTopics.isNotEmpty())
+                                                    Color(0xFF10B981).copy(alpha = 0.16f)
+                                                else
+                                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                                                RoundedCornerShape(10.dp)
+                                            ),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = "$chapterCompletedCount/${chapterTopics.size}",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (chapterTopics.isNotEmpty() && chapterCompletedCount == chapterTopics.size) {
+                                        Icon(
+                                            imageVector = if (chapterCompletedCount == chapterTopics.size && chapterTopics.isNotEmpty())
+                                                Icons.Rounded.CheckCircle
+                                            else
+                                                Icons.Rounded.Folder,
+                                            contentDescription = null,
+                                            tint = if (chapterCompletedCount == chapterTopics.size && chapterTopics.isNotEmpty())
                                                 Color(0xFF10B981)
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                            },
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            else
+                                                MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
                                         )
                                     }
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = chapter.name,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        if (chapter.description.isNotBlank()) {
+                                            Text(
+                                                text = chapter.description,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+
+                                    // Capsule Progress Pill in Chapter Header
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = when {
+                                            chapterTopics.isEmpty() -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                            chapterCompletedCount == chapterTopics.size -> Color(0xFF10B981).copy(alpha = 0.16f)
+                                            chapterProgress > 0f -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                        },
+                                        border = BorderStroke(
+                                            0.5.dp,
+                                            when {
+                                                chapterTopics.isEmpty() -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                                                chapterCompletedCount == chapterTopics.size -> Color(0xFF10B981).copy(alpha = 0.35f)
+                                                chapterProgress > 0f -> MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                                                else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                                            }
+                                        )
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            if (chapterTopics.isNotEmpty() && chapterCompletedCount == chapterTopics.size) {
+                                                Icon(
+                                                    Icons.Rounded.Check,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFF10B981),
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                            }
+                                            Text(
+                                                text = if (chapterTopics.isEmpty()) "0 Topics" else "$chapterCompletedCount/${chapterTopics.size}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 11.sp,
+                                                color = when {
+                                                    chapterTopics.isEmpty() -> MaterialTheme.colorScheme.onSurfaceVariant
+                                                    chapterCompletedCount == chapterTopics.size -> Color(0xFF10B981)
+                                                    chapterProgress > 0f -> MaterialTheme.colorScheme.primary
+                                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                                }
+                                            )
+                                        }
+                                    }
+
+                                    // Collapsible rotating chevron
+                                    val chevronRotation by animateFloatAsState(
+                                        targetValue = if (isExpanded) 180f else 0f,
+                                        animationSpec = tween(250),
+                                        label = "ch_chevron_${chapter.id}"
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Rounded.KeyboardArrowDown,
+                                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .rotate(chevronRotation)
+                                    )
                                 }
 
+                                // Chapter Options Menu
                                 Box {
-                                    IconButton(
+                                    BouncyIconButton(
                                         onClick = { showChapterMenu = true },
                                         modifier = Modifier.size(32.dp)
                                     ) {
@@ -731,136 +893,174 @@ fun SubjectDetailScreen(
                                 }
                             }
 
+                            // Chapter Progress Bar
                             if (chapterTopics.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(10.dp))
                                 LinearProgressIndicator(
                                     progress = { animatedChapterProgress },
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(3.dp)
+                                        .height(4.dp)
                                         .clip(CircleShape),
                                     color = if (chapterCompletedCount == chapterTopics.size) Color(0xFF10B981) else MaterialTheme.colorScheme.primary,
-                                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                     strokeCap = StrokeCap.Round
                                 )
                             }
 
-                            if (chapter.description.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = chapter.description,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(start = 28.dp)
-                                )
-                            }
-
+                            // Collapsible Curriculum Topics
                             if (isExpanded) {
-                                Spacer(modifier = Modifier.height(10.dp))
+                                Spacer(modifier = Modifier.height(12.dp))
                                 if (chapterTopics.isEmpty()) {
-                                    Text(
-                                        text = "No topics in this chapter.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(start = 28.dp, bottom = 4.dp)
-                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "No topics in this chapter yet.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
+                                            )
+                                            BouncyTextButton(
+                                                onClick = {
+                                                    selectedChapterForNewTopic = chapter.id
+                                                    showAddTopicDialog = true
+                                                }
+                                            ) {
+                                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                Spacer(modifier = Modifier.width(3.dp))
+                                                Text("Add", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+                                    }
                                 } else {
                                     Column(
-                                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                                        modifier = Modifier.padding(start = 8.dp)
+                                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.padding(start = 4.dp)
                                     ) {
                                         chapterTopics.forEach { topic ->
                                             var showTopicMenu by remember { mutableStateOf(false) }
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .clip(RoundedCornerShape(10.dp))
-                                                    .padding(vertical = 2.dp, horizontal = 4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
+                                            Surface(
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = if (topic.isCompleted)
+                                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                                                else
+                                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                                                border = BorderStroke(
+                                                    0.5.dp,
+                                                    if (topic.isCompleted)
+                                                        Color(0xFF10B981).copy(alpha = 0.15f)
+                                                    else
+                                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                                                ),
+                                                modifier = Modifier.fillMaxWidth()
                                             ) {
-                                                IconButton(
-                                                    onClick = { viewModel.toggleTopicCompleted(topic) },
-                                                    modifier = Modifier.size(32.dp)
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
                                                 ) {
-                                                    Icon(
-                                                        imageVector = if (topic.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
-                                                        contentDescription = "Toggle Complete",
-                                                        tint = if (topic.isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        modifier = Modifier.size(18.dp)
-                                                    )
-                                                }
-                                                Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
-                                                    Text(
-                                                        text = topic.title,
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        fontWeight = if (topic.isCompleted) FontWeight.Normal else FontWeight.Medium,
-                                                        textDecoration = if (topic.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-                                                        color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                    if (topic.tags.isNotBlank()) {
-                                                        Row(
-                                                            modifier = Modifier.padding(top = 2.dp),
-                                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                    BouncyIconButton(
+                                                        onClick = { viewModel.toggleTopicCompleted(topic) },
+                                                        modifier = Modifier.size(32.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = if (topic.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                                                            contentDescription = "Toggle Complete",
+                                                            tint = if (topic.isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
+
+                                                    Column(modifier = Modifier.weight(1f).padding(start = 6.dp)) {
+                                                        Text(
+                                                            text = topic.title,
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            fontWeight = if (topic.isCompleted) FontWeight.Normal else FontWeight.SemiBold,
+                                                            textDecoration = if (topic.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                                                            color = if (topic.isCompleted)
+                                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                                            else
+                                                                MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                        if (topic.tags.isNotBlank()) {
+                                                            Spacer(modifier = Modifier.height(2.dp))
+                                                            FlowRow(
+                                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                                verticalArrangement = Arrangement.spacedBy(2.dp)
                                                             ) {
-                                                            topic.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.take(2).forEach { tag ->
-                                                                val colors = getTagColors(tag)
-                                                                Box(
-                                                                    modifier = Modifier
-                                                                        .background(colors.first, RoundedCornerShape(4.dp))
-                                                                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                                                                ) {
-                                                                    Text(
-                                                                        text = tag,
-                                                                        style = MaterialTheme.typography.labelSmall,
-                                                                        color = colors.second,
-                                                                        fontSize = 9.sp,
-                                                                        fontWeight = FontWeight.Bold
-                                                                    )
+                                                                topic.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.take(3).forEach { tag ->
+                                                                    val colors = getTagColors(tag)
+                                                                    Surface(
+                                                                        shape = CircleShape,
+                                                                        color = colors.first.copy(alpha = 0.15f),
+                                                                        border = BorderStroke(0.5.dp, colors.second.copy(alpha = 0.3f))
+                                                                    ) {
+                                                                        Text(
+                                                                            text = tag,
+                                                                            style = MaterialTheme.typography.labelSmall,
+                                                                            color = colors.second,
+                                                                            fontSize = 9.sp,
+                                                                            fontWeight = FontWeight.Bold,
+                                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                                                        )
+                                                                    }
                                                                 }
                                                             }
                                                         }
                                                     }
-                                                }
-                                                Box {
-                                                    IconButton(
-                                                        onClick = { showTopicMenu = true },
-                                                        modifier = Modifier.size(32.dp)
-                                                    ) {
-                                                        Icon(
-                                                            Icons.Rounded.MoreVert,
-                                                            contentDescription = "Topic Options",
-                                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            modifier = Modifier.size(16.dp)
-                                                        )
-                                                    }
-                                                    DropdownMenu(
-                                                        expanded = showTopicMenu,
-                                                        onDismissRequest = { showTopicMenu = false }
-                                                    ) {
-                                                        DropdownMenuItem(
-                                                            text = { Text("Start Pomodoro") },
-                                                            onClick = {
-                                                                showTopicMenu = false
-                                                                navController.navigate("pomodoro?subjectId=${subjectId}&topicId=${topic.id}")
-                                                            },
-                                                            leadingIcon = { Icon(Icons.Rounded.Timer, contentDescription = null) }
-                                                        )
-                                                        DropdownMenuItem(
-                                                            text = { Text("Edit Topic") },
-                                                            onClick = {
-                                                                showTopicMenu = false
-                                                                topicToEdit = topic
-                                                            },
-                                                            leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
-                                                        )
-                                                        DropdownMenuItem(
-                                                            text = { Text("Delete Topic", color = MaterialTheme.colorScheme.error) },
-                                                            onClick = {
-                                                                showTopicMenu = false
-                                                                viewModel.deleteTopic(topic)
-                                                            },
-                                                            leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
-                                                        )
+
+                                                    // Topic Action Menu
+                                                    Box {
+                                                        BouncyIconButton(
+                                                            onClick = { showTopicMenu = true },
+                                                            modifier = Modifier.size(32.dp)
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Rounded.MoreVert,
+                                                                contentDescription = "Topic Options",
+                                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                modifier = Modifier.size(16.dp)
+                                                            )
+                                                        }
+                                                        DropdownMenu(
+                                                            expanded = showTopicMenu,
+                                                            onDismissRequest = { showTopicMenu = false }
+                                                        ) {
+                                                            DropdownMenuItem(
+                                                                text = { Text("Start Pomodoro") },
+                                                                onClick = {
+                                                                    showTopicMenu = false
+                                                                    navController.navigate("pomodoro?subjectId=${subjectId}&topicId=${topic.id}")
+                                                                },
+                                                                leadingIcon = { Icon(Icons.Rounded.Timer, contentDescription = null) }
+                                                            )
+                                                            DropdownMenuItem(
+                                                                text = { Text("Edit Topic") },
+                                                                onClick = {
+                                                                    showTopicMenu = false
+                                                                    topicToEdit = topic
+                                                                },
+                                                                leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
+                                                            )
+                                                            DropdownMenuItem(
+                                                                text = { Text("Delete Topic", color = MaterialTheme.colorScheme.error) },
+                                                                onClick = {
+                                                                    showTopicMenu = false
+                                                                    viewModel.deleteTopic(topic)
+                                                                },
+                                                                leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
@@ -868,8 +1068,9 @@ fun SubjectDetailScreen(
                                     }
                                 }
 
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                    modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.End
                                 ) {
                                     BouncyTextButton(
@@ -892,10 +1093,18 @@ fun SubjectDetailScreen(
                     item {
                         var isExpandedUnassigned by remember { mutableStateOf(true) }
                         ScholarCard(
-                            modifier = Modifier.fillMaxWidth().animateContentSize(),
-                            shape = RoundedCornerShape(18.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateContentSize(
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioLowBouncy,
+                                        stiffness = Spring.StiffnessMediumLow
+                                    )
+                                ),
+                            shape = RoundedCornerShape(22.dp),
+                            glassmorphic = true
                         ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
+                            Column(modifier = Modifier.padding(16.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -904,142 +1113,185 @@ fun SubjectDetailScreen(
                                     Row(
                                         modifier = Modifier
                                             .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
                                             .clickable { isExpandedUnassigned = !isExpandedUnassigned },
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = if (isExpandedUnassigned) Icons.Rounded.KeyboardArrowDown else Icons.Rounded.KeyboardArrowRight,
-                                            contentDescription = if (isExpandedUnassigned) "Collapse" else "Expand",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Icon(
-                                            imageVector = Icons.Rounded.HelpOutline,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.secondary,
-                                            modifier = Modifier.size(18.dp)
-                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .background(
+                                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
+                                                    RoundedCornerShape(10.dp)
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Bookmarks,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.secondary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                         Text(
-                                            text = "General / Unassigned Topics",
+                                            text = "General Topics",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurface,
                                             modifier = Modifier.weight(1f)
                                         )
                                         Surface(
-                                            color = MaterialTheme.colorScheme.surfaceVariant,
-                                            shape = RoundedCornerShape(6.dp)
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                                         ) {
                                             Text(
-                                                text = "${unassignedTopics.size}",
+                                                text = "${unassignedTopics.size} Topics",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                fontSize = 11.sp,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                             )
                                         }
+
+                                        val unassignedChevronRotation by animateFloatAsState(
+                                            targetValue = if (isExpandedUnassigned) 180f else 0f,
+                                            animationSpec = tween(250),
+                                            label = "unassigned_chevron"
+                                        )
+                                        Icon(
+                                            imageVector = Icons.Rounded.KeyboardArrowDown,
+                                            contentDescription = if (isExpandedUnassigned) "Collapse" else "Expand",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .rotate(unassignedChevronRotation)
+                                        )
                                     }
                                 }
 
                                 if (isExpandedUnassigned) {
-                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Spacer(modifier = Modifier.height(12.dp))
                                     Column(
-                                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                                        modifier = Modifier.padding(start = 8.dp)
+                                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.padding(start = 4.dp)
                                     ) {
                                         unassignedTopics.forEach { topic ->
                                             var showTopicMenu by remember { mutableStateOf(false) }
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .clip(RoundedCornerShape(10.dp))
-                                                    .padding(vertical = 2.dp, horizontal = 4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
+                                            Surface(
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = if (topic.isCompleted)
+                                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                                                else
+                                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                                                border = BorderStroke(
+                                                    0.5.dp,
+                                                    if (topic.isCompleted)
+                                                        Color(0xFF10B981).copy(alpha = 0.15f)
+                                                    else
+                                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                                                ),
+                                                modifier = Modifier.fillMaxWidth()
                                             ) {
-                                                IconButton(
-                                                    onClick = { viewModel.toggleTopicCompleted(topic) },
-                                                    modifier = Modifier.size(32.dp)
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
                                                 ) {
-                                                    Icon(
-                                                        imageVector = if (topic.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
-                                                        contentDescription = "Toggle Complete",
-                                                        tint = if (topic.isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        modifier = Modifier.size(18.dp)
-                                                    )
-                                                }
-                                                Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
-                                                    Text(
-                                                        text = topic.title,
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        fontWeight = if (topic.isCompleted) FontWeight.Normal else FontWeight.Medium,
-                                                        textDecoration = if (topic.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-                                                        color = if (topic.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                    if (topic.tags.isNotBlank()) {
-                                                        Row(
-                                                            modifier = Modifier.padding(top = 2.dp),
-                                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                                        ) {
-                                                            topic.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.take(2).forEach { tag ->
-                                                                val colors = getTagColors(tag)
-                                                                Box(
-                                                                    modifier = Modifier
-                                                                        .background(colors.first, RoundedCornerShape(4.dp))
-                                                                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                                                                ) {
-                                                                    Text(
-                                                                        text = tag,
-                                                                        style = MaterialTheme.typography.labelSmall,
-                                                                        color = colors.second,
-                                                                        fontSize = 9.sp,
-                                                                        fontWeight = FontWeight.Bold
-                                                                    )
+                                                    BouncyIconButton(
+                                                        onClick = { viewModel.toggleTopicCompleted(topic) },
+                                                        modifier = Modifier.size(32.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = if (topic.isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                                                            contentDescription = "Toggle Complete",
+                                                            tint = if (topic.isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
+
+                                                    Column(modifier = Modifier.weight(1f).padding(start = 6.dp)) {
+                                                        Text(
+                                                            text = topic.title,
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            fontWeight = if (topic.isCompleted) FontWeight.Normal else FontWeight.SemiBold,
+                                                            textDecoration = if (topic.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                                                            color = if (topic.isCompleted)
+                                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                                            else
+                                                                MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                        if (topic.tags.isNotBlank()) {
+                                                            Spacer(modifier = Modifier.height(2.dp))
+                                                            FlowRow(
+                                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                                                            ) {
+                                                                topic.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.take(3).forEach { tag ->
+                                                                    val colors = getTagColors(tag)
+                                                                    Surface(
+                                                                        shape = CircleShape,
+                                                                        color = colors.first.copy(alpha = 0.15f),
+                                                                        border = BorderStroke(0.5.dp, colors.second.copy(alpha = 0.3f))
+                                                                    ) {
+                                                                        Text(
+                                                                            text = tag,
+                                                                            style = MaterialTheme.typography.labelSmall,
+                                                                            color = colors.second,
+                                                                            fontSize = 9.sp,
+                                                                            fontWeight = FontWeight.Bold,
+                                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                                                        )
+                                                                    }
                                                                 }
                                                             }
                                                         }
                                                     }
-                                                }
-                                                Box {
-                                                    IconButton(
-                                                        onClick = { showTopicMenu = true },
-                                                        modifier = Modifier.size(32.dp)
-                                                    ) {
-                                                        Icon(
-                                                            Icons.Rounded.MoreVert,
-                                                            contentDescription = "Topic Options",
-                                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            modifier = Modifier.size(16.dp)
-                                                        )
-                                                    }
-                                                    DropdownMenu(
-                                                        expanded = showTopicMenu,
-                                                        onDismissRequest = { showTopicMenu = false }
-                                                    ) {
-                                                        DropdownMenuItem(
-                                                            text = { Text("Start Pomodoro") },
-                                                            onClick = {
-                                                                showTopicMenu = false
-                                                                navController.navigate("pomodoro?subjectId=${subjectId}&topicId=${topic.id}")
-                                                            },
-                                                            leadingIcon = { Icon(Icons.Rounded.Timer, contentDescription = null) }
-                                                        )
-                                                        DropdownMenuItem(
-                                                            text = { Text("Edit Topic") },
-                                                            onClick = {
-                                                                showTopicMenu = false
-                                                                topicToEdit = topic
-                                                            },
-                                                            leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
-                                                        )
-                                                        DropdownMenuItem(
-                                                            text = { Text("Delete Topic", color = MaterialTheme.colorScheme.error) },
-                                                            onClick = {
-                                                                showTopicMenu = false
-                                                                viewModel.deleteTopic(topic)
-                                                            },
-                                                            leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
-                                                        )
+
+                                                    Box {
+                                                        BouncyIconButton(
+                                                            onClick = { showTopicMenu = true },
+                                                            modifier = Modifier.size(32.dp)
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Rounded.MoreVert,
+                                                                contentDescription = "Topic Options",
+                                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                modifier = Modifier.size(16.dp)
+                                                            )
+                                                        }
+                                                        DropdownMenu(
+                                                            expanded = showTopicMenu,
+                                                            onDismissRequest = { showTopicMenu = false }
+                                                        ) {
+                                                            DropdownMenuItem(
+                                                                text = { Text("Start Pomodoro") },
+                                                                onClick = {
+                                                                    showTopicMenu = false
+                                                                    navController.navigate("pomodoro?subjectId=${subjectId}&topicId=${topic.id}")
+                                                                },
+                                                                leadingIcon = { Icon(Icons.Rounded.Timer, contentDescription = null) }
+                                                            )
+                                                            DropdownMenuItem(
+                                                                text = { Text("Edit Topic") },
+                                                                onClick = {
+                                                                    showTopicMenu = false
+                                                                    topicToEdit = topic
+                                                                },
+                                                                leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) }
+                                                            )
+                                                            DropdownMenuItem(
+                                                                text = { Text("Delete Topic", color = MaterialTheme.colorScheme.error) },
+                                                                onClick = {
+                                                                    showTopicMenu = false
+                                                                    viewModel.deleteTopic(topic)
+                                                                },
+                                                                leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }

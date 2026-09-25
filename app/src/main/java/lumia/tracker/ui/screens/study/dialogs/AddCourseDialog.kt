@@ -1,7 +1,10 @@
 package lumia.tracker.ui.screens.study.dialogs
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -10,11 +13,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.viewmodel.ScholarViewModel
@@ -31,6 +36,9 @@ fun AddCourseDialog(
     viewModel: ScholarViewModel,
     onDismiss: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
+    val dialogShape = RoundedCornerShape(28.dp)
+
     var name by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
     var selectedColor by remember { mutableStateOf("#3197D6") }
@@ -49,17 +57,30 @@ fun AddCourseDialog(
 
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
 
+    val accentColor = remember(selectedColor) {
+        try {
+            Color(android.graphics.Color.parseColor(selectedColor))
+        } catch (e: Exception) {
+            Color(0xFF3197D6)
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        shape = dialogShape,
+        containerColor = ScholarCardDefaults.glassContainerColor(isDark, alpha = if (isDark) 0.88f else 0.94f),
+        modifier = Modifier.border(
+            border = ScholarCardDefaults.glassBorder(isDark, accentColor = accentColor),
+            shape = dialogShape
+        ),
+        tonalElevation = 0.dp,
         title = {
             StudyDialogHeader(
                 icon = Icons.Rounded.School,
-                title = "Add New Course",
-                subtitle = "Set up schedule, color, and subject links",
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                title = "Add Course",
+                subtitle = "Schedule, color, and links",
+                containerColor = accentColor.copy(alpha = 0.16f),
+                contentColor = accentColor
             )
         },
         text = {
@@ -69,18 +90,18 @@ fun AddCourseDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
                 // Course Code & Name
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it },
                     label = { Text("Course Code") },
-                    placeholder = { Text("e.g. CS101, MATH204") },
+                    placeholder = { Text("CS101") },
                     leadingIcon = {
-                        Icon(Icons.Rounded.QrCode, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Rounded.QrCode, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
                     },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = CircleShape,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -92,15 +113,15 @@ fun AddCourseDialog(
                         nameTouched = true
                     },
                     label = { Text("Course Name *") },
-                    placeholder = { Text("e.g. Data Structures & Algorithms") },
+                    placeholder = { Text("Course Name") },
                     leadingIcon = {
-                        Icon(Icons.Rounded.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Rounded.MenuBook, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
                     },
                     isError = nameTouched && name.trim().isBlank(),
                     supportingText = if (nameTouched && name.trim().isBlank()) {
                         { Text("Course name is required", color = MaterialTheme.colorScheme.error) }
                     } else null,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = CircleShape,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -109,11 +130,11 @@ fun AddCourseDialog(
                     value = instructor,
                     onValueChange = { instructor = it },
                     label = { Text("Instructor (Optional)") },
-                    placeholder = { Text("e.g. Prof. Alexander") },
+                    placeholder = { Text("Instructor") },
                     leadingIcon = {
                         Icon(Icons.Rounded.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = CircleShape,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -152,7 +173,7 @@ fun AddCourseDialog(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Description (Optional)") },
-                    placeholder = { Text("Add class notes, room number, or teacher info") },
+                    placeholder = { Text("Notes or details") },
                     leadingIcon = {
                         Icon(Icons.Rounded.Notes, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     },
@@ -165,11 +186,11 @@ fun AddCourseDialog(
                     value = tags,
                     onValueChange = { tags = it },
                     label = { Text("Tags (Optional)") },
-                    placeholder = { Text("core, semester1, mandatory") },
+                    placeholder = { Text("core, mandatory") },
                     leadingIcon = {
                         Icon(Icons.Rounded.Tag, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = CircleShape,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -209,7 +230,7 @@ fun AddCourseDialog(
                     }
                 },
                 enabled = name.trim().isNotBlank(),
-                shape = RoundedCornerShape(16.dp)
+                shape = CircleShape
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

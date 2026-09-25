@@ -2,6 +2,7 @@ package lumia.tracker.ui.screens.study.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -18,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -55,22 +58,30 @@ fun StudyItemActionMenu(
     var expanded by remember { mutableStateOf(false) }
 
     Box(modifier = modifier) {
-        BouncyIconButton(
-            onClick = { expanded = true },
-            modifier = Modifier.size(36.dp)
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            modifier = Modifier.size(34.dp)
         ) {
-            Icon(
-                imageVector = Icons.Rounded.MoreVert,
-                contentDescription = "Options",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            BouncyIconButton(
+                onClick = { expanded = true },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.MoreVert,
+                    contentDescription = "Options",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            shape = RoundedCornerShape(16.dp)
         ) {
             DropdownMenuItem(
-                text = { Text(editLabel) },
+                text = { Text(editLabel, fontWeight = FontWeight.Medium) },
                 onClick = {
                     expanded = false
                     onEdit()
@@ -79,12 +90,13 @@ fun StudyItemActionMenu(
                     Icon(
                         imageVector = editIcon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             )
             DropdownMenuItem(
-                text = { Text(deleteLabel) },
+                text = { Text(deleteLabel, fontWeight = FontWeight.Medium) },
                 onClick = {
                     expanded = false
                     onDelete()
@@ -93,7 +105,8 @@ fun StudyItemActionMenu(
                     Icon(
                         imageVector = deleteIcon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             )
@@ -102,12 +115,12 @@ fun StudyItemActionMenu(
 }
 
 /**
- * Single tag badge chip rendered with dynamic background and contrast text colors derived from tag hash.
+ * Single tag badge chip rendered as a modern capsule pill with dynamic background and contrast text colors derived from tag hash.
  */
 @ValueScore(
-    score = 60,
+    score = 65,
     importance = Importance.LOW,
-    description = "Color-accented tag chip with optional icon and click callback",
+    description = "Color-accented capsule tag chip with circular icon and click callback",
     category = "Study"
 )
 @Composable
@@ -115,30 +128,38 @@ fun StudyTagChip(
     tag: String,
     modifier: Modifier = Modifier,
     showIcon: Boolean = true,
-    shape: Shape = RoundedCornerShape(6.dp),
-    contentPadding: PaddingValues = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+    shape: Shape = CircleShape,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp, vertical = 3.dp),
     onClick: (() -> Unit)? = null
 ) {
     val (bgColor, textColor) = getTagColors(tag)
     Surface(
         shape = shape,
         color = bgColor,
-        modifier = modifier.then(
-            if (onClick != null) Modifier.clickable { onClick() } else Modifier
-        )
+        border = BorderStroke(0.5.dp, textColor.copy(alpha = 0.22f)),
+        modifier = modifier
+            .clip(shape)
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
     ) {
         Row(
             modifier = Modifier.padding(contentPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(3.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             if (showIcon) {
-                Icon(
-                    imageVector = Icons.Rounded.LocalOffer,
-                    contentDescription = null,
-                    modifier = Modifier.size(10.dp),
-                    tint = textColor
-                )
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(textColor.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.LocalOffer,
+                        contentDescription = null,
+                        modifier = Modifier.size(8.dp),
+                        tint = textColor
+                    )
+                }
             }
             Text(
                 text = tag,
@@ -189,12 +210,12 @@ fun StudyTagChipsFlow(
 }
 
 /**
- * Deduplicated animated linear progress indicator with title header and value indicator badge.
+ * Deduplicated animated linear progress indicator with title header and capsule value indicator badge.
  */
 @ValueScore(
     score = 75,
     importance = Importance.HIGH,
-    description = "Animated linear progress bar with title and value badge",
+    description = "Animated linear progress bar with title and capsule value badge",
     category = "Study"
 )
 @Composable
@@ -211,6 +232,7 @@ fun StudyProgressBar(
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = tween(400),
         label = "studyProgress"
     )
 
@@ -230,15 +252,16 @@ fun StudyProgressBar(
                 fontWeight = FontWeight.Medium
             )
             Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = badgeColor
+                shape = CircleShape,
+                color = badgeColor,
+                border = BorderStroke(0.5.dp, badgeTextColor.copy(alpha = 0.25f))
             ) {
                 Text(
                     text = valueText,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = badgeTextColor,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
         }
@@ -247,20 +270,21 @@ fun StudyProgressBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(height)
-                .clip(RoundedCornerShape(height / 2)),
+                .clip(CircleShape),
             color = color,
-            trackColor = trackColor
+            trackColor = trackColor,
+            strokeCap = StrokeCap.Round
         )
     }
 }
 
 /**
- * Metric status badge with icon and label for attendance, assignments, and health states.
+ * Metric status badge with circular icon and capsule pill container for attendance, assignments, and health states.
  */
 @ValueScore(
-    score = 65,
+    score = 68,
     importance = Importance.MEDIUM,
-    description = "Colored status indicator badge with icon and text",
+    description = "Colored status indicator capsule pill with circular icon and text",
     category = "Study"
 )
 @Composable
@@ -270,26 +294,37 @@ fun StudyStatusBadge(
     color: Color,
     containerColor: Color,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(8.dp),
-    iconSize: Dp = 14.dp,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+    shape: Shape = CircleShape,
+    iconSize: Dp = 12.dp,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 9.dp, vertical = 4.dp),
+    onClick: (() -> Unit)? = null
 ) {
     Surface(
         shape = shape,
         color = containerColor,
+        border = BorderStroke(0.5.dp, color.copy(alpha = 0.25f)),
         modifier = modifier
+            .clip(shape)
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
     ) {
         Row(
             modifier = Modifier.padding(contentPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(iconSize)
-            )
+            Box(
+                modifier = Modifier
+                    .size(iconSize + 4.dp)
+                    .background(color.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(iconSize)
+                )
+            }
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelSmall,
@@ -301,12 +336,12 @@ fun StudyStatusBadge(
 }
 
 /**
- * Card info or empty state placeholder row (e.g. "No syllabus topics added yet").
+ * Card info or empty state placeholder row with subtle glassmorphic styling and circular icon.
  */
 @ValueScore(
-    score = 55,
+    score = 60,
     importance = Importance.LOW,
-    description = "Information row with icon and text in a muted container",
+    description = "Glassmorphic information row with circular icon and text in a muted container",
     category = "Study"
 )
 @Composable
@@ -316,27 +351,35 @@ fun StudyCardInfoRow(
     modifier: Modifier = Modifier,
     iconTint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-    shape: Shape = RoundedCornerShape(8.dp)
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
+    shape: Shape = RoundedCornerShape(14.dp)
 ) {
     Surface(
         shape = shape,
         color = containerColor,
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.22f)),
         modifier = modifier
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = 10.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier.size(14.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .background(iconTint.copy(alpha = 0.12f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelSmall,
@@ -350,12 +393,12 @@ fun StudyCardInfoRow(
 }
 
 /**
- * Clickable pill chip representing a linked Course or Subject with indicator dot.
+ * Clickable capsule pill chip representing a linked Course or Subject with circular indicator dot.
  */
 @ValueScore(
-    score = 65,
+    score = 68,
     importance = Importance.MEDIUM,
-    description = "Clickable chip representing linked course or subject associations",
+    description = "Clickable capsule chip representing linked course or subject associations",
     category = "Study"
 )
 @Composable
@@ -364,16 +407,19 @@ fun StudyLinkedEntityChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    shape: Shape = RoundedCornerShape(8.dp)
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f),
+    shape: Shape = CircleShape
 ) {
     Surface(
         shape = shape,
         color = containerColor,
-        modifier = modifier.clickable(onClick = onClick)
+        border = BorderStroke(0.5.dp, color.copy(alpha = 0.25f)),
+        modifier = modifier
+            .clip(shape)
+            .clickable(onClick = onClick)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
@@ -396,9 +442,9 @@ fun StudyLinkedEntityChip(
  * Standard header overview metric card displaying an icon, primary value, and subtitle label.
  */
 @ValueScore(
-    score = 75,
+    score = 78,
     importance = Importance.HIGH,
-    description = "Metric overview card for tab header summaries",
+    description = "Metric overview card for tab header summaries with glassmorphic styling and circular icon",
     category = "Study"
 )
 @Composable
@@ -412,7 +458,7 @@ fun StudyHeaderStatCard(
 ) {
     ScholarCard(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         shadowElevation = 0.dp,
         tonalElevation = 0.dp,
         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
@@ -424,7 +470,7 @@ fun StudyHeaderStatCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(38.dp)
                     .background(iconBackgroundColor, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
@@ -432,7 +478,7 @@ fun StudyHeaderStatCard(
                     imageVector = icon,
                     contentDescription = null,
                     tint = iconColor,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(19.dp)
                 )
             }
             Column {
@@ -453,7 +499,7 @@ fun StudyHeaderStatCard(
 }
 
 /**
- * Hero empty state card with icon illustration, title, description, and actionable primary bouncy button.
+ * Hero empty state card with circular icon illustration, title, description, and actionable primary bouncy button.
  */
 @ValueScore(
     score = 80,
@@ -475,7 +521,7 @@ fun StudyEmptyStateCard(
 ) {
     ScholarCard(
         modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(22.dp),
         shadowElevation = 0.dp,
         tonalElevation = 0.dp,
         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
@@ -489,14 +535,14 @@ fun StudyEmptyStateCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(60.dp)
+                    .size(64.dp)
                     .background(accentColor.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(32.dp),
                     tint = accentColor
                 )
             }
@@ -532,13 +578,13 @@ fun StudyEmptyStateCard(
 }
 
 /**
- * AttendanceHealthBadge - Standardized attendance percentage and health indicator badge.
- * Displays color-coded attendance health metrics with emerald, amber, and crimson threshold states.
+ * AttendanceHealthBadge - Modernized capsule attendance percentage and health indicator badge.
+ * Displays color-coded attendance metrics with uncluttered typography, circular icon, and emerald/amber/crimson thresholds.
  */
 @ValueScore(
-    score = 75,
+    score = 78,
     importance = Importance.HIGH,
-    description = "Color-coded attendance health gauge and status badge with threshold evaluation",
+    description = "Color-coded attendance health capsule badge with threshold evaluation and circular status icon",
     category = "Study"
 )
 @Composable
@@ -547,7 +593,8 @@ fun AttendanceHealthBadge(
     modifier: Modifier = Modifier,
     attendedCount: Int? = null,
     totalCount: Int? = null,
-    compact: Boolean = false
+    compact: Boolean = false,
+    onClick: (() -> Unit)? = null
 ) {
     if (percentage == null) return
 
@@ -566,9 +613,9 @@ fun AttendanceHealthBadge(
     }
 
     val text = if (!compact && attendedCount != null && totalCount != null) {
-        "$percentage% Attendance ($attendedCount/$totalCount)"
+        "$percentage% • $attendedCount/$totalCount"
     } else {
-        "$percentage% Attendance"
+        "$percentage%"
     }
 
     StudyStatusBadge(
@@ -576,8 +623,127 @@ fun AttendanceHealthBadge(
         icon = statusIcon,
         color = statusColor,
         containerColor = containerColor,
-        modifier = modifier
+        modifier = modifier,
+        onClick = onClick
     )
+}
+
+/**
+ * AttendanceTrackerRow - Sleek academic attendance tracker row with glassmorphic styling.
+ * Displays circular status badge, course title, attended/total count, and animated threshold progress bar.
+ */
+@ValueScore(
+    score = 82,
+    importance = Importance.HIGH,
+    description = "Glassmorphic attendance tracker row with circular status icon, capsule pill, and animated progress",
+    category = "Study"
+)
+@Composable
+fun AttendanceTrackerRow(
+    percentage: Int,
+    attendedCount: Int,
+    totalCount: Int,
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    targetPercentage: Int = 75,
+    onClick: (() -> Unit)? = null
+) {
+    val isGood = percentage >= targetPercentage
+    val isWarning = percentage in 50 until targetPercentage
+    val statusColor = when {
+        isGood -> Color(0xFF10B981)
+        isWarning -> Color(0xFFF59E0B)
+        else -> Color(0xFFEF4444)
+    }
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = if (totalCount > 0) (attendedCount.toFloat() / totalCount).coerceIn(0f, 1f) else (percentage / 100f).coerceIn(0f, 1f),
+        animationSpec = tween(450),
+        label = "attendance_row_progress"
+    )
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.75f),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(statusColor.copy(alpha = 0.12f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = when {
+                                isGood -> Icons.Rounded.CheckCircle
+                                isWarning -> Icons.Rounded.Warning
+                                else -> Icons.Rounded.Error
+                            },
+                            contentDescription = null,
+                            tint = statusColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            text = title ?: "Attendance",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "$attendedCount of $totalCount classes attended",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = CircleShape,
+                    color = statusColor.copy(alpha = 0.12f),
+                    border = BorderStroke(0.5.dp, statusColor.copy(alpha = 0.25f))
+                ) {
+                    Text(
+                        text = "$percentage%",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = statusColor,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            LinearProgressIndicator(
+                progress = { animatedProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(5.dp)
+                    .clip(CircleShape),
+                color = statusColor,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                strokeCap = StrokeCap.Round
+            )
+        }
+    }
 }
 
 /**

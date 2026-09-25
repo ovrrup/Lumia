@@ -4,8 +4,11 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -21,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -34,6 +38,7 @@ import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.BouncyOutlinedButton
 import lumia.tracker.ui.components.BouncyTextButton
+import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.settings.components.SettingsActionItemInCard
@@ -58,6 +63,7 @@ import java.io.FileOutputStream
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
     val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
 
@@ -108,57 +114,81 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .animateContentSize(),
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
+                        containerColor = ScholarCardDefaults.glassContainerColor(
+                            isDark = isDark,
+                            alpha = if (isDark) 0.58f else 0.72f
+                        )
                     ),
+                    border = ScholarCardDefaults.glassBorder(isDark),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
+                        // Profile Header: Circular Avatar with Highlight & Name / Handle
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Simplified Avatar Monogram / Photo
+                            // Circular Avatar with Specular Highlight Ring
                             Box(
                                 modifier = Modifier
-                                    .size(56.dp)
+                                    .size(62.dp)
                                     .background(
-                                        MaterialTheme.colorScheme.primaryContainer,
-                                        CircleShape
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                        shape = CircleShape
                                     )
-                                    .clip(CircleShape),
+                                    .border(
+                                        width = 1.5.dp,
+                                        brush = Brush.verticalGradient(
+                                            listOf(
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.65f),
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                            )
+                                        ),
+                                        shape = CircleShape
+                                    )
+                                    .padding(3.5.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                val isLocalImage = activeProfile.avatarEmoji.startsWith("/") ||
-                                        activeProfile.avatarEmoji.startsWith("file://") ||
-                                        activeProfile.avatarEmoji.startsWith("content://")
-                                if (isLocalImage) {
-                                    AsyncImage(
-                                        model = activeProfile.avatarEmoji,
-                                        contentDescription = "Profile Picture",
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                } else {
-                                    val fallback = if (activeProfile.avatarEmoji.isNotBlank() &&
-                                        activeProfile.avatarEmoji.length <= 3 &&
-                                        !activeProfile.avatarEmoji.startsWith("/")
-                                    ) {
-                                        activeProfile.avatarEmoji.uppercase()
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val isLocalImage = activeProfile.avatarEmoji.startsWith("/") ||
+                                            activeProfile.avatarEmoji.startsWith("file://") ||
+                                            activeProfile.avatarEmoji.startsWith("content://")
+                                    if (isLocalImage) {
+                                        AsyncImage(
+                                            model = activeProfile.avatarEmoji,
+                                            contentDescription = "Profile Picture",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
                                     } else {
-                                        activeProfile.name.take(2).uppercase().ifBlank { "SC" }
+                                        val fallback = if (activeProfile.avatarEmoji.isNotBlank() &&
+                                            activeProfile.avatarEmoji.length <= 3 &&
+                                            !activeProfile.avatarEmoji.startsWith("/")
+                                        ) {
+                                            activeProfile.avatarEmoji.uppercase()
+                                        } else {
+                                            activeProfile.name.take(2).uppercase().ifBlank { "SC" }
+                                        }
+                                        Text(
+                                            text = fallback,
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
                                     }
-                                    Text(
-                                        text = fallback,
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
                                 }
                             }
 
@@ -167,36 +197,36 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = activeProfile.name.ifBlank { "Scholar" },
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 if (activeProfile.alias.isNotBlank()) {
-                                    Spacer(Modifier.height(1.dp))
+                                    Spacer(Modifier.height(2.dp))
                                     Text(
                                         text = "@${activeProfile.alias}",
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
                         }
 
-                        Spacer(Modifier.height(12.dp))
-
-                        // Streamlined Active Profile Status Chip
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                        // Capsule Pills Row: Active Profile Status & Profiles Count
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            // Active Status Capsule Pill
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
                             ) {
                                 Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
@@ -208,31 +238,51 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                                     )
                                     Text(
                                         text = "Active Profile",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
-                                Text(
-                                    text = "${allProfiles.size} profile${if (allProfiles.size > 1) "s" else ""}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            }
+
+                            // Profiles Count Capsule Pill
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.People,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Text(
+                                        text = "${allProfiles.size} profile${if (allProfiles.size > 1) "s" else ""}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
 
-                        Spacer(Modifier.height(10.dp))
-
-                        // Streamlined Quick Action Buttons: Edit & Switch
+                        // Quick Action Capsule Buttons: Edit & Switch
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             BouncyOutlinedButton(
                                 onClick = { showEditProfileSheet = true },
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                shape = CircleShape,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                             ) {
                                 Icon(
                                     Icons.Rounded.Edit,
@@ -240,18 +290,22 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                                     modifier = Modifier.size(15.dp)
                                 )
                                 Spacer(Modifier.width(6.dp))
-                                Text("Edit Profile", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "Edit Profile",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
                             }
 
                             BouncyButton(
                                 onClick = { showSwitchProfileSheet = true },
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = CircleShape,
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                                 ),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                             ) {
                                 Icon(
                                     Icons.Rounded.SwapHoriz,
@@ -259,7 +313,11 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(6.dp))
-                                Text("Switch Profile", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "Switch Profile",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
                             }
                         }
                     }
@@ -275,7 +333,6 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Appearance & Theme",
-                    subtitle = "Themes, dark mode & layout",
                     icon = Icons.Rounded.Palette,
                     iconBgColor = Color(0xFF007AFF),
                     onClick = { navController.navigate("settings/appearance") }
@@ -288,7 +345,6 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
                 SettingsActionItemInCard(
                     title = "Streak Goals & Requirements",
-                    subtitle = "Daily goals & streak targets",
                     icon = Icons.Rounded.LocalFireDepartment,
                     iconBgColor = Color(0xFFFF9500),
                     onClick = { navController.navigate("settings/streaks") }
@@ -304,7 +360,6 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "App Preferences",
-                    subtitle = "Study options & behavior",
                     icon = Icons.Rounded.Tune,
                     iconBgColor = Color(0xFF5856D6),
                     onClick = { navController.navigate("settings/system") }
@@ -320,7 +375,6 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Notifications & Reminders",
-                    subtitle = "Alerts & study alarms",
                     icon = Icons.Rounded.Notifications,
                     iconBgColor = Color(0xFF34C759),
                     onClick = { navController.navigate("settings/notifications") }
@@ -336,7 +390,6 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "Data & Backups",
-                    subtitle = "Export, import & storage",
                     icon = Icons.Rounded.Storage,
                     iconBgColor = Color(0xFF8E8E93),
                     onClick = { navController.navigate("settings/data") }
@@ -352,7 +405,6 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             ) {
                 SettingsActionItemInCard(
                     title = "About Lumia",
-                    subtitle = "Version, build & licenses",
                     icon = Icons.Rounded.Info,
                     iconBgColor = Color(0xFF636366),
                     onClick = { navController.navigate("settings/about") }
@@ -365,27 +417,33 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                    .padding(horizontal = 24.dp, vertical = 14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(
-                    text = "Lumia Tracker • v1.0.7",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                ) {
+                    Text(
+                        text = "Lumia Tracker • v1.0.7",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                }
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     BouncyTextButton(onClick = { navController.navigate("settings/about") }) {
-                        Text("Release Notes", style = MaterialTheme.typography.labelSmall)
+                        Text("Release Notes", style = MaterialTheme.typography.labelMedium)
                     }
                     Text("•", color = MaterialTheme.colorScheme.outlineVariant)
                     BouncyTextButton(onClick = { navController.navigate("settings/data") }) {
-                        Text("Backups", style = MaterialTheme.typography.labelSmall)
+                        Text("Backups", style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
@@ -458,33 +516,52 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
+                        .border(1.dp, ScholarCardDefaults.glassBorder(isDark), RoundedCornerShape(20.dp))
                         .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                            .clip(CircleShape),
+                            .size(56.dp)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape)
+                            .border(
+                                width = 1.5.dp,
+                                brush = Brush.verticalGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.65f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                    )
+                                ),
+                                shape = CircleShape
+                            )
+                            .padding(3.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        val isLocal = editAvatar.startsWith("/") || editAvatar.startsWith("file://") || editAvatar.startsWith("content://")
-                        if (isLocal) {
-                            AsyncImage(
-                                model = editAvatar,
-                                contentDescription = "Avatar",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Text(
-                                text = editAvatar.ifBlank { editName.take(2).uppercase().ifBlank { "SC" } },
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val isLocal = editAvatar.startsWith("/") || editAvatar.startsWith("file://") || editAvatar.startsWith("content://")
+                            if (isLocal) {
+                                AsyncImage(
+                                    model = editAvatar,
+                                    contentDescription = "Avatar",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Text(
+                                    text = editAvatar.ifBlank { editName.take(2).uppercase().ifBlank { "SC" } },
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
                     }
 
@@ -503,12 +580,12 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
 
                     BouncyButton(
                         onClick = { imagePickerLauncher.launch("image/*") },
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp)
                     ) {
                         Icon(Icons.Rounded.PhotoCamera, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Upload", style = MaterialTheme.typography.labelMedium)
+                        Text("Upload", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                     }
                 }
 
@@ -575,7 +652,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     BouncyOutlinedButton(
                         onClick = { showEditProfileSheet = false },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp)
+                        shape = CircleShape
                     ) {
                         Text("Cancel")
                     }
@@ -589,7 +666,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                         },
                         enabled = editName.isNotBlank(),
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp)
+                        shape = CircleShape
                     ) {
                         Text("Save")
                     }
@@ -634,12 +711,12 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                             showSwitchProfileSheet = false
                             showCreateProfileDialog = true
                         },
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp)
                     ) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("New Profile", style = MaterialTheme.typography.labelMedium)
+                        Text("New Profile", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                     }
                 }
 
@@ -648,8 +725,9 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     allProfiles.forEach { profile ->
                         val isCurrent = profile.id == activeProfile.id
                         Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(18.dp),
+                            color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
+                            border = if (isCurrent) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)) else ScholarCardDefaults.glassBorder(isDark),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable(enabled = !isCurrent) {
@@ -663,25 +741,41 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(40.dp)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                                        .clip(CircleShape),
+                                        .size(44.dp)
+                                        .background(
+                                            color = if (isCurrent) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent,
+                                            shape = CircleShape
+                                        )
+                                        .border(
+                                            width = 1.dp,
+                                            color = if (isCurrent) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f) else Color.Transparent,
+                                            shape = CircleShape
+                                        )
+                                        .padding(2.5.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    val isLocal = profile.avatarEmoji.startsWith("/") || profile.avatarEmoji.startsWith("file://")
-                                    if (isLocal) {
-                                        AsyncImage(
-                                            model = profile.avatarEmoji,
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
-                                    } else {
-                                        Text(
-                                            profile.avatarEmoji.ifBlank { profile.name.take(2).uppercase().ifBlank { "SC" } },
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.titleSmall
-                                        )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        val isLocal = profile.avatarEmoji.startsWith("/") || profile.avatarEmoji.startsWith("file://")
+                                        if (isLocal) {
+                                            AsyncImage(
+                                                model = profile.avatarEmoji,
+                                                contentDescription = null,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        } else {
+                                            Text(
+                                                profile.avatarEmoji.ifBlank { profile.name.take(2).uppercase().ifBlank { "SC" } },
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.titleSmall
+                                            )
+                                        }
                                     }
                                 }
 
@@ -812,7 +906,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                         }
                     },
                     enabled = createName.isNotBlank(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = CircleShape
                 ) {
                     Text("Create")
                 }

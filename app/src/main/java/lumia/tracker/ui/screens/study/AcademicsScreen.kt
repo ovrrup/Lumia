@@ -10,19 +10,24 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
@@ -47,10 +52,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.study.dialogs.AddCourseDialog
 import lumia.tracker.ui.screens.study.dialogs.AddSubjectDialog
+import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
@@ -102,10 +109,17 @@ fun AcademicsScreen(
             .fillMaxSize()
             .padding(top = bottomPadding.calculateTopPadding())
     ) {
-        // Clean, Top-Centered Segmented Pill Switcher
+        // Modern Frosted Glassmorphic Capsule Segmented Tab Bar
+        val isDark = isSystemInDarkTheme()
+        val glassBg = ScholarCardDefaults.glassContainerColor(isDark, alpha = if (isDark) 0.65f else 0.78f)
+        val glassBorder = ScholarCardDefaults.glassBorder(isDark)
+
         Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = CircleShape,
+            color = glassBg,
+            border = glassBorder,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -114,29 +128,47 @@ fun AcademicsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 AcademicViewMode.entries.forEach { mode ->
                     val isSelected = activeView == mode
                     val count = if (mode == AcademicViewMode.COURSES) courses.size else subjects.size
-                    val bg = if (isSelected) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent
-                    val textColor = if (isSelected) {
-                        if (mode == AcademicViewMode.COURSES) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary
+                    val activeColor = if (mode == AcademicViewMode.COURSES) {
+                        MaterialTheme.colorScheme.primary
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                        MaterialTheme.colorScheme.tertiary
                     }
-                    Box(
+                    val itemBg = if (isSelected) {
+                        activeColor.copy(alpha = if (isDark) 0.20f else 0.14f)
+                    } else {
+                        Color.Transparent
+                    }
+                    val itemBorder = if (isSelected) {
+                        BorderStroke(0.8.dp, activeColor.copy(alpha = 0.40f))
+                    } else null
+                    val textColor = if (isSelected) {
+                        activeColor
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                    }
+
+                    Surface(
+                        shape = CircleShape,
+                        color = itemBg,
+                        border = itemBorder,
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp,
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(bg)
-                            .clickable { activeView = mode }
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center
+                            .clip(CircleShape)
+                            .bouncyClick { activeView = mode }
                     ) {
                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 9.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.Center
                         ) {
                             Icon(
                                 imageVector = mode.icon,
@@ -144,12 +176,32 @@ fun AcademicsScreen(
                                 modifier = Modifier.size(16.dp),
                                 tint = textColor
                             )
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "${mode.title} ($count)",
+                                text = mode.title,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = textColor
                             )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = CircleShape,
+                                color = if (isSelected) {
+                                    activeColor.copy(alpha = 0.22f)
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f)
+                                },
+                                tonalElevation = 0.dp,
+                                shadowElevation = 0.dp
+                            ) {
+                                Text(
+                                    text = "$count",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textColor,
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                )
+                            }
                         }
                     }
                 }
