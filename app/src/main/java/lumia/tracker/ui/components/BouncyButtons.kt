@@ -95,6 +95,7 @@ fun BouncyOutlinedButton(
     shape: Shape = ButtonDefaults.outlinedShape,
     colors: ButtonColors = ButtonDefaults.outlinedButtonColors(),
     elevation: ButtonElevation? = null,
+    border: BorderStroke? = ButtonDefaults.outlinedButtonBorder,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable RowScope.() -> Unit
@@ -106,6 +107,7 @@ fun BouncyOutlinedButton(
         shape = shape,
         colors = colors,
         elevation = elevation,
+        border = border,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
         content = content

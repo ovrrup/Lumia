@@ -351,7 +351,7 @@ fun PomodoroScreen(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(horizontal = 8.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     if (isSelected) {

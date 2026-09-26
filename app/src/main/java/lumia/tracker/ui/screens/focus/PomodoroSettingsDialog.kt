@@ -370,7 +370,7 @@ fun CapsuleTogglePill(
             .clip(CircleShape)
             .background(pillBg)
             .bouncyClick {
-                haptic.performHapticFeedback(HapticFeedbackType.LightImpact)
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onCheckedChange(!checked)
             }
             .padding(horizontal = 3.dp),

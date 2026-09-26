@@ -314,12 +314,13 @@ fun SubjectItemCard(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    val fallbackColor = MaterialTheme.colorScheme.secondary
                     for (course in linkedCourses) {
-                        val courseColor = remember(course.colorHex) {
+                        val courseColor = remember(course.colorHex, fallbackColor) {
                             try {
                                 Color(android.graphics.Color.parseColor(course.colorHex))
                             } catch (e: Exception) {
-                                MaterialTheme.colorScheme.secondary
+                                fallbackColor
                             }
                         }
                         Surface(

@@ -517,7 +517,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
-                        .border(1.dp, ScholarCardDefaults.glassBorder(isDark), RoundedCornerShape(20.dp))
+                        .border(border = ScholarCardDefaults.glassBorder(isDark), shape = RoundedCornerShape(20.dp))
                         .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp)

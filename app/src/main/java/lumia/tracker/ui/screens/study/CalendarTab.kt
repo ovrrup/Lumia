@@ -545,8 +545,9 @@ fun CalendarTab(
                     sortedCoursesForDay,
                     key = { index, course -> "cal_course_${course.id}_${currentDayItem.dateMillis}_$index" }
                 ) { index, course ->
-                    val courseColor = remember(course.colorHex) {
-                        parseHexColor(course.colorHex, MaterialTheme.colorScheme.primary)
+                    val defaultPrimaryColor = MaterialTheme.colorScheme.primary
+                    val courseColor = remember(course.colorHex, defaultPrimaryColor) {
+                        parseHexColor(course.colorHex, defaultPrimaryColor)
                     }
 
                     val existingAttendance = remember(allAttendanceRecords, course.id, currentDayItem.dateMillis) {
