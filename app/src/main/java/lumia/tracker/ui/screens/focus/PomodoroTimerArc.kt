@@ -83,16 +83,6 @@ fun PomodoroTimerArc(
             contentAlignment = Alignment.Center,
             modifier = Modifier.size(260.dp)
         ) {
-            // 1. Subtle Ambient Glowing Blur Aura
-            Box(
-                modifier = Modifier
-                    .size(200.dp)
-                    .blur(radius = 42.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                    .background(
-                        color = ringColor.copy(alpha = glowAlpha),
-                        shape = CircleShape
-                    )
-            )
 
             // 2. High-Precision Arc Gauge with Rounded Stroke Caps
             Canvas(

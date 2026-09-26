@@ -27,13 +27,10 @@ fun AmbientBackgroundCanvas(
     lightBrightness: Float = 0.5f,
     darkBrightness: Float = 0.5f
 ) {
+    if (!enabled) return
+
     val isDark = isSystemInDarkTheme()
-    // When enabled, scale with user settings; otherwise provide subtle minimalist ambient blur
-    val brightness = if (enabled) {
-        if (isDark) darkBrightness else lightBrightness
-    } else {
-        0.20f
-    }
+    val brightness = if (isDark) darkBrightness else lightBrightness
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val secondaryColor = MaterialTheme.colorScheme.tertiary

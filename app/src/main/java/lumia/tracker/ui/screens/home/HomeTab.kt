@@ -185,27 +185,11 @@ fun HomeTab(
                         }),
                     shape = RoundedCornerShape(28.dp)
                 ) {
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        // Subtle live glowing blur aura when focus session is running
-                        if (isFocusRunning) {
-                            Box(
-                                modifier = Modifier
-                                    .size(160.dp)
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = 40.dp, y = (-30).dp)
-                                    .blur(40.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                                    .background(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
-                                        CircleShape
-                                    )
-                            )
-                        }
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp)
-                        ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
+                    ) {
                             // Header row: status capsule pill + action control pills
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -416,7 +400,6 @@ fun HomeTab(
                                 trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                             )
                         }
-                    }
                 }
 
                 // Row 2: Split Cards (Tasks & Courses)

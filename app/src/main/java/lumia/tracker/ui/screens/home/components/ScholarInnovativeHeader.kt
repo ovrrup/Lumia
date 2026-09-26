@@ -35,18 +35,18 @@ import lumia.tracker.viewmodel.ScholarViewModel
 import java.util.Locale
 
 /**
- * ScholarInnovativeHeader - Modern Glassmorphic Action Capsule Header.
- * Unifies minimalist tab title, responsive Focus live pill, streak widget,
- * search circular capsule button, and profile avatar in sleek capsule design.
+ * DashboardTopFloatingPills - Floating action pills bar replacing static pinned headers.
+ * Unifies left section title pill (or dynamic live Focus countdown pill) and right pill cluster
+ * (Streak counter, Search action pill, Profile avatar).
  */
 @ValueScore(
     score = 96,
     importance = Importance.CRITICAL,
-    description = "Modern glassmorphic capsule header unifying minimalist tab title, live focus pill, streak widget, and profile avatar",
+    description = "Floating top action pill bar replacing static header with live focus pill, tab indicator, and action cluster",
     category = "Navigation"
 )
 @Composable
-fun ScholarInnovativeHeader(
+fun DashboardTopFloatingPills(
     selectedTab: Int,
     navController: NavController,
     viewModel: ScholarViewModel,
@@ -55,95 +55,135 @@ fun ScholarInnovativeHeader(
     val activeProfile by viewModel.activeProfile.collectAsStateWithLifecycle()
     val pomodoroState by PomodoroService.state.collectAsStateWithLifecycle()
 
-    val tabTitle = when (selectedTab) {
-        0 -> "Home"
-        1 -> "Classes"
-        2 -> "Tasks"
-        3 -> "Progress"
-        else -> "Home"
+    val (tabIcon, tabTitle) = when (selectedTab) {
+        0 -> Icons.Rounded.Home to "Home"
+        1 -> Icons.AutoMirrored.Rounded.MenuBook to "Classes"
+        2 -> Icons.Rounded.AutoStories to "Tasks"
+        3 -> Icons.Rounded.Analytics to "Progress"
+        else -> Icons.Rounded.Home to "Home"
     }
 
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.background.copy(alpha = 0.82f),
-        border = BorderStroke(
-            0.5.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
-        ),
-        tonalElevation = 0.dp
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AnimatedContent(
-                targetState = tabTitle,
-                transitionSpec = {
-                    (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
-                        .togetherWith(fadeOut(tween(140)) + slideOutVertically(tween(140)) { -it / 3 })
-                },
-                label = "header_title",
-                modifier = Modifier.weight(1f)
-            ) { title ->
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // Left Floating Pill: Live Focus Timer (if running) OR Section Title Pill
+        if (pomodoroState.isRunning) {
+            ScholarFocusPill(
+                isRunning = true,
+                timeLeft = pomodoroState.timeLeft,
+                onClick = { navController.navigate("pomodoro") }
+            )
+        } else {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(
+                    0.8.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)
+                ),
+                shadowElevation = 4.dp,
+                tonalElevation = 0.dp,
+                modifier = Modifier
+                    .height(42.dp)
+                    .clip(CircleShape)
             ) {
-                if (pomodoroState.isRunning) {
-                    ScholarFocusPill(
-                        isRunning = true,
-                        timeLeft = pomodoroState.timeLeft,
-                        onClick = { navController.navigate("pomodoro") }
-                    )
-                }
-
-                StreakWidget(
-                    viewModel = viewModel,
-                    navController = navController
-                )
-
-                Surface(
+                Row(
                     modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .bouncyClick(onClick = { navController.navigate("search") }),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f),
-                    border = BorderStroke(
-                        0.5.dp,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                    )
+                        .fillMaxHeight()
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.Search,
-                            contentDescription = "Search",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
+                    Icon(
+                        imageVector = tabIcon,
+                        contentDescription = tabTitle,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    AnimatedContent(
+                        targetState = tabTitle,
+                        transitionSpec = {
+                            (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
+                                .togetherWith(fadeOut(tween(140)) + slideOutVertically(tween(140)) { -it / 3 })
+                        },
+                        label = "top_pill_title"
+                    ) { title ->
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
-
-                ScholarProfileAvatar(
-                    avatarEmoji = activeProfile.avatarEmoji,
-                    displayName = activeProfile.name,
-                    onClick = { navController.navigate("settings") },
-                    modifier = Modifier.size(40.dp)
-                )
             }
         }
+
+        // Right Action Pill Cluster: Streak + Search + Profile Avatar
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            StreakWidget(
+                viewModel = viewModel,
+                navController = navController
+            )
+
+            Surface(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .bouncyClick(onClick = { navController.navigate("search") }),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(
+                    0.8.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)
+                ),
+                shadowElevation = 4.dp,
+                tonalElevation = 0.dp
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Rounded.Search,
+                        contentDescription = "Search",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            ScholarProfileAvatar(
+                avatarEmoji = activeProfile.avatarEmoji,
+                displayName = activeProfile.name,
+                onClick = { navController.navigate("settings") },
+                modifier = Modifier.size(42.dp)
+            )
+        }
     }
+}
+
+/**
+ * ScholarInnovativeHeader compatibility wrapper delegating to DashboardTopFloatingPills.
+ */
+@Composable
+fun ScholarInnovativeHeader(
+    selectedTab: Int,
+    navController: NavController,
+    viewModel: ScholarViewModel,
+    modifier: Modifier = Modifier
+) {
+    DashboardTopFloatingPills(
+        selectedTab = selectedTab,
+        navController = navController,
+        viewModel = viewModel,
+        modifier = modifier
+    )
 }
 
 /**
@@ -164,12 +204,12 @@ fun ScholarSearchCapsule(
 ) {
     Surface(
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.70f),
+        color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(
-            0.5.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+            0.8.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)
         ),
-        shadowElevation = 0.dp,
+        shadowElevation = 4.dp,
         tonalElevation = 0.dp,
         modifier = modifier
             .height(42.dp)
@@ -228,7 +268,7 @@ fun ScholarSearchCapsule(
                         FontWeight.SemiBold
                     },
                     color = if (targetTab == 0) {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        MaterialTheme.colorScheme.onSurfaceVariant
                     } else {
                         MaterialTheme.colorScheme.onSurface
                     },
@@ -260,7 +300,7 @@ fun ScholarFocusPill(
         targetValue = if (isRunning) {
             MaterialTheme.colorScheme.primary
         } else {
-            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.70f)
+            MaterialTheme.colorScheme.surfaceContainer
         },
         animationSpec = tween(300, easing = FastOutSlowInEasing),
         label = "focus_pill_color"
@@ -291,17 +331,17 @@ fun ScholarFocusPill(
         shape = CircleShape,
         color = focusPillBg,
         border = BorderStroke(
-            0.5.dp,
+            0.8.dp,
             if (isRunning) {
                 MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
             } else {
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)
             }
         ),
-        shadowElevation = 0.dp,
+        shadowElevation = 4.dp,
         tonalElevation = 0.dp,
         modifier = modifier
-            .height(40.dp)
+            .height(42.dp)
             .clip(CircleShape)
             .bouncyClick(onClick = onClick)
             .testTag("open_pomodoro_button")
@@ -309,7 +349,7 @@ fun ScholarFocusPill(
         Row(
             modifier = Modifier
                 .fillMaxHeight()
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -374,10 +414,10 @@ fun ScholarProfileAvatar(
 ) {
     Box(
         modifier = modifier
-            .size(40.dp)
-            .shadow(elevation = 0.dp, shape = CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.70f), CircleShape)
-            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), CircleShape)
+            .size(42.dp)
+            .shadow(elevation = 4.dp, shape = CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
+            .border(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f), CircleShape)
             .clip(CircleShape)
             .bouncyClick(onClick = onClick)
             .testTag("profile_avatar_button"),

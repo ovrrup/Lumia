@@ -249,30 +249,6 @@ fun PomodoroScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // 1. Live Blurred Ambient Glow Orb behind the Timer Arc
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(380.dp)
-                    .blur(radius = 48.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(280.dp)
-                        .align(Alignment.TopCenter)
-                        .offset(y = 20.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    animatedRingColor.copy(alpha = if (isDark) 0.18f else 0.14f),
-                                    animatedRingColor.copy(alpha = 0.04f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                )
-            }
 
             // 2. Subtle Ambient Vertical Gradient Wash
             Box(

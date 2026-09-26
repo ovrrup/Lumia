@@ -211,33 +211,13 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    // App Logo with Live Blur Glow
-                    Box(
-                        modifier = Modifier.padding(top = 4.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Live blur glow effect behind the logo
-                        Box(
-                            modifier = Modifier
-                                .size(88.dp)
-                                .blur(32.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                                .background(
-                                    Brush.radialGradient(
-                                        listOf(
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.65f),
-                                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f),
-                                            Color.Transparent
-                                        )
-                                    ),
-                                    CircleShape
-                                )
-                        )
-
-                        // App Logo Circular Container
-                        Surface(
-                            modifier = Modifier.size(68.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+                    // App Logo Container
+                    Surface(
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .size(68.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
                             border = ScholarCardDefaults.glassBorder(accentColor = MaterialTheme.colorScheme.primary),
                             shadowElevation = 0.dp
                         ) {
@@ -250,7 +230,6 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                                 )
                             }
                         }
-                    }
 
                     // App Title & Tagline
                     Column(

@@ -32,6 +32,7 @@ import lumia.tracker.ui.components.StreakWidget
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.home.HomeTab
+import lumia.tracker.ui.screens.home.components.DashboardTopFloatingPills
 import lumia.tracker.ui.screens.home.components.ScholarInnovativeHeader
 import lumia.tracker.ui.screens.study.*
 import lumia.tracker.viewmodel.ScholarViewModel
@@ -70,55 +71,27 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
 
     val navItemColors = rememberDashboardNavBarColors(navBarIndicatorAlpha)
 
+    val navBarsBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val statusBarsTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val topFloatingPillHeight = 58.dp
+    val extendedPadding = PaddingValues(
+        start = 0.dp,
+        top = 0.dp,
+        end = 0.dp,
+        bottom = navBarsBottom + navBarHeight.dp + navBarPaddingBottom.dp + 20.dp
+    )
+
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = MaterialTheme.colorScheme.background,
-            topBar = {
-                ScholarInnovativeHeader(
-                    selectedTab = selectedTab,
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            },
-            bottomBar = {
-                if (!betaFloatingNav) {
-                    StandardDashboardBottomBar(
-                        navBarHeight = navBarHeight,
-                        navItemColors = navItemColors,
-                        selectedTab = selectedTab,
-                        onSelectTab = { target ->
-                            viewModel.setSelectedDashboardTab(target)
-                        },
-                        navBarLabelMode = navBarLabelMode,
-                        featureSelfStudyEnabled = featureSelfStudyEnabled,
-                        featureAnalyticsEnabled = featureAnalyticsEnabled
-                    )
-                }
-            }
+            topBar = {},
+            bottomBar = {}
         ) { padding ->
-            val layoutDirection = LocalLayoutDirection.current
-            val navBarsBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-            val extendedPadding = if (betaFloatingNav) {
-                PaddingValues(
-                    start = padding.calculateStartPadding(layoutDirection),
-                    top = 0.dp,
-                    end = padding.calculateEndPadding(layoutDirection),
-                    bottom = navBarsBottom + navBarHeight.dp + navBarPaddingBottom.dp + 16.dp
-                )
-            } else {
-                PaddingValues(
-                    start = padding.calculateStartPadding(layoutDirection),
-                    top = 0.dp,
-                    end = padding.calculateEndPadding(layoutDirection),
-                    bottom = padding.calculateBottomPadding()
-                )
-            }
-
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = padding.calculateTopPadding())
+                    .padding(top = statusBarsTop + topFloatingPillHeight)
                     .clipToBounds()
             ) {
                 AnimatedContent(
@@ -174,23 +147,29 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             }
         }
 
-        // Floating Navigation Bar Pill
-        if (betaFloatingNav) {
-            FloatingDashboardBottomBar(
-                navBarHeight = navBarHeight,
-                navBarPaddingHorizontal = navBarPaddingHorizontal,
-                navBarPaddingBottom = navBarPaddingBottom,
-                navBarCornerRadius = navBarCornerRadius,
-                navItemColors = navItemColors,
-                selectedTab = selectedTab,
-                onSelectTab = { target ->
-                    viewModel.setSelectedDashboardTab(target)
-                },
-                navBarLabelMode = navBarLabelMode,
-                featureSelfStudyEnabled = featureSelfStudyEnabled,
-                featureAnalyticsEnabled = featureAnalyticsEnabled
-            )
-        }
+        // Top Floating Action Pills Bar
+        DashboardTopFloatingPills(
+            selectedTab = selectedTab,
+            navController = navController,
+            viewModel = viewModel,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
+
+        // Bottom Floating Navigation Pill Dock
+        FloatingDashboardBottomBar(
+            navBarHeight = navBarHeight,
+            navBarPaddingHorizontal = navBarPaddingHorizontal,
+            navBarPaddingBottom = navBarPaddingBottom,
+            navBarCornerRadius = navBarCornerRadius,
+            navItemColors = navItemColors,
+            selectedTab = selectedTab,
+            onSelectTab = { target ->
+                viewModel.setSelectedDashboardTab(target)
+            },
+            navBarLabelMode = navBarLabelMode,
+            featureSelfStudyEnabled = featureSelfStudyEnabled,
+            featureAnalyticsEnabled = featureAnalyticsEnabled
+        )
     }
 
     // Modal dialog triggers
@@ -228,53 +207,9 @@ private fun rememberDashboardNavBarColors(indicatorAlpha: Float): NavigationBarI
 }
 
 @ValueScore(
-    score = 90,
-    importance = Importance.HIGH,
-    description = "Material 3 standard bottom navigation dock with elevated surface and adaptive window insets",
-    category = "Navigation"
-)
-@Composable
-private fun StandardDashboardBottomBar(
-    navBarHeight: Int,
-    navItemColors: NavigationBarItemColors,
-    selectedTab: Int,
-    onSelectTab: (Int) -> Unit,
-    navBarLabelMode: String,
-    featureSelfStudyEnabled: Boolean,
-    featureAnalyticsEnabled: Boolean
-) {
-    val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    Surface(
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp,
-        border = BorderStroke(
-            0.5.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)
-        )
-    ) {
-        NavigationBar(
-            modifier = Modifier.height(navBarHeight.dp + bottomInset),
-            containerColor = Color.Transparent,
-            tonalElevation = 0.dp
-        ) {
-            DashboardNavItems(
-                selectedTab = selectedTab,
-                onSelectTab = onSelectTab,
-                navItemColors = navItemColors,
-                alwaysShowLabel = navBarLabelMode == "Always",
-                hideLabels = navBarLabelMode == "Hidden",
-                featureSelfStudyEnabled = featureSelfStudyEnabled,
-                featureAnalyticsEnabled = featureAnalyticsEnabled
-            )
-        }
-    }
-}
-
-@ValueScore(
     score = 91,
     importance = Importance.HIGH,
-    description = "Floating pill dynamic navigation bar with custom corner radius and elevated glassmorphic shadow",
+    description = "Floating pill dynamic navigation bar with custom corner radius and elevated shadow",
     category = "Navigation"
 )
 @Composable
@@ -290,29 +225,31 @@ private fun BoxScope.FloatingDashboardBottomBar(
     featureSelfStudyEnabled: Boolean,
     featureAnalyticsEnabled: Boolean
 ) {
-    val effectiveCornerRadius = if (navBarCornerRadius > 0) navBarCornerRadius.dp else 32.dp
+    val hPadding = if (navBarPaddingHorizontal > 0) navBarPaddingHorizontal else 20
+    val bPadding = if (navBarPaddingBottom > 0) navBarPaddingBottom else 16
+    val dockHeight = if (navBarHeight > 0) navBarHeight else 64
     Surface(
         modifier = Modifier
             .align(Alignment.BottomCenter)
             .padding(
-                start = navBarPaddingHorizontal.dp,
-                end = navBarPaddingHorizontal.dp,
-                bottom = navBarPaddingBottom.dp
+                start = hPadding.dp,
+                end = hPadding.dp,
+                bottom = bPadding.dp
             )
             .windowInsetsPadding(WindowInsets.navigationBars),
-        shape = RoundedCornerShape(effectiveCornerRadius),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(
             1.dp,
             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
         ),
-        shadowElevation = 0.dp,
+        shadowElevation = 8.dp,
         tonalElevation = 0.dp
     ) {
         NavigationBar(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(navBarHeight.dp),
+                .height(dockHeight.dp),
             containerColor = Color.Transparent,
             tonalElevation = 0.dp,
             windowInsets = WindowInsets(0, 0, 0, 0)

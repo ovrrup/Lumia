@@ -66,25 +66,20 @@ object ScholarCardDefaults {
         accentColor: Color? = null,
         width: Dp = 1.dp
     ): BorderStroke {
-        val topColor = accentColor?.copy(alpha = 0.35f)
-            ?: if (isDark) Color.White.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.65f)
-        val bottomColor = accentColor?.copy(alpha = 0.08f)
-            ?: if (isDark) Color.White.copy(alpha = 0.04f) else Color.White.copy(alpha = 0.15f)
-        return BorderStroke(
-            width = width,
-            brush = Brush.verticalGradient(listOf(topColor, bottomColor))
-        )
+        val borderColor = accentColor?.copy(alpha = if (isDark) 0.35f else 0.25f)
+            ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.30f else 0.20f)
+        return BorderStroke(width = width, color = borderColor)
     }
 
     @Composable
     fun glassContainerColor(
         isDark: Boolean = isSystemInDarkTheme(),
-        alpha: Float = if (isDark) 0.60f else 0.72f
+        alpha: Float = 1.0f
     ): Color {
         return if (isDark) {
-            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = alpha)
+            MaterialTheme.colorScheme.surfaceContainer
         } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = alpha)
+            MaterialTheme.colorScheme.surfaceContainerLowest
         }
     }
 }
@@ -208,9 +203,9 @@ fun GlassCapsule(
 ) {
     val isDark = isSystemInDarkTheme()
     val bgColor = containerColor ?: if (isDark) {
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
+        MaterialTheme.colorScheme.surfaceContainerHigh
     } else {
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.80f)
+        MaterialTheme.colorScheme.surfaceContainerLow
     }
     val pillBorder = border ?: ScholarCardDefaults.glassBorder(isDark)
 

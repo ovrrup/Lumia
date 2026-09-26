@@ -548,38 +548,10 @@ fun CourseDetailScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(26.dp),
                     glassmorphic = true,
-                    containerColor = if (isDark) {
-                        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.60f)
-                    } else {
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
-                    },
+                    containerColor = ScholarCardDefaults.glassContainerColor(isDark),
                     border = ScholarCardDefaults.glassBorder(isDark, accentColor = courseColor)
                 ) {
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        // Radiant Ambient Glowing Aura in the background
-                        Box(
-                            modifier = Modifier
-                                .size(190.dp)
-                                .align(Alignment.TopEnd)
-                                .offset(x = 50.dp, y = (-35).dp)
-                                .blur(48.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                                .background(
-                                    courseColor.copy(alpha = if (isDark) 0.28f else 0.20f),
-                                    CircleShape
-                                )
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(130.dp)
-                                .align(Alignment.BottomStart)
-                                .offset(x = (-30).dp, y = 30.dp)
-                                .blur(42.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                                .background(
-                                    courseColor.copy(alpha = if (isDark) 0.16f else 0.10f),
-                                    CircleShape
-                                )
-                        )
-
                         Column(modifier = Modifier.padding(20.dp)) {
                             // Top Row: Glowing Icon Avatar + Title + Code Capsule Pill
                             Row(
@@ -1347,16 +1319,6 @@ fun CourseDetailScreen(
                                 border = ScholarCardDefaults.glassBorder(isDark, accentColor = thresholdColor)
                             ) {
                                 Box(modifier = Modifier.fillMaxWidth()) {
-                                    // Ambient glowing blur aura behind the attendance gauge
-                                    Box(
-                                        modifier = Modifier
-                                            .size(120.dp)
-                                            .align(Alignment.TopStart)
-                                            .offset(x = 10.dp, y = 30.dp)
-                                            .blur(40.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                                            .background(thresholdColor.copy(alpha = if (isDark) 0.22f else 0.15f), CircleShape)
-                                    )
-
                                     Column(modifier = Modifier.padding(18.dp)) {
                                         // Header Row: Attendance Health Title + Capsule Status Pill + View Toggle Capsule
                                         Row(
