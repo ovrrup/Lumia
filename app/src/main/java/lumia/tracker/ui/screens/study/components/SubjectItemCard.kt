@@ -28,6 +28,7 @@ import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
+import lumia.tracker.ui.screens.study.dialogs.StudyDeleteConfirmationDialog
 import lumia.tracker.ui.util.getTagColors
 import lumia.tracker.viewmodel.ScholarViewModel
 
@@ -51,6 +52,7 @@ fun SubjectItemCard(
     onCourseClick: (Int) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val allTopics by viewModel.allTopics.collectAsStateWithLifecycle(emptyList())
 
@@ -230,7 +232,7 @@ fun SubjectItemCard(
                             text = { Text("Delete Subject") },
                             onClick = {
                                 expanded = false
-                                viewModel.deleteSubject(subject)
+                                showDeleteConfirmation = true
                             },
                             leadingIcon = {
                                 Icon(
@@ -354,5 +356,18 @@ fun SubjectItemCard(
                 }
             }
         }
+    }
+
+    if (showDeleteConfirmation) {
+        StudyDeleteConfirmationDialog(
+            title = "Delete Subject?",
+            message = "Are you sure you want to delete '${subject.name}'? This action cannot be undone.",
+            onConfirmDelete = {
+                viewModel.deleteSubject(subject)
+            },
+            onDismiss = {
+                showDeleteConfirmation = false
+            }
+        )
     }
 }

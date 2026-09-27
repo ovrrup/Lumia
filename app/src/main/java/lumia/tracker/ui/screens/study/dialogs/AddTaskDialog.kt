@@ -1,9 +1,6 @@
 package lumia.tracker.ui.screens.study.dialogs
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -18,14 +15,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.model.Task
-import lumia.tracker.ui.components.ScholarCardDefaults
+import lumia.tracker.ui.components.BouncyButton
+import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
+import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -33,13 +32,13 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * AddTaskDialog - Modern Material 3 modal for adding or editing tasks with
+ * AddTaskDialog - Modern gesture-driven modal bottom sheet for adding or editing tasks with
  * priorities, deadline picker, tags, and subject/course linkages.
  */
 @ValueScore(
-    score = 88,
+    score = 92,
     importance = Importance.HIGH,
-    description = "Comprehensive task creation and modification dialog with deadline, priority, and linkages",
+    description = "Comprehensive gesture-dismissible task bottom sheet with deadline, priority, and linkages",
     category = "Dialog"
 )
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,7 +50,6 @@ fun AddTaskDialog(
     initialCourseId: Int? = null,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
     val isEdit = taskToEdit != null
     var title by remember { mutableStateOf(taskToEdit?.title ?: "") }
     var description by remember { mutableStateOf(taskToEdit?.description ?: "") }
@@ -71,47 +69,112 @@ fun AddTaskDialog(
     var showDatePicker by remember { mutableStateOf(false) }
 
     if (showDatePicker) {
-        val calendar = Calendar.getInstance().apply {
-            timeInMillis = dueDateMillis ?: System.currentTimeMillis()
-        }
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = dueDateMillis ?: System.currentTimeMillis()
+        )
         DatePickerDialog(
-            context,
-            { _, year, month, day ->
-                calendar.set(year, month, day)
-                dueDateMillis = calendar.timeInMillis
-                showDatePicker = false
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                BouncyTextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { dueDateMillis = it }
+                    showDatePicker = false
+                }) { Text("OK") }
             },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        ).apply {
-            setOnCancelListener { showDatePicker = false }
-            show()
+            dismissButton = {
+                BouncyTextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState, showModeToggle = false)
         }
     }
 
-    AlertDialog(
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        title = {
-            StudyDialogHeader(
-                icon = if (isEdit) Icons.Rounded.EditCalendar else Icons.Rounded.AddTask,
-                title = if (isEdit) "Edit Task" else "Add New Task",
-                subtitle = if (isEdit) "Update task details" else "Create a new study task",
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        },
-        text = {
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(horizontal = 20.dp, vertical = 6.dp)
+        ) {
+            // Header Row: Icon + Title/Subtitle + Circular Close Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
+                        modifier = Modifier.size(42.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (isEdit) Icons.Rounded.EditCalendar else Icons.Rounded.AddTask,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                    Column {
+                        Text(
+                            text = if (isEdit) "Edit Task" else "Add New Task",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = if (isEdit) "Update task details" else "Create a new study task",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .bouncyClick(onClick = onDismiss),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "Close",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Scrollable Form Content
             Column(
                 modifier = Modifier
+                    .weight(1f, fill = false)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                 // Task Title
                 StudyDialogTextField(
                     value = title,
@@ -122,7 +185,7 @@ fun AddTaskDialog(
                     label = "Task Title *",
                     placeholder = "What needs to be done?",
                     leadingIcon = Icons.Rounded.TaskAlt,
-                    isError = titleTouched && title.isBlank(),
+                    isError = titleTouched && title.trim().isBlank(),
                     errorMessage = "Task title is required",
                     singleLine = true
                 )
@@ -157,7 +220,6 @@ fun AddTaskDialog(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    val isDark = isSystemInDarkTheme()
                     val todayStart = remember {
                         Calendar.getInstance().apply {
                             set(Calendar.HOUR_OF_DAY, 0)
@@ -181,14 +243,15 @@ fun AddTaskDialog(
                         // Today capsule pill
                         Surface(
                             shape = CircleShape,
-                            color = if (isToday) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.70f)
-                                    else ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.40f),
-                            border = if (isToday) ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.primary)
-                                     else ScholarCardDefaults.glassBorder(isDark, width = 0.8.dp),
+                            color = if (isToday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            border = BorderStroke(
+                                width = if (isToday) 1.2.dp else 0.8.dp,
+                                color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                            ),
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(CircleShape)
-                                .clickable {
+                                .bouncyClick {
                                     dueDateMillis = if (isToday) null else {
                                         Calendar.getInstance().apply {
                                             set(Calendar.HOUR_OF_DAY, 23)
@@ -200,14 +263,14 @@ fun AddTaskDialog(
                                 }
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 9.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Today,
                                     contentDescription = null,
-                                    modifier = Modifier.size(15.dp),
+                                    modifier = Modifier.size(16.dp),
                                     tint = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -223,14 +286,15 @@ fun AddTaskDialog(
                         // Tomorrow capsule pill
                         Surface(
                             shape = CircleShape,
-                            color = if (isTomorrow) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.70f)
-                                    else ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.40f),
-                            border = if (isTomorrow) ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.primary)
-                                     else ScholarCardDefaults.glassBorder(isDark, width = 0.8.dp),
+                            color = if (isTomorrow) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            border = BorderStroke(
+                                width = if (isTomorrow) 1.2.dp else 0.8.dp,
+                                color = if (isTomorrow) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                            ),
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(CircleShape)
-                                .clickable {
+                                .bouncyClick {
                                     dueDateMillis = if (isTomorrow) null else {
                                         Calendar.getInstance().apply {
                                             add(Calendar.DAY_OF_YEAR, 1)
@@ -243,14 +307,14 @@ fun AddTaskDialog(
                                 }
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 9.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Event,
                                     contentDescription = null,
-                                    modifier = Modifier.size(15.dp),
+                                    modifier = Modifier.size(16.dp),
                                     tint = if (isTomorrow) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -269,24 +333,25 @@ fun AddTaskDialog(
                         }
                         Surface(
                             shape = CircleShape,
-                            color = if (isCustom) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.70f)
-                                    else ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.40f),
-                            border = if (isCustom) ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.primary)
-                                     else ScholarCardDefaults.glassBorder(isDark, width = 0.8.dp),
+                            color = if (isCustom) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            border = BorderStroke(
+                                width = if (isCustom) 1.2.dp else 0.8.dp,
+                                color = if (isCustom) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                            ),
                             modifier = Modifier
                                 .weight(1.2f)
                                 .clip(CircleShape)
-                                .clickable { showDatePicker = true }
+                                .bouncyClick { showDatePicker = true }
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.CalendarMonth,
                                     contentDescription = null,
-                                    modifier = Modifier.size(15.dp),
+                                    modifier = Modifier.size(16.dp),
                                     tint = if (isCustom) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -306,7 +371,7 @@ fun AddTaskDialog(
                                         modifier = Modifier
                                             .size(14.dp)
                                             .clip(CircleShape)
-                                            .clickable { dueDateMillis = null }
+                                            .bouncyClick { dueDateMillis = null }
                                     )
                                 }
                             }
@@ -314,7 +379,7 @@ fun AddTaskDialog(
                     }
                 }
 
-                // Priority Selection
+                // Priority Selection Capsule Pills
                 Column(modifier = Modifier.fillMaxWidth()) {
                     StudyDialogSectionHeader(
                         title = "Priority",
@@ -325,41 +390,43 @@ fun AddTaskDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        val isDark = isSystemInDarkTheme()
                         listOf(
                             Triple(0, "Low", Icons.Rounded.Flag),
                             Triple(1, "Medium", Icons.Rounded.Flag),
                             Triple(2, "High", Icons.Rounded.PriorityHigh)
                         ).forEach { (pLevel, pName, pIcon) ->
                             val isSelected = priority == pLevel
-                            val (selectedBg, selectedBorder, selectedTint) = when (pLevel) {
+                            val (selectedBg, selectedBorderColor, selectedTint) = when (pLevel) {
                                 2 -> Triple(
-                                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.70f),
-                                    ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.error),
+                                    MaterialTheme.colorScheme.errorContainer,
+                                    MaterialTheme.colorScheme.error,
                                     MaterialTheme.colorScheme.onErrorContainer
                                 )
                                 1 -> Triple(
-                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.70f),
-                                    ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.secondary),
+                                    MaterialTheme.colorScheme.secondaryContainer,
+                                    MaterialTheme.colorScheme.secondary,
                                     MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 else -> Triple(
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
-                                    ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.primary),
+                                    MaterialTheme.colorScheme.primaryContainer,
+                                    MaterialTheme.colorScheme.primary,
                                     MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                             Surface(
                                 shape = CircleShape,
-                                color = if (isSelected) selectedBg else ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.40f),
-                                border = if (isSelected) selectedBorder else ScholarCardDefaults.glassBorder(isDark, width = 0.8.dp),
+                                color = if (isSelected) selectedBg else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                border = BorderStroke(
+                                    width = if (isSelected) 1.2.dp else 0.8.dp,
+                                    color = if (isSelected) selectedBorderColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                                ),
                                 modifier = Modifier
                                     .weight(1f)
                                     .clip(CircleShape)
-                                    .clickable { priority = pLevel }
+                                    .bouncyClick { priority = pLevel }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 9.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center
                                 ) {
@@ -466,15 +533,16 @@ fun AddTaskDialog(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(10.dp))
             }
-        },
-        confirmButton = {
-            StudyDialogConfirmButton(
-                text = if (isEdit) "Save Changes" else "Add Task",
-                icon = if (isEdit) Icons.Rounded.Save else Icons.Rounded.Add,
-                enabled = title.isNotBlank(),
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Primary Bottom Action Button
+            BouncyButton(
                 onClick = {
-                    if (title.isNotBlank()) {
+                    if (title.trim().isNotBlank()) {
                         if (isEdit) {
                             taskToEdit?.copy(
                                 title = title.trim(),
@@ -501,12 +569,32 @@ fun AddTaskDialog(
                             )
                         }
                         onDismiss()
+                    } else {
+                        titleTouched = true
                     }
+                },
+                enabled = title.trim().isNotBlank(),
+                shape = CircleShape,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isEdit) Icons.Rounded.Save else Icons.Rounded.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = if (isEdit) "Save Changes" else "Add Task",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-            )
-        },
-        dismissButton = {
-            StudyDialogDismissButton(onClick = onDismiss)
+            }
         }
-    )
+    }
 }

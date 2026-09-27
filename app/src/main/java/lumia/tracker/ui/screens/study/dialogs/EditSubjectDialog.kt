@@ -2,8 +2,6 @@ package lumia.tracker.ui.screens.study.dialogs
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -12,8 +10,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Tag
@@ -27,17 +25,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.model.Subject
-import lumia.tracker.ui.components.ScholarCardDefaults
+import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.theme.bouncyClick
 import lumia.tracker.viewmodel.ScholarViewModel
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @ValueScore(
-    score = 85,
+    score = 92,
     importance = Importance.HIGH,
-    description = "Modernized glassmorphic modal dialog for editing academic subjects with capsule pills, tags, and course linkages",
+    description = "Modern gesture-driven modal bottom sheet for editing academic subjects with capsule pills, tags, and course linkages",
     category = "Dialog"
 )
 @Composable
@@ -51,8 +49,6 @@ fun EditSubjectDialog(
     var nameTouched by remember { mutableStateOf(false) }
 
     val courses by viewModel.courses.collectAsStateWithLifecycle()
-    val isDark = isSystemInDarkTheme()
-    val dialogShape = RoundedCornerShape(28.dp)
 
     // Compute initially linked courses
     val initiallyLinkedCourseIds = remember(courses, subject.id) {
@@ -70,7 +66,10 @@ fun EditSubjectDialog(
     }
 
     val initialColorHex = remember(courses, subject.id) {
-        courses.firstOrNull { it.subjectId == subject.id || it.subjectIds.split(",").mapNotNull { s -> s.trim().toIntOrNull() }.contains(subject.id) }?.colorHex ?: "#3197D6"
+        courses.firstOrNull {
+            it.subjectId == subject.id ||
+                it.subjectIds.split(",").mapNotNull { s -> s.trim().toIntOrNull() }.contains(subject.id)
+        }?.colorHex ?: "#3197D6"
     }
     var selectedColor by remember(subject) { mutableStateOf(initialColorHex) }
 
@@ -86,33 +85,93 @@ fun EditSubjectDialog(
         listOf("Core", "Major", "Theory", "Elective", "Lab", "Practical", "Seminar")
     }
 
-    AlertDialog(
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        shape = dialogShape,
-        containerColor = ScholarCardDefaults.glassContainerColor(isDark, alpha = if (isDark) 0.88f else 0.94f),
-        modifier = Modifier.border(
-            border = ScholarCardDefaults.glassBorder(isDark, accentColor = accentColor),
-            shape = dialogShape
-        ),
-        tonalElevation = 0.dp,
-        title = {
-            StudyDialogHeader(
-                icon = Icons.Rounded.Edit,
-                title = "Edit Subject",
-                subtitle = "Update details, tags, and linkages",
-                containerColor = accentColor.copy(alpha = 0.16f),
-                contentColor = accentColor
-            )
-        },
-        text = {
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(horizontal = 20.dp, vertical = 6.dp)
+        ) {
+            // Header Row: Icon + Title/Subtitle + Circular Close Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = accentColor.copy(alpha = 0.16f),
+                        border = BorderStroke(0.8.dp, accentColor.copy(alpha = 0.35f)),
+                        modifier = Modifier.size(42.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.Edit,
+                                contentDescription = null,
+                                tint = accentColor,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                    Column {
+                        Text(
+                            text = "Edit Subject",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Update details, tags, and linkages",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .bouncyClick(onClick = onDismiss),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "Close",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Scrollable Form Content
             Column(
                 modifier = Modifier
+                    .weight(1f, fill = false)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-
                 // Subject Name
                 StudyDialogTextField(
                     value = name,
@@ -120,66 +179,20 @@ fun EditSubjectDialog(
                         name = it
                         nameTouched = true
                     },
-                    label = "Subject Name",
+                    label = "Subject Name *",
                     placeholder = "e.g. Physics",
                     leadingIcon = Icons.Rounded.AutoStories,
-                    isError = nameTouched && name.isBlank(),
-                    errorMessage = if (nameTouched && name.isBlank()) "Subject name is required" else null,
-                    singleLine = true,
-                    shape = CircleShape
+                    isError = nameTouched && name.trim().isBlank(),
+                    errorMessage = "Subject name is required"
                 )
 
                 // Theme Color Presets
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    StudyDialogSectionHeader(
-                        title = "Theme Color",
-                        icon = Icons.Rounded.Palette,
-                        color = accentColor
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        STUDY_COLOR_PALETTE.forEach { hex ->
-                            val c = try {
-                                Color(android.graphics.Color.parseColor(hex))
-                            } catch (e: Exception) {
-                                MaterialTheme.colorScheme.primary
-                            }
-                            val isSelected = selectedColor.equals(hex, ignoreCase = true)
-                            Surface(
-                                shape = CircleShape,
-                                color = if (isSelected) c.copy(alpha = 0.22f) else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f),
-                                border = BorderStroke(
-                                    width = if (isSelected) 1.5.dp else 0.6.dp,
-                                    color = if (isSelected) c else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                                ),
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .clip(CircleShape)
-                                    .bouncyClick { selectedColor = hex }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(if (isSelected) 16.dp else 22.dp)
-                                            .background(c, CircleShape)
-                                    )
-                                    if (isSelected) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Check,
-                                            contentDescription = "Selected",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(12.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                ColorPickerPalette(
+                    selectedColor = selectedColor,
+                    onColorSelected = { selectedColor = it },
+                    title = "Theme Color",
+                    colors = STUDY_COLOR_PALETTE
+                )
 
                 // Tag Selector Capsule Pills
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -203,10 +216,10 @@ fun EditSubjectDialog(
                             val isSelected = currentTags.any { it.equals(preset, ignoreCase = true) }
                             Surface(
                                 shape = CircleShape,
-                                color = if (isSelected) accentColor.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f),
+                                color = if (isSelected) accentColor.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh,
                                 border = BorderStroke(
-                                    width = if (isSelected) 1.2.dp else 0.6.dp,
-                                    color = if (isSelected) accentColor.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                                    width = if (isSelected) 1.2.dp else 0.8.dp,
+                                    color = if (isSelected) accentColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                                 ),
                                 modifier = Modifier
                                     .clip(CircleShape)
@@ -220,9 +233,9 @@ fun EditSubjectDialog(
                                     }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                                 ) {
                                     if (isSelected) {
                                         Icon(
@@ -234,7 +247,7 @@ fun EditSubjectDialog(
                                     }
                                     Text(
                                         text = preset,
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = MaterialTheme.typography.labelMedium,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         color = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -248,11 +261,9 @@ fun EditSubjectDialog(
                     StudyDialogTextField(
                         value = tags,
                         onValueChange = { tags = it },
-                        label = "Custom Tags",
+                        label = "Custom Tags (Optional)",
                         placeholder = "e.g. Core, Major",
-                        leadingIcon = Icons.Rounded.Tag,
-                        singleLine = true,
-                        shape = CircleShape
+                        leadingIcon = Icons.Rounded.Tag
                     )
                 }
 
@@ -275,10 +286,10 @@ fun EditSubjectDialog(
                             val isNone = selectedCourseIds.isEmpty()
                             Surface(
                                 shape = CircleShape,
-                                color = if (isNone) accentColor.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f),
+                                color = if (isNone) accentColor.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh,
                                 border = BorderStroke(
-                                    width = if (isNone) 1.2.dp else 0.6.dp,
-                                    color = if (isNone) accentColor.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                                    width = if (isNone) 1.2.dp else 0.8.dp,
+                                    color = if (isNone) accentColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                                 ),
                                 modifier = Modifier
                                     .clip(CircleShape)
@@ -286,10 +297,10 @@ fun EditSubjectDialog(
                             ) {
                                 Text(
                                     text = "None",
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = if (isNone) FontWeight.Bold else FontWeight.Medium,
                                     color = if (isNone) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
                                 )
                             }
 
@@ -302,10 +313,10 @@ fun EditSubjectDialog(
                                 }
                                 Surface(
                                     shape = CircleShape,
-                                    color = if (isCourseSelected) courseColor.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f),
+                                    color = if (isCourseSelected) courseColor.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh,
                                     border = BorderStroke(
-                                        width = if (isCourseSelected) 1.2.dp else 0.6.dp,
-                                        color = if (isCourseSelected) courseColor.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                                        width = if (isCourseSelected) 1.2.dp else 0.8.dp,
+                                        color = if (isCourseSelected) courseColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                                     ),
                                     modifier = Modifier
                                         .clip(CircleShape)
@@ -318,18 +329,18 @@ fun EditSubjectDialog(
                                         }
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(7.dp)
+                                                .size(8.dp)
                                                 .background(courseColor, CircleShape)
                                         )
                                         Text(
                                             text = course.code.ifBlank { course.name },
-                                            style = MaterialTheme.typography.labelSmall,
+                                            style = MaterialTheme.typography.labelMedium,
                                             fontWeight = if (isCourseSelected) FontWeight.Bold else FontWeight.Medium,
                                             color = if (isCourseSelected) courseColor else MaterialTheme.colorScheme.onSurface
                                         )
@@ -347,14 +358,16 @@ fun EditSubjectDialog(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(10.dp))
             }
-        },
-        confirmButton = {
-            StudyDialogConfirmButton(
-                text = "Save Changes",
-                icon = Icons.Rounded.Save,
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Primary Bottom Action Button
+            BouncyButton(
                 onClick = {
-                    if (name.isNotBlank()) {
+                    if (name.trim().isNotBlank()) {
                         val trimmedName = name.trim()
                         val trimmedTags = tags.trim()
 
@@ -393,11 +406,20 @@ fun EditSubjectDialog(
                         nameTouched = true
                     }
                 },
-                enabled = name.isNotBlank()
-            )
-        },
-        dismissButton = {
-            StudyDialogDismissButton(onClick = onDismiss)
+                enabled = name.trim().isNotBlank(),
+                shape = CircleShape,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(Icons.Rounded.Save, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Text("Save Changes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+            }
         }
-    )
+    }
 }

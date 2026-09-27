@@ -34,6 +34,7 @@ import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
+import lumia.tracker.ui.theme.bouncyClick
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -218,7 +219,7 @@ fun StudyDialogTextField(
     singleLine: Boolean = true,
     maxLines: Int = if (singleLine) 1 else 4,
     minLines: Int = 1,
-    shape: Shape = if (singleLine) CircleShape else RoundedCornerShape(20.dp)
+    shape: Shape = if (singleLine) RoundedCornerShape(16.dp) else RoundedCornerShape(18.dp)
 ) {
     OutlinedTextField(
         value = value,
@@ -251,9 +252,9 @@ fun StudyDialogTextField(
         minLines = minLines,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-            focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f),
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     )
 }
@@ -289,15 +290,13 @@ fun WeekdaySelectorChips(
                 val isSelected = selectedDays.contains(day)
                 val targetBg = if (isSelected) {
                     MaterialTheme.colorScheme.primary
-                } else if (isDark) {
-                    MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.50f)
                 } else {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                    MaterialTheme.colorScheme.surfaceContainerHigh
                 }
                 val targetBorder = if (isSelected) {
                     BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                 } else {
-                    ScholarCardDefaults.glassBorder(isDark = isDark, width = 0.8.dp)
+                    BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
                 }
                 val targetTextColor = if (isSelected) {
                     MaterialTheme.colorScheme.onPrimary
@@ -310,7 +309,7 @@ fun WeekdaySelectorChips(
                     border = targetBorder,
                     modifier = Modifier
                         .clip(CircleShape)
-                        .clickable {
+                        .bouncyClick {
                             val newDays = if (isSelected) {
                                 selectedDays - day
                             } else {
@@ -320,7 +319,7 @@ fun WeekdaySelectorChips(
                         }
                 ) {
                     Box(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -370,18 +369,18 @@ fun ColorPickerPalette(
                 }
                 val isSelected = selectedColor.equals(col, ignoreCase = true)
                 val targetBorder = if (isSelected) {
-                    BorderStroke(2.5.dp, MaterialTheme.colorScheme.onSurface)
+                    BorderStroke(3.dp, MaterialTheme.colorScheme.onSurface)
                 } else {
-                    ScholarCardDefaults.glassBorder(isDark = isDark, width = 1.dp)
+                    BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
                 }
                 Surface(
                     shape = CircleShape,
                     color = c,
                     border = targetBorder,
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
-                        .clickable { onColorSelected(col) }
+                        .bouncyClick { onColorSelected(col) }
                 ) {
                     if (isSelected) {
                         Box(contentAlignment = Alignment.Center) {
@@ -389,7 +388,7 @@ fun ColorPickerPalette(
                                 imageVector = Icons.Rounded.Check,
                                 contentDescription = "Selected",
                                 tint = Color.White,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
@@ -426,15 +425,15 @@ fun ScheduleTimeRangePicker(
         ) {
             Surface(
                 shape = CircleShape,
-                color = if (startTime.isNotBlank()) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                border = BorderStroke(0.8.dp, if (startTime.isNotBlank()) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                color = if (startTime.isNotBlank()) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(0.8.dp, if (startTime.isNotBlank()) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                 modifier = Modifier
                     .weight(1f)
                     .clip(CircleShape)
-                    .clickable { onStartTimeClick() }
+                    .bouncyClick { onStartTimeClick() }
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
@@ -456,15 +455,15 @@ fun ScheduleTimeRangePicker(
 
             Surface(
                 shape = CircleShape,
-                color = if (endTime.isNotBlank()) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                border = BorderStroke(0.8.dp, if (endTime.isNotBlank()) MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                color = if (endTime.isNotBlank()) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(0.8.dp, if (endTime.isNotBlank()) MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                 modifier = Modifier
                     .weight(1f)
                     .clip(CircleShape)
-                    .clickable { onEndTimeClick() }
+                    .bouncyClick { onEndTimeClick() }
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
@@ -485,6 +484,80 @@ fun ScheduleTimeRangePicker(
             }
         }
     }
+}
+
+/**
+ * Standardized delete confirmation modal dialog preventing accidental data loss.
+ */
+@Composable
+fun StudyDeleteConfirmationDialog(
+    title: String,
+    message: String,
+    onConfirmDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(24.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.DeleteOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        },
+        text = {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        confirmButton = {
+            BouncyButton(
+                onClick = {
+                    onConfirmDelete()
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                ),
+                shape = CircleShape
+            ) {
+                Text("Delete", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            BouncyTextButton(
+                onClick = onDismiss,
+                shape = CircleShape
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 /**
