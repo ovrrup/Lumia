@@ -113,39 +113,26 @@ fun AcademicsScreen(
     ) {
         // Modern Frosted Glassmorphic Capsule Segmented Tab Bar
         val isDark = isSystemInDarkTheme()
-        val glassBg = ScholarCardDefaults.glassContainerColor(isDark, alpha = if (isDark) 0.65f else 0.78f)
-        val glassBorder = ScholarCardDefaults.glassBorder(isDark)
+        val tabBg = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                    else MaterialTheme.colorScheme.surfaceContainerLowest
+        val tabBorder = ScholarCardDefaults.border()
 
         Surface(
             shape = CircleShape,
-            color = glassBg,
-            border = glassBorder,
+            color = tabBg,
+            border = tabBorder,
             tonalElevation = 0.dp,
             shadowElevation = 0.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 6.dp)
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                // Live specular reflection on segmented bar
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.20f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 AcademicViewMode.entries.forEach { mode ->
                     val isSelected = activeView == mode
                     val count = when (mode) {
@@ -228,7 +215,6 @@ fun AcademicsScreen(
                             }
                         }
                     }
-                }
                 }
             }
         }

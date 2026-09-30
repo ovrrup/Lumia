@@ -14,9 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
@@ -65,27 +62,20 @@ object ScholarCardDefaults {
         accentColor: Color? = null,
         width: Dp = 1.dp
     ): BorderStroke {
-        val topHighlight = accentColor?.copy(alpha = if (isDark) 0.30f else 0.40f)
-            ?: (if (isDark) Color.White.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.45f))
-        val bottomShadow = accentColor?.copy(alpha = if (isDark) 0.05f else 0.08f)
-            ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.10f else 0.15f)
-        val brush = Brush.linearGradient(
-            colors = listOf(topHighlight, bottomShadow),
-            start = Offset(0f, 0f),
-            end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-        )
-        return BorderStroke(width = width, brush = brush)
+        val color = accentColor?.copy(alpha = if (isDark) 0.35f else 0.25f)
+            ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.18f else 0.14f)
+        return BorderStroke(width = width, color = color)
     }
 
     @Composable
     fun glassContainerColor(
         isDark: Boolean = isSystemInDarkTheme(),
-        alpha: Float = if (isDark) 0.70f else 0.80f
+        alpha: Float = 1.0f
     ): Color {
         return if (isDark) {
-            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = alpha)
+            MaterialTheme.colorScheme.surfaceContainer
         } else {
-            MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = alpha)
+            MaterialTheme.colorScheme.surfaceContainerLowest
         }
     }
 }
@@ -110,22 +100,18 @@ fun ScholarCard(
     shadowElevation: Dp = ScholarCardDefaults.shadowElevation,
     tonalElevation: Dp = ScholarCardDefaults.tonalElevation,
     animateSize: Boolean = false,
-    glassmorphic: Boolean = true,
+    glassmorphic: Boolean = false,
     liveReflection: Boolean = false,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
-    val targetColor = containerColor ?: if (glassmorphic) {
-        ScholarCardDefaults.glassContainerColor(isDark)
+    val targetColor = containerColor ?: if (isDark) {
+        MaterialTheme.colorScheme.surfaceContainer
     } else {
-        MaterialTheme.colorScheme.surfaceContainerLow
+        MaterialTheme.colorScheme.surfaceContainerLowest
     }
-    val targetBorder = border ?: if (glassmorphic) {
-        ScholarCardDefaults.glassBorder(isDark)
-    } else {
-        ScholarCardDefaults.border()
-    }
+    val targetBorder = border ?: ScholarCardDefaults.border()
     
     val cardModifier = if (onClick != null) {
         modifier
@@ -134,18 +120,6 @@ fun ScholarCard(
     } else {
         modifier.clip(shape)
     }
-
-    // Live reflection slow ambient sweep
-    val infiniteTransition = rememberInfiniteTransition(label = "card_reflection_anim")
-    val sweepProgress by infiniteTransition.animateFloat(
-        initialValue = -1.5f,
-        targetValue = 2.5f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 14000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "sweep_progress"
-    )
 
     Surface(
         modifier = cardModifier,
@@ -156,65 +130,6 @@ fun ScholarCard(
         tonalElevation = tonalElevation
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
-            if (glassmorphic) {
-                // 1. Soft Ambient Specular Angle Reflection
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    if (isDark) Color.White.copy(alpha = 0.04f) else Color.White.copy(alpha = 0.18f),
-                                    if (isDark) Color.White.copy(alpha = 0.01f) else Color.White.copy(alpha = 0.05f),
-                                    Color.Transparent
-                                ),
-                                start = Offset(0f, 0f),
-                                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                            )
-                        )
-                )
-
-                // 2. Delicate Refractive Top Rim Light
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    if (isDark) Color.White.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.32f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                )
-
-                // 3. Serene Animated Ambient Reflection Sweep
-                if (liveReflection) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .drawWithCache {
-                                val highlightColor = if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.12f)
-                                val brush = Brush.linearGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        highlightColor,
-                                        Color.Transparent
-                                    ),
-                                    start = Offset(size.width * (sweepProgress - 0.4f), 0f),
-                                    end = Offset(size.width * (sweepProgress + 0.4f), size.height)
-                                )
-                                onDrawWithContent {
-                                    drawContent()
-                                    drawRect(brush = brush)
-                                }
-                            }
-                    )
-                }
-            }
-
             if (animateSize) {
                 Box(
                     modifier = Modifier.animateContentSize(
@@ -234,12 +149,12 @@ fun ScholarCard(
 
 /**
  * ScholarHeroCard - High-emphasis hero card used for dashboard banners, streak highlights,
- * and key interactive statistics with live reflection sweeps and glassmorphic depth.
+ * and key interactive statistics with soft ambient styling.
  */
 @ValueScore(
     score = 92,
     importance = Importance.HIGH,
-    description = "High-emphasis hero card with accent glassmorphism and live reflection sweep for banners and primary stations",
+    description = "High-emphasis hero card with accent styling and tactile bounce for banners and primary stations",
     category = "Container"
 )
 @Composable
@@ -250,13 +165,13 @@ fun ScholarHeroCard(
     border: BorderStroke? = null,
     shadowElevation: Dp = ScholarCardDefaults.heroShadowElevation,
     tonalElevation: Dp = ScholarCardDefaults.heroTonalElevation,
-    liveReflection: Boolean = true,
+    liveReflection: Boolean = false,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
-    val targetColor = containerColor ?: MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isDark) 0.35f else 0.45f)
-    val targetBorder = border ?: ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.primary)
+    val targetColor = containerColor ?: MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isDark) 0.45f else 0.55f)
+    val targetBorder = border ?: ScholarCardDefaults.heroBorder()
     
     ScholarCard(
         modifier = modifier,
@@ -265,16 +180,16 @@ fun ScholarHeroCard(
         border = targetBorder,
         shadowElevation = shadowElevation,
         tonalElevation = tonalElevation,
-        glassmorphic = true,
-        liveReflection = liveReflection,
+        glassmorphic = false,
+        liveReflection = false,
         onClick = onClick,
         content = content
     )
 }
 
 /**
- * GlassCapsule - Minimalist pill/capsule container with subtle glassmorphic styling,
- * live specular highlight, fully rounded into a capsule (CircleShape) with frosted glass border.
+ * GlassCapsule - Minimalist pill/capsule container with soft ambient styling,
+ * fully rounded into a capsule (CircleShape) with clean subtle border.
  */
 @Composable
 fun GlassCapsule(
@@ -286,11 +201,11 @@ fun GlassCapsule(
 ) {
     val isDark = isSystemInDarkTheme()
     val bgColor = containerColor ?: if (isDark) {
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.70f)
+        MaterialTheme.colorScheme.surfaceContainerHigh
     } else {
-        MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.80f)
+        MaterialTheme.colorScheme.surfaceContainerLow
     }
-    val pillBorder = border ?: ScholarCardDefaults.glassBorder(isDark)
+    val pillBorder = border ?: ScholarCardDefaults.border()
 
     val capsuleModifier = if (onClick != null) {
         modifier
@@ -308,24 +223,9 @@ fun GlassCapsule(
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            // Subtle specular glass reflection for capsules
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.20f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                content = content
-            )
-        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            content = content
+        )
     }
 }

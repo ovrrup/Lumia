@@ -24,7 +24,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -135,7 +134,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Circular Avatar with Specular Highlight Ring
+                            // Circular Avatar with Accent Ring
                             Box(
                                 modifier = Modifier
                                     .size(62.dp)
@@ -145,12 +144,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                                     )
                                     .border(
                                         width = 1.5.dp,
-                                        brush = Brush.verticalGradient(
-                                            listOf(
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.65f),
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                            )
-                                        ),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                                         shape = CircleShape
                                     )
                                     .padding(3.5.dp),
@@ -528,12 +522,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape)
                             .border(
                                 width = 1.5.dp,
-                                brush = Brush.verticalGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.65f),
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                    )
-                                ),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                                 shape = CircleShape
                             )
                             .padding(3.dp),

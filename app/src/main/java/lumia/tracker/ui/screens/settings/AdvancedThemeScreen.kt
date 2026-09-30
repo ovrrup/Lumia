@@ -325,18 +325,13 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
                                 )
                             }
 
-                            // Frosted glass interactive card
+                            // Soft ambient interactive card
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
-                                color = parsedSurface.copy(alpha = 0.75f),
+                                color = parsedSurface,
                                 border = BorderStroke(
                                     1.dp,
-                                    Brush.verticalGradient(
-                                        listOf(
-                                            Color.White.copy(alpha = 0.45f),
-                                            Color.White.copy(alpha = 0.12f)
-                                        )
-                                    )
+                                    parsedText.copy(alpha = 0.12f)
                                 ),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -364,12 +359,7 @@ fun AdvancedThemeScreen(navController: NavController, viewModel: ScholarViewMode
                                         color = parsedPrimary,
                                         border = BorderStroke(
                                             1.dp,
-                                            Brush.verticalGradient(
-                                                listOf(
-                                                    Color.White.copy(alpha = 0.40f),
-                                                    Color.White.copy(alpha = 0.10f)
-                                                )
-                                            )
+                                            Color.White.copy(alpha = 0.20f)
                                         )
                                     ) {
                                         Row(
@@ -461,48 +451,17 @@ private fun ModernPresetColorSwatch(
                     .background(color)
                     .border(
                         width = if (isSelected) 2.5.dp else 1.dp,
-                        brush = Brush.verticalGradient(
-                            colors = if (isSelected) {
-                                listOf(
-                                    Color.White.copy(alpha = 0.90f),
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.70f)
-                                )
-                            } else {
-                                listOf(
-                                    Color.White.copy(alpha = 0.45f),
-                                    Color.White.copy(alpha = 0.12f)
-                                )
-                            }
-                        ),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f),
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                // Specular circular glass highlight overlay
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape)
-                        .background(
-                            Brush.verticalGradient(
-                                0.0f to Color.White.copy(alpha = 0.40f),
-                                0.45f to Color.White.copy(alpha = 0.12f),
-                                0.85f to Color.Transparent
-                            )
-                        )
-                )
-
                 if (isSelected) {
                     Box(
                         modifier = Modifier
                             .size(20.dp)
                             .background(
-                                Brush.verticalGradient(
-                                    listOf(
-                                        Color.White.copy(alpha = 0.35f),
-                                        Color.Black.copy(alpha = 0.45f)
-                                    )
-                                ),
+                                Color.Black.copy(alpha = 0.45f),
                                 CircleShape
                             )
                             .border(0.75.dp, Color.White.copy(alpha = 0.65f), CircleShape),

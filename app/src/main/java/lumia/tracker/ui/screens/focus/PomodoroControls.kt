@@ -18,7 +18,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -163,20 +162,15 @@ fun PomodoroControls(
         ) {
             if (!isRunning) {
                 // PRIMARY START CAPSULE PILL
-                val startSpecularBorder = BorderStroke(
+                val startBorder = BorderStroke(
                     width = 1.dp,
-                    brush = Brush.verticalGradient(
-                        listOf(
-                            Color.White.copy(alpha = if (isDark) 0.40f else 0.55f),
-                            Color.White.copy(alpha = if (isDark) 0.08f else 0.16f)
-                        )
-                    )
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.20f)
                 )
 
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary,
-                    border = startSpecularBorder,
+                    border = startBorder,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
@@ -214,21 +208,16 @@ fun PomodoroControls(
                     animationSpec = tween(220),
                     label = "pause_btn_content"
                 )
-                val pauseSpecularBorder = BorderStroke(
+                val pauseBorder = BorderStroke(
                     width = 1.dp,
-                    brush = Brush.verticalGradient(
-                        listOf(
-                            if (isPaused) Color.White.copy(alpha = 0.40f) else (if (isDark) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.45f)),
-                            if (isPaused) Color.White.copy(alpha = 0.08f) else (if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.12f))
-                        )
-                    )
+                    color = pauseButtonContent.copy(alpha = 0.20f)
                 )
 
                 // Pause / Resume Capsule Action Pill
                 Surface(
                     shape = CircleShape,
                     color = pauseButtonBg,
-                    border = pauseSpecularBorder,
+                    border = pauseBorder,
                     modifier = Modifier
                         .weight(1.8f)
                         .height(56.dp)
@@ -272,9 +261,9 @@ fun PomodoroControls(
                 Surface(
                     shape = CircleShape,
                     color = if (isDark) {
-                        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
+                        MaterialTheme.colorScheme.surfaceContainerHigh
                     } else {
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+                        MaterialTheme.colorScheme.surfaceContainerLowest
                     },
                     border = ScholarCardDefaults.glassBorder(isDark),
                     modifier = Modifier
@@ -294,7 +283,7 @@ fun PomodoroControls(
                 // Stop / Reset Capsule Pill
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = if (isDark) 0.40f else 0.60f),
+                    color = MaterialTheme.colorScheme.errorContainer,
                     border = ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier
                         .size(56.dp)
@@ -505,9 +494,9 @@ private fun UtilityFilterChip(
     Surface(
         shape = CircleShape,
         color = if (isDark) {
-            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f)
+            MaterialTheme.colorScheme.surfaceContainerHigh
         } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+            MaterialTheme.colorScheme.surfaceContainerLowest
         },
         border = ScholarCardDefaults.glassBorder(isDark),
         modifier = modifier
@@ -559,9 +548,9 @@ private fun EngineSelectionCard(
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isDark) 0.35f else 0.45f)
+            MaterialTheme.colorScheme.primaryContainer
         } else {
-            ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.5f)
+            ScholarCardDefaults.glassContainerColor(isDark)
         },
         border = ScholarCardDefaults.glassBorder(
             isDark = isDark,

@@ -174,11 +174,11 @@ fun HomeTab(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Modern Glassmorphic Focus Hero Card with Live Specular Reflection
+                // Modern Ambient Focus Hero Card
                 ScholarHeroCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
-                    liveReflection = true,
+                    liveReflection = false,
                     onClick = {
                         navController.navigate("pomodoro") { launchSingleTop = true }
                     }

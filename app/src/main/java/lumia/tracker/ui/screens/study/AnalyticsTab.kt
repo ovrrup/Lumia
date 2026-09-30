@@ -66,14 +66,9 @@ fun frostedSpecularBorder(
     isDark: Boolean = isSystemInDarkTheme(),
     width: Dp = 1.dp
 ): BorderStroke {
-    val topColor = accentColor?.copy(alpha = if (isDark) 0.42f else 0.55f)
-        ?: if (isDark) Color.White.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.65f)
-    val bottomColor = accentColor?.copy(alpha = 0.08f)
-        ?: if (isDark) Color.White.copy(alpha = 0.03f) else Color.White.copy(alpha = 0.14f)
-    return BorderStroke(
-        width = width,
-        brush = Brush.verticalGradient(listOf(topColor, bottomColor))
-    )
+    val color = accentColor?.copy(alpha = if (isDark) 0.35f else 0.25f)
+        ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.20f else 0.15f)
+    return BorderStroke(width = width, color = color)
 }
 
 /**
@@ -139,9 +134,7 @@ fun MetricHeroCard(
                         .background(color.copy(alpha = 0.14f))
                         .border(
                             1.dp,
-                            Brush.verticalGradient(
-                                listOf(color.copy(alpha = 0.35f), color.copy(alpha = 0.08f))
-                            ),
+                            color.copy(alpha = 0.25f),
                             RoundedCornerShape(12.dp)
                         ),
                     contentAlignment = Alignment.Center

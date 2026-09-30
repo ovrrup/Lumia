@@ -38,14 +38,12 @@ fun SettingsGroupCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
-    val targetContainerColor = containerColor ?: ScholarCardDefaults.glassContainerColor(
-        isDark = isDark,
-        alpha = if (isDark) 0.58f else 0.72f
-    )
-    val targetBorder = border ?: ScholarCardDefaults.glassBorder(
-        isDark = isDark,
-        width = 1.dp
-    )
+    val targetContainerColor = containerColor ?: if (isDark) {
+        MaterialTheme.colorScheme.surfaceContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLowest
+    }
+    val targetBorder = border ?: ScholarCardDefaults.border()
 
     Column(
         modifier = modifier

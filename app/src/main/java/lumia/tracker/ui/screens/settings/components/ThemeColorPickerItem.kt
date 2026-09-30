@@ -109,7 +109,7 @@ fun ThemeColorPickerItem(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            // Main circular swatch with frosted glass border
+            // Main circular swatch with soft border
             Box(
                 modifier = Modifier
                     .size(46.dp)
@@ -117,48 +117,17 @@ fun ThemeColorPickerItem(
                     .then(backgroundModifier)
                     .border(
                         width = if (isSelected) 2.5.dp else 1.dp,
-                        brush = Brush.verticalGradient(
-                            colors = if (isSelected) {
-                                listOf(
-                                    Color.White.copy(alpha = 0.90f),
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.70f)
-                                )
-                            } else {
-                                listOf(
-                                    Color.White.copy(alpha = 0.45f),
-                                    Color.White.copy(alpha = 0.12f)
-                                )
-                            }
-                        ),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f),
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                // Circular glass specular highlight
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape)
-                        .background(
-                            Brush.verticalGradient(
-                                0.0f to Color.White.copy(alpha = 0.40f),
-                                0.45f to Color.White.copy(alpha = 0.12f),
-                                0.85f to Color.Transparent
-                            )
-                        )
-                )
-
                 if (isSelected) {
                     Box(
                         modifier = Modifier
                             .size(22.dp)
                             .background(
-                                Brush.verticalGradient(
-                                    listOf(
-                                        Color.White.copy(alpha = 0.35f),
-                                        Color.Black.copy(alpha = 0.45f)
-                                    )
-                                ),
+                                Color.Black.copy(alpha = 0.45f),
                                 CircleShape
                             )
                             .border(0.75.dp, Color.White.copy(alpha = 0.65f), CircleShape),

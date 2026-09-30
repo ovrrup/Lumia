@@ -75,9 +75,9 @@ fun DashboardTopFloatingPills(
         verticalAlignment = Alignment.CenterVertically
     ) {
         val isDark = isSystemInDarkTheme()
-        val pillBg = if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.85f)
-                     else MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.90f)
-        val glassBorder = ScholarCardDefaults.glassBorder(isDark)
+        val pillBg = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                     else MaterialTheme.colorScheme.surfaceContainerLowest
+        val pillBorder = ScholarCardDefaults.border()
 
         // Left Floating Pill: Live Focus Timer (if running) OR Section Title Pill
         if (pomodoroState.isRunning) {
@@ -90,54 +90,40 @@ fun DashboardTopFloatingPills(
             Surface(
                 shape = CircleShape,
                 color = pillBg,
-                border = glassBorder,
+                border = pillBorder,
                 shadowElevation = 0.dp,
                 tonalElevation = 0.dp,
                 modifier = Modifier
                     .height(42.dp)
                     .clip(CircleShape)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.20f),
-                                        Color.Transparent
-                                    )
-                                )
-                            )
+                Row(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = tabIcon,
+                        contentDescription = tabTitle,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
                     )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(horizontal = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = tabIcon,
-                            contentDescription = tabTitle,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
+                    AnimatedContent(
+                        targetState = tabTitle,
+                        transitionSpec = {
+                            (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
+                                .togetherWith(fadeOut(tween(140)) + slideOutVertically(tween(140)) { -it / 3 })
+                        },
+                        label = "top_pill_title"
+                    ) { title ->
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-                        AnimatedContent(
-                            targetState = tabTitle,
-                            transitionSpec = {
-                                (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
-                                    .togetherWith(fadeOut(tween(140)) + slideOutVertically(tween(140)) { -it / 3 })
-                            },
-                            label = "top_pill_title"
-                        ) { title ->
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
                     }
                 }
             }
@@ -160,23 +146,11 @@ fun DashboardTopFloatingPills(
                     .bouncyClick(onClick = { navController.navigate("search") }),
                 shape = CircleShape,
                 color = pillBg,
-                border = glassBorder,
+                border = pillBorder,
                 shadowElevation = 0.dp,
                 tonalElevation = 0.dp
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.20f),
-                                        Color.Transparent
-                                    )
-                                )
-                            )
-                    )
                     Icon(
                         imageVector = Icons.Rounded.Search,
                         contentDescription = "Search",
@@ -348,13 +322,13 @@ fun ScholarProfileAvatar(
     modifier: Modifier = Modifier
 ) {
     val isDark = isSystemInDarkTheme()
-    val avatarBorder = ScholarCardDefaults.glassBorder(isDark)
+    val avatarBorder = ScholarCardDefaults.border()
     Box(
         modifier = modifier
             .size(42.dp)
             .background(
-                if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.75f)
-                else MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.85f),
+                if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                else MaterialTheme.colorScheme.surfaceContainerLowest,
                 CircleShape
             )
             .border(avatarBorder, CircleShape)

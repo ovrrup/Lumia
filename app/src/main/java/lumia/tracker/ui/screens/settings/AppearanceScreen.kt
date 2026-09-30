@@ -175,28 +175,11 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                             .clip(CircleShape)
                                             .background(activeColor)
                                             .border(
-                                                width = 1.dp,
-                                                brush = Brush.verticalGradient(
-                                                    listOf(
-                                                        Color.White.copy(alpha = 0.70f),
-                                                        Color.White.copy(alpha = 0.20f)
-                                                    )
-                                                ),
+                                                BorderStroke(1.dp, activeColor.copy(alpha = 0.40f)),
                                                 shape = CircleShape
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        // Glass highlight
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .background(
-                                                    Brush.verticalGradient(
-                                                        0.0f to Color.White.copy(alpha = 0.45f),
-                                                        0.5f to Color.Transparent
-                                                    )
-                                                )
-                                        )
                                         Icon(
                                             imageVector = when (currentThemeSelection) {
                                                 "Light" -> Icons.Rounded.LightMode
@@ -251,15 +234,10 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         // Streamlined preview surface snippet
                         Surface(
                             shape = RoundedCornerShape(14.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.60f),
                             border = BorderStroke(
                                 1.dp,
-                                Brush.verticalGradient(
-                                    listOf(
-                                        Color.White.copy(alpha = 0.35f),
-                                        Color.White.copy(alpha = 0.08f)
-                                    )
-                                )
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
                             ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -278,7 +256,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Frosted Glass Aesthetic",
+                                        text = "Ambient Soft Aesthetic",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -289,12 +267,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                                     color = activeColor,
                                     border = BorderStroke(
                                         1.dp,
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                Color.White.copy(alpha = 0.45f),
-                                                Color.White.copy(alpha = 0.10f)
-                                            )
-                                        )
+                                        activeColor.copy(alpha = 0.40f)
                                     )
                                 ) {
                                     Text(

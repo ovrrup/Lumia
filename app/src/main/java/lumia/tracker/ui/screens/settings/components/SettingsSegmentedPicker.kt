@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -81,12 +80,7 @@ fun <T> SettingsSegmentedPicker(
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
                 .border(
                     width = 1.dp,
-                    brush = Brush.verticalGradient(
-                        listOf(
-                            Color.White.copy(alpha = 0.20f),
-                            Color.White.copy(alpha = 0.05f)
-                        )
-                    ),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                     shape = CircleShape
                 )
                 .padding(3.dp),
@@ -163,12 +157,7 @@ fun ThemeModeCapsulePicker(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
             .border(
                 width = 1.dp,
-                brush = Brush.verticalGradient(
-                    listOf(
-                        Color.White.copy(alpha = 0.20f),
-                        Color.White.copy(alpha = 0.05f)
-                    )
-                ),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
                 shape = CircleShape
             )
             .padding(3.dp),

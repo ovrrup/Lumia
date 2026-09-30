@@ -240,48 +240,29 @@ private fun BoxScope.FloatingDashboardBottomBar(
             )
             .windowInsetsPadding(WindowInsets.navigationBars),
         shape = dockShape,
-        color = if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.75f)
-                else MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.85f),
-        border = ScholarCardDefaults.glassBorder(isDark),
+        color = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                else MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = ScholarCardDefaults.border(),
         shadowElevation = 0.dp,
         tonalElevation = 0.dp
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            // Live specular reflection on floating navigation dock
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.20f),
-                                if (isDark) Color.White.copy(alpha = 0.01f) else Color.White.copy(alpha = 0.05f),
-                                Color.Transparent
-                            ),
-                            start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                            end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                        )
-                    )
+        NavigationBar(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(dockHeight.dp),
+            containerColor = Color.Transparent,
+            tonalElevation = 0.dp,
+            windowInsets = WindowInsets(0, 0, 0, 0)
+        ) {
+            DashboardNavItems(
+                selectedTab = selectedTab,
+                onSelectTab = onSelectTab,
+                navItemColors = navItemColors,
+                alwaysShowLabel = navBarLabelMode == "Always",
+                hideLabels = navBarLabelMode == "Hidden",
+                featureSelfStudyEnabled = featureSelfStudyEnabled,
+                featureAnalyticsEnabled = featureAnalyticsEnabled
             )
-
-            NavigationBar(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(dockHeight.dp),
-                containerColor = Color.Transparent,
-                tonalElevation = 0.dp,
-                windowInsets = WindowInsets(0, 0, 0, 0)
-            ) {
-                DashboardNavItems(
-                    selectedTab = selectedTab,
-                    onSelectTab = onSelectTab,
-                    navItemColors = navItemColors,
-                    alwaysShowLabel = navBarLabelMode == "Always",
-                    hideLabels = navBarLabelMode == "Hidden",
-                    featureSelfStudyEnabled = featureSelfStudyEnabled,
-                    featureAnalyticsEnabled = featureAnalyticsEnabled
-                )
-            }
         }
     }
 }
