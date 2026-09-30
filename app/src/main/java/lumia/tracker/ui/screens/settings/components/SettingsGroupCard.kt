@@ -39,7 +39,7 @@ fun SettingsGroupCard(
 ) {
     val isDark = isSystemInDarkTheme()
     val targetContainerColor = containerColor ?: if (isDark) {
-        MaterialTheme.colorScheme.surfaceContainer
+        MaterialTheme.colorScheme.surfaceContainerLow
     } else {
         MaterialTheme.colorScheme.surfaceContainerLowest
     }
