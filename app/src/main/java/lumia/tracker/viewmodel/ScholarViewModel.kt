@@ -566,11 +566,12 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                         editor.putInt("streak_current", 0).apply()
                     }
                 }
-            } catch (e: Throwable) {
-                android.util.Log.e("ScholarViewModel", "Streak calculation non-fatal error", e)
             }
+        } catch (e: Throwable) {
+            android.util.Log.e("ScholarViewModel", "Streak calculation non-fatal error", e)
         }
     }
+}
 
     private val _themeMode = MutableStateFlow(prefs.getString("theme_mode", "System") ?: "System")
     val themeMode = _themeMode.asStateFlow()
