@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.sp
 import lumia.tracker.model.Course
 import lumia.tracker.model.Subject
 import lumia.tracker.ui.components.BouncyIconButton
-import lumia.tracker.ui.components.GlassCapsule
 import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
@@ -114,22 +113,19 @@ fun PomodoroCourseSelector(
             }
 
             if (isLinked) {
-                GlassCapsule(
-                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f),
-                    border = ScholarCardDefaults.glassBorder(
-                        isDark = isDark,
-                        accentColor = MaterialTheme.colorScheme.error,
-                        width = 0.8.dp
-                    ),
-                    onClick = {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f)),
+                    modifier = Modifier.bouncyClick {
                         onSelectCourse(null)
                         onSelectSubject?.invoke(null)
                     }
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
@@ -149,16 +145,17 @@ fun PomodoroCourseSelector(
         }
 
         // Active Context Card Trigger
+        val triggerBg = if (isLinked) activeColor.copy(alpha = 0.08f)
+                        else if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                        else MaterialTheme.colorScheme.surfaceContainerLowest
+        val triggerBorder = if (isLinked) BorderStroke(1.dp, activeColor.copy(alpha = 0.35f))
+                            else ScholarCardDefaults.border()
+
         ScholarCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            glassmorphic = true,
-            containerColor = if (isLinked) activeColor.copy(alpha = 0.08f) else ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.55f),
-            border = ScholarCardDefaults.glassBorder(
-                isDark = isDark,
-                accentColor = if (isLinked) activeColor else null,
-                width = 1.dp
-            ),
+            containerColor = triggerBg,
+            border = triggerBorder,
             onClick = { showSheet = true }
         ) {
             Row(
@@ -226,14 +223,15 @@ fun PomodoroCourseSelector(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     if (isLinked) {
-                        GlassCapsule(
-                            containerColor = activeColor.copy(alpha = 0.14f),
-                            border = ScholarCardDefaults.glassBorder(isDark = isDark, accentColor = activeColor, width = 0.8.dp)
+                        Surface(
+                            shape = CircleShape,
+                            color = activeColor.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, activeColor.copy(alpha = 0.30f))
                         ) {
                             Text(
                                 text = "Active",
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = activeColor,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                             )
@@ -258,15 +256,14 @@ fun PomodoroCourseSelector(
                 // General (Unlinked) Option Capsule Pill
                 item {
                     val isGeneralSelected = selectedCourse == null && selectedSubject == null
-                    val generalBorder = ScholarCardDefaults.glassBorder(
-                        isDark = isDark,
-                        accentColor = if (isGeneralSelected) MaterialTheme.colorScheme.primary else null,
-                        width = if (isGeneralSelected) 1.2.dp else 0.75.dp
-                    )
+                    val generalBorder = if (isGeneralSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.40f))
+                                        else ScholarCardDefaults.border()
                     val generalContainerColor = if (isGeneralSelected) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    } else if (isDark) {
+                        MaterialTheme.colorScheme.surfaceContainer
                     } else {
-                        ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.5f)
+                        MaterialTheme.colorScheme.surfaceContainerLowest
                     }
 
                     Surface(
@@ -297,7 +294,7 @@ fun PomodoroCourseSelector(
                             Text(
                                 text = "General",
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = if (isGeneralSelected) FontWeight.Bold else FontWeight.Medium,
+                                fontWeight = if (isGeneralSelected) FontWeight.SemiBold else FontWeight.Medium,
                                 color = if (isGeneralSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                 letterSpacing = 0.2.sp
                             )
@@ -312,15 +309,14 @@ fun PomodoroCourseSelector(
                         try { Color(android.graphics.Color.parseColor(course.colorHex)) } catch (e: Exception) { null }
                     } ?: MaterialTheme.colorScheme.primary
 
-                    val courseBorder = ScholarCardDefaults.glassBorder(
-                        isDark = isDark,
-                        accentColor = if (isSelected) courseColor else null,
-                        width = if (isSelected) 1.2.dp else 0.75.dp
-                    )
+                    val courseBorder = if (isSelected) BorderStroke(1.dp, courseColor.copy(alpha = 0.40f))
+                                       else ScholarCardDefaults.border()
                     val courseContainerColor = if (isSelected) {
-                        courseColor.copy(alpha = 0.18f)
+                        courseColor.copy(alpha = 0.12f)
+                    } else if (isDark) {
+                        MaterialTheme.colorScheme.surfaceContainer
                     } else {
-                        ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.5f)
+                        MaterialTheme.colorScheme.surfaceContainerLowest
                     }
 
                     Surface(
@@ -355,7 +351,7 @@ fun PomodoroCourseSelector(
                             Text(
                                 text = course.name,
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                                 color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                 letterSpacing = 0.2.sp,
                                 maxLines = 1
@@ -369,15 +365,14 @@ fun PomodoroCourseSelector(
                     val isSelected = selectedSubject?.id == subject.id
                     val subjectColor = MaterialTheme.colorScheme.secondary
 
-                    val subjectBorder = ScholarCardDefaults.glassBorder(
-                        isDark = isDark,
-                        accentColor = if (isSelected) subjectColor else null,
-                        width = if (isSelected) 1.2.dp else 0.75.dp
-                    )
+                    val subjectBorder = if (isSelected) BorderStroke(1.dp, subjectColor.copy(alpha = 0.40f))
+                                        else ScholarCardDefaults.border()
                     val subjectContainerColor = if (isSelected) {
-                        subjectColor.copy(alpha = 0.18f)
+                        subjectColor.copy(alpha = 0.12f)
+                    } else if (isDark) {
+                        MaterialTheme.colorScheme.surfaceContainer
                     } else {
-                        ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.5f)
+                        MaterialTheme.colorScheme.surfaceContainerLowest
                     }
 
                     Surface(
@@ -412,7 +407,7 @@ fun PomodoroCourseSelector(
                             Text(
                                 text = subject.name,
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                                 color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                 letterSpacing = 0.2.sp,
                                 maxLines = 1
@@ -717,15 +712,14 @@ private fun ContextSelectionRow(
     onClick: () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
-    val rowBorder = ScholarCardDefaults.glassBorder(
-        isDark = isDark,
-        accentColor = if (isSelected) tintColor else null,
-        width = if (isSelected) 1.2.dp else 0.75.dp
-    )
+    val rowBorder = if (isSelected) BorderStroke(1.dp, tintColor.copy(alpha = 0.40f))
+                    else ScholarCardDefaults.border()
     val rowContainerColor = if (isSelected) {
-        tintColor.copy(alpha = 0.15f)
+        tintColor.copy(alpha = 0.12f)
+    } else if (isDark) {
+        MaterialTheme.colorScheme.surfaceContainer
     } else {
-        ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.5f)
+        MaterialTheme.colorScheme.surfaceContainerLowest
     }
 
     Surface(

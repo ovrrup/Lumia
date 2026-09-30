@@ -251,34 +251,6 @@ fun PomodoroScreen(
                 .padding(padding)
         ) {
 
-            // 2. Subtle Ambient Radial Glowing Aura behind timer arc
-            val breathingTransition = rememberInfiniteTransition(label = "timer_glow_pulse")
-            val glowPulseScale by breathingTransition.animateFloat(
-                initialValue = 0.90f,
-                targetValue = 1.10f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(2800, easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "glow_pulse"
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(380.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                animatedRingColor.copy(alpha = if (isDark) 0.16f else 0.10f),
-                                animatedRingColor.copy(alpha = if (isDark) 0.05f else 0.03f),
-                                Color.Transparent
-                            ),
-                            radius = 450f * glowPulseScale
-                        )
-                    )
-            )
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -314,14 +286,14 @@ fun PomodoroScreen(
                         presets.forEach { preset ->
                             val isSelected = workDurationMin == preset.work && shortBreakDurationMin == preset.shortBreak
                             val presetBg = if (isSelected) {
-                                animatedRingColor.copy(alpha = if (isDark) 0.20f else 0.14f)
+                                animatedRingColor.copy(alpha = 0.12f)
                             } else {
-                                ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.50f)
+                                if (isDark) MaterialTheme.colorScheme.surfaceContainer else MaterialTheme.colorScheme.surfaceContainerLowest
                             }
                             val presetBorder = if (isSelected) {
-                                BorderStroke(1.dp, animatedRingColor.copy(alpha = 0.65f))
+                                BorderStroke(1.dp, animatedRingColor.copy(alpha = 0.40f))
                             } else {
-                                ScholarCardDefaults.glassBorder(isDark)
+                                ScholarCardDefaults.border()
                             }
 
                             Surface(
@@ -351,12 +323,12 @@ fun PomodoroScreen(
                                                 .clip(CircleShape)
                                                 .background(animatedRingColor)
                                         )
-                                        Spacer(modifier = Modifier.width(5.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
                                     }
                                     Text(
                                         text = "${preset.name} · ${preset.work}m",
                                         style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                                         color = if (isSelected) animatedRingColor else MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
@@ -446,17 +418,16 @@ fun PomodoroScreen(
                     viewModel = viewModel
                 )
 
-                // 5. Daily Metrics Row (Sessions, Focus Time, Streak)
+                // 5. Daily Metrics Section (Sessions, Focus Time, Streak)
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = ScholarCardDefaults.shape,
-                    glassmorphic = true
+                    shape = RoundedCornerShape(22.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                            .padding(horizontal = 14.dp, vertical = 14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // 1. Sessions Today
@@ -464,12 +435,15 @@ fun PomodoroScreen(
                             icon = Icons.Rounded.CheckCircle,
                             value = "${pomodoroState.sessionsCompleted}",
                             label = "Sessions",
-                            tintColor = MaterialTheme.colorScheme.primary
+                            tintColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
                         )
 
-                        VerticalDivider(
-                            modifier = Modifier.height(32.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(28.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), CircleShape)
                         )
 
                         // 2. Total Focus Time
@@ -483,12 +457,15 @@ fun PomodoroScreen(
                             icon = Icons.Rounded.Timer,
                             value = timeDisplay,
                             label = "Focus Time",
-                            tintColor = MaterialTheme.colorScheme.secondary
+                            tintColor = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.weight(1.1f)
                         )
 
-                        VerticalDivider(
-                            modifier = Modifier.height(32.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(28.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), CircleShape)
                         )
 
                         // 3. Current Streak
@@ -496,7 +473,8 @@ fun PomodoroScreen(
                             icon = Icons.Rounded.LocalFireDepartment,
                             value = "$streakDays d",
                             label = "Streak",
-                            tintColor = Color(0xFFFF9500)
+                            tintColor = Color(0xFFFF9500),
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
@@ -542,10 +520,13 @@ fun FluidPillModeSelector(
         label = "pill_active_color"
     )
 
+    val containerBg = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                      else MaterialTheme.colorScheme.surfaceContainerLowest
+
     Surface(
         shape = CircleShape,
-        color = ScholarCardDefaults.glassContainerColor(isDark, alpha = if (isDark) 0.60f else 0.80f),
-        border = ScholarCardDefaults.glassBorder(isDark),
+        color = containerBg,
+        border = ScholarCardDefaults.border(),
         modifier = modifier.height(48.dp)
     ) {
         BoxWithConstraints(
@@ -563,7 +544,7 @@ fun FluidPillModeSelector(
                 label = "pill_sliding_offset"
             )
 
-            // Sliding Indicator Background Capsule Pill with Frosted Highlight
+            // Sliding Indicator Background Capsule Pill
             Box(
                 modifier = Modifier
                     .offset(x = animatedOffset)
@@ -571,20 +552,7 @@ fun FluidPillModeSelector(
                     .fillMaxHeight()
                     .clip(CircleShape)
                     .background(activeColor)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Color.White.copy(alpha = 0.25f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                )
-            }
+            )
 
             // Interactive Tab Items
             Row(
@@ -701,9 +669,11 @@ private fun MetricBadgeItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     value: String,
     label: String,
-    tintColor: Color
+    tintColor: Color,
+    modifier: Modifier = Modifier
 ) {
     Column(
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -721,21 +691,21 @@ private fun MetricBadgeItem(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(14.dp),
+                    modifier = Modifier.size(13.dp),
                     tint = tintColor
                 )
             }
             Text(
                 text = value,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Normal,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }

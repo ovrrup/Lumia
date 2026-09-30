@@ -1,6 +1,7 @@
 package lumia.tracker.ui.screens.study.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -63,8 +64,8 @@ fun TaskItemCard(
     val checkScale by animateFloatAsState(
         targetValue = if (isCompleted) 1f else 0f,
         animationSpec = spring(
-            dampingRatio = spring.DampingRatioMediumBouncy,
-            stiffness = spring.StiffnessMedium
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
         ),
         label = "taskCheckScale"
     )

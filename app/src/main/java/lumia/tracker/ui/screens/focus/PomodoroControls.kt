@@ -99,8 +99,8 @@ fun PomodoroControls(
         ) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = if (isDark) 0.70f else 0.85f),
-                border = ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.error),
+                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = if (isDark) 0.85f else 0.95f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -118,7 +118,7 @@ fun PomodoroControls(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.20f)),
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -131,7 +131,7 @@ fun PomodoroControls(
                         Text(
                             text = "Timer Complete",
                             style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
@@ -139,13 +139,13 @@ fun PomodoroControls(
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.error,
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onError.copy(alpha = 0.25f)),
                         modifier = Modifier.bouncyClick(onClick = onStopAlarm)
                     ) {
                         Text(
                             text = "Dismiss",
                             style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onError,
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
                         )
@@ -261,11 +261,11 @@ fun PomodoroControls(
                 Surface(
                     shape = CircleShape,
                     color = if (isDark) {
-                        MaterialTheme.colorScheme.surfaceContainerHigh
+                        MaterialTheme.colorScheme.surfaceContainer
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerLowest
                     },
-                    border = ScholarCardDefaults.glassBorder(isDark),
+                    border = ScholarCardDefaults.border(),
                     modifier = Modifier
                         .size(56.dp)
                         .bouncyClick(onClick = onSkip)
@@ -284,7 +284,7 @@ fun PomodoroControls(
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.errorContainer,
-                    border = ScholarCardDefaults.glassBorder(isDark, accentColor = MaterialTheme.colorScheme.error),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f)),
                     modifier = Modifier
                         .size(56.dp)
                         .bouncyClick(onClick = onStop)
@@ -494,11 +494,11 @@ private fun UtilityFilterChip(
     Surface(
         shape = CircleShape,
         color = if (isDark) {
-            MaterialTheme.colorScheme.surfaceContainerHigh
+            MaterialTheme.colorScheme.surfaceContainer
         } else {
             MaterialTheme.colorScheme.surfaceContainerLowest
         },
-        border = ScholarCardDefaults.glassBorder(isDark),
+        border = ScholarCardDefaults.border(),
         modifier = modifier
             .height(42.dp)
             .bouncyClick(onClick = onClick)
@@ -545,17 +545,23 @@ private fun EngineSelectionCard(
     onGrantPermission: () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
+    val containerBg = if (isSelected) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else if (isDark) {
+        MaterialTheme.colorScheme.surfaceContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLowest
+    }
+    val cardBorder = if (isSelected) {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.40f))
+    } else {
+        ScholarCardDefaults.border()
+    }
+
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            ScholarCardDefaults.glassContainerColor(isDark)
-        },
-        border = ScholarCardDefaults.glassBorder(
-            isDark = isDark,
-            accentColor = if (isSelected) MaterialTheme.colorScheme.primary else null
-        ),
+        color = containerBg,
+        border = cardBorder,
         modifier = Modifier
             .fillMaxWidth()
             .bouncyClick(onClick = onClick)

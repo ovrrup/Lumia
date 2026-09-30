@@ -4,6 +4,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -13,8 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -24,20 +23,21 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.theme.bouncyClick
 import java.util.Locale
 
 /**
- * PomodoroTimerArc - Modernized circular countdown gauge.
- * Features sleek rounded stroke caps, subtle glowing blur auras, clean minimalist
- * typography, capsule status pill, and tactile on-the-fly duration nudges.
+ * PomodoroTimerArc - Reimagined soft ambient circular countdown gauge.
+ * Features an organic curved gauge, clean tabular time typography,
+ * pill status badge, session round capsule indicators, and tactile minute nudges.
  */
 @ValueScore(
     score = 98,
     importance = Importance.CRITICAL,
-    description = "Modernized circular timer arc with rounded stroke caps, glowing blur aura, clean minimalist typography, and capsule duration nudges",
+    description = "Reimagined soft ambient countdown gauge with rounded progress arc, serene typography, and session round indicators",
     category = "Focus"
 )
 @Composable
@@ -61,61 +61,37 @@ fun PomodoroTimerArc(
         label = "pomodoro_arc_progress"
     )
 
-    // Breathing glow aura pulse when running
-    val infiniteTransition = rememberInfiniteTransition(label = "pomodoro_arc_glow")
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.12f,
-        targetValue = if (isRunning && !isPaused) 0.28f else 0.12f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2400, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pomodoro_glow_pulse"
-    )
-
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Main Circular Countdown Gauge (260dp Canvas)
+        // Main Circular Countdown Gauge
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(260.dp)
+            modifier = Modifier.size(268.dp)
         ) {
-
-            // 2. High-Precision Arc Gauge with Rounded Stroke Caps
+            // High-Precision Soft Progress Arc with Rounded Stroke Caps
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(14.dp)
+                    .padding(16.dp)
             ) {
-                val strokeWidthPx = 9.dp.toPx()
+                val strokeWidthPx = 10.dp.toPx()
                 val arcSize = Size(size.width - strokeWidthPx, size.height - strokeWidthPx)
                 val topLeft = Offset(strokeWidthPx / 2f, strokeWidthPx / 2f)
                 val radius = (size.minDimension - strokeWidthPx) / 2f
                 val sweepAngleDeg = animatedProgress * 360f
 
-                // Sleek Track Ring
+                // Track Ring
                 drawCircle(
-                    color = ringColor.copy(alpha = 0.10f),
+                    color = ringColor.copy(alpha = 0.12f),
                     radius = radius,
                     style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
                 )
 
-                // Subtle Glowing Arc Halo
+                // Foreground Progress Arc
                 if (animatedProgress > 0.005f) {
-                    drawArc(
-                        color = ringColor.copy(alpha = if (isRunning && !isPaused) 0.22f else 0.10f),
-                        startAngle = -90f,
-                        sweepAngle = sweepAngleDeg,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = arcSize,
-                        style = Stroke(width = strokeWidthPx * 1.8f, cap = StrokeCap.Round)
-                    )
-
-                    // Crisp Foreground Progress Arc with Sleek Rounded Stroke Cap
                     drawArc(
                         color = ringColor,
                         startAngle = -90f,
@@ -128,7 +104,7 @@ fun PomodoroTimerArc(
                 }
             }
 
-            // Central Minimalist Information Display
+            // Central Information Display
             val mins = timeLeftSeconds / 60
             val secs = timeLeftSeconds % 60
             val timeString = String.format(Locale.US, "%02d:%02d", mins, secs)
@@ -137,13 +113,13 @@ fun PomodoroTimerArc(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Minimalist Countdown Typography (clean tabular monospace digits)
+                // Countdown Digits
                 Text(
                     text = timeString,
                     style = MaterialTheme.typography.displayLarge.copy(
-                        fontSize = 54.sp,
+                        fontSize = 52.sp,
                         fontWeight = FontWeight.Medium,
-                        letterSpacing = (-1.5).sp,
+                        letterSpacing = (-1).sp,
                         fontFeatureSettings = "tnum"
                     ),
                     color = MaterialTheme.colorScheme.onSurface
@@ -154,8 +130,8 @@ fun PomodoroTimerArc(
                 // Modern Capsule Status Badge
                 Surface(
                     shape = CircleShape,
-                    color = ringColor.copy(alpha = 0.10f),
-                    border = BorderStroke(1.dp, ringColor.copy(alpha = 0.20f)),
+                    color = ringColor.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, ringColor.copy(alpha = 0.25f)),
                     modifier = Modifier.padding(horizontal = 4.dp)
                 ) {
                     Row(
@@ -173,7 +149,7 @@ fun PomodoroTimerArc(
                             text = statusLabel,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 0.4.sp,
+                            letterSpacing = 0.3.sp,
                             color = ringColor
                         )
                     }
@@ -181,7 +157,7 @@ fun PomodoroTimerArc(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Cycle Session Progress Dots with Capsule Active Indicator
+                // Cycle Session Progress Capsules
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -193,8 +169,8 @@ fun PomodoroTimerArc(
                         Box(
                             modifier = Modifier
                                 .size(
-                                    width = if (isActive) 12.dp else 6.dp,
-                                    height = 6.dp
+                                    width = if (isActive) 14.dp else 7.dp,
+                                    height = 7.dp
                                 )
                                 .clip(CircleShape)
                                 .background(
@@ -214,12 +190,12 @@ fun PomodoroTimerArc(
 }
 
 /**
- * PomodoroDurationNudgeRow - Reusable row for quick on-the-fly time adjustments.
+ * PomodoroDurationNudgeRow - Quick on-the-fly time adjustments with tactile capsule pills.
  */
 @ValueScore(
     score = 80,
     importance = Importance.HIGH,
-    description = "Clean reusable tactile row for quick minute adjustments during active sessions",
+    description = "Clean tactile row for quick minute adjustments during active sessions",
     category = "Focus"
 )
 @Composable
@@ -254,10 +230,14 @@ fun QuickNudgePill(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
+    val pillBg = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                 else MaterialTheme.colorScheme.surfaceContainerLowest
+
     Surface(
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)),
+        color = pillBg,
+        border = ScholarCardDefaults.border(),
         modifier = modifier.bouncyClick(onClick = onClick)
     ) {
         Box(

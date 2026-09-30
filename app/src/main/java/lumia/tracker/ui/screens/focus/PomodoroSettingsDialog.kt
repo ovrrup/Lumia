@@ -202,8 +202,7 @@ fun PomodoroSettingsDialog(
             // 5. Automation & Logging Preferences Card with Capsule Toggle Pills
             ScholarCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                glassmorphic = true
+                shape = RoundedCornerShape(20.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -420,8 +419,7 @@ private fun DurationSettingCard(
 ) {
     ScholarCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        glassmorphic = true
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(
             modifier = Modifier
