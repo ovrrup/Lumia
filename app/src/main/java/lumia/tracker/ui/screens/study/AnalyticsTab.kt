@@ -983,7 +983,10 @@ fun AnalyticsTab(
 
                         val filteredTestRecords = if (selectedCourseId == -1) allTestRecords else allTestRecords.filter { it.courseId == selectedCourseId }
                         val avgScore = if (filteredTestRecords.isNotEmpty()) {
-                            filteredTestRecords.map { (it.score.toFloat() / it.maxScore.coerceAtLeast(1).toFloat()) * 100f }.average().toInt()
+                            filteredTestRecords.map {
+                                val total = if (it.totalMarks > 0f) it.totalMarks else 1f
+                                (it.marksObtained / total) * 100f
+                            }.average().toInt()
                         } else 0
 
                         Row(
