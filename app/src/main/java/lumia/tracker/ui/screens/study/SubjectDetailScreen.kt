@@ -394,8 +394,7 @@ fun SubjectDetailScreen(
 
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(26.dp),
-                    glassmorphic = true
+                    shape = RoundedCornerShape(26.dp)
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         // Subject Header Row
@@ -460,7 +459,7 @@ fun SubjectDetailScreen(
                         Surface(
                             shape = RoundedCornerShape(20.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                            border = ScholarCardDefaults.glassBorder(accentColor = MaterialTheme.colorScheme.primary),
+                            border = ScholarCardDefaults.border(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
@@ -719,8 +718,7 @@ fun SubjectDetailScreen(
                                     stiffness = Spring.StiffnessMediumLow
                                 )
                             ),
-                        shape = RoundedCornerShape(22.dp),
-                        glassmorphic = true
+                        shape = RoundedCornerShape(22.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             // Chapter Header Row
@@ -1101,8 +1099,7 @@ fun SubjectDetailScreen(
                                         stiffness = Spring.StiffnessMediumLow
                                     )
                                 ),
-                            shape = RoundedCornerShape(22.dp),
-                            glassmorphic = true
+                            shape = RoundedCornerShape(22.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(

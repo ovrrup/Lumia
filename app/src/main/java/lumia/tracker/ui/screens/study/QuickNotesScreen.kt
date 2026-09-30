@@ -159,9 +159,8 @@ fun QuickNotesScreen(navController: NavController) {
                         if (notesList.isNotEmpty()) {
                             GlassCapsule(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
-                                border = ScholarCardDefaults.glassBorder(
-                                    isDark = isDark,
-                                    accentColor = MaterialTheme.colorScheme.primary,
+                                border = ScholarCardDefaults.border(
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                                     width = 0.8.dp
                                 )
                             ) {
@@ -222,12 +221,8 @@ fun QuickNotesScreen(navController: NavController) {
                             val isAllSelected = selectedFilterTag == null
                             Surface(
                                 shape = CircleShape,
-                                color = if (isAllSelected) MaterialTheme.colorScheme.primaryContainer else ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.5f),
-                                border = ScholarCardDefaults.glassBorder(
-                                    isDark = isDark,
-                                    accentColor = if (isAllSelected) MaterialTheme.colorScheme.primary else null,
-                                    width = if (isAllSelected) 1.2.dp else 0.75.dp
-                                ),
+                                color = if (isAllSelected) MaterialTheme.colorScheme.primaryContainer else if (isDark) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerLowest,
+                                border = if (isAllSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.40f)) else ScholarCardDefaults.border(),
                                 modifier = Modifier
                                     .clip(CircleShape)
                                     .bouncyClick { selectedFilterTag = null }
@@ -257,12 +252,8 @@ fun QuickNotesScreen(navController: NavController) {
                             val count = notesList.count { it.tag.equals(tag, ignoreCase = true) }
                             Surface(
                                 shape = CircleShape,
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.5f),
-                                border = ScholarCardDefaults.glassBorder(
-                                    isDark = isDark,
-                                    accentColor = if (isSelected) MaterialTheme.colorScheme.primary else null,
-                                    width = if (isSelected) 1.2.dp else 0.75.dp
-                                ),
+                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else if (isDark) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerLowest,
+                                border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.40f)) else ScholarCardDefaults.border(),
                                 modifier = Modifier
                                     .clip(CircleShape)
                                     .bouncyClick {
@@ -300,9 +291,7 @@ fun QuickNotesScreen(navController: NavController) {
                             .fillMaxWidth()
                             .padding(top = 28.dp),
                         shape = ScholarCardDefaults.shape,
-                        glassmorphic = true,
-                        containerColor = ScholarCardDefaults.glassContainerColor(isDark, alpha = 0.5f),
-                        border = ScholarCardDefaults.glassBorder(isDark)
+                        border = ScholarCardDefaults.border()
                     ) {
                         Column(
                             modifier = Modifier
@@ -344,9 +333,8 @@ fun QuickNotesScreen(navController: NavController) {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
-                                border = ScholarCardDefaults.glassBorder(
-                                    isDark = isDark,
-                                    accentColor = MaterialTheme.colorScheme.primary,
+                                border = ScholarCardDefaults.border(
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                                     width = 0.8.dp
                                 ),
                                 modifier = Modifier
@@ -406,9 +394,7 @@ fun QuickNotesScreen(navController: NavController) {
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = ScholarCardDefaults.shape,
-                    glassmorphic = true,
-                    containerColor = ScholarCardDefaults.glassContainerColor(isDark),
-                    border = ScholarCardDefaults.glassBorder(isDark),
+                    border = ScholarCardDefaults.border(),
                     animateSize = true
                 ) {
                     Column(
@@ -563,12 +549,8 @@ fun QuickNotesScreen(navController: NavController) {
 
                             Surface(
                                 shape = CircleShape,
-                                color = if (isSelected) tagColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
-                                border = ScholarCardDefaults.glassBorder(
-                                    isDark = isDark,
-                                    accentColor = if (isSelected) tagColor else null,
-                                    width = if (isSelected) 1.2.dp else 0.75.dp
-                                ),
+                                color = if (isSelected) tagColor.copy(alpha = 0.2f) else if (isDark) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerLowest,
+                                border = if (isSelected) BorderStroke(1.dp, tagColor.copy(alpha = 0.40f)) else ScholarCardDefaults.border(),
                                 modifier = Modifier
                                     .clip(CircleShape)
                                     .bouncyClick { selectedTag = tag }
@@ -597,13 +579,12 @@ fun QuickNotesScreen(navController: NavController) {
                     }
                 }
 
-                // Decluttered Note Input Field (Glass container, borderless input)
+                // Decluttered Note Input Field (Ambient container, borderless input)
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    glassmorphic = true,
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = if (isDark) 0.5f else 0.8f),
-                    border = ScholarCardDefaults.glassBorder(isDark = isDark, width = 0.8.dp)
+                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border = ScholarCardDefaults.border()
                 ) {
                     Column(
                         modifier = Modifier
@@ -653,12 +634,8 @@ fun QuickNotesScreen(navController: NavController) {
                 // Save Note Capsule Button
                 Surface(
                     shape = CircleShape,
-                    color = if (newNoteText.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
-                    border = ScholarCardDefaults.glassBorder(
-                        isDark = isDark,
-                        accentColor = if (newNoteText.isNotBlank()) MaterialTheme.colorScheme.primary else null,
-                        width = 1.dp
-                    ),
+                    color = if (newNoteText.isNotBlank()) MaterialTheme.colorScheme.primary else if (isDark) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border = ScholarCardDefaults.border(color = if (newNoteText.isNotBlank()) MaterialTheme.colorScheme.primary.copy(alpha = 0.40f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)),
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(CircleShape)
@@ -733,7 +710,7 @@ private fun NoteTagBadge(
         modifier = modifier.clip(CircleShape),
         shape = CircleShape,
         color = tagColor.copy(alpha = if (isDark) 0.16f else 0.12f),
-        border = ScholarCardDefaults.glassBorder(isDark = isDark, accentColor = tagColor, width = 0.8.dp)
+        border = ScholarCardDefaults.border(color = tagColor.copy(alpha = 0.35f), width = 0.8.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),

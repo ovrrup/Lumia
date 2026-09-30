@@ -119,14 +119,12 @@ fun StudyEmptySectionCard(
     icon: ImageVector? = null,
     accentColor: Color = MaterialTheme.colorScheme.primary
 ) {
-    val isDark = isSystemInDarkTheme()
-    val cardBorder = ScholarCardDefaults.glassBorder(isDark, accentColor = accentColor.copy(alpha = 0.25f))
+    val cardBorder = ScholarCardDefaults.border(color = accentColor.copy(alpha = 0.25f))
 
     ScholarCard(
         modifier = modifier.fillMaxWidth(),
         shape = ScholarCardDefaults.compactShape,
-        border = cardBorder,
-        glassmorphic = true
+        border = cardBorder
     ) {
         Column(
             modifier = Modifier

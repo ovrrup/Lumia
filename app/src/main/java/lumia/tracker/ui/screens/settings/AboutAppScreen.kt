@@ -201,8 +201,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(24.dp),
-                glassmorphic = true
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -218,9 +217,9 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                             .size(68.dp),
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.primaryContainer,
-                            border = ScholarCardDefaults.glassBorder(accentColor = MaterialTheme.colorScheme.primary),
-                            shadowElevation = 0.dp
-                        ) {
+                        border = ScholarCardDefaults.border(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                        shadowElevation = 0.dp
+                    ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Rounded.School,
@@ -307,7 +306,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
-                                border = ScholarCardDefaults.glassBorder(),
+                                border = ScholarCardDefaults.border(),
                                 modifier = Modifier.size(50.dp)
                             ) {
                                 BouncyIconButton(
@@ -341,7 +340,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
-                                border = ScholarCardDefaults.glassBorder(),
+                                border = ScholarCardDefaults.border(),
                                 modifier = Modifier.size(50.dp)
                             ) {
                                 BouncyIconButton(
@@ -372,8 +371,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(24.dp),
-                glassmorphic = true
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Column(
                     modifier = Modifier

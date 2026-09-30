@@ -547,9 +547,7 @@ fun CourseDetailScreen(
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(26.dp),
-                    glassmorphic = true,
-                    containerColor = ScholarCardDefaults.glassContainerColor(isDark),
-                    border = ScholarCardDefaults.glassBorder(isDark, accentColor = courseColor)
+                    border = ScholarCardDefaults.border(color = courseColor.copy(alpha = 0.25f))
                 ) {
                     Box(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(20.dp)) {
@@ -677,13 +675,12 @@ fun CourseDetailScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(
-                                        if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f)
-                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                        if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
+                                        else MaterialTheme.colorScheme.surfaceContainerLowest,
                                         RoundedCornerShape(16.dp)
                                     )
                                     .border(
-                                        0.8.dp,
-                                        if (isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.35f),
+                                        ScholarCardDefaults.border(),
                                         RoundedCornerShape(16.dp)
                                     )
                                     .padding(horizontal = 14.dp, vertical = 10.dp),
@@ -912,10 +909,8 @@ fun CourseDetailScreen(
                             ScholarCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(20.dp),
-                                glassmorphic = true,
-                                border = ScholarCardDefaults.glassBorder(
-                                    isDark,
-                                    accentColor = if (completedTopics == totalTopics) Color(0xFF10B981) else courseColor
+                                border = ScholarCardDefaults.border(
+                                    color = (if (completedTopics == totalTopics) Color(0xFF10B981) else courseColor).copy(alpha = 0.25f)
                                 )
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
@@ -985,16 +980,14 @@ fun CourseDetailScreen(
                             ScholarCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                glassmorphic = true,
                                 containerColor = if (topic.isCompleted) {
                                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.20f)
                                 } else {
-                                    if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f)
-                                    else MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+                                    if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
+                                    else MaterialTheme.colorScheme.surfaceContainerLowest
                                 },
-                                border = ScholarCardDefaults.glassBorder(
-                                    isDark = isDark,
-                                    accentColor = if (topic.isCompleted) Color(0xFF10B981).copy(alpha = 0.35f) else null
+                                border = ScholarCardDefaults.border(
+                                    color = if (topic.isCompleted) Color(0xFF10B981).copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
                                 )
                             ) {
                                 Row(
@@ -1102,8 +1095,7 @@ fun CourseDetailScreen(
                         item {
                             ScholarCard(
                                 modifier = Modifier.fillMaxWidth().height(120.dp),
-                                shape = RoundedCornerShape(20.dp),
-                                glassmorphic = true
+                                shape = RoundedCornerShape(20.dp)
                             ) {
                                 Column(
                                     modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -1174,16 +1166,14 @@ fun CourseDetailScreen(
                                         .animateItem()
                                         .fillMaxWidth(),
                                     shape = RoundedCornerShape(16.dp),
-                                    glassmorphic = true,
                                     containerColor = if (task.isCompleted) {
                                         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.20f)
                                     } else {
-                                        if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f)
-                                        else MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+                                        if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
+                                        else MaterialTheme.colorScheme.surfaceContainerLowest
                                     },
-                                    border = ScholarCardDefaults.glassBorder(
-                                        isDark = isDark,
-                                        accentColor = if (task.isCompleted) Color(0xFF10B981).copy(alpha = 0.35f) else null
+                                    border = ScholarCardDefaults.border(
+                                        color = if (task.isCompleted) Color(0xFF10B981).copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
                                     )
                                 ) {
                                     Row(
@@ -1315,8 +1305,7 @@ fun CourseDetailScreen(
                             ScholarCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(22.dp),
-                                glassmorphic = true,
-                                border = ScholarCardDefaults.glassBorder(isDark, accentColor = thresholdColor)
+                                border = ScholarCardDefaults.border(color = thresholdColor.copy(alpha = 0.25f))
                             ) {
                                 Box(modifier = Modifier.fillMaxWidth()) {
                                     Column(modifier = Modifier.padding(18.dp)) {
@@ -1386,13 +1375,12 @@ fun CourseDetailScreen(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .background(
-                                                    if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.45f)
-                                                    else thresholdColor.copy(alpha = 0.06f),
+                                                    if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
+                                                    else MaterialTheme.colorScheme.surfaceContainerLowest,
                                                     RoundedCornerShape(18.dp)
                                                 )
                                                 .border(
-                                                    0.8.dp,
-                                                    thresholdColor.copy(alpha = 0.20f),
+                                                    ScholarCardDefaults.border(color = thresholdColor.copy(alpha = 0.20f)),
                                                     RoundedCornerShape(18.dp)
                                                 )
                                                 .padding(14.dp),
@@ -1834,8 +1822,7 @@ fun CourseDetailScreen(
                         item(key = "assignments_empty") {
                             ScholarCard(
                                 modifier = Modifier.fillMaxWidth().height(120.dp),
-                                shape = RoundedCornerShape(20.dp),
-                                glassmorphic = true
+                                shape = RoundedCornerShape(20.dp)
                             ) {
                                 Column(
                                     modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -1871,8 +1858,8 @@ fun CourseDetailScreen(
                             ReorderableItem(reorderableState, key = "assignment_${assignment.id}") { isDragging ->
                                 val cardColor by animateColorAsState(
                                     if (assignment.isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.20f)
-                                    else if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f)
-                                    else MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+                                    else if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
+                                    else MaterialTheme.colorScheme.surfaceContainerLowest
                                 )
                                 ScholarCard(
                                     modifier = Modifier
@@ -1880,11 +1867,9 @@ fun CourseDetailScreen(
                                         .animateItem()
                                         .fillMaxWidth(),
                                     shape = RoundedCornerShape(18.dp),
-                                    glassmorphic = true,
                                     containerColor = cardColor,
-                                    border = ScholarCardDefaults.glassBorder(
-                                        isDark = isDark,
-                                        accentColor = if (assignment.isCompleted) Color(0xFF10B981).copy(alpha = 0.35f) else null
+                                    border = ScholarCardDefaults.border(
+                                        color = if (assignment.isCompleted) Color(0xFF10B981).copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
                                     )
                                 ) {
                                     Row(

@@ -88,8 +88,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(20.dp),
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.25f),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f)),
-                glassmorphic = true
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f))
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
@@ -158,8 +157,7 @@ private fun BetaFeatureToggleCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(24.dp),
-        glassmorphic = true
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier

@@ -288,7 +288,7 @@ fun PomodoroScreen(
                             val presetBg = if (isSelected) {
                                 animatedRingColor.copy(alpha = 0.12f)
                             } else {
-                                if (isDark) MaterialTheme.colorScheme.surfaceContainer else MaterialTheme.colorScheme.surfaceContainerLowest
+                                if (isDark) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerLowest
                             }
                             val presetBorder = if (isSelected) {
                                 BorderStroke(1.dp, animatedRingColor.copy(alpha = 0.40f))
@@ -520,7 +520,7 @@ fun FluidPillModeSelector(
         label = "pill_active_color"
     )
 
-    val containerBg = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+    val containerBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                       else MaterialTheme.colorScheme.surfaceContainerLowest
 
     Surface(

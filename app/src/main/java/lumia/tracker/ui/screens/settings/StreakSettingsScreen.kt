@@ -125,8 +125,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(26.dp),
-                    glassmorphic = true
+                    shape = RoundedCornerShape(26.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -295,8 +294,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    glassmorphic = true
+                    shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -430,8 +428,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    glassmorphic = true
+                    shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -565,8 +562,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    glassmorphic = true
+                    shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -718,8 +714,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    glassmorphic = true
+                    shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -854,8 +849,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    glassmorphic = true
+                    shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),

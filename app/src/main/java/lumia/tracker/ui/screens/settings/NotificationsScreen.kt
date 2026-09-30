@@ -95,8 +95,7 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(24.dp),
-                glassmorphic = true
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
@@ -224,8 +223,7 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(22.dp),
-                glassmorphic = true
+                shape = RoundedCornerShape(22.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(14.dp),
@@ -327,8 +325,7 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(22.dp),
-                glassmorphic = true
+                shape = RoundedCornerShape(22.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(14.dp),
@@ -429,8 +426,7 @@ fun NotificationsScreen(navController: NavController, viewModel: ScholarViewMode
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(22.dp),
-                glassmorphic = true
+                shape = RoundedCornerShape(22.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(14.dp),

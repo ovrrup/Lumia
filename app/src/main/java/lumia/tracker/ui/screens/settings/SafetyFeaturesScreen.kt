@@ -128,8 +128,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(24.dp),
-                glassmorphic = true
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -279,8 +278,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(24.dp),
-                glassmorphic = true
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -485,8 +483,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(24.dp),
-                glassmorphic = true
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Column(
                     modifier = Modifier

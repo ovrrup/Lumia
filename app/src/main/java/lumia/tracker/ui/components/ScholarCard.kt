@@ -73,7 +73,7 @@ object ScholarCardDefaults {
         alpha: Float = 1.0f
     ): Color {
         return if (isDark) {
-            MaterialTheme.colorScheme.surfaceContainer
+            MaterialTheme.colorScheme.surfaceContainerLow
         } else {
             MaterialTheme.colorScheme.surfaceContainerLowest
         }
@@ -107,7 +107,7 @@ fun ScholarCard(
 ) {
     val isDark = isSystemInDarkTheme()
     val targetColor = containerColor ?: if (isDark) {
-        MaterialTheme.colorScheme.surfaceContainer
+        MaterialTheme.colorScheme.surfaceContainerLow
     } else {
         MaterialTheme.colorScheme.surfaceContainerLowest
     }

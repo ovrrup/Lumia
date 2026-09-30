@@ -67,7 +67,7 @@ fun MetricHeroCard(
     ScholarCard(
         modifier = modifier,
         shape = RoundedCornerShape(22.dp),
-        containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+        containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                         else MaterialTheme.colorScheme.surfaceContainerLowest,
         border = ScholarCardDefaults.border()
     ) {
@@ -148,7 +148,7 @@ fun PeriodSelectorCapsule(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = CircleShape,
-        color = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+        color = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                 else MaterialTheme.colorScheme.surfaceContainerLowest,
         border = ScholarCardDefaults.border()
     ) {
@@ -375,7 +375,7 @@ fun AnalyticsTab(
             ScholarCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(26.dp),
-                containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                 else MaterialTheme.colorScheme.surfaceContainerLowest,
                 border = ScholarCardDefaults.border()
             ) {
@@ -605,7 +605,7 @@ fun AnalyticsTab(
             ScholarCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                 else MaterialTheme.colorScheme.surfaceContainerLowest,
                 border = ScholarCardDefaults.border()
             ) {
@@ -735,7 +735,7 @@ fun AnalyticsTab(
             ScholarCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                 else MaterialTheme.colorScheme.surfaceContainerLowest,
                 border = ScholarCardDefaults.border()
             ) {
@@ -819,7 +819,7 @@ fun AnalyticsTab(
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                     else MaterialTheme.colorScheme.surfaceContainerLowest,
                     border = ScholarCardDefaults.border()
                 ) {
@@ -915,7 +915,7 @@ fun AnalyticsTab(
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                     else MaterialTheme.colorScheme.surfaceContainerLowest,
                     border = ScholarCardDefaults.border()
                 ) {
@@ -1031,7 +1031,7 @@ fun AnalyticsTab(
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                     else MaterialTheme.colorScheme.surfaceContainerLowest,
                     border = ScholarCardDefaults.border()
                 ) {

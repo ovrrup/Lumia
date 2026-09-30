@@ -115,13 +115,12 @@ fun StreakWidget(
             .clip(CircleShape)
             .background(
                 if (isCompleteToday) color.copy(alpha = if (isDark) 0.18f else 0.14f)
-                else if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.70f)
-                else MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.85f)
+                else if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
+                else MaterialTheme.colorScheme.surfaceContainerLowest
             )
             .border(
-                ScholarCardDefaults.glassBorder(
-                    isDark = isDark,
-                    accentColor = if (isCompleteToday) color else null
+                ScholarCardDefaults.border(
+                    color = if (isCompleteToday) color.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
                 ),
                 CircleShape
             )

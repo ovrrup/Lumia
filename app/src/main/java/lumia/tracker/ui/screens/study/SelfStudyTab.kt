@@ -168,7 +168,7 @@ fun SelfStudyTab(
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(26.dp),
-                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                     else MaterialTheme.colorScheme.surfaceContainerLowest,
                     border = ScholarCardDefaults.border()
                 ) {
@@ -342,7 +342,7 @@ fun SelfStudyTab(
 
             // 2. Capsule Segmented Filter Tab Bar (Matches AcademicsScreen)
             item(key = "filter_tabs_bar") {
-                val tabBg = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                val tabBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                             else MaterialTheme.colorScheme.surfaceContainerLowest
 
                 Surface(
@@ -398,7 +398,7 @@ fun SelfStudyTab(
             item(key = "quick_add_task_bar") {
                 var quickTaskTitle by remember { mutableStateOf("") }
                 val focusManager = LocalFocusManager.current
-                val inputBg = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                val inputBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                               else MaterialTheme.colorScheme.surfaceContainerLowest
 
                 Surface(
@@ -504,7 +504,7 @@ fun SelfStudyTab(
                                 else -> MaterialTheme.colorScheme.primary
                             }
                             val chipBg = if (isSelected) activeColor.copy(alpha = 0.15f)
-                                         else if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                                         else if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                          else MaterialTheme.colorScheme.surfaceContainerLowest
 
                             Surface(
@@ -547,7 +547,7 @@ fun SelfStudyTab(
                         Box {
                             Surface(
                                 shape = CircleShape,
-                                color = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                                color = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                         else MaterialTheme.colorScheme.surfaceContainerLowest,
                                 border = ScholarCardDefaults.border(),
                                 modifier = Modifier
@@ -610,7 +610,7 @@ fun SelfStudyTab(
                             Surface(
                                 shape = CircleShape,
                                 color = if (isAllSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.50f)
-                                        else if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                                        else if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                         else MaterialTheme.colorScheme.surfaceContainerLowest,
                                 border = if (isAllSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.40f))
                                          else ScholarCardDefaults.border(),
@@ -634,7 +634,7 @@ fun SelfStudyTab(
                             Surface(
                                 shape = CircleShape,
                                 color = if (isSelected) tagBg.copy(alpha = 0.35f)
-                                        else if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                                        else if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                         else MaterialTheme.colorScheme.surfaceContainerLowest,
                                 border = if (isSelected) BorderStroke(1.dp, tagText.copy(alpha = 0.45f))
                                          else ScholarCardDefaults.border(),
@@ -672,7 +672,7 @@ fun SelfStudyTab(
                 item(key = "empty_filtered_tasks") {
                     ScholarCard(
                         shape = RoundedCornerShape(24.dp),
-                        containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                        containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                                         else MaterialTheme.colorScheme.surfaceContainerLowest,
                         border = ScholarCardDefaults.border(),
                         modifier = Modifier

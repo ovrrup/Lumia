@@ -240,7 +240,7 @@ private fun BoxScope.FloatingDashboardBottomBar(
             )
             .windowInsetsPadding(WindowInsets.navigationBars),
         shape = dockShape,
-        color = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+        color = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                 else MaterialTheme.colorScheme.surfaceContainerLowest,
         border = ScholarCardDefaults.border(),
         shadowElevation = 0.dp,

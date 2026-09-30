@@ -499,7 +499,7 @@ fun StudyDeleteConfirmationDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(24.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -744,7 +744,7 @@ fun AddEditAssignmentDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         title = {
             StudyDialogHeader(
                 icon = if (isEdit) Icons.Rounded.EditNote else Icons.AutoMirrored.Rounded.LibraryBooks,
@@ -998,7 +998,7 @@ fun AddEditNoteDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         title = {
             StudyDialogHeader(
                 icon = if (isEdit) Icons.Rounded.EditNote else Icons.Rounded.Notes,
@@ -1083,7 +1083,7 @@ fun AiStudyGuideExportDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         title = {
             StudyDialogHeader(
                 icon = Icons.Rounded.AutoAwesome,

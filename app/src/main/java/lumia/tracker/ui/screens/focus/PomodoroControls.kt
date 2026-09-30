@@ -261,7 +261,7 @@ fun PomodoroControls(
                 Surface(
                     shape = CircleShape,
                     color = if (isDark) {
-                        MaterialTheme.colorScheme.surfaceContainer
+                        MaterialTheme.colorScheme.surfaceContainerLow
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerLowest
                     },
@@ -494,7 +494,7 @@ private fun UtilityFilterChip(
     Surface(
         shape = CircleShape,
         color = if (isDark) {
-            MaterialTheme.colorScheme.surfaceContainer
+            MaterialTheme.colorScheme.surfaceContainerLow
         } else {
             MaterialTheme.colorScheme.surfaceContainerLowest
         },
@@ -548,7 +548,7 @@ private fun EngineSelectionCard(
     val containerBg = if (isSelected) {
         MaterialTheme.colorScheme.primaryContainer
     } else if (isDark) {
-        MaterialTheme.colorScheme.surfaceContainer
+        MaterialTheme.colorScheme.surfaceContainerLow
     } else {
         MaterialTheme.colorScheme.surfaceContainerLowest
     }

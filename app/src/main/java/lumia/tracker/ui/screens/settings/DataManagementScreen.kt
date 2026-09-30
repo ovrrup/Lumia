@@ -135,8 +135,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = ScholarCardDefaults.shape,
-                glassmorphic = true
+                shape = ScholarCardDefaults.shape
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),

@@ -75,7 +75,7 @@ fun DashboardTopFloatingPills(
         verticalAlignment = Alignment.CenterVertically
     ) {
         val isDark = isSystemInDarkTheme()
-        val pillBg = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+        val pillBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                      else MaterialTheme.colorScheme.surfaceContainerLowest
         val pillBorder = ScholarCardDefaults.border()
 
@@ -209,7 +209,7 @@ fun ScholarFocusPill(
         targetValue = if (isRunning) {
             MaterialTheme.colorScheme.primary
         } else {
-            MaterialTheme.colorScheme.surfaceContainer
+            MaterialTheme.colorScheme.surfaceContainerLow
         },
         animationSpec = tween(300, easing = FastOutSlowInEasing),
         label = "focus_pill_color"
@@ -327,7 +327,7 @@ fun ScholarProfileAvatar(
         modifier = modifier
             .size(42.dp)
             .background(
-                if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                 else MaterialTheme.colorScheme.surfaceContainerLowest,
                 CircleShape
             )

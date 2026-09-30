@@ -54,9 +54,12 @@ fun MetricSummaryTile(
     border: BorderStroke? = null,
     onClick: (() -> Unit)? = null
 ) {
-    val isDark = isSystemInDarkTheme()
-    val resolvedContainerColor = containerColor ?: ScholarCardDefaults.glassContainerColor(isDark, alpha = if (isDark) 0.50f else 0.65f)
-    val resolvedBorder = border ?: ScholarCardDefaults.glassBorder(isDark, accentColor = valueColor)
+    val resolvedContainerColor = containerColor ?: if (isDark) {
+        MaterialTheme.colorScheme.surfaceContainerLow
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLowest
+    }
+    val resolvedBorder = border ?: ScholarCardDefaults.border(color = valueColor.copy(alpha = 0.25f))
 
     val tileModifier = if (onClick != null) {
         modifier
@@ -176,15 +179,13 @@ fun ChartContainerCard(
     headerTrailing: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
-    val resolvedBorder = border ?: ScholarCardDefaults.glassBorder(isDark)
+    val resolvedBorder = border ?: ScholarCardDefaults.border()
 
     ScholarCard(
         modifier = modifier.fillMaxWidth(),
         shape = shape,
         containerColor = containerColor,
-        border = resolvedBorder,
-        glassmorphic = true
+        border = resolvedBorder
     ) {
         Column(
             modifier = Modifier

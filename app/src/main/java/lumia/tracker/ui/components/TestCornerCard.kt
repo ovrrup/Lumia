@@ -56,15 +56,11 @@ fun TestCornerCard(
     val isDark = isSystemInDarkTheme()
 
         ScholarCard(
-        modifier = Modifier.fillMaxWidth().animateContentSize(),
-        shape = RoundedCornerShape(32.dp),
-        containerColor = ScholarCardDefaults.glassContainerColor(isDark).copy(
-            red = ScholarCardDefaults.glassContainerColor(isDark).red * 0.9f + MaterialTheme.colorScheme.tertiaryContainer.red * 0.1f,
-            green = ScholarCardDefaults.glassContainerColor(isDark).green * 0.9f + MaterialTheme.colorScheme.tertiaryContainer.green * 0.1f,
-            blue = ScholarCardDefaults.glassContainerColor(isDark).blue * 0.9f + MaterialTheme.colorScheme.tertiaryContainer.blue * 0.1f
-        ),
-        glassmorphic = true
-    ) {
+            modifier = Modifier.fillMaxWidth().animateContentSize(),
+            shape = RoundedCornerShape(32.dp),
+            containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerLowest,
+            border = ScholarCardDefaults.border(color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.25f))
+        ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
@@ -200,11 +196,10 @@ fun TestCornerCard(
                     items(sortedRecords.reversed()) { test ->
                         var showEditDialog by remember { mutableStateOf(false) }
                             ScholarCard(
-                            modifier = Modifier.width(200.dp).bouncyClick { showEditDialog = true },
-                            shape = ScholarCardDefaults.shape,
-                            containerColor = ScholarCardDefaults.glassContainerColor(isDark),
-                            glassmorphic = true
-                        ) {
+                                modifier = Modifier.width(200.dp).bouncyClick { showEditDialog = true },
+                                shape = ScholarCardDefaults.shape,
+                                border = ScholarCardDefaults.border()
+                            ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(test.title, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -340,11 +335,11 @@ fun AddEditTestRecordDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.border(
-            border = ScholarCardDefaults.glassBorder(isDark),
+            border = ScholarCardDefaults.border(),
             shape = dialogShape
         ),
         shape = dialogShape,
-        containerColor = ScholarCardDefaults.glassContainerColor(isDark, alpha = if (isDark) 0.88f else 0.94f),
+        containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 0.dp,
         title = { Text(if (testToEdit == null) "Add Test Record" else "Edit Test Record") },
         text = {

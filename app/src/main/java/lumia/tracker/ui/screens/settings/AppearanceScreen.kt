@@ -118,8 +118,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 4.dp),
-                shape = RoundedCornerShape(22.dp),
-                glassmorphic = true
+                shape = RoundedCornerShape(22.dp)
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     // Ambient backlight glowing aura

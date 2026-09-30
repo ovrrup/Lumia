@@ -146,7 +146,7 @@ fun PomodoroCourseSelector(
 
         // Active Context Card Trigger
         val triggerBg = if (isLinked) activeColor.copy(alpha = 0.08f)
-                        else if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                        else if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                         else MaterialTheme.colorScheme.surfaceContainerLowest
         val triggerBorder = if (isLinked) BorderStroke(1.dp, activeColor.copy(alpha = 0.35f))
                             else ScholarCardDefaults.border()
@@ -261,7 +261,7 @@ fun PomodoroCourseSelector(
                     val generalContainerColor = if (isGeneralSelected) {
                         MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                     } else if (isDark) {
-                        MaterialTheme.colorScheme.surfaceContainer
+                        MaterialTheme.colorScheme.surfaceContainerLow
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerLowest
                     }
@@ -314,7 +314,7 @@ fun PomodoroCourseSelector(
                     val courseContainerColor = if (isSelected) {
                         courseColor.copy(alpha = 0.12f)
                     } else if (isDark) {
-                        MaterialTheme.colorScheme.surfaceContainer
+                        MaterialTheme.colorScheme.surfaceContainerLow
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerLowest
                     }
@@ -370,7 +370,7 @@ fun PomodoroCourseSelector(
                     val subjectContainerColor = if (isSelected) {
                         subjectColor.copy(alpha = 0.12f)
                     } else if (isDark) {
-                        MaterialTheme.colorScheme.surfaceContainer
+                        MaterialTheme.colorScheme.surfaceContainerLow
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerLowest
                     }
@@ -717,7 +717,7 @@ private fun ContextSelectionRow(
     val rowContainerColor = if (isSelected) {
         tintColor.copy(alpha = 0.12f)
     } else if (isDark) {
-        MaterialTheme.colorScheme.surfaceContainer
+        MaterialTheme.colorScheme.surfaceContainerLow
     } else {
         MaterialTheme.colorScheme.surfaceContainerLowest
     }

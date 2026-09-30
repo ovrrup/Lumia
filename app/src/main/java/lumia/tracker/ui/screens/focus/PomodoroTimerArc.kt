@@ -231,7 +231,7 @@ fun QuickNudgePill(
     modifier: Modifier = Modifier
 ) {
     val isDark = isSystemInDarkTheme()
-    val pillBg = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+    val pillBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                  else MaterialTheme.colorScheme.surfaceContainerLowest
 
     Surface(
