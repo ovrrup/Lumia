@@ -4,7 +4,6 @@ import android.text.format.DateFormat
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,28 +21,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import lumia.tracker.model.*
-import lumia.tracker.ui.components.GlassCapsule
 import lumia.tracker.ui.components.ScholarCard
 import lumia.tracker.ui.components.ScholarCardDefaults
+import lumia.tracker.ui.meta.Importance
+import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.study.components.StudyCapsuleFilterChip
 import lumia.tracker.viewmodel.ScholarViewModel
 import java.util.*
@@ -58,48 +51,8 @@ enum class AnalyticsPeriod(val label: String, val icon: ImageVector) {
 }
 
 /**
- * Frosted specular gradient border providing a top-lit glass refraction look.
- */
-@Composable
-fun frostedSpecularBorder(
-    accentColor: Color? = null,
-    isDark: Boolean = isSystemInDarkTheme(),
-    width: Dp = 1.dp
-): BorderStroke {
-    val color = accentColor?.copy(alpha = if (isDark) 0.35f else 0.25f)
-        ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.20f else 0.15f)
-    return BorderStroke(width = width, color = color)
-}
-
-/**
- * Organic blur aura drawn behind containers and charts to give depth and luminous refraction.
- */
-fun Modifier.blurAura(
-    color: Color,
-    alpha: Float = 0.15f,
-    radiusMultiplier: Float = 0.70f,
-    centerOffset: Offset = Offset(0.85f, 0.25f)
-): Modifier = this.drawBehind {
-    if (size.width <= 1f || size.height <= 1f) return@drawBehind
-    val cx = size.width * centerOffset.x
-    val cy = size.height * centerOffset.y
-    val r = maxOf(1f, size.width * radiusMultiplier)
-    try {
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(color.copy(alpha = alpha), Color.Transparent),
-                center = Offset(cx, cy),
-                radius = r
-            ),
-            center = Offset(cx, cy),
-            radius = r
-        )
-    } catch (_: Exception) {}
-}
-
-/**
- * Modernized glassmorphic analytical hero card with frosted specular borders,
- * glowing icon container, and subtle blur aura.
+ * Modernized soft ambient analytical metric hero card with rounded container,
+ * glowing icon pill, and clear typography.
  */
 @Composable
 fun MetricHeroCard(
@@ -112,10 +65,11 @@ fun MetricHeroCard(
 ) {
     val isDark = isSystemInDarkTheme()
     ScholarCard(
-        modifier = modifier
-            .blurAura(color = color, alpha = if (isDark) 0.14f else 0.09f),
+        modifier = modifier,
         shape = RoundedCornerShape(22.dp),
-        border = frostedSpecularBorder(accentColor = color, isDark = isDark)
+        containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                        else MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = ScholarCardDefaults.border()
     ) {
         Column(
             modifier = Modifier
@@ -130,27 +84,21 @@ fun MetricHeroCard(
                 Box(
                     modifier = Modifier
                         .size(38.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(color.copy(alpha = 0.14f))
-                        .border(
-                            1.dp,
-                            color.copy(alpha = 0.25f),
-                            RoundedCornerShape(12.dp)
-                        ),
+                        .clip(CircleShape)
+                        .background(color.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         tint = color,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                 }
                 if (badge != null) {
                     Surface(
                         shape = CircleShape,
-                        color = color.copy(alpha = 0.12f),
-                        border = BorderStroke(0.5.dp, color.copy(alpha = 0.30f))
+                        color = color.copy(alpha = 0.12f)
                     ) {
                         Text(
                             text = badge,
@@ -166,8 +114,8 @@ fun MetricHeroCard(
             Spacer(modifier = Modifier.height(14.dp))
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Black,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -175,8 +123,7 @@ fun MetricHeroCard(
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Medium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -187,7 +134,7 @@ fun MetricHeroCard(
 
 /**
  * Capsule Period Selector Pills (Daily / Weekly / Monthly).
- * Features glassmorphic frosted surface, tactile haptics, and specular outline.
+ * Features clean CircleShape capsule container, tactile haptics, and soft indicator.
  */
 @Composable
 fun PeriodSelectorCapsule(
@@ -201,9 +148,9 @@ fun PeriodSelectorCapsule(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = CircleShape,
-        color = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.50f)
-               else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f),
-        border = frostedSpecularBorder(isDark = isDark, width = 1.dp)
+        color = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                else MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = ScholarCardDefaults.border()
     ) {
         Row(
             modifier = Modifier
@@ -211,10 +158,10 @@ fun PeriodSelectorCapsule(
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            AnalyticsPeriod.values().forEach { period ->
+            AnalyticsPeriod.entries.forEach { period ->
                 val isSelected = period == selectedPeriod
                 val animatedBg by animateColorAsState(
-                    targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                    targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
                                   else Color.Transparent,
                     animationSpec = tween(durationMillis = 220),
                     label = "period_bg_${period.name}"
@@ -231,20 +178,6 @@ fun PeriodSelectorCapsule(
                         .weight(1f)
                         .clip(CircleShape)
                         .background(animatedBg)
-                        .then(
-                            if (isSelected) {
-                                Modifier.border(
-                                    width = 1.dp,
-                                    brush = Brush.verticalGradient(
-                                        listOf(
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                        )
-                                    ),
-                                    shape = CircleShape
-                                )
-                            } else Modifier
-                        )
                         .clickable {
                             if (!isSelected) {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -277,6 +210,16 @@ fun PeriodSelectorCapsule(
     }
 }
 
+/**
+ * AnalyticsTab - Reimagined Progress & Stats Hub with Soft Ambient Aesthetics,
+ * Study Pulse Hero, 2x2 Bento Metric Grid, and Decluttered Activity Charts.
+ */
+@ValueScore(
+    score = 96,
+    importance = Importance.CRITICAL,
+    description = "Reimagined ambient analytics and progress workspace with study pulse hero, bento metric grid, and focus activity charts",
+    category = "Study"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsTab(
@@ -289,19 +232,16 @@ fun AnalyticsTab(
     val actionLogs by viewModel.actionLogs.collectAsStateWithLifecycle()
     val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
     val allTestRecords by viewModel.allTestRecords.collectAsStateWithLifecycle()
-    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
-    val topics by viewModel.allTopics.collectAsStateWithLifecycle()
     val allAttendance by viewModel.allAttendanceRecords.collectAsStateWithLifecycle()
 
     val streakLongest by viewModel.streakLongest.collectAsStateWithLifecycle()
     val streakCurrent by viewModel.streakCurrent.collectAsStateWithLifecycle()
-    val streakTotalComplete by viewModel.streakTotalComplete.collectAsStateWithLifecycle()
-    val streakPercentage by viewModel.streakPercentage.collectAsStateWithLifecycle()
-    val isCompleteToday by viewModel.streakIsCompleteToday.collectAsStateWithLifecycle()
     val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
 
     var selectedPeriod by remember { mutableStateOf(AnalyticsPeriod.WEEKLY) }
     var selectedCourseId by remember { mutableStateOf(-1) }
+
+    val isDark = isSystemInDarkTheme()
 
     // Date boundaries
     val now = remember { System.currentTimeMillis() }
@@ -346,11 +286,7 @@ fun AnalyticsTab(
     }
 
     val periodTasksDone = remember(assignments, selectedPeriod) {
-        when (selectedPeriod) {
-            AnalyticsPeriod.DAILY -> assignments.count { it.isCompleted }
-            AnalyticsPeriod.WEEKLY -> assignments.count { it.isCompleted }
-            AnalyticsPeriod.MONTHLY -> assignments.count { it.isCompleted }
-        }
+        assignments.count { it.isCompleted }
     }
 
     val totalAssignments = assignments.size
@@ -414,7 +350,7 @@ fun AnalyticsTab(
         ),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Capsule Period Selector Pills
+        // 1. Period Selector Capsule Bar
         item(key = "period_selector_capsule") {
             PeriodSelectorCapsule(
                 selectedPeriod = selectedPeriod,
@@ -422,7 +358,190 @@ fun AnalyticsTab(
             )
         }
 
-        // 2x2 Glassmorphic Metric Hero Cards with Frosted Specular Borders
+        // 2. Ambient Study Pulse Hero Card
+        item(key = "study_pulse_hero") {
+            val periodGoalMins = when (selectedPeriod) {
+                AnalyticsPeriod.DAILY -> 120
+                AnalyticsPeriod.WEEKLY -> 600
+                AnalyticsPeriod.MONTHLY -> 2400
+            }
+            val goalProgress = (periodFocusMins.toFloat() / periodGoalMins.toFloat()).coerceIn(0f, 1f)
+            val animatedGoalProgress by animateFloatAsState(
+                targetValue = goalProgress,
+                animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
+                label = "goalProgressAnim"
+            )
+
+            ScholarCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(26.dp),
+                containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                                else MaterialTheme.colorScheme.surfaceContainerLowest,
+                border = ScholarCardDefaults.border()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Insights,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "Study Pulse",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = periodFocusFormatted,
+                                style = MaterialTheme.typography.displaySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "Focus time in this period",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        // Circular Target Ring
+                        Box(
+                            modifier = Modifier.size(72.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                progress = { 1f },
+                                modifier = Modifier.fillMaxSize(),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                strokeWidth = 7.dp,
+                                trackColor = Color.Transparent
+                            )
+                            CircularProgressIndicator(
+                                progress = { animatedGoalProgress },
+                                modifier = Modifier.fillMaxSize(),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 7.dp,
+                                trackColor = Color.Transparent
+                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "${(animatedGoalProgress * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Goal",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Key Summary Stats Strip
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Rounded.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = "${pomodoroSessions.size} Sessions",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Rounded.LocalFireDepartment, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = "$streakCurrent Days",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+                        }
+
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = "$periodTasksDone Done",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. 2x2 Soft Bento Metric Grid
         item(key = "summary_metrics_grid") {
             val periodBadgeText = when (selectedPeriod) {
                 AnalyticsPeriod.DAILY -> "Today"
@@ -462,7 +581,7 @@ fun AnalyticsTab(
                         value = "$assignmentRate%",
                         icon = Icons.Rounded.AssignmentTurnedIn,
                         color = MaterialTheme.colorScheme.secondary,
-                        badge = if (assignmentRate >= 75) "Optimal" else "Progress",
+                        badge = if (assignmentRate >= 75) "Optimal" else "In Progress",
                         modifier = Modifier.weight(1f)
                     )
                     MetricHeroCard(
@@ -477,19 +596,18 @@ fun AnalyticsTab(
             }
         }
 
-        // Enhanced Focus Activity Bar Chart with Specular Glass & Blur Aura
+        // 4. Ambient Focus Activity Bar Chart
         item(key = "focus_activity_chart") {
-            val isDark = isSystemInDarkTheme()
             val weeklyTotalMins = last7DaysData.sumOf { it.second }
             val weeklyFormatted = if (weeklyTotalMins >= 60) "${weeklyTotalMins / 60}h ${weeklyTotalMins % 60}m" else "${weeklyTotalMins}m"
             val primaryColor = MaterialTheme.colorScheme.primary
 
             ScholarCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .blurAura(color = primaryColor, alpha = if (isDark) 0.14f else 0.08f),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                border = frostedSpecularBorder(accentColor = primaryColor, isDark = isDark)
+                containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                                else MaterialTheme.colorScheme.surfaceContainerLowest,
+                border = ScholarCardDefaults.border()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Row(
@@ -504,7 +622,7 @@ fun AnalyticsTab(
                             Box(
                                 modifier = Modifier
                                     .size(34.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(CircleShape)
                                     .background(primaryColor.copy(alpha = 0.14f)),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -516,18 +634,21 @@ fun AnalyticsTab(
                                 )
                             }
                             Text(
-                                text = "Focus Activity",
+                                text = "Daily Focus",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
-                        GlassCapsule {
+                        Surface(
+                            shape = CircleShape,
+                            color = primaryColor.copy(alpha = 0.12f)
+                        ) {
                             Text(
                                 text = weeklyFormatted,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Black,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
                                 color = primaryColor,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
@@ -541,7 +662,7 @@ fun AnalyticsTab(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp),
+                            .height(130.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.Bottom
                     ) {
@@ -563,7 +684,7 @@ fun AnalyticsTab(
                                         text = "${mins}m",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontSize = 10.sp,
-                                        fontWeight = if (isToday) FontWeight.Black else FontWeight.SemiBold,
+                                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
                                         color = if (isToday) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -575,33 +696,11 @@ fun AnalyticsTab(
                                     modifier = Modifier
                                         .width(22.dp)
                                         .fillMaxHeight(animatedHeightFrac)
-                                        .clip(RoundedCornerShape(11.dp))
+                                        .clip(CircleShape)
                                         .background(
-                                            if (isToday) {
-                                                Brush.verticalGradient(
-                                                    listOf(primaryColor, primaryColor.copy(alpha = 0.70f))
-                                                )
-                                            } else if (mins > 0) {
-                                                Brush.verticalGradient(
-                                                    listOf(primaryColor.copy(alpha = 0.55f), primaryColor.copy(alpha = 0.25f))
-                                                )
-                                            } else {
-                                                Brush.verticalGradient(
-                                                    listOf(
-                                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                                                    )
-                                                )
-                                            }
-                                        )
-                                        .then(
-                                            if (isToday) {
-                                                Modifier.border(
-                                                    1.dp,
-                                                    Color.White.copy(alpha = if (isDark) 0.35f else 0.70f),
-                                                    RoundedCornerShape(11.dp)
-                                                )
-                                            } else Modifier
+                                            if (isToday) primaryColor
+                                            else if (mins > 0) primaryColor.copy(alpha = 0.40f)
+                                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.50f)
                                         )
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -618,9 +717,8 @@ fun AnalyticsTab(
             }
         }
 
-        // Enhanced Study Streak Chart with Warm Blur Aura & Milestone Visualizer
+        // 5. Study Streak & Consistency Card
         item(key = "streaks_analytics_chart") {
-            val isDark = isSystemInDarkTheme()
             val streakColor = Color(0xFFFF9500)
             val nextMilestone = remember(streakCurrent) {
                 when {
@@ -635,11 +733,11 @@ fun AnalyticsTab(
             val milestoneProgress = (streakCurrent.toFloat() / nextMilestone).coerceIn(0f, 1f)
 
             ScholarCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .blurAura(color = streakColor, alpha = if (isDark) 0.16f else 0.10f),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                border = frostedSpecularBorder(accentColor = streakColor, isDark = isDark)
+                containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                                else MaterialTheme.colorScheme.surfaceContainerLowest,
+                border = ScholarCardDefaults.border()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Row(
@@ -654,386 +752,76 @@ fun AnalyticsTab(
                             Box(
                                 modifier = Modifier
                                     .size(34.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(streakColor.copy(alpha = 0.16f)),
+                                    .clip(CircleShape)
+                                    .background(streakColor.copy(alpha = 0.14f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Whatshot,
+                                    imageVector = Icons.Rounded.LocalFireDepartment,
                                     contentDescription = null,
                                     tint = streakColor,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(19.dp)
                                 )
                             }
                             Text(
-                                text = "Study Streaks",
+                                text = "Study Streak",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
-                        GlassCapsule {
-                            Text(
-                                text = if (isCompleteToday) "Active Today" else "Needs Activity",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isCompleteToday) Color(0xFF34C759) else streakColor,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    // 7-Day Visual Streak Timeline Nodes
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        last7DaysData.forEach { (day, mins, isToday) ->
-                            val isDayDone = mins > 0
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            if (isDayDone) streakColor.copy(alpha = 0.20f)
-                                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f)
-                                        )
-                                        .border(
-                                            width = if (isToday) 1.5.dp else 1.dp,
-                                            brush = if (isDayDone || isToday) {
-                                                Brush.verticalGradient(
-                                                    listOf(streakColor.copy(alpha = 0.8f), streakColor.copy(alpha = 0.2f))
-                                                )
-                                            } else {
-                                                Brush.verticalGradient(
-                                                    listOf(Color.White.copy(alpha = 0.15f), Color.Transparent)
-                                                )
-                                            },
-                                            shape = CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (isDayDone) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Whatshot,
-                                            contentDescription = null,
-                                            tint = streakColor,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    } else {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(6.dp)
-                                                .clip(CircleShape)
-                                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
-                                        )
-                                    }
-                                }
-                                Text(
-                                    text = day,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isToday) streakColor else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    // Milestone Progress Bar with Ambient Glow
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            shape = CircleShape,
+                            color = streakColor.copy(alpha = 0.12f)
                         ) {
                             Text(
-                                text = "Next Goal: $nextMilestone Days",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "$streakCurrent / $nextMilestone",
+                                text = "$streakCurrent Days",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = streakColor
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.50f))
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(milestoneProgress)
-                                    .fillMaxHeight()
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(
-                                        Brush.horizontalGradient(
-                                            listOf(streakColor.copy(alpha = 0.70f), streakColor)
-                                        )
-                                    )
+                                color = streakColor,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // 3 Clean KPI Columns
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        StreakStatColumn(
-                            label = "Current",
-                            value = "$streakCurrent d",
-                            color = streakColor,
-                            modifier = Modifier.weight(1f)
-                        )
-                        StreakStatColumn(
-                            label = "Best Streak",
-                            value = "$streakLongest d",
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.weight(1f)
-                        )
-                        StreakStatColumn(
-                            label = "Completed",
-                            value = "$streakTotalComplete",
-                            color = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.weight(1f)
-                        )
+                        StreakStatColumn(label = "Current", value = "$streakCurrent d", color = streakColor)
+                        StreakStatColumn(label = "Longest", value = "$streakLongest d", color = MaterialTheme.colorScheme.primary)
+                        StreakStatColumn(label = "Next Goal", value = "$nextMilestone d", color = MaterialTheme.colorScheme.secondary)
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    LinearProgressIndicator(
+                        progress = { milestoneProgress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(CircleShape),
+                        color = streakColor,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f)
+                    )
                 }
             }
         }
 
-        // Attendance Visual Graph with Donut Radial Gauge & Distribution Breakdown
-        if (allAttendance.isNotEmpty()) {
+        // 6. Attendance Analysis Breakdown
+        if (attendanceStats.total > 0) {
             item(key = "attendance_analytics_graph") {
-                val isDark = isSystemInDarkTheme()
-                val isGoodStanding = attendanceStats.ratePercent >= 75
-                val healthColor = if (isGoodStanding) Color(0xFF34C759) else MaterialTheme.colorScheme.error
+                val healthColor = if (attendanceStats.ratePercent >= 75) Color(0xFF34C759) else Color(0xFFFF9500)
 
                 ScholarCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .blurAura(color = healthColor, alpha = if (isDark) 0.15f else 0.08f),
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    border = frostedSpecularBorder(accentColor = healthColor, isDark = isDark)
-                ) {
-                    Column(modifier = Modifier.padding(18.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(34.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(healthColor.copy(alpha = 0.16f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.School,
-                                        contentDescription = null,
-                                        tint = healthColor,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                                Text(
-                                    text = "Attendance Health",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-
-                            GlassCapsule {
-                                val margin = attendanceStats.ratePercent - 75
-                                val marginText = if (margin >= 0) "+$margin% Margin" else "$margin% Margin"
-                                Text(
-                                    text = if (isGoodStanding) "Optimal ($marginText)" else "Needs Attention ($marginText)",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = healthColor,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(18.dp))
-
-                        // Radial Gauge + Breakdown Side-by-Side
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // Circular Radial Gauge
-                            Box(
-                                modifier = Modifier.size(92.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                val animatedRate by animateFloatAsState(
-                                    targetValue = (attendanceStats.ratePercent / 100f).coerceIn(0f, 1f),
-                                    animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
-                                    label = "attendance_gauge"
-                                )
-                                val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-
-                                Canvas(modifier = Modifier.fillMaxSize()) {
-                                    val strokeWidth = 9.dp.toPx()
-                                    val diameter = size.minDimension - strokeWidth
-                                    val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
-                                    val arcSize = Size(diameter, diameter)
-
-                                    // Background Track Arc (270 deg)
-                                    drawArc(
-                                        color = trackColor,
-                                        startAngle = 135f,
-                                        sweepAngle = 270f,
-                                        useCenter = false,
-                                        topLeft = topLeft,
-                                        size = arcSize,
-                                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                                    )
-
-                                    // Foreground Progress Arc
-                                    if (animatedRate > 0f) {
-                                        drawArc(
-                                            brush = Brush.sweepGradient(
-                                                listOf(healthColor.copy(alpha = 0.8f), healthColor)
-                                            ),
-                                            startAngle = 135f,
-                                            sweepAngle = 270f * animatedRate,
-                                            useCenter = false,
-                                            topLeft = topLeft,
-                                            size = arcSize,
-                                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                                        )
-                                    }
-                                }
-
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        text = "${attendanceStats.ratePercent}%",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Black,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Target 75%",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontSize = 9.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-
-                            // Minimalist Breakdown Visual Stack
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                // Stacked Proportional Distribution Bar
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(8.dp)
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f))
-                                ) {
-                                    val total = attendanceStats.total.coerceAtLeast(1).toFloat()
-                                    val presentWeight = attendanceStats.present / total
-                                    val lateWeight = attendanceStats.late / total
-                                    val absentWeight = attendanceStats.absent / total
-
-                                    if (presentWeight > 0f) {
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(presentWeight)
-                                                .fillMaxHeight()
-                                                .background(Color(0xFF34C759))
-                                        )
-                                    }
-                                    if (lateWeight > 0f) {
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(lateWeight)
-                                                .fillMaxHeight()
-                                                .background(Color(0xFFFF9500))
-                                        )
-                                    }
-                                    if (absentWeight > 0f) {
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(absentWeight)
-                                                .fillMaxHeight()
-                                                .background(MaterialTheme.colorScheme.error)
-                                        )
-                                    }
-                                }
-
-                                // Visual Indicator Badges
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    AttendancePillIndicator(
-                                        label = "Present",
-                                        count = attendanceStats.present,
-                                        color = Color(0xFF34C759)
-                                    )
-                                    AttendancePillIndicator(
-                                        label = "Late",
-                                        count = attendanceStats.late,
-                                        color = Color(0xFFFF9500)
-                                    )
-                                    AttendancePillIndicator(
-                                        label = "Absent",
-                                        count = attendanceStats.absent,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Test Score Distributions & Academic Breakdown with Specular Glass
-        if (allTestRecords.isNotEmpty()) {
-            item(key = "test_analytics_section") {
-                val isDark = isSystemInDarkTheme()
-                val secColor = MaterialTheme.colorScheme.secondary
-
-                ScholarCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .blurAura(color = secColor, alpha = if (isDark) 0.15f else 0.08f),
-                    shape = RoundedCornerShape(24.dp),
-                    border = frostedSpecularBorder(accentColor = secColor, isDark = isDark)
+                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                                    else MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border = ScholarCardDefaults.border()
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Row(
@@ -1043,12 +831,108 @@ fun AnalyticsTab(
                             Box(
                                 modifier = Modifier
                                     .size(34.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(secColor.copy(alpha = 0.14f)),
+                                    .clip(CircleShape)
+                                    .background(healthColor.copy(alpha = 0.14f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.School,
+                                    contentDescription = null,
+                                    tint = healthColor,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Text(
+                                text = "Attendance Rate",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Stacked Proportional Distribution Bar
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(10.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f))
+                        ) {
+                            val total = attendanceStats.total.coerceAtLeast(1).toFloat()
+                            val presentWeight = attendanceStats.present / total
+                            val lateWeight = attendanceStats.late / total
+                            val absentWeight = attendanceStats.absent / total
+
+                            if (presentWeight > 0f) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(presentWeight)
+                                        .fillMaxHeight()
+                                        .background(Color(0xFF34C759))
+                                )
+                            }
+                            if (lateWeight > 0f) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(lateWeight)
+                                        .fillMaxHeight()
+                                        .background(Color(0xFFFF9500))
+                                )
+                            }
+                            if (absentWeight > 0f) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(absentWeight)
+                                        .fillMaxHeight()
+                                        .background(MaterialTheme.colorScheme.error)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Indicator Pills
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            AttendancePillIndicator(label = "Present", count = attendanceStats.present, color = Color(0xFF34C759))
+                            AttendancePillIndicator(label = "Late", count = attendanceStats.late, color = Color(0xFFFF9500))
+                            AttendancePillIndicator(label = "Absent", count = attendanceStats.absent, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+            }
+        }
+
+        // 7. Academic Performance & Tests Breakdown
+        if (allTestRecords.isNotEmpty()) {
+            item(key = "test_analytics_section") {
+                val secColor = MaterialTheme.colorScheme.secondary
+
+                ScholarCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                                    else MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border = ScholarCardDefaults.border()
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .background(secColor.copy(alpha = 0.14f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Grading,
                                     contentDescription = null,
                                     tint = secColor,
                                     modifier = Modifier.size(18.dp)
@@ -1062,8 +946,9 @@ fun AnalyticsTab(
                             )
                         }
 
-                        // Capsule Course Filters
                         Spacer(modifier = Modifier.height(14.dp))
+
+                        // Capsule Course Filters
                         LazyRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -1080,7 +965,7 @@ fun AnalyticsTab(
                                 val courseColor = remember(course.colorHex) {
                                     try {
                                         Color(android.graphics.Color.parseColor(course.colorHex))
-                                    } catch (e: Exception) {
+                                    } catch (_: Exception) {
                                         null
                                     }
                                 }
@@ -1097,371 +982,55 @@ fun AnalyticsTab(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         val filteredTestRecords = if (selectedCourseId == -1) allTestRecords else allTestRecords.filter { it.courseId == selectedCourseId }
-                        val totalTests = filteredTestRecords.size
-                        val pctScores = filteredTestRecords.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }
-                        val overallAverage = if (pctScores.isNotEmpty()) pctScores.average().toFloat() else 0f
-                        val passingTestsCount = pctScores.count { it >= 50f }
-                        val passRate = if (totalTests > 0) (passingTestsCount.toFloat() / totalTests * 100).toInt() else 0
+                        val avgScore = if (filteredTestRecords.isNotEmpty()) {
+                            filteredTestRecords.map { (it.score.toFloat() / it.maxScore.coerceAtLeast(1).toFloat()) * 100f }.average().toInt()
+                        } else 0
 
-                        if (totalTests == 0) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "No tests recorded for this selection.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        } else {
-                            // 3 Minimalist KPI Capsules
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                StreakStatColumn(
-                                    label = "Average",
-                                    value = "${overallAverage.toInt()}%",
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                StreakStatColumn(
-                                    label = "Tests",
-                                    value = "$totalTests",
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                StreakStatColumn(
-                                    label = "Pass Rate",
-                                    value = "$passRate%",
-                                    color = if (passRate >= 75) Color(0xFF34C759) else MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(20.dp))
-
-                            // Score Tier Distribution Histogram
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text(
-                                text = "Score Distribution",
-                                style = MaterialTheme.typography.titleSmall,
+                                text = "Average Score",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "$avgScore%",
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = secColor
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            val tierA = pctScores.count { it >= 90f }
-                            val tierB = pctScores.count { it in 75f..89.99f }
-                            val tierC = pctScores.count { it in 50f..74.99f }
-                            val tierD = pctScores.count { it < 50f }
-                            val maxTierCount = maxOf(tierA, tierB, tierC, tierD, 1).toFloat()
-
-                            val tierData = listOf(
-                                Triple("90-100%", tierA, Color(0xFF34C759)),
-                                Triple("75-89%", tierB, MaterialTheme.colorScheme.primary),
-                                Triple("50-74%", tierC, Color(0xFFFF9500)),
-                                Triple("<50%", tierD, MaterialTheme.colorScheme.error)
-                            )
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(96.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Bottom
-                            ) {
-                                tierData.forEach { (label, count, color) ->
-                                    val heightFrac = (count / maxTierCount).coerceIn(0.10f, 1f)
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.Bottom,
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text(
-                                            text = "$count",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (count > 0) color else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .width(28.dp)
-                                                .fillMaxHeight(heightFrac)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(
-                                                    if (count > 0) {
-                                                        Brush.verticalGradient(
-                                                            listOf(color, color.copy(alpha = 0.50f))
-                                                        )
-                                                    } else {
-                                                        Brush.verticalGradient(
-                                                            listOf(
-                                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                                                            )
-                                                        )
-                                                    }
-                                                )
-                                        )
-                                        Spacer(modifier = Modifier.height(6.dp))
-                                        Text(
-                                            text = label,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontSize = 9.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Subject Scores Breakdown
-                            if (subjects.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(20.dp))
-                                Text(
-                                    text = "Subject Performance",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    subjects.forEach { subj ->
-                                        val subjTests = allTestRecords.filter { test ->
-                                            test.subjectId == subj.id ||
-                                                (test.topicId != null && topics.find { it.id == test.topicId }?.subjectId == subj.id) ||
-                                                (test.courseId != null && courses.find { it.id == test.courseId }?.let { c ->
-                                                    c.subjectId == subj.id ||
-                                                        c.subjectIds.split(",").mapNotNull { it.trim().toIntOrNull() }.contains(subj.id)
-                                                } == true)
-                                        }
-                                        if (subjTests.isNotEmpty()) {
-                                            val subjAvg = subjTests.map { if (it.totalMarks > 0) (it.marksObtained / it.totalMarks) * 100f else 0f }.average().toFloat()
-                                            val statusColor = when {
-                                                subjAvg >= 85f -> Color(0xFF34C759)
-                                                subjAvg >= 70f -> MaterialTheme.colorScheme.primary
-                                                subjAvg >= 50f -> Color(0xFFFF9500)
-                                                else -> MaterialTheme.colorScheme.error
-                                            }
-
-                                            Column(modifier = Modifier.fillMaxWidth()) {
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Text(
-                                                        text = subj.name,
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        fontWeight = FontWeight.Medium,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis,
-                                                        modifier = Modifier.weight(1f)
-                                                    )
-                                                    Surface(
-                                                        shape = CircleShape,
-                                                        color = statusColor.copy(alpha = 0.12f)
-                                                    ) {
-                                                        Text(
-                                                            text = "${subjAvg.toInt()}%",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            fontWeight = FontWeight.Bold,
-                                                            color = statusColor,
-                                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                                        )
-                                                    }
-                                                }
-                                                Spacer(modifier = Modifier.height(4.dp))
-                                                LinearProgressIndicator(
-                                                    progress = { subjAvg / 100f },
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .height(5.dp)
-                                                        .clip(RoundedCornerShape(3.dp)),
-                                                    color = statusColor,
-                                                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                         }
-                    }
-                }
-            }
-        }
 
-        // Minimalist Focus Goal & Task Completion Visual Cards
-        item(key = "indicator_focus_progress") {
-            val isDark = isSystemInDarkTheme()
-            val priColor = MaterialTheme.colorScheme.primary
-            val weeklyFocusGoalMins = 600
-            val weeklyProgress = (periodFocusMins.toFloat() / weeklyFocusGoalMins).coerceIn(0f, 1f)
+                        Spacer(modifier = Modifier.height(8.dp))
 
-            ScholarCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .blurAura(color = priColor, alpha = if (isDark) 0.12f else 0.07f),
-                shape = RoundedCornerShape(22.dp),
-                border = frostedSpecularBorder(accentColor = priColor, isDark = isDark)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(priColor.copy(alpha = 0.14f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Timer,
-                                    contentDescription = null,
-                                    tint = priColor,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = "Focus Goal",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "${pomodoroSessions.size} Sessions Logged",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        Text(
-                            text = periodFocusFormatted,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black,
-                            color = priColor
+                        LinearProgressIndicator(
+                            progress = { (avgScore / 100f).coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(CircleShape),
+                            color = secColor,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f)
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    LinearProgressIndicator(
-                        progress = { weeklyProgress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = priColor,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f)
-                    )
                 }
             }
         }
 
-        item(key = "indicator_task_completion") {
-            val isDark = isSystemInDarkTheme()
-            val tertColor = MaterialTheme.colorScheme.tertiary
-            val completionFraction = if (totalAssignments > 0) completedAssignments.toFloat() / totalAssignments else 0f
-
-            ScholarCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .blurAura(color = tertColor, alpha = if (isDark) 0.12f else 0.07f),
-                shape = RoundedCornerShape(22.dp),
-                border = frostedSpecularBorder(accentColor = tertColor, isDark = isDark)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(tertColor.copy(alpha = 0.14f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.CheckCircle,
-                                    contentDescription = null,
-                                    tint = tertColor,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = "Task Completion",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "$completedAssignments of $totalAssignments done",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        Text(
-                            text = "$assignmentRate%",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black,
-                            color = tertColor
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    LinearProgressIndicator(
-                        progress = { completionFraction },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = tertColor,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f)
-                    )
-                }
-            }
-        }
-
-        // Recent Activity History Section
+        // 8. Recent Activity History Section
         if (showActionHistory) {
             item(key = "activity_log_header") {
-                val isDark = isSystemInDarkTheme()
                 val priColor = MaterialTheme.colorScheme.primary
 
                 ScholarCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    border = frostedSpecularBorder(accentColor = priColor, isDark = isDark)
+                    containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+                                    else MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border = ScholarCardDefaults.border()
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Row(
@@ -1471,7 +1040,7 @@ fun AnalyticsTab(
                             Box(
                                 modifier = Modifier
                                     .size(34.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(CircleShape)
                                     .background(priColor.copy(alpha = 0.14f)),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -1496,7 +1065,7 @@ fun AnalyticsTab(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 16.dp),
+                                    .padding(vertical = 14.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
@@ -1507,7 +1076,7 @@ fun AnalyticsTab(
                             }
                         } else {
                             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                actionLogs.take(20).forEach { log ->
+                                actionLogs.take(15).forEach { log ->
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically
@@ -1568,14 +1137,14 @@ private fun StreakStatColumn(
         Text(
             text = value,
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Black,
+            fontWeight = FontWeight.Bold,
             color = color
         )
     }
 }
 
 /**
- * Visual attendance indicator pill with glowing accent dot.
+ * Visual attendance indicator pill with accent dot.
  */
 @Composable
 private fun AttendancePillIndicator(
