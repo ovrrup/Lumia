@@ -189,19 +189,22 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                         ) {
                             // Organic Radial Gradient Glow
                             Canvas(modifier = Modifier.fillMaxSize()) {
-                                val glowRadius = size.minDimension * 0.72f
+                                if (size.minDimension <= 1f) return@Canvas
+                                val glowRadius = maxOf(1f, size.minDimension * 0.72f)
                                 val glowAlpha = (0.35f * brightness).coerceIn(0.10f, 0.65f)
-                                drawCircle(
-                                    brush = Brush.radialGradient(
-                                        colors = listOf(
-                                            activeStreakColor.copy(alpha = glowAlpha),
-                                            activeStreakColor.copy(alpha = glowAlpha * 0.45f),
-                                            Color.Transparent
-                                        ),
-                                        center = center,
-                                        radius = glowRadius
+                                try {
+                                    drawCircle(
+                                        brush = Brush.radialGradient(
+                                            colors = listOf(
+                                                activeStreakColor.copy(alpha = glowAlpha),
+                                                activeStreakColor.copy(alpha = glowAlpha * 0.45f),
+                                                Color.Transparent
+                                            ),
+                                            center = center,
+                                            radius = glowRadius
+                                        )
                                     )
-                                )
+                                } catch (_: Exception) {}
                             }
 
                             // Interactive Widget

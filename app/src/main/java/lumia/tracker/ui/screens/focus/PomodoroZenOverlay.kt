@@ -109,22 +109,25 @@ fun PomodoroZenOverlay(
         Canvas(
             modifier = Modifier.size(360.dp)
         ) {
+            if (size.minDimension <= 1f) return@Canvas
             val activeAlpha = if (isRunning && !isPaused) glowAlpha else 0.05f
             val activeScale = if (isRunning && !isPaused) glowScale else 0.95f
-            val radius = (size.minDimension / 2f) * activeScale
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        ringColor.copy(alpha = activeAlpha),
-                        ringColor.copy(alpha = activeAlpha * 0.35f),
-                        Color.Transparent
+            val radius = maxOf(1f, (size.minDimension / 2f) * activeScale)
+            try {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            ringColor.copy(alpha = activeAlpha),
+                            ringColor.copy(alpha = activeAlpha * 0.35f),
+                            Color.Transparent
+                        ),
+                        center = center,
+                        radius = radius
                     ),
-                    center = center,
-                    radius = radius
-                ),
-                radius = radius,
-                center = center
-            )
+                    radius = radius,
+                    center = center
+                )
+            } catch (_: Exception) {}
         }
 
         // Center Countdown Arc (Crisp & Clean)

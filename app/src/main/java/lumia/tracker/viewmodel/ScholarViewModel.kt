@@ -199,11 +199,6 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     
     val prefs = profileManager.getProfilePrefs()
 
-    init {
-        calculateTodayStreakProgress()
-        checkSafetySnapshot()
-    }
-
     private val initiallyCompleted = run {
         var completed = prefs.getBoolean("onboarding_completed", false)
         val wasInstalledBefore = prefs.getBoolean("was_installed_before", false)
@@ -349,7 +344,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
 
     private fun calculateTodayStreakProgress() {
         viewModelScope.launch(Dispatchers.IO) {
-            val now = System.currentTimeMillis()
+            try {
+                val now = System.currentTimeMillis()
             val lastRecordedTime = prefs.getLong("last_recorded_monotonic_time", 0L)
             
             // Detect backward clock jumps (tampering by more than 2 minutes)
@@ -570,6 +566,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                         editor.putInt("streak_current", 0).apply()
                     }
                 }
+            } catch (e: Throwable) {
+                android.util.Log.e("ScholarViewModel", "Streak calculation non-fatal error", e)
             }
         }
     }
@@ -1897,6 +1895,19 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 _hasSafetySnapshot.value = false
                 _safetySnapshotInfo.value = null
             }
+        }
+    }
+
+    init {
+        try {
+            calculateTodayStreakProgress()
+        } catch (e: Throwable) {
+            android.util.Log.e("ScholarViewModel", "Streak calc startup non-fatal error", e)
+        }
+        try {
+            checkSafetySnapshot()
+        } catch (e: Throwable) {
+            android.util.Log.e("ScholarViewModel", "Snapshot check startup non-fatal error", e)
         }
     }
 

@@ -47,59 +47,69 @@ fun AmbientBackgroundCanvas(
         label = "ambient_phase"
     )
 
+    val blurModifier = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+        Modifier.blur(radius = 60.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+    } else {
+        Modifier
+    }
+
     Canvas(
         modifier = Modifier
             .fillMaxSize()
-            .blur(radius = 60.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+            .then(blurModifier)
     ) {
         val width = size.width
         val height = size.height
 
+        if (width <= 1f || height <= 1f) return@Canvas
+
         val x1 = width * (0.32f + 0.12f * sin(phase))
         val y1 = height * (0.20f + 0.08f * cos(phase))
-        val r1 = width * 1.05f
+        val r1 = maxOf(1f, width * 1.05f)
 
         val x2 = width * (0.70f - 0.12f * cos(phase))
         val y2 = height * (0.78f - 0.08f * sin(phase))
-        val r2 = width * 0.95f
+        val r2 = maxOf(1f, width * 0.95f)
 
         val x3 = width * (0.50f + 0.10f * cos(phase * 0.6f))
         val y3 = height * (0.45f + 0.10f * sin(phase * 0.6f))
-        val r3 = width * 0.85f
+        val r3 = maxOf(1f, width * 0.85f)
 
         val alphaMultiplier = (brightness * (if (isDark) 0.07f else 0.05f)).coerceIn(0f, 0.14f)
 
-        // Primary soft ambient orb
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(primaryColor.copy(alpha = alphaMultiplier), Color.Transparent),
+        try {
+            // Primary soft ambient orb
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(primaryColor.copy(alpha = alphaMultiplier), Color.Transparent),
+                    center = Offset(x1, y1),
+                    radius = r1
+                ),
                 center = Offset(x1, y1),
                 radius = r1
-            ),
-            center = Offset(x1, y1),
-            radius = r1
-        )
+            )
 
-        // Tertiary soft ambient orb
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(secondaryColor.copy(alpha = alphaMultiplier * 0.70f), Color.Transparent),
+            // Tertiary soft ambient orb
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(secondaryColor.copy(alpha = alphaMultiplier * 0.70f), Color.Transparent),
+                    center = Offset(x2, y2),
+                    radius = r2
+                ),
                 center = Offset(x2, y2),
                 radius = r2
-            ),
-            center = Offset(x2, y2),
-            radius = r2
-        )
+            )
 
-        // Center gentle ambient blend orb
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(accentColor.copy(alpha = alphaMultiplier * 0.45f), Color.Transparent),
+            // Center gentle ambient blend orb
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(accentColor.copy(alpha = alphaMultiplier * 0.45f), Color.Transparent),
+                    center = Offset(x3, y3),
+                    radius = r3
+                ),
                 center = Offset(x3, y3),
                 radius = r3
-            ),
-            center = Offset(x3, y3),
-            radius = r3
-        )
+            )
+        } catch (_: Exception) {}
     }
 }

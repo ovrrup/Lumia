@@ -85,18 +85,21 @@ fun Modifier.blurAura(
     radiusMultiplier: Float = 0.70f,
     centerOffset: Offset = Offset(0.85f, 0.25f)
 ): Modifier = this.drawBehind {
+    if (size.width <= 1f || size.height <= 1f) return@drawBehind
     val cx = size.width * centerOffset.x
     val cy = size.height * centerOffset.y
-    val r = size.width * radiusMultiplier
-    drawCircle(
-        brush = Brush.radialGradient(
-            colors = listOf(color.copy(alpha = alpha), Color.Transparent),
+    val r = maxOf(1f, size.width * radiusMultiplier)
+    try {
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(color.copy(alpha = alpha), Color.Transparent),
+                center = Offset(cx, cy),
+                radius = r
+            ),
             center = Offset(cx, cy),
             radius = r
-        ),
-        center = Offset(cx, cy),
-        radius = r
-    )
+        )
+    } catch (_: Exception) {}
 }
 
 /**

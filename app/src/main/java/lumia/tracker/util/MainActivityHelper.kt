@@ -18,15 +18,20 @@ object MainActivityHelper {
         activity: Activity,
         displayLayoutMode: String = "Immersive"
     ) {
-        val window = activity.window
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            window.attributes = window.attributes.apply {
-                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        try {
+            val window = activity.window ?: return
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                window.attributes = window.attributes.apply {
+                    layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                }
             }
+            val decor = window.decorView
+            val controller = WindowCompat.getInsetsController(window, decor)
+            controller?.show(WindowInsetsCompat.Type.systemBars())
+        } catch (e: Exception) {
+            android.util.Log.w("MainActivityHelper", "Failed to apply system bars cutout mode", e)
         }
-        val controller = WindowCompat.getInsetsController(window, window.decorView)
-        controller.show(WindowInsetsCompat.Type.systemBars())
     }
 
     fun handleIntentNavigation(
@@ -34,24 +39,28 @@ object MainActivityHelper {
         navController: NavController,
         viewModel: ScholarViewModel
     ) {
-        intent ?: return
-        intent.getStringExtra("OPEN_SCREEN")?.takeIf { it.isNotEmpty() }?.let {
-            navController.navigate(it) { launchSingleTop = true }
-            intent.removeExtra("OPEN_SCREEN")
-        }
-        val openTab = intent.getIntExtra("OPEN_TAB", -1)
-        if (openTab != -1) {
-            viewModel.setSelectedDashboardTab(openTab)
-            navController.navigate("dashboard") {
-                popUpTo("dashboard") { inclusive = false }
-                launchSingleTop = true
+        try {
+            intent ?: return
+            intent.getStringExtra("OPEN_SCREEN")?.takeIf { it.isNotEmpty() }?.let {
+                navController.navigate(it) { launchSingleTop = true }
+                intent.removeExtra("OPEN_SCREEN")
             }
-            intent.removeExtra("OPEN_TAB")
-        }
-        if (intent.action == "ACTION_OPEN_POMODORO" || intent.getBooleanExtra("OPEN_POMODORO", false)) {
-            navController.navigate("pomodoro") { launchSingleTop = true }
-            intent.removeExtra("OPEN_POMODORO")
-            intent.action = null
+            val openTab = intent.getIntExtra("OPEN_TAB", -1)
+            if (openTab != -1) {
+                viewModel.setSelectedDashboardTab(openTab)
+                navController.navigate("dashboard") {
+                    popUpTo("dashboard") { inclusive = false }
+                    launchSingleTop = true
+                }
+                intent.removeExtra("OPEN_TAB")
+            }
+            if (intent.action == "ACTION_OPEN_POMODORO" || intent.getBooleanExtra("OPEN_POMODORO", false)) {
+                navController.navigate("pomodoro") { launchSingleTop = true }
+                intent.removeExtra("OPEN_POMODORO")
+                intent.action = null
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MainActivityHelper", "Failed to handle intent navigation", e)
         }
     }
 }

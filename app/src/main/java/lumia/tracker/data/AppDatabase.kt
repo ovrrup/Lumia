@@ -384,12 +384,18 @@ abstract class AppDatabase : RoomDatabase() {
                         AppDatabase::class.java,
                         dbName
                     ).addMigrations(*ALL_MIGRATIONS)
+                        .fallbackToDestructiveMigration()
                         .fallbackToDestructiveMigrationOnDowngrade()
 
                     val instance = try {
                         val dbInstance = builder.build()
-                        // Ensure database open succeeds without throwing unhandled migration error
-                        dbInstance.openHelper.writableDatabase
+                        try {
+                            // Ensure database open succeeds without throwing unhandled migration error
+                            dbInstance.openHelper.writableDatabase
+                        } catch (openEx: Exception) {
+                            Log.w(TAG, "Database initial open probe failed for $dbName, initiating recovery", openEx)
+                            throw openEx
+                        }
                         dbInstance
                     } catch (e: Exception) {
                         Log.e(TAG, "Migration encountered an issue for $dbName, attempting safe recovery", e)
@@ -401,6 +407,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 AppDatabase::class.java,
                                 dbName
                             ).addMigrations(*ALL_MIGRATIONS)
+                                .fallbackToDestructiveMigration()
                                 .fallbackToDestructiveMigrationOnDowngrade()
                             val recoveredInstance = recoveredBuilder.build()
                             try {
@@ -411,18 +418,35 @@ abstract class AppDatabase : RoomDatabase() {
                             recoveredInstance
                         } catch (re: Exception) {
                             Log.e(TAG, "Rebuilt migration recovery failed for $dbName, deploying ultimate safety fallback", re)
-                            val fallbackBuilder = Room.databaseBuilder(
-                                context.applicationContext,
-                                AppDatabase::class.java,
-                                dbName
-                            ).fallbackToDestructiveMigration()
-                            val fallbackInstance = fallbackBuilder.build()
                             try {
-                                safeReconcileSchema(fallbackInstance.openHelper.writableDatabase)
-                            } catch (fe: Exception) {
-                                Log.e(TAG, "Fallback schema reconcile non-fatal: ${fe.message}")
+                                val fallbackBuilder = Room.databaseBuilder(
+                                    context.applicationContext,
+                                    AppDatabase::class.java,
+                                    dbName
+                                ).fallbackToDestructiveMigration()
+                                    .fallbackToDestructiveMigrationOnDowngrade()
+                                val fallbackInstance = fallbackBuilder.build()
+                                try {
+                                    safeReconcileSchema(fallbackInstance.openHelper.writableDatabase)
+                                } catch (fe: Exception) {
+                                    Log.e(TAG, "Fallback schema reconcile non-fatal: ${fe.message}")
+                                }
+                                fallbackInstance
+                            } catch (fatalDbEx: Exception) {
+                                Log.e(TAG, "Fatal DB corruption for $dbName. Deleting and recreating clean database.", fatalDbEx)
+                                context.deleteDatabase(dbName)
+                                val cleanBuilder = Room.databaseBuilder(
+                                    context.applicationContext,
+                                    AppDatabase::class.java,
+                                    dbName
+                                ).fallbackToDestructiveMigration()
+                                    .fallbackToDestructiveMigrationOnDowngrade()
+                                val cleanInstance = cleanBuilder.build()
+                                try {
+                                    safeReconcileSchema(cleanInstance.openHelper.writableDatabase)
+                                } catch (_: Exception) {}
+                                cleanInstance
                             }
-                            fallbackInstance
                         }
                     }
 
