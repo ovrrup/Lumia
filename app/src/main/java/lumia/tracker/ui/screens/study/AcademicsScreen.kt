@@ -111,9 +111,9 @@ fun AcademicsScreen(
             .fillMaxSize()
             .padding(top = bottomPadding.calculateTopPadding())
     ) {
-        // Modern Frosted Glassmorphic Capsule Segmented Tab Bar
+        // Soft Ambient Capsule Segmented Tab Bar
         val isDark = isSystemInDarkTheme()
-        val tabBg = if (isDark) MaterialTheme.colorScheme.surfaceContainer
+        val tabBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                     else MaterialTheme.colorScheme.surfaceContainerLowest
         val tabBorder = ScholarCardDefaults.border()
 
@@ -146,12 +146,12 @@ fun AcademicsScreen(
                         AcademicViewMode.TIMETABLE -> MaterialTheme.colorScheme.secondary
                     }
                     val itemBg = if (isSelected) {
-                        activeColor.copy(alpha = if (isDark) 0.16f else 0.12f)
+                        activeColor.copy(alpha = if (isDark) 0.18f else 0.12f)
                     } else {
                         Color.Transparent
                     }
                     val itemBorder = if (isSelected) {
-                        BorderStroke(0.5.dp, activeColor.copy(alpha = 0.30f))
+                        BorderStroke(1.dp, activeColor.copy(alpha = 0.28f))
                     } else null
                     val textColor = if (isSelected) {
                         activeColor

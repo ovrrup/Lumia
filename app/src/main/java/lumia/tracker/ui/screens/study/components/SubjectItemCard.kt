@@ -4,7 +4,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.model.Subject
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.screens.study.dialogs.StudyDeleteConfirmationDialog
@@ -33,13 +36,14 @@ import lumia.tracker.ui.util.getTagColors
 import lumia.tracker.viewmodel.ScholarViewModel
 
 /**
- * SubjectItemCard - Modern Subject Card with Topic Coverage Progress,
- * Linked Course Indicators, Syllabus Count, and Smooth Navigation.
+ * SubjectItemCard - Modern Academic Subject Card.
+ * Features soft ambient card styling, monogram avatar squircle, circular completion gauge,
+ * syllabus linear progress bar, and connected course capsules.
  */
 @ValueScore(
-    score = 86,
+    score = 90,
     importance = Importance.HIGH,
-    description = "Subject overview card with syllabus coverage progress, linked course chips, and quick actions",
+    description = "Subject overview card with syllabus coverage progress, linked course chips, and quick actions in ambient style",
     category = "Study"
 )
 @OptIn(ExperimentalLayoutApi::class)
@@ -49,7 +53,8 @@ fun SubjectItemCard(
     onClick: () -> Unit,
     onEdit: () -> Unit,
     viewModel: ScholarViewModel,
-    onCourseClick: (Int) -> Unit
+    onCourseClick: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -84,11 +89,16 @@ fun SubjectItemCard(
         else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
     }
 
+    val isDark = isSystemInDarkTheme()
+    val cardBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
+                 else MaterialTheme.colorScheme.surfaceContainerLowest
+
     ScholarCard(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        glassmorphic = true
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        containerColor = cardBg,
+        border = ScholarCardDefaults.border()
     ) {
         Column(
             modifier = Modifier
@@ -104,7 +114,15 @@ fun SubjectItemCard(
                 Box(
                     modifier = Modifier
                         .size(46.dp)
-                        .background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape),
+                        .background(
+                            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = if (isDark) 0.35f else 0.45f),
+                            RoundedCornerShape(13.dp)
+                        )
+                        .border(
+                            0.5.dp,
+                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.25f),
+                            RoundedCornerShape(13.dp)
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -141,7 +159,7 @@ fun SubjectItemCard(
                                 Surface(
                                     shape = CircleShape,
                                     color = bgColor.copy(alpha = 0.16f),
-                                    border = BorderStroke(0.5.dp, textColor.copy(alpha = 0.35f))
+                                    border = BorderStroke(0.5.dp, textColor.copy(alpha = 0.30f))
                                 ) {
                                     Text(
                                         text = tag,
@@ -159,17 +177,17 @@ fun SubjectItemCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Circular Completion Ring
+                // Circular Completion Gauge
                 Box(
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(44.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
                         progress = { animatedProgress },
                         modifier = Modifier.fillMaxSize(),
                         color = progressColor,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                        strokeWidth = 4.dp,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f),
+                        strokeWidth = 3.5.dp,
                         strokeCap = StrokeCap.Round
                     )
                     if (totalTopicsCount > 0 && rawProgress >= 1f) {
@@ -199,20 +217,27 @@ fun SubjectItemCard(
 
                 // Options Menu
                 Box {
-                    BouncyIconButton(
-                        onClick = { expanded = true },
-                        modifier = Modifier.size(36.dp)
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                        modifier = Modifier.size(34.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.MoreVert,
-                            contentDescription = "Options",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        BouncyIconButton(
+                            onClick = { expanded = true },
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = "Options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                     DropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onDismissRequest = { expanded = false },
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         DropdownMenuItem(
                             text = { Text("Edit Subject") },
@@ -224,7 +249,8 @@ fun SubjectItemCard(
                                 Icon(
                                     Icons.Rounded.Edit,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         )
@@ -238,7 +264,8 @@ fun SubjectItemCard(
                                 Icon(
                                     Icons.Rounded.Delete,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         )
@@ -246,18 +273,16 @@ fun SubjectItemCard(
                 }
             }
 
-            // Capsule Progress Pill / Syllabus status
+            // Syllabus Progress Section
             if (totalTopicsCount > 0) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -269,24 +294,36 @@ fun SubjectItemCard(
                                     .background(progressColor, CircleShape)
                             )
                             Text(
-                                text = if (rawProgress >= 1f) "Syllabus mastered" else "Curriculum progress",
+                                text = if (rawProgress >= 1f) "Syllabus mastered" else "Curriculum coverage",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Text(
-                            text = "$completedTopicsCount of $totalTopicsCount topics",
+                            text = "$completedTopicsCount of $totalTopicsCount topics (${(rawProgress * 100).toInt()}%)",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = progressColor
                         )
                     }
+
+                    LinearProgressIndicator(
+                        progress = { animatedProgress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(CircleShape),
+                        color = progressColor,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f),
+                        strokeCap = StrokeCap.Round
+                    )
                 }
             } else {
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -301,7 +338,7 @@ fun SubjectItemCard(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = "No topics added yet",
+                            text = "No topics added yet • Tap to view curriculum",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -309,7 +346,7 @@ fun SubjectItemCard(
                 }
             }
 
-            // Connected Courses Capsule Chips
+            // Connected Courses Chips
             if (linkedCourses.isNotEmpty()) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -328,7 +365,7 @@ fun SubjectItemCard(
                         Surface(
                             shape = CircleShape,
                             color = courseColor.copy(alpha = 0.12f),
-                            border = BorderStroke(0.5.dp, courseColor.copy(alpha = 0.35f)),
+                            border = BorderStroke(0.5.dp, courseColor.copy(alpha = 0.30f)),
                             modifier = Modifier
                                 .clip(CircleShape)
                                 .clickable { onCourseClick(course.id) }
@@ -360,14 +397,13 @@ fun SubjectItemCard(
 
     if (showDeleteConfirmation) {
         StudyDeleteConfirmationDialog(
-            title = "Delete Subject?",
-            message = "Are you sure you want to delete '${subject.name}'? This action cannot be undone.",
+            title = "Delete Subject",
+            message = "Are you sure you want to delete ${subject.name}? All curriculum topics and study progress will be permanently removed.",
             onConfirmDelete = {
+                showDeleteConfirmation = false
                 viewModel.deleteSubject(subject)
             },
-            onDismiss = {
-                showDeleteConfirmation = false
-            }
+            onDismiss = { showDeleteConfirmation = false }
         )
     }
 }

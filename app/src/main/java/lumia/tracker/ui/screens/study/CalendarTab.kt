@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -43,6 +44,7 @@ import androidx.navigation.NavController
 import lumia.tracker.model.Course
 import lumia.tracker.ui.components.BouncyIconButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.theme.bouncyClick
@@ -181,6 +183,9 @@ fun CalendarTab(
     val allAttendanceRecords by viewModel.allAttendanceRecords.collectAsStateWithLifecycle()
 
     var weekOffset by rememberSaveable { mutableIntStateOf(0) }
+    val isDark = isSystemInDarkTheme()
+    val calendarBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
+                     else MaterialTheme.colorScheme.surfaceContainerLowest
 
     val todayCalendar = remember {
         Calendar.getInstance().apply {
@@ -357,11 +362,12 @@ fun CalendarTab(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 7-Day Horizontal Calendar Strip in Subtle Glassmorphic Backdrop
+        // 7-Day Horizontal Calendar Strip in Soft Ambient Card
         ScholarCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            glassmorphic = true
+            shape = RoundedCornerShape(22.dp),
+            containerColor = calendarBg,
+            border = ScholarCardDefaults.border()
         ) {
             Row(
                 modifier = Modifier
@@ -500,9 +506,10 @@ fun CalendarTab(
                 ScholarCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 24.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    glassmorphic = true
+                        .padding(horizontal = 4.dp, vertical = 20.dp),
+                    shape = RoundedCornerShape(22.dp),
+                    containerColor = calendarBg,
+                    border = ScholarCardDefaults.border()
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -613,16 +620,16 @@ fun CalendarTab(
                             }
                         }
 
-                        // Frosted Glass Card
+                        // Soft Ambient Class Session Card
                         ScholarCard(
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(bottom = 12.dp),
                             shape = RoundedCornerShape(20.dp),
-                            glassmorphic = true,
+                            containerColor = calendarBg,
                             border = if (isLiveNow) {
                                 BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
-                            } else null,
+                            } else ScholarCardDefaults.border(),
                             onClick = {
                                 navController.navigate("courseDetail/${course.id}")
                             }
