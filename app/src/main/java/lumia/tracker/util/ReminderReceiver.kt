@@ -283,8 +283,14 @@ class ReminderReceiver : BroadcastReceiver() {
             builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Absent", absentPending)
         }
 
-        val notification = builder.build()
-        val notifId = if (assignmentId != -1) assignmentId else (System.currentTimeMillis() % 100000).toInt()
-        notificationManager.notify(notifId, notification)
+        try {
+            val notification = builder.build()
+            val notifId = if (assignmentId != -1) assignmentId else (System.currentTimeMillis() % 100000).toInt()
+            notificationManager.notify(notifId, notification)
+        } catch (e: SecurityException) {
+            android.util.Log.e("ReminderReceiver", "Notification permission missing", e)
+        } catch (e: Exception) {
+            android.util.Log.e("ReminderReceiver", "Failed to show notification", e)
+        }
     }
 }

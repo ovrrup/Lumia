@@ -279,24 +279,21 @@ fun CoursesTab(
             }
         }
 
-        val fabSource = remember { MutableInteractionSource() }
         BouncyFloatingActionButton(
             onClick = onAddCourseClick,
-            interactionSource = fabSource,
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 20.dp, bottom = bottomPadding.calculateBottomPadding() + 16.dp)
-                .bouncyScale(fabSource)
         ) {
             Icon(Icons.Rounded.Add, contentDescription = "Add Course", modifier = Modifier.size(24.dp))
         }
     }
 
-    if (courseToEdit != null) {
+    courseToEdit?.let { targetCourse ->
         EditCourseDialog(
-            course = courseToEdit!!,
+            course = targetCourse,
             viewModel = viewModel,
             onDismiss = { courseToEdit = null }
         )

@@ -378,12 +378,13 @@ abstract class AppDatabase : RoomDatabase() {
                     // 1. Create automatic pre-upgrade safety snapshot if DB file already exists
                     createAutomaticSafetySnapshot(context, dbName)
 
-                    // 2. Build Room database with continuous migrations and ZERO destructive fallbacks
+                    // 2. Build Room database with continuous migrations and resilient fallback safeguards
                     val builder = Room.databaseBuilder(
                         context.applicationContext,
                         AppDatabase::class.java,
                         dbName
                     ).addMigrations(*ALL_MIGRATIONS)
+                        .fallbackToDestructiveMigrationOnDowngrade()
 
                     val instance = try {
                         val dbInstance = builder.build()
@@ -393,19 +394,36 @@ abstract class AppDatabase : RoomDatabase() {
                     } catch (e: Exception) {
                         Log.e(TAG, "Migration encountered an issue for $dbName, attempting safe recovery", e)
                         restoreSafetySnapshot(context, dbName)
-                        // Retry opening with rebuilt instance
-                        val recoveredBuilder = Room.databaseBuilder(
-                            context.applicationContext,
-                            AppDatabase::class.java,
-                            dbName
-                        ).addMigrations(*ALL_MIGRATIONS)
-                        val recoveredInstance = recoveredBuilder.build()
                         try {
-                            safeReconcileSchema(recoveredInstance.openHelper.writableDatabase)
+                            // Retry opening with rebuilt instance
+                            val recoveredBuilder = Room.databaseBuilder(
+                                context.applicationContext,
+                                AppDatabase::class.java,
+                                dbName
+                            ).addMigrations(*ALL_MIGRATIONS)
+                                .fallbackToDestructiveMigrationOnDowngrade()
+                            val recoveredInstance = recoveredBuilder.build()
+                            try {
+                                safeReconcileSchema(recoveredInstance.openHelper.writableDatabase)
+                            } catch (re: Exception) {
+                                Log.e(TAG, "Post-recovery schema reconcile non-fatal: ${re.message}")
+                            }
+                            recoveredInstance
                         } catch (re: Exception) {
-                            Log.e(TAG, "Post-recovery schema reconcile non-fatal: ${re.message}")
+                            Log.e(TAG, "Rebuilt migration recovery failed for $dbName, deploying ultimate safety fallback", re)
+                            val fallbackBuilder = Room.databaseBuilder(
+                                context.applicationContext,
+                                AppDatabase::class.java,
+                                dbName
+                            ).fallbackToDestructiveMigration()
+                            val fallbackInstance = fallbackBuilder.build()
+                            try {
+                                safeReconcileSchema(fallbackInstance.openHelper.writableDatabase)
+                            } catch (fe: Exception) {
+                                Log.e(TAG, "Fallback schema reconcile non-fatal: ${fe.message}")
+                            }
+                            fallbackInstance
                         }
-                        recoveredInstance
                     }
 
                     instances[profileId] = instance

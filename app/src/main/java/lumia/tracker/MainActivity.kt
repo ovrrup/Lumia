@@ -18,6 +18,14 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BugReport
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import lumia.tracker.ui.components.AmbientBackgroundCanvas
 import lumia.tracker.ui.components.SafetyPinDialog
 import lumia.tracker.ui.navigation.AppNavigationGraph
@@ -84,7 +92,8 @@ class MainActivity : ComponentActivity() {
                 MainActivityHelper.applyDisplayCutoutAndBars(this@MainActivity, displayLayoutMode)
             }
 
-            val startupState = remember { mutableStateOf("splash") }
+            val crashData by _crashData.collectAsStateWithLifecycle()
+            val startupState = rememberSaveable { mutableStateOf(if (!isOnboardingCompleted) "main" else "splash") }
             val actForStartup = androidx.activity.compose.LocalActivity.current as? MainActivity
             LaunchedEffect(actForStartup?.intent) {
                 if (actForStartup?.intent?.getBooleanExtra("OPEN_PROFILE_SELECTOR", false) == true) {
@@ -116,6 +125,106 @@ class MainActivity : ComponentActivity() {
                     ),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    if (crashData != null) {
+                        val currentCrash = crashData!!
+                        val analyzed = remember(currentCrash) { LogDog.analyzeCrash(currentCrash) }
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        AlertDialog(
+                            onDismissRequest = { _crashData.value = null },
+                            icon = {
+                                Icon(
+                                    Icons.Rounded.BugReport,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            },
+                            title = {
+                                Text(
+                                    text = "Crash Intercepted",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            text = {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState()),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "Lumia intercepted an unexpected crash and restored your session.",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            Text(
+                                                text = "${analyzed.severityLevel} • ${analyzed.likelyComponent}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = analyzed.exceptionType,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onErrorContainer
+                                            )
+                                            Text(
+                                                text = analyzed.errorMessage,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onErrorContainer
+                                            )
+                                            if (analyzed.crashLocation.isNotBlank()) {
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "At: ${analyzed.crashLocation}",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                            }
+                                        }
+                                    }
+                                    if (analyzed.suggestion.isNotBlank()) {
+                                        Text(
+                                            text = analyzed.suggestion,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        LogDog.clearCrashes(context)
+                                        _crashData.value = null
+                                    }
+                                ) {
+                                    Text("Dismiss")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = {
+                                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                                        val clip = android.content.ClipData.newPlainText("Crash Details", currentCrash)
+                                        clipboard?.setPrimaryClip(clip)
+                                        android.widget.Toast.makeText(context, "Crash report copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                ) {
+                                    Text("Copy Log")
+                                }
+                            }
+                        )
+                    }
+
                     if (startupState.value == "splash") {
                         ProfileSplashLoadingScreen(activeProfile = activeProfile, onEnter = { startupState.value = "main" }, onSwitchAccount = { startupState.value = "selector" })
                     } else if (startupState.value == "selector") {

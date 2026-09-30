@@ -208,8 +208,18 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         var completed = prefs.getBoolean("onboarding_completed", false)
         val wasInstalledBefore = prefs.getBoolean("was_installed_before", false)
         if (!wasInstalledBefore) {
-            val hasAnyDb = application.databaseList().any { it.startsWith("scholar_sync") }
-            val isUpdate = prefs.all.filterKeys { it != "was_installed_before" && it != "onboarding_completed" }.isNotEmpty() || hasAnyDb
+            val hasCustomSettings = prefs.all.filterKeys {
+                it != "was_installed_before" && it != "onboarding_completed"
+            }.isNotEmpty()
+
+            val hasUserContent = try {
+                val dbFile = application.getDatabasePath("scholar_sync_database")
+                dbFile.exists() && dbFile.length() > 32768L
+            } catch (e: Exception) {
+                false
+            }
+
+            val isUpdate = hasCustomSettings || hasUserContent
             if (isUpdate) {
                 completed = true
                 prefs.edit().putBoolean("onboarding_completed", true).putBoolean("was_installed_before", true).apply()
@@ -718,7 +728,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     private val _betaMinimalistMode = MutableStateFlow(prefs.getBoolean("beta_minimalist_mode", false))
     val betaMinimalistMode = _betaMinimalistMode.asStateFlow()
 
-    private val _betaDynamicBackground = MutableStateFlow(prefs.getBoolean("beta_dynamic_background", false))
+    private val _betaDynamicBackground = MutableStateFlow(prefs.getBoolean("beta_dynamic_background", true))
     val betaDynamicBackground = _betaDynamicBackground.asStateFlow()
 
     private val _systemAutoLinkByName = MutableStateFlow(prefs.getBoolean("system_auto_link_by_name", true))
@@ -1934,37 +1944,41 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             .format(java.util.Date())
 
     private fun sendInstantNotification(channelId: String, notifId: Int, title: String, text: String, iconRes: Int, color: Int, openScreen: String? = null, openTab: Int = -1) {
-        val application = getApplication<Application>()
-        val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            val channel = android.app.NotificationChannel(channelId, "Scholar System Alerts", android.app.NotificationManager.IMPORTANCE_DEFAULT).apply {
-                enableLights(true)
-                lightColor = color
+        try {
+            val application = getApplication<Application>()
+            val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager ?: return
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                val channel = android.app.NotificationChannel(channelId, "Scholar System Alerts", android.app.NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    enableLights(true)
+                    lightColor = color
+                }
+                notificationManager.createNotificationChannel(channel)
             }
-            notificationManager.createNotificationChannel(channel)
-        }
-        val intent = android.content.Intent(application, lumia.tracker.MainActivity::class.java).apply { 
-            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP 
-            if (openScreen != null) {
-                putExtra("OPEN_SCREEN", openScreen)
+            val intent = android.content.Intent(application, lumia.tracker.MainActivity::class.java).apply { 
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP 
+                if (openScreen != null) {
+                    putExtra("OPEN_SCREEN", openScreen)
+                }
+                if (openTab != -1) {
+                    putExtra("OPEN_TAB", openTab)
+                }
             }
-            if (openTab != -1) {
-                putExtra("OPEN_TAB", openTab)
-            }
-        }
-        val pendingIntent = android.app.PendingIntent.getActivity(application, 0, intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+            val pendingIntent = android.app.PendingIntent.getActivity(application, 0, intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
 
-        val notification = androidx.core.app.NotificationCompat.Builder(application, channelId)
-            .setSmallIcon(iconRes)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(text))
-            .setColor(color)
-            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
-        notificationManager.notify(notifId, notification)
+            val notification = androidx.core.app.NotificationCompat.Builder(application, channelId)
+                .setSmallIcon(iconRes)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(text))
+                .setColor(color)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .build()
+            notificationManager.notify(notifId, notification)
+        } catch (e: Exception) {
+            android.util.Log.e("ScholarViewModel", "Failed to send instant notification: ${e.message}")
+        }
     }
 
     private fun gatherSettings(pref: android.content.SharedPreferences = prefs): Map<String, String> {

@@ -2717,8 +2717,7 @@ fun CourseDetailScreen(
     }
 
     // Edit Assignment Dialog
-    if (assignmentToEdit != null) {
-        val targetAssignment = assignmentToEdit!!
+    assignmentToEdit?.let { targetAssignment ->
         var title by remember(targetAssignment) { mutableStateOf(targetAssignment.title) }
         var desc by remember(targetAssignment) { mutableStateOf(targetAssignment.description) }
         var dueDateMillis by remember(targetAssignment) { mutableStateOf(if (targetAssignment.dueDateMillis > 0) targetAssignment.dueDateMillis else System.currentTimeMillis()) }

@@ -7,6 +7,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,8 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import lumia.tracker.ui.components.ScholarCardDefaults
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -109,8 +112,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             navController = navController,
                             viewModel = viewModel,
                             bottomPadding = extendedPadding,
-                            onAddCourseClick = { showAddCourseDialog = true },
-                            onAddSubjectClick = { showAddSubjectDialog = true },
                             onNavigateToTasks = {
                                 viewModel.setSelectedDashboardTab(2)
                             }
@@ -136,8 +137,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
                             navController = navController,
                             viewModel = viewModel,
                             bottomPadding = extendedPadding,
-                            onAddCourseClick = { showAddCourseDialog = true },
-                            onAddSubjectClick = { showAddSubjectDialog = true },
                             onNavigateToTasks = {
                                 viewModel.setSelectedDashboardTab(2)
                             }
@@ -225,9 +224,12 @@ private fun BoxScope.FloatingDashboardBottomBar(
     featureSelfStudyEnabled: Boolean,
     featureAnalyticsEnabled: Boolean
 ) {
+    val isDark = isSystemInDarkTheme()
     val hPadding = if (navBarPaddingHorizontal > 0) navBarPaddingHorizontal else 20
     val bPadding = if (navBarPaddingBottom > 0) navBarPaddingBottom else 16
     val dockHeight = if (navBarHeight > 0) navBarHeight else 64
+    val dockShape = if (navBarCornerRadius > 0) RoundedCornerShape(navBarCornerRadius.dp) else CircleShape
+
     Surface(
         modifier = Modifier
             .align(Alignment.BottomCenter)
@@ -237,32 +239,49 @@ private fun BoxScope.FloatingDashboardBottomBar(
                 bottom = bPadding.dp
             )
             .windowInsetsPadding(WindowInsets.navigationBars),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-        ),
-        shadowElevation = 8.dp,
+        shape = dockShape,
+        color = if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.75f)
+                else MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.85f),
+        border = ScholarCardDefaults.glassBorder(isDark),
+        shadowElevation = 0.dp,
         tonalElevation = 0.dp
     ) {
-        NavigationBar(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(dockHeight.dp),
-            containerColor = Color.Transparent,
-            tonalElevation = 0.dp,
-            windowInsets = WindowInsets(0, 0, 0, 0)
-        ) {
-            DashboardNavItems(
-                selectedTab = selectedTab,
-                onSelectTab = onSelectTab,
-                navItemColors = navItemColors,
-                alwaysShowLabel = navBarLabelMode == "Always",
-                hideLabels = navBarLabelMode == "Hidden",
-                featureSelfStudyEnabled = featureSelfStudyEnabled,
-                featureAnalyticsEnabled = featureAnalyticsEnabled
+        Box(contentAlignment = Alignment.Center) {
+            // Live specular reflection on floating navigation dock
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.20f),
+                                if (isDark) Color.White.copy(alpha = 0.01f) else Color.White.copy(alpha = 0.05f),
+                                Color.Transparent
+                            ),
+                            start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                            end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                        )
+                    )
             )
+
+            NavigationBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(dockHeight.dp),
+                containerColor = Color.Transparent,
+                tonalElevation = 0.dp,
+                windowInsets = WindowInsets(0, 0, 0, 0)
+            ) {
+                DashboardNavItems(
+                    selectedTab = selectedTab,
+                    onSelectTab = onSelectTab,
+                    navItemColors = navItemColors,
+                    alwaysShowLabel = navBarLabelMode == "Always",
+                    hideLabels = navBarLabelMode == "Hidden",
+                    featureSelfStudyEnabled = featureSelfStudyEnabled,
+                    featureAnalyticsEnabled = featureAnalyticsEnabled
+                )
+            }
         }
     }
 }

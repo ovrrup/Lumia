@@ -109,8 +109,6 @@ fun HomeTab(
     navController: NavController,
     viewModel: ScholarViewModel,
     bottomPadding: PaddingValues,
-    onAddCourseClick: () -> Unit,
-    onAddSubjectClick: () -> Unit,
     onNavigateToTasks: () -> Unit
 ) {
     val context = LocalContext.current
@@ -176,14 +174,14 @@ fun HomeTab(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Modern Glassmorphic Focus Hero Card
-                ScholarCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .bouncyClick(onClick = {
-                            navController.navigate("pomodoro") { launchSingleTop = true }
-                        }),
-                    shape = RoundedCornerShape(28.dp)
+                // Modern Glassmorphic Focus Hero Card with Live Specular Reflection
+                ScholarHeroCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    liveReflection = true,
+                    onClick = {
+                        navController.navigate("pomodoro") { launchSingleTop = true }
+                    }
                 ) {
                     Column(
                         modifier = Modifier
@@ -261,10 +259,10 @@ fun HomeTab(
                                     if (isFocusRunning) {
                                         Surface(
                                             shape = CircleShape,
-                                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f),
-                                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)),
+                                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f),
+                                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f)),
                                             modifier = Modifier
-                                                .size(42.dp)
+                                                .size(38.dp)
                                                 .clip(CircleShape)
                                                 .clickable {
                                                     context.sendBroadcast(Intent(context, PomodoroActionReceiver::class.java).apply {
@@ -277,7 +275,7 @@ fun HomeTab(
                                                     Icons.Rounded.Stop,
                                                     contentDescription = "Stop",
                                                     tint = MaterialTheme.colorScheme.error,
-                                                    modifier = Modifier.size(20.dp)
+                                                    modifier = Modifier.size(18.dp)
                                                 )
                                             }
                                         }
@@ -285,9 +283,10 @@ fun HomeTab(
 
                                     Surface(
                                         shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.primary,
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.90f),
+                                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
                                         modifier = Modifier
-                                            .size(48.dp)
+                                            .size(44.dp)
                                             .clip(CircleShape)
                                             .clickable {
                                                 if (isFocusRunning) {
@@ -317,16 +316,16 @@ fun HomeTab(
                                                 } else Icons.Rounded.PlayArrow,
                                                 contentDescription = if (isFocusRunning) "Pause/Resume" else "Start Focus",
                                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                                modifier = Modifier.size(26.dp)
+                                                modifier = Modifier.size(24.dp)
                                             )
                                         }
                                     }
                                 }
                             }
 
-                            Spacer(Modifier.height(14.dp))
+                            Spacer(Modifier.height(12.dp))
 
-                            // Large minimalist numerical time display
+                            // Calm, ambient numerical time display
                             val minsLeft = pomodoroState.timeLeft / 60
                             val secsLeft = pomodoroState.timeLeft % 60
                             val focusDisplayTime = if (isFocusRunning) {
@@ -341,15 +340,21 @@ fun HomeTab(
 
                             Text(
                                 text = focusDisplayTime,
-                                style = MaterialTheme.typography.displayMedium,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                letterSpacing = (-0.5).sp
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
+                            if (!isFocusRunning) {
+                                Text(
+                                    text = if (todayFocusMinutes > 0) "Today's completed focus" else "Ready to focus",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
 
                             // Duration preset capsule pills
                             if (!isFocusRunning) {
-                                Spacer(Modifier.height(12.dp))
+                                Spacer(Modifier.height(10.dp))
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -359,14 +364,14 @@ fun HomeTab(
                                         Surface(
                                             shape = CircleShape,
                                             color = if (isSel) {
-                                                MaterialTheme.colorScheme.primary
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
                                             } else {
-                                                MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)
+                                                MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.30f)
                                             },
                                             border = BorderStroke(
-                                                0.8.dp,
-                                                if (isSel) MaterialTheme.colorScheme.primary
-                                                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                                                0.5.dp,
+                                                if (isSel) MaterialTheme.colorScheme.primary.copy(alpha = 0.40f)
+                                                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
                                             ),
                                             modifier = Modifier
                                                 .clip(CircleShape)
@@ -376,7 +381,7 @@ fun HomeTab(
                                                 text = "${mins}m",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
-                                                color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                color = if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                             )
                                         }
@@ -384,7 +389,7 @@ fun HomeTab(
                                 }
                             }
 
-                            Spacer(Modifier.height(14.dp))
+                            Spacer(Modifier.height(12.dp))
 
                             // Minimalist capsule progress indicator
                             val focusProgress = remember(todayFocusMinutes) {
@@ -394,10 +399,10 @@ fun HomeTab(
                                 progress = { focusProgress },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(6.dp)
+                                    .height(4.dp)
                                     .clip(CircleShape),
                                 color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
                             )
                         }
                 }
@@ -844,16 +849,16 @@ fun HomeTab(
                                 }
 
                                 Surface(
-                                    shape = RoundedCornerShape(20.dp),
+                                    shape = RoundedCornerShape(18.dp),
                                     color = if (isLiveNow) {
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
                                     } else {
-                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                                        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.35f)
                                     },
                                     border = BorderStroke(
-                                        0.8.dp,
-                                        if (isLiveNow) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                                        0.5.dp,
+                                        if (isLiveNow) MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)
+                                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
                                     ),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
@@ -869,7 +874,7 @@ fun HomeTab(
                                         ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .size(10.dp)
+                                                    .size(8.dp)
                                                     .background(courseColor, CircleShape)
                                             )
 
@@ -896,14 +901,14 @@ fun HomeTab(
                                                     if (course.code.isNotBlank()) {
                                                         Surface(
                                                             shape = CircleShape,
-                                                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
+                                                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
                                                             modifier = Modifier.padding(horizontal = 2.dp)
                                                         ) {
                                                             Text(
                                                                 text = course.code,
                                                                 style = MaterialTheme.typography.labelSmall,
-                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                                                             )
                                                         }
                                                     }
@@ -919,7 +924,7 @@ fun HomeTab(
                                                     Text(
                                                         text = scheduleText,
                                                         style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                                         maxLines = 1,
                                                         overflow = TextOverflow.Ellipsis
                                                     )
@@ -938,8 +943,8 @@ fun HomeTab(
                                                 }
                                                 Surface(
                                                     shape = CircleShape,
-                                                    color = statusColor.copy(alpha = 0.16f),
-                                                    border = BorderStroke(0.8.dp, statusColor.copy(alpha = 0.4f)),
+                                                    color = statusColor.copy(alpha = 0.12f),
+                                                    border = BorderStroke(0.5.dp, statusColor.copy(alpha = 0.25f)),
                                                     modifier = Modifier
                                                         .clip(CircleShape)
                                                         .clickable {
@@ -952,20 +957,20 @@ fun HomeTab(
                                                         }
                                                 ) {
                                                     Row(
-                                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                                         verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                                                     ) {
                                                         Icon(
                                                             if (existingAttendance.status.equals("present", true)) Icons.Rounded.Check else Icons.Rounded.Edit,
                                                             contentDescription = null,
                                                             tint = statusColor,
-                                                            modifier = Modifier.size(13.dp)
+                                                            modifier = Modifier.size(12.dp)
                                                         )
                                                         Text(
                                                             text = existingAttendance.status,
                                                             style = MaterialTheme.typography.labelSmall,
-                                                            fontWeight = FontWeight.Bold,
+                                                            fontWeight = FontWeight.SemiBold,
                                                             color = statusColor
                                                         )
                                                     }
@@ -975,10 +980,10 @@ fun HomeTab(
                                                     // Quick Present Capsule Button
                                                     Surface(
                                                         shape = CircleShape,
-                                                        color = Color(0xFF34C759).copy(alpha = 0.15f),
-                                                        border = BorderStroke(0.5.dp, Color(0xFF34C759).copy(alpha = 0.35f)),
+                                                        color = Color(0xFF34C759).copy(alpha = 0.10f),
+                                                        border = BorderStroke(0.5.dp, Color(0xFF34C759).copy(alpha = 0.25f)),
                                                         modifier = Modifier
-                                                            .size(38.dp)
+                                                            .size(32.dp)
                                                             .clip(CircleShape)
                                                             .clickable {
                                                                 viewModel.addAttendanceRecord(course.id, selectedDateStartMillis, "Present")
@@ -989,7 +994,7 @@ fun HomeTab(
                                                                 Icons.Rounded.Check,
                                                                 contentDescription = "Present",
                                                                 tint = Color(0xFF34C759),
-                                                                modifier = Modifier.size(18.dp)
+                                                                modifier = Modifier.size(15.dp)
                                                             )
                                                         }
                                                     }
@@ -997,10 +1002,10 @@ fun HomeTab(
                                                     // Quick Absent Capsule Button
                                                     Surface(
                                                         shape = CircleShape,
-                                                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
-                                                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)),
+                                                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+                                                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.20f)),
                                                         modifier = Modifier
-                                                            .size(38.dp)
+                                                            .size(32.dp)
                                                             .clip(CircleShape)
                                                             .clickable {
                                                                 viewModel.addAttendanceRecord(course.id, selectedDateStartMillis, "Absent")
@@ -1011,7 +1016,7 @@ fun HomeTab(
                                                                 Icons.Rounded.Close,
                                                                 contentDescription = "Absent",
                                                                 tint = MaterialTheme.colorScheme.error,
-                                                                modifier = Modifier.size(18.dp)
+                                                                modifier = Modifier.size(15.dp)
                                                             )
                                                         }
                                                     }
@@ -1024,8 +1029,8 @@ fun HomeTab(
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Surface(
                                                 shape = CircleShape,
-                                                color = Color(0xFF34C759).copy(alpha = 0.12f),
-                                                border = BorderStroke(0.5.dp, Color(0xFF34C759).copy(alpha = 0.35f))
+                                                color = Color(0xFF34C759).copy(alpha = 0.10f),
+                                                border = BorderStroke(0.5.dp, Color(0xFF34C759).copy(alpha = 0.25f))
                                             ) {
                                                 Row(
                                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
@@ -1034,7 +1039,7 @@ fun HomeTab(
                                                 ) {
                                                     Box(
                                                         modifier = Modifier
-                                                            .size(6.dp)
+                                                            .size(5.dp)
                                                             .graphicsLayer {
                                                                 scaleX = livePulseScale
                                                                 scaleY = livePulseScale
@@ -1048,7 +1053,7 @@ fun HomeTab(
                                                     Text(
                                                         text = "Live Now • $minutesLeft min left",
                                                         style = MaterialTheme.typography.labelSmall,
-                                                        fontWeight = FontWeight.Bold,
+                                                        fontWeight = FontWeight.SemiBold,
                                                         color = Color(0xFF34C759)
                                                     )
                                                 }
@@ -1060,10 +1065,10 @@ fun HomeTab(
                                                     progress = { liveProgress },
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .height(3.dp)
+                                                        .height(2.5.dp)
                                                         .clip(CircleShape),
                                                     color = Color(0xFF34C759),
-                                                    trackColor = Color(0xFF34C759).copy(alpha = 0.2f)
+                                                    trackColor = Color(0xFF34C759).copy(alpha = 0.15f)
                                                 )
                                             }
                                         }
@@ -1198,8 +1203,8 @@ fun HomeTab(
                             activeTasks.forEach { task ->
                                 Surface(
                                     shape = RoundedCornerShape(16.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.35f),
+                                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { viewModel.toggleTaskCompleted(task) }
@@ -1211,11 +1216,11 @@ fun HomeTab(
                                         // Circular Checkbox
                                         Box(
                                             modifier = Modifier
-                                                .size(22.dp)
+                                                .size(20.dp)
                                                 .clip(CircleShape)
                                                 .border(
-                                                    width = 2.dp,
-                                                    color = if (task.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                                    width = 1.2.dp,
+                                                    color = if (task.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
                                                     shape = CircleShape
                                                 )
                                                 .background(
@@ -1228,7 +1233,7 @@ fun HomeTab(
                                                     Icons.Rounded.Check,
                                                     contentDescription = null,
                                                     tint = MaterialTheme.colorScheme.onPrimary,
-                                                    modifier = Modifier.size(13.dp)
+                                                    modifier = Modifier.size(12.dp)
                                                 )
                                             }
                                         }

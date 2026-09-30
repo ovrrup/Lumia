@@ -652,16 +652,13 @@ fun SelfStudyTab(
         }
 
 
-        val fabSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
         BouncyFloatingActionButton(
             onClick = { showAddTaskDialog = true },
-            interactionSource = fabSource,
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 20.dp, bottom = bottomPadding.calculateBottomPadding() + 16.dp)
-                .bouncyScale(fabSource)
         ) {
             Icon(Icons.Rounded.Add, contentDescription = "Add Task", modifier = Modifier.size(24.dp))
         }

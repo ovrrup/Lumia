@@ -41,7 +41,7 @@ fun AmbientBackgroundCanvas(
         initialValue = 0f,
         targetValue = 6.28318f,
         animationSpec = infiniteRepeatable(
-            animation = tween(28000, easing = LinearEasing),
+            animation = tween(36000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "ambient_phase"
@@ -50,26 +50,26 @@ fun AmbientBackgroundCanvas(
     Canvas(
         modifier = Modifier
             .fillMaxSize()
-            .blur(radius = 36.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+            .blur(radius = 60.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
     ) {
         val width = size.width
         val height = size.height
 
-        val x1 = width * (0.35f + 0.10f * sin(phase))
-        val y1 = height * (0.22f + 0.08f * cos(phase))
-        val r1 = width * 0.90f
+        val x1 = width * (0.32f + 0.12f * sin(phase))
+        val y1 = height * (0.20f + 0.08f * cos(phase))
+        val r1 = width * 1.05f
 
-        val x2 = width * (0.68f - 0.10f * cos(phase))
-        val y2 = height * (0.75f - 0.08f * sin(phase))
-        val r2 = width * 0.85f
+        val x2 = width * (0.70f - 0.12f * cos(phase))
+        val y2 = height * (0.78f - 0.08f * sin(phase))
+        val r2 = width * 0.95f
 
-        val x3 = width * (0.50f + 0.12f * cos(phase * 0.7f))
-        val y3 = height * (0.48f + 0.10f * sin(phase * 0.7f))
-        val r3 = width * 0.75f
+        val x3 = width * (0.50f + 0.10f * cos(phase * 0.6f))
+        val y3 = height * (0.45f + 0.10f * sin(phase * 0.6f))
+        val r3 = width * 0.85f
 
-        val alphaMultiplier = (brightness * (if (isDark) 0.06f else 0.045f)).coerceIn(0f, 0.15f)
+        val alphaMultiplier = (brightness * (if (isDark) 0.07f else 0.05f)).coerceIn(0f, 0.14f)
 
-        // Primary ambient orb
+        // Primary soft ambient orb
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(primaryColor.copy(alpha = alphaMultiplier), Color.Transparent),
@@ -80,10 +80,10 @@ fun AmbientBackgroundCanvas(
             radius = r1
         )
 
-        // Tertiary ambient orb
+        // Tertiary soft ambient orb
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(secondaryColor.copy(alpha = alphaMultiplier * 0.75f), Color.Transparent),
+                colors = listOf(secondaryColor.copy(alpha = alphaMultiplier * 0.70f), Color.Transparent),
                 center = Offset(x2, y2),
                 radius = r2
             ),
@@ -91,10 +91,10 @@ fun AmbientBackgroundCanvas(
             radius = r2
         )
 
-        // Secondary subtle center orb
+        // Center gentle ambient blend orb
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(accentColor.copy(alpha = alphaMultiplier * 0.5f), Color.Transparent),
+                colors = listOf(accentColor.copy(alpha = alphaMultiplier * 0.45f), Color.Transparent),
                 center = Offset(x3, y3),
                 radius = r3
             ),

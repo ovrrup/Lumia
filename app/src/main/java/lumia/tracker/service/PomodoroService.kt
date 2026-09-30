@@ -202,6 +202,9 @@ class PomodoroService : Service() {
         isServiceRunning = true
         val action = intent?.action
 
+        // Always satisfy Android 8.0+ and 14+ contract immediately upon service start
+        ensureForegroundNotification()
+
         processIntentAction(action, intent)
         return START_NOT_STICKY
     }
@@ -562,9 +565,33 @@ class PomodoroService : Service() {
         }
     }
 
-    private fun startAsForeground() {
+    private fun ensureForegroundNotification() {
         val notification = buildNotification(timeLeftSeconds)
-        startForeground(NOTIFICATION_ID, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                } else {
+                    0
+                }
+                if (fgsType != 0) {
+                    startForeground(NOTIFICATION_ID, notification, fgsType)
+                } else {
+                    startForeground(NOTIFICATION_ID, notification)
+                }
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error starting foreground service notification", e)
+            try {
+                startForeground(NOTIFICATION_ID, notification)
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun startAsForeground() {
+        ensureForegroundNotification()
     }
 
     private fun updateForegroundNotification(time: Int) {

@@ -132,7 +132,7 @@ private fun CircularAttendanceButton(
         label = "att_bg"
     )
     val borderColor by animateColorAsState(
-        targetValue = if (selected) activeColor else activeColor.copy(alpha = 0.25f),
+        targetValue = if (selected) activeColor.copy(alpha = 0.5f) else activeColor.copy(alpha = 0.15f),
         label = "att_border"
     )
     val iconColor by animateColorAsState(
@@ -143,7 +143,7 @@ private fun CircularAttendanceButton(
     Surface(
         shape = CircleShape,
         color = bgColor,
-        border = BorderStroke(0.8.dp, borderColor),
+        border = BorderStroke(0.5.dp, borderColor),
         modifier = modifier
             .size(34.dp)
             .clip(CircleShape)
@@ -390,9 +390,9 @@ fun CalendarTab(
 
                     val pillBorder by animateColorAsState(
                         targetValue = when {
-                            isSelected -> MaterialTheme.colorScheme.primary
-                            dayInfo.isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                            else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                            isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.40f)
+                            dayInfo.isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                            else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f)
                         },
                         animationSpec = tween(200),
                         label = "pill_border_$index"
@@ -405,7 +405,7 @@ fun CalendarTab(
                             .clip(RoundedCornerShape(20.dp))
                             .background(pillBg)
                             .border(
-                                width = if (isSelected) 1.dp else 0.5.dp,
+                                width = 0.5.dp,
                                 color = pillBorder,
                                 shape = RoundedCornerShape(20.dp)
                             )

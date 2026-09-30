@@ -31,8 +31,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material3.Icon
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -65,7 +68,8 @@ import lumia.tracker.viewmodel.ScholarViewModel
  */
 enum class AcademicViewMode(val title: String, val icon: ImageVector) {
     COURSES("Courses", Icons.AutoMirrored.Rounded.MenuBook),
-    SUBJECTS("Subjects", Icons.Rounded.FolderOpen)
+    SUBJECTS("Subjects", Icons.Rounded.FolderOpen),
+    TIMETABLE("Timetable", Icons.Rounded.CalendarMonth)
 }
 
 /**
@@ -88,8 +92,6 @@ fun AcademicsScreen(
     modifier: Modifier = Modifier
 ) {
     var activeView by rememberSaveable { mutableStateOf(AcademicViewMode.COURSES) }
-    var showAddCourseDialog by remember { mutableStateOf(false) }
-    var showAddSubjectDialog by remember { mutableStateOf(false) }
 
     val courses by viewModel.courses.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
@@ -124,32 +126,50 @@ fun AcademicsScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 6.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
+            Box(contentAlignment = Alignment.Center) {
+                // Live specular reflection on segmented bar
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.20f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                 AcademicViewMode.entries.forEach { mode ->
                     val isSelected = activeView == mode
-                    val count = if (mode == AcademicViewMode.COURSES) courses.size else subjects.size
-                    val activeColor = if (mode == AcademicViewMode.COURSES) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.tertiary
+                    val count = when (mode) {
+                        AcademicViewMode.COURSES -> courses.size
+                        AcademicViewMode.SUBJECTS -> subjects.size
+                        AcademicViewMode.TIMETABLE -> courses.count { it.schedule.isNotBlank() }
+                    }
+                    val activeColor = when (mode) {
+                        AcademicViewMode.COURSES -> MaterialTheme.colorScheme.primary
+                        AcademicViewMode.SUBJECTS -> MaterialTheme.colorScheme.tertiary
+                        AcademicViewMode.TIMETABLE -> MaterialTheme.colorScheme.secondary
                     }
                     val itemBg = if (isSelected) {
-                        activeColor.copy(alpha = if (isDark) 0.20f else 0.14f)
+                        activeColor.copy(alpha = if (isDark) 0.16f else 0.12f)
                     } else {
                         Color.Transparent
                     }
                     val itemBorder = if (isSelected) {
-                        BorderStroke(0.8.dp, activeColor.copy(alpha = 0.40f))
+                        BorderStroke(0.5.dp, activeColor.copy(alpha = 0.30f))
                     } else null
                     val textColor = if (isSelected) {
                         activeColor
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
                     }
 
                     Surface(
@@ -166,41 +186,45 @@ fun AcademicsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 9.dp),
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Icon(
                                 imageVector = mode.icon,
                                 contentDescription = mode.title,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(14.dp),
                                 tint = textColor
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = mode.title,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = textColor
+                                color = textColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
-                                shape = CircleShape,
-                                color = if (isSelected) {
-                                    activeColor.copy(alpha = 0.22f)
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f)
-                                },
-                                tonalElevation = 0.dp,
-                                shadowElevation = 0.dp
-                            ) {
-                                Text(
-                                    text = "$count",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = textColor,
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                )
+                            if (count > 0) {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Surface(
+                                    shape = CircleShape,
+                                    color = if (isSelected) {
+                                        activeColor.copy(alpha = 0.18f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.50f)
+                                    },
+                                    tonalElevation = 0.dp,
+                                    shadowElevation = 0.dp
+                                ) {
+                                    Text(
+                                        text = "$count",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = textColor,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -247,22 +271,15 @@ fun AcademicsScreen(
                             onAddSubjectClick = { onAddSubjectClick() }
                         )
                     }
+                    AcademicViewMode.TIMETABLE -> {
+                        CalendarTab(
+                            navController = navController,
+                            viewModel = viewModel,
+                            bottomPadding = academicsContentPadding
+                        )
+                    }
                 }
             }
         }
-    }
-
-    if (showAddCourseDialog) {
-        AddCourseDialog(
-            viewModel = viewModel,
-            onDismiss = { showAddCourseDialog = false }
-        )
-    }
-
-    if (showAddSubjectDialog) {
-        AddSubjectDialog(
-            viewModel = viewModel,
-            onDismiss = { showAddSubjectDialog = false }
-        )
     }
 }

@@ -122,9 +122,10 @@ fun PomodoroScreen(
     }
 
     // Dynamic Color Branding (Mode or Course Theme)
+    val courseColorHex = selectedCourse?.colorHex
     val ringColor = when {
-        selectedCourse?.colorHex != null -> {
-            try { Color(android.graphics.Color.parseColor(selectedCourse!!.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+        !courseColorHex.isNullOrBlank() -> {
+            try { Color(android.graphics.Color.parseColor(courseColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
         }
         currentMode == PomodoroMode.SHORT_BREAK -> MaterialTheme.colorScheme.secondary
         currentMode == PomodoroMode.LONG_BREAK -> MaterialTheme.colorScheme.tertiary
@@ -250,17 +251,30 @@ fun PomodoroScreen(
                 .padding(padding)
         ) {
 
-            // 2. Subtle Ambient Vertical Gradient Wash
+            // 2. Subtle Ambient Radial Glowing Aura behind timer arc
+            val breathingTransition = rememberInfiniteTransition(label = "timer_glow_pulse")
+            val glowPulseScale by breathingTransition.animateFloat(
+                initialValue = 0.90f,
+                targetValue = 1.10f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(2800, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "glow_pulse"
+            )
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(340.dp)
+                    .height(380.dp)
                     .background(
-                        Brush.verticalGradient(
+                        Brush.radialGradient(
                             colors = listOf(
-                                animatedRingColor.copy(alpha = if (isDark) 0.08f else 0.05f),
+                                animatedRingColor.copy(alpha = if (isDark) 0.16f else 0.10f),
+                                animatedRingColor.copy(alpha = if (isDark) 0.05f else 0.03f),
                                 Color.Transparent
-                            )
+                            ),
+                            radius = 450f * glowPulseScale
                         )
                     )
             )

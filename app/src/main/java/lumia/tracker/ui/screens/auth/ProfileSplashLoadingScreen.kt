@@ -4,6 +4,8 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,6 +58,13 @@ fun ProfileSplashLoadingScreen(
 
     // Progress bar animation to show timeline passing elegantly
     var progress by remember { mutableStateOf(0f) }
+    var hasEntered by remember { mutableStateOf(false) }
+    val safeEnter = {
+        if (!hasEntered) {
+            hasEntered = true
+            onEnter()
+        }
+    }
     
     LaunchedEffect(Unit) {
         scaleAnim.animateTo(
@@ -66,16 +75,17 @@ fun ProfileSplashLoadingScreen(
             )
         )
         
-        // Progress tick animation matching the auto-advance timing
-        val totalDuration = 2000f
-        val interval = 50f
+        // Fast, responsive auto-advance (600ms) or instant tap
+        val totalDuration = 600f
+        val interval = 25f
         val steps = (totalDuration / interval).toInt()
         
         for (i in 1..steps) {
             delay(interval.toLong())
+            if (hasEntered) break
             progress = i.toFloat() / steps.toFloat()
         }
-        onEnter()
+        safeEnter()
     }
 
     Box(
@@ -89,7 +99,13 @@ fun ProfileSplashLoadingScreen(
                         MaterialTheme.colorScheme.background
                     )
                 )
-            ),
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                safeEnter()
+            },
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -205,6 +221,12 @@ fun ProfileSplashLoadingScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Medium
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Tap anywhere to skip",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 )
             }
 

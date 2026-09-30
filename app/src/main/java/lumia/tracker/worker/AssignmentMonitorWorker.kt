@@ -247,6 +247,12 @@ class AssignmentMonitorWorker(
             .setGroupSummary(true)
             .build()
 
-        notificationManager.notify(1001, notification)
+        try {
+            notificationManager.notify(1001, notification)
+        } catch (e: SecurityException) {
+            android.util.Log.e("AssignmentMonitorWorker", "Notification permission missing", e)
+        } catch (e: Exception) {
+            android.util.Log.e("AssignmentMonitorWorker", "Failed to show notification", e)
+        }
     }
 }

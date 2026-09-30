@@ -165,9 +165,9 @@ fun SubjectsTab(
         }
     }
 
-    if (subjectToEdit != null) {
+    subjectToEdit?.let { targetSubject ->
         EditSubjectDialog(
-            subject = subjectToEdit!!,
+            subject = targetSubject,
             viewModel = viewModel,
             onDismiss = { subjectToEdit = null }
         )

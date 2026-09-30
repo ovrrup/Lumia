@@ -6,6 +6,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -18,7 +19,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import lumia.tracker.ui.components.ScholarCardDefaults
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -101,30 +104,34 @@ fun StreakWidget(
         label = "flame_scale"
     )
 
+    val isDark = isSystemInDarkTheme()
+
     // Streak Widget Capsule Pill
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
-            .height(40.dp)
+            .height(42.dp)
             .clip(CircleShape)
             .background(
-                if (isCompleteToday) color.copy(alpha = 0.16f)
-                else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
+                if (isCompleteToday) color.copy(alpha = if (isDark) 0.18f else 0.14f)
+                else if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.70f)
+                else MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.85f)
             )
             .border(
-                0.8.dp,
-                if (isCompleteToday) color.copy(alpha = 0.45f)
-                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                ScholarCardDefaults.glassBorder(
+                    isDark = isDark,
+                    accentColor = if (isCompleteToday) color else null
+                ),
                 CircleShape
             )
             .bouncyClick(onClick = { showStreakSheet = true })
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = 14.dp, vertical = 6.dp)
     ) {
         Text(
             text = streakCurrent.toString(),
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Black,
+            fontWeight = FontWeight.Bold,
             color = if (isCompleteToday) color else MaterialTheme.colorScheme.onSurface
         )
 

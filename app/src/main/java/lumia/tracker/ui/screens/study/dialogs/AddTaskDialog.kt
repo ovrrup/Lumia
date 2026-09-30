@@ -231,9 +231,10 @@ fun AddTaskDialog(
                     val todayEnd = remember(todayStart) { todayStart + 86400000L }
                     val tomorrowEnd = remember(todayEnd) { todayEnd + 86400000L }
 
-                    val isToday = dueDateMillis != null && dueDateMillis!! in todayStart until todayEnd
-                    val isTomorrow = dueDateMillis != null && dueDateMillis!! in todayEnd until tomorrowEnd
-                    val isCustom = dueDateMillis != null && !isToday && !isTomorrow
+                    val currentDueDate = dueDateMillis
+                    val isToday = currentDueDate != null && currentDueDate in todayStart until todayEnd
+                    val isTomorrow = currentDueDate != null && currentDueDate in todayEnd until tomorrowEnd
+                    val isCustom = currentDueDate != null && !isToday && !isTomorrow
 
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
