@@ -162,10 +162,10 @@ fun PomodoroTimerArc(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val currentInCycle = (sessionsCompleted % periodSessions) + 1
+                    val completedInCycle = sessionsCompleted % periodSessions
                     for (i in 1..periodSessions) {
-                        val isFilled = i <= currentInCycle
-                        val isActive = isFilled && isRunning && !isPaused && i == currentInCycle
+                        val isFilled = i <= completedInCycle
+                        val isActive = isRunning && !isPaused && (i == completedInCycle + 1)
                         Box(
                             modifier = Modifier
                                 .size(
@@ -174,7 +174,7 @@ fun PomodoroTimerArc(
                                 )
                                 .clip(CircleShape)
                                 .background(
-                                    if (isFilled) ringColor else ringColor.copy(alpha = 0.20f)
+                                    if (isFilled || isActive) ringColor else ringColor.copy(alpha = 0.20f)
                                 )
                         )
                     }

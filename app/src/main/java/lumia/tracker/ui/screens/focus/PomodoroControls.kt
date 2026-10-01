@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import lumia.tracker.service.AodAccessibilityService
+import lumia.tracker.service.PomodoroMode
 import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
@@ -56,6 +57,8 @@ fun PomodoroControls(
     onStartAod: () -> Unit,
     onOpenZenMode: () -> Unit,
     onOpenSettings: () -> Unit,
+    currentMode: PomodoroMode = PomodoroMode.WORK,
+    isAtFullDuration: Boolean = false,
     viewModel: ScholarViewModel? = null,
     modifier: Modifier = Modifier
 ) {
@@ -160,6 +163,18 @@ fun PomodoroControls(
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val modeColor = when (currentMode) {
+                PomodoroMode.WORK -> MaterialTheme.colorScheme.primary
+                PomodoroMode.SHORT_BREAK -> MaterialTheme.colorScheme.secondary
+                PomodoroMode.LONG_BREAK -> MaterialTheme.colorScheme.tertiary
+            }
+
+            val startLabel = when (currentMode) {
+                PomodoroMode.WORK -> "Start Focus"
+                PomodoroMode.SHORT_BREAK -> "Start Break"
+                PomodoroMode.LONG_BREAK -> "Start Long Break"
+            }
+
             if (!isRunning) {
                 // PRIMARY START CAPSULE PILL
                 val startBorder = BorderStroke(
@@ -169,7 +184,7 @@ fun PomodoroControls(
 
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = modeColor,
                     border = startBorder,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -183,13 +198,13 @@ fun PomodoroControls(
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.PlayArrow,
-                            contentDescription = "Start Focus",
+                            contentDescription = startLabel,
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Start Focus",
+                            text = startLabel,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary
@@ -198,8 +213,15 @@ fun PomodoroControls(
                 }
             } else {
                 // RUNNING STATE: Modern Capsule Action Pills (Pause/Resume + Skip + Stop)
+                val isResumingBreakOrWork = isPaused && isAtFullDuration
+                val currentActionText = if (isPaused) {
+                    if (isResumingBreakOrWork) startLabel else "Resume"
+                } else {
+                    "Pause"
+                }
+
                 val pauseButtonBg by animateColorAsState(
-                    targetValue = if (isPaused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
+                    targetValue = if (isPaused) modeColor else MaterialTheme.colorScheme.secondaryContainer,
                     animationSpec = tween(220),
                     label = "pause_btn_bg"
                 )
@@ -229,25 +251,25 @@ fun PomodoroControls(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         AnimatedContent(
-                            targetState = isPaused,
+                            targetState = currentActionText,
                             transitionSpec = {
                                 fadeIn(animationSpec = tween(180)).togetherWith(fadeOut(animationSpec = tween(120)))
                             },
                             label = "pause_resume_animated_content"
-                        ) { paused ->
+                        ) { label ->
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Icon(
-                                    imageVector = if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
-                                    contentDescription = if (paused) "Resume" else "Pause",
+                                    imageVector = if (isPaused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
+                                    contentDescription = label,
                                     tint = pauseButtonContent,
                                     modifier = Modifier.size(22.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (paused) "Resume" else "Pause",
+                                    text = label,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = pauseButtonContent

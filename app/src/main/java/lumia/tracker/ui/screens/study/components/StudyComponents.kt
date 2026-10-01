@@ -54,6 +54,7 @@ fun MetricSummaryTile(
     border: BorderStroke? = null,
     onClick: (() -> Unit)? = null
 ) {
+    val isDark = isSystemInDarkTheme()
     val resolvedContainerColor = containerColor ?: if (isDark) {
         MaterialTheme.colorScheme.surfaceContainerLow
     } else {

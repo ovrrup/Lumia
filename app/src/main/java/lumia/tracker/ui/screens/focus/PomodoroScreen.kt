@@ -76,7 +76,24 @@ fun PomodoroScreen(
     val courses by viewModel.courses.collectAsStateWithLifecycle(initialValue = emptyList())
     val subjects by viewModel.subjects.collectAsStateWithLifecycle(initialValue = emptyList())
     val pomodoroState by PomodoroService.state.collectAsStateWithLifecycle()
+    val pomodoroSessions by viewModel.pomodoroSessions.collectAsStateWithLifecycle(initialValue = emptyList())
     val streakDays by viewModel.streakCurrent.collectAsStateWithLifecycle(initialValue = 0)
+
+    val todayStart = remember {
+        java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+    val todaySessions = remember(pomodoroSessions, todayStart) {
+        pomodoroSessions.filter { it.dateMillis >= todayStart }
+    }
+    val todaySessionsCount = todaySessions.size
+    val todayFocusMinutes = remember(todaySessions) {
+        todaySessions.sumOf { it.durationMinutes }
+    }
 
     // Configured Durations from ViewModel
     val workDurationMin by viewModel.pomodoroWorkDuration.collectAsStateWithLifecycle()
@@ -147,16 +164,24 @@ fun PomodoroScreen(
         else -> "Focus Session"
     }
 
-    // Helper: Send Intent actions to PomodoroService
+    // Helper: Send Intent actions to PomodoroService with direct execution priority
     fun sendServiceAction(action: String, extras: (Intent.() -> Unit)? = null) {
         val intent = Intent(context, PomodoroService::class.java).apply {
             this.action = action
             extras?.invoke(this)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && action == "START") {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
+        if (PomodoroService.instance != null) {
+            val handled = PomodoroService.handleActionDirectly(context, action, intent)
+            if (handled) return
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("PomodoroScreen", "Error sending service action $action", e)
         }
     }
 
@@ -216,6 +241,16 @@ fun PomodoroScreen(
                     }
                 },
                 actions = {
+                    // Reset Cycle Button (Active if any sessions completed or idle)
+                    if (pomodoroState.sessionsCompleted > 0 || !pomodoroState.isRunning) {
+                        BouncyIconButton(onClick = { sendServiceAction("RESET") }) {
+                            Icon(
+                                imageVector = Icons.Rounded.RestartAlt,
+                                contentDescription = "Reset Cycle",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                     // Zen Mode Quick Button
                     BouncyIconButton(onClick = { isZenModeActive = true }) {
                         Icon(
@@ -266,7 +301,22 @@ fun PomodoroScreen(
                     shortBreakDurationMin = shortBreakDurationMin,
                     longBreakDurationMin = longBreakDurationMin,
                     onSelectMode = { mode ->
-                        sendServiceAction("SWITCH_MODE") { putExtra("targetMode", mode.name) }
+                        if (pomodoroState.isRunning) {
+                            sendServiceAction("SWITCH_MODE") { putExtra("targetMode", mode.name) }
+                        } else {
+                            val defaultSec = when (mode) {
+                                PomodoroMode.WORK -> workDurationMin * 60
+                                PomodoroMode.SHORT_BREAK -> shortBreakDurationMin * 60
+                                PomodoroMode.LONG_BREAK -> longBreakDurationMin * 60
+                            }
+                            PomodoroService.updateState {
+                                it.copy(
+                                    modeString = mode.name,
+                                    timeLeft = defaultSec,
+                                    originalTime = defaultSec
+                                )
+                            }
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -307,6 +357,19 @@ fun PomodoroScreen(
                                         viewModel.updatePomodoroWorkDuration(preset.work)
                                         viewModel.updatePomodoroShortBreakDuration(preset.shortBreak)
                                         viewModel.updatePomodoroLongBreakDuration(preset.longBreak)
+                                        if (!pomodoroState.isRunning) {
+                                            val newSec = when (currentMode) {
+                                                PomodoroMode.WORK -> preset.work * 60
+                                                PomodoroMode.SHORT_BREAK -> preset.shortBreak * 60
+                                                PomodoroMode.LONG_BREAK -> preset.longBreak * 60
+                                            }
+                                            PomodoroService.updateState {
+                                                it.copy(
+                                                    timeLeft = newSec,
+                                                    originalTime = newSec
+                                                )
+                                            }
+                                        }
                                     }
                             ) {
                                 Row(
@@ -391,12 +454,16 @@ fun PomodoroScreen(
                     isRunning = pomodoroState.isRunning,
                     isPaused = pomodoroState.isPaused,
                     isAlarmActive = pomodoroState.isAlarmActive,
+                    currentMode = currentMode,
+                    isAtFullDuration = (pomodoroState.timeLeft >= pomodoroState.originalTime),
                     onStart = {
                         sendServiceAction("START") {
                             putExtra("workDuration", workDurationMin * 60)
                             putExtra("shortBreakDuration", shortBreakDurationMin * 60)
                             putExtra("longBreakDuration", longBreakDurationMin * 60)
                             putExtra("periodSessions", periodSessions)
+                            putExtra("targetMode", currentMode.name)
+                            putExtra("sessionsCompleted", pomodoroState.sessionsCompleted)
                             if (selectedCourse != null) {
                                 putExtra("courseId", selectedCourse?.id ?: -1)
                                 putExtra("subjectId", selectedCourse?.subjectId ?: -1)
@@ -433,8 +500,8 @@ fun PomodoroScreen(
                         // 1. Sessions Today
                         MetricBadgeItem(
                             icon = Icons.Rounded.CheckCircle,
-                            value = "${pomodoroState.sessionsCompleted}",
-                            label = "Sessions",
+                            value = "$todaySessionsCount",
+                            label = "Sessions Today",
                             tintColor = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
                         )
@@ -447,11 +514,10 @@ fun PomodoroScreen(
                         )
 
                         // 2. Total Focus Time
-                        val totalMins = pomodoroState.sessionsCompleted * workDurationMin
-                        val timeDisplay = if (totalMins >= 60) {
-                            String.format(java.util.Locale.US, "%.1fh", totalMins / 60.0f)
+                        val timeDisplay = if (todayFocusMinutes >= 60) {
+                            String.format(java.util.Locale.US, "%.1fh", todayFocusMinutes / 60.0f)
                         } else {
-                            "${totalMins}m"
+                            "${todayFocusMinutes}m"
                         }
                         MetricBadgeItem(
                             icon = Icons.Rounded.Timer,

@@ -72,8 +72,15 @@ class ScholarPomodoroWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_pomo_state, modeName + if (state.isPaused) " (PAUSED)" else "")
             views.setTextViewText(R.id.widget_btn_text_1, if (state.isPaused) "Resume" else "Pause")
         } else {
-            views.setTextViewText(R.id.widget_pomo_time, "25:00")
-            views.setTextViewText(R.id.widget_pomo_state, "Ready to focus")
+            val minutes = state.timeLeft / 60
+            val seconds = state.timeLeft % 60
+            views.setTextViewText(R.id.widget_pomo_time, String.format("%02d:%02d", minutes, seconds))
+            val idleModeName = when (state.modeString) {
+                "SHORT_BREAK" -> "Ready for short break"
+                "LONG_BREAK" -> "Ready for long break"
+                else -> "Ready to focus"
+            }
+            views.setTextViewText(R.id.widget_pomo_state, idleModeName)
             views.setTextViewText(R.id.widget_btn_text_1, "Start")
         }
 

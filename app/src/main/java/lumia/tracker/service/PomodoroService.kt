@@ -15,6 +15,9 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.*
@@ -214,14 +217,46 @@ class PomodoroService : Service() {
      */
     fun processIntentAction(action: String?, intent: Intent?) {
         when (action) {
+            "RESET" -> {
+                saveElapsedWorkSessionIfNeeded()
+                stopAlarmSound()
+                isAlarmActive = false
+                endedModeStr = ""
+                isServiceRunning = false
+                paused = false
+                tickerJob?.cancel()
+                tickerJob = null
+
+                sessionsCompletedCount = 0
+                periodsCompleted = 0
+                currentMode = PomodoroMode.WORK
+                originalDurationSeconds = workDuration
+                timeLeftSeconds = originalDurationSeconds
+                hasSavedCurrentSession = false
+
+                syncToState()
+                stopForeground(true)
+                stopSelf()
+            }
+
             "STOP" -> {
                 saveElapsedWorkSessionIfNeeded()
                 stopAlarmSound()
                 isAlarmActive = false
                 endedModeStr = ""
                 isServiceRunning = false
+                paused = false
                 tickerJob?.cancel()
                 tickerJob = null
+
+                originalDurationSeconds = when (currentMode) {
+                    PomodoroMode.WORK -> workDuration
+                    PomodoroMode.SHORT_BREAK -> shortBreakDuration
+                    PomodoroMode.LONG_BREAK -> longBreakDuration
+                }
+                timeLeftSeconds = originalDurationSeconds
+                hasSavedCurrentSession = false
+
                 syncToState()
                 stopForeground(true)
                 stopSelf()
@@ -269,6 +304,25 @@ class PomodoroService : Service() {
                 }
             }
 
+            "UPDATE_CONFIG" -> {
+                if (intent != null) {
+                    if (intent.hasExtra("workDuration")) workDuration = intent.getIntExtra("workDuration", workDuration)
+                    if (intent.hasExtra("shortBreakDuration")) shortBreakDuration = intent.getIntExtra("shortBreakDuration", shortBreakDuration)
+                    if (intent.hasExtra("longBreakDuration")) longBreakDuration = intent.getIntExtra("longBreakDuration", longBreakDuration)
+                    if (intent.hasExtra("periodSessions")) periodSessions = intent.getIntExtra("periodSessions", periodSessions)
+
+                    if (!isServiceRunning) {
+                        originalDurationSeconds = when (currentMode) {
+                            PomodoroMode.WORK -> workDuration
+                            PomodoroMode.SHORT_BREAK -> shortBreakDuration
+                            PomodoroMode.LONG_BREAK -> longBreakDuration
+                        }
+                        timeLeftSeconds = originalDurationSeconds
+                    }
+                    syncToState()
+                }
+            }
+
             "ADJUST_TIME" -> {
                 val delta = intent?.getIntExtra("deltaSeconds", 0) ?: 0
                 if (delta != 0) {
@@ -286,21 +340,39 @@ class PomodoroService : Service() {
             "SWITCH_MODE" -> {
                 val targetModeStr = intent?.getStringExtra("targetMode") ?: "WORK"
                 val targetMode = try { PomodoroMode.valueOf(targetModeStr) } catch (e: Exception) { PomodoroMode.WORK }
+                val wasRunning = isServiceRunning
                 currentMode = targetMode
                 hasSavedCurrentSession = false
-                startCurrentMode(startPaused = paused)
+
+                if (wasRunning) {
+                    startCurrentMode(startPaused = paused)
+                } else {
+                    originalDurationSeconds = when (currentMode) {
+                        PomodoroMode.WORK -> workDuration
+                        PomodoroMode.SHORT_BREAK -> shortBreakDuration
+                        PomodoroMode.LONG_BREAK -> longBreakDuration
+                    }
+                    timeLeftSeconds = originalDurationSeconds
+                    paused = false
+                    syncToState()
+                }
             }
 
-            "START", "RESET" -> {
+            "START" -> {
                 stopAlarmSound()
                 isAlarmActive = false
                 endedModeStr = ""
 
-                workDuration = intent?.getIntExtra("workDuration", 25 * 60) ?: (25 * 60)
-                shortBreakDuration = intent?.getIntExtra("shortBreakDuration", 5 * 60) ?: (5 * 60)
-                longBreakDuration = intent?.getIntExtra("longBreakDuration", 15 * 60) ?: (15 * 60)
-                periodSessions = intent?.getIntExtra("periodSessions", 4) ?: 4
-                maxPeriods = intent?.getIntExtra("maxPeriods", -1) ?: -1
+                workDuration = intent?.getIntExtra("workDuration", workDuration) ?: workDuration
+                shortBreakDuration = intent?.getIntExtra("shortBreakDuration", shortBreakDuration) ?: shortBreakDuration
+                longBreakDuration = intent?.getIntExtra("longBreakDuration", longBreakDuration) ?: longBreakDuration
+                periodSessions = intent?.getIntExtra("periodSessions", periodSessions) ?: periodSessions
+                maxPeriods = intent?.getIntExtra("maxPeriods", maxPeriods) ?: maxPeriods
+
+                if (intent?.hasExtra("targetMode") == true) {
+                    val modeStr = intent.getStringExtra("targetMode") ?: "WORK"
+                    currentMode = try { PomodoroMode.valueOf(modeStr) } catch (_: Exception) { currentMode }
+                }
 
                 if (intent?.hasExtra("subjectId") == true) {
                     activeSubjectId = intent.getIntExtra("subjectId", -1).takeIf { it != -1 }
@@ -318,9 +390,11 @@ class PomodoroService : Service() {
                     activeTopicId = intent.getIntExtra("topicId", -1).takeIf { it != -1 }
                 }
 
-                sessionsCompletedCount = 0
-                periodsCompleted = 0
-                currentMode = PomodoroMode.WORK
+                if (intent?.hasExtra("sessionsCompleted") == true) {
+                    sessionsCompletedCount = intent.getIntExtra("sessionsCompleted", sessionsCompletedCount)
+                }
+
+                isServiceRunning = true
                 hasSavedCurrentSession = false
                 startCurrentMode(startPaused = false)
                 startAsForeground()
@@ -379,6 +453,7 @@ class PomodoroService : Service() {
         targetEndTimeElapsedRealtime = SystemClock.elapsedRealtime() + (timeLeftSeconds * 1000L)
 
         tickerJob = serviceScope.launch {
+            var lastNotifSecond = timeLeftSeconds
             while (isActive && !paused && timeLeftSeconds > 0) {
                 val now = SystemClock.elapsedRealtime()
                 val remainingMillis = targetEndTimeElapsedRealtime - now
@@ -397,7 +472,12 @@ class PomodoroService : Service() {
                     timeLeftSeconds = computedSeconds
                     syncToState()
                     sendTickBroadcast()
-                    updateForegroundNotification(timeLeftSeconds)
+
+                    // Throttle notification updates to prevent Chronometer re-anchor flicker
+                    if (lastNotifSecond - timeLeftSeconds >= 15 || timeLeftSeconds <= 10) {
+                        lastNotifSecond = timeLeftSeconds
+                        updateForegroundNotification(timeLeftSeconds)
+                    }
                 }
 
                 // Re-align dynamically with next sub-second boundary to prevent any drift
@@ -670,12 +750,12 @@ class PomodoroService : Service() {
         )
 
         val progressMax = originalDurationSeconds
-        val progressNow = originalDurationSeconds - time
+        val progressNow = (originalDurationSeconds - time).coerceAtLeast(0)
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(NotificationHelper.getSmallIcon())
             .setContentTitle(title)
-            .setContentText("Time remaining: $timeStr" + if (paused) " (PAUSED)" else "")
+            .setContentText(if (paused) "Time remaining: $timeStr (PAUSED)" else "Time remaining: $timeStr")
             .setProgress(progressMax, progressNow, false)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
@@ -683,11 +763,15 @@ class PomodoroService : Service() {
             .setContentIntent(mainPending)
             .setOngoing(true)
             .setColor(NotificationHelper.getColor(this))
-            .setUsesChronometer(!paused)
-            .setWhen(System.currentTimeMillis() + time * 1000L)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            builder.setChronometerCountDown(true)
+        if (!paused) {
+            builder.setUsesChronometer(true)
+            builder.setWhen(System.currentTimeMillis() + time * 1000L)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                builder.setChronometerCountDown(true)
+            }
+        } else {
+            builder.setUsesChronometer(false)
         }
 
         return builder
@@ -738,6 +822,27 @@ class PomodoroService : Service() {
     private fun playAlarmSound(isWorkEnd: Boolean) {
         stopAlarmSound()
         try {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+                vibratorManager?.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            }
+            if (vibrator?.hasVibrator() == true) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val pattern = longArrayOf(0, 500, 200, 500, 200, 500)
+                    vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(longArrayOf(0, 500, 200, 500), -1)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error vibrating on alarm", e)
+        }
+
+        try {
             val soundUri = if (isWorkEnd) {
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                     ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
@@ -774,6 +879,18 @@ class PomodoroService : Service() {
             mediaPlayer = null
         } catch (e: Exception) {
             Log.e(TAG, "Error stopping alarm sound", e)
+        }
+        try {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+                vibratorManager?.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            }
+            vibrator?.cancel()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error cancelling vibrator", e)
         }
     }
 

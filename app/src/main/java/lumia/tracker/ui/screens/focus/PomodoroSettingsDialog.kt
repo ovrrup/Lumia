@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import lumia.tracker.service.PomodoroMode
+import lumia.tracker.service.PomodoroService
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.ScholarCard
@@ -314,6 +316,21 @@ fun PomodoroSettingsDialog(
                         viewModel.updatePomodoroPeriodSessions(tempSessions.toInt())
                         viewModel.updateSystemPomodoroAutoLog(tempAutoLog)
                         viewModel.updatePomodoroEnablePeriodTarget(tempPeriodTarget)
+
+                        if (!PomodoroService.isServiceRunning) {
+                            val mode = try { PomodoroMode.valueOf(PomodoroService.state.value.modeString) } catch (_: Exception) { PomodoroMode.WORK }
+                            val newDuration = when (mode) {
+                                PomodoroMode.WORK -> tempWork.toInt() * 60
+                                PomodoroMode.SHORT_BREAK -> tempShort.toInt() * 60
+                                PomodoroMode.LONG_BREAK -> tempLong.toInt() * 60
+                            }
+                            PomodoroService.updateState {
+                                it.copy(
+                                    timeLeft = newDuration,
+                                    originalTime = newDuration
+                                )
+                            }
+                        }
                         onDismiss()
                     },
                     modifier = Modifier.weight(1.5f),
