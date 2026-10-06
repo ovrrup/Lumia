@@ -83,6 +83,14 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     var showSwitchProfileSheet by remember { mutableStateOf(false) }
     var showCreateProfileDialog by remember { mutableStateOf(false) }
 
+    val currentVersionName = remember {
+        try {
+            lumia.tracker.BuildConfig.VERSION_NAME
+        } catch (e: Exception) {
+            "1.0.7"
+        }
+    }
+
     val cardBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                  else MaterialTheme.colorScheme.surfaceContainerLowest
 
@@ -485,7 +493,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 ) {
                     SettingsActionItemInCard(
                         title = "About Lumia Tracker",
-                        subtitle = "Version 1.0.7 • Open source licenses & changelog",
+                        subtitle = "v$currentVersionName • GNU GPLv3 • Specs & Updates",
                         icon = Icons.Rounded.Info,
                         iconBgColor = Color(0xFF636366),
                         onClick = { navController.navigate("settings/about") }
