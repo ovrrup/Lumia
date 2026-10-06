@@ -386,14 +386,8 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
             val existingCompletedTasks = tasks.filter { it.isCompleted && it.title.trim().length >= 2 }
             val existingCompletedAssignments = assignments.filter { it.isCompleted && it.title.trim().length >= 2 }
 
-            val eligibleTasksCompletedTodayTitles = existingCompletedTasks.filter { task ->
-                (task.dueDateMillis != null && task.dueDateMillis >= todayStart) || 
-                (task.dueDateMillis == null && task.createdAt >= todayStart)
-            }.map { it.title }.toSet()
-
-            val eligibleAssignmentsCompletedTodayTitles = existingCompletedAssignments.filter { assignment ->
-                assignment.dueDateMillis >= todayStart
-            }.map { it.title }.toSet()
+            val eligibleTasksCompletedTodayTitles = existingCompletedTasks.map { it.title.trim() }.toSet()
+            val eligibleAssignmentsCompletedTodayTitles = existingCompletedAssignments.map { it.title.trim() }.toSet()
 
             val completedTasksToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Completed task:") }
             val unmarkedTasksToday = actionLogs.filter { it.timestampMillis >= todayStart && it.timestampMillis < todayEnd && it.actionText.startsWith("Unmarked task:") }
@@ -499,7 +493,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
                 val editor = prefs.edit()
                 if (percentage >= threshold) {
                     if (statusToday == "none") {
-                        val isConsecutive = (todayStart - lastStreakDate) <= 86400000L * 2
+                        val isConsecutive = lastStreakDate > 0L && (todayStart - lastStreakDate) in 3600000L..(86400000L + 14400000L)
                         val newCurrent = if (isConsecutive) _streakCurrent.value + 1 else 1
                         
                         _streakCurrent.value = newCurrent

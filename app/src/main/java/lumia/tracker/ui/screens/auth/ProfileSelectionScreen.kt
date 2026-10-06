@@ -129,7 +129,7 @@ fun ProfileSelectionScreen(
                     style = MaterialTheme.typography.titleLarge
                 )
             },
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(32.dp),
             text = {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,

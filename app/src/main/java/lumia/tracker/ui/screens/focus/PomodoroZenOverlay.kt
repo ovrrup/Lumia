@@ -54,6 +54,8 @@ fun PomodoroZenOverlay(
     ringColor: Color,
     isRunning: Boolean,
     isPaused: Boolean,
+    sessionsCompleted: Int = 0,
+    periodSessions: Int = 4,
     onPauseResume: () -> Unit,
     onClose: () -> Unit
 ) {
@@ -136,6 +138,8 @@ fun PomodoroZenOverlay(
             originalTimeSeconds = originalTimeSeconds,
             statusLabel = statusLabel,
             ringColor = ringColor,
+            sessionsCompleted = sessionsCompleted,
+            periodSessions = periodSessions,
             isRunning = isRunning,
             isPaused = isPaused
         )

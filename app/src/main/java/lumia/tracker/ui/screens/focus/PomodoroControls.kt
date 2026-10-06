@@ -169,6 +169,12 @@ fun PomodoroControls(
                 PomodoroMode.LONG_BREAK -> MaterialTheme.colorScheme.tertiary
             }
 
+            val onModeColor = when (currentMode) {
+                PomodoroMode.WORK -> MaterialTheme.colorScheme.onPrimary
+                PomodoroMode.SHORT_BREAK -> MaterialTheme.colorScheme.onSecondary
+                PomodoroMode.LONG_BREAK -> MaterialTheme.colorScheme.onTertiary
+            }
+
             val startLabel = when (currentMode) {
                 PomodoroMode.WORK -> "Start Focus"
                 PomodoroMode.SHORT_BREAK -> "Start Break"
@@ -179,7 +185,7 @@ fun PomodoroControls(
                 // PRIMARY START CAPSULE PILL
                 val startBorder = BorderStroke(
                     width = 1.dp,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.20f)
+                    color = onModeColor.copy(alpha = 0.20f)
                 )
 
                 Surface(
@@ -199,7 +205,7 @@ fun PomodoroControls(
                         Icon(
                             imageVector = Icons.Rounded.PlayArrow,
                             contentDescription = startLabel,
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = onModeColor,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -207,7 +213,7 @@ fun PomodoroControls(
                             text = startLabel,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = onModeColor
                         )
                     }
                 }
@@ -226,7 +232,7 @@ fun PomodoroControls(
                     label = "pause_btn_bg"
                 )
                 val pauseButtonContent by animateColorAsState(
-                    targetValue = if (isPaused) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
+                    targetValue = if (isPaused) onModeColor else MaterialTheme.colorScheme.onSecondaryContainer,
                     animationSpec = tween(220),
                     label = "pause_btn_content"
                 )
@@ -356,13 +362,6 @@ fun PomodoroControls(
                 modifier = Modifier.weight(1f)
             )
 
-            // Timer Interval Preferences
-            UtilityFilterChip(
-                icon = Icons.Rounded.Tune,
-                label = "Intervals",
-                onClick = onOpenSettings,
-                modifier = Modifier.weight(1f)
-            )
         }
 
         // 4. True AOD Engine Selector Modal Dialog
@@ -492,7 +491,7 @@ fun PomodoroControls(
                         )
                     }
                 },
-                shape = RoundedCornerShape(26.dp),
+                shape = RoundedCornerShape(32.dp),
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
         }

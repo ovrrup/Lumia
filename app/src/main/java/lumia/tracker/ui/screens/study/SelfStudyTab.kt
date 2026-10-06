@@ -152,7 +152,7 @@ fun SelfStudyTab(
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
-                top = 16.dp,
+                top = bottomPadding.calculateTopPadding(),
                 bottom = bottomPadding.calculateBottomPadding() + 88.dp
             ),
             verticalArrangement = Arrangement.spacedBy(14.dp)

@@ -24,7 +24,7 @@ class PomodoroActionReceiver : BroadcastReceiver() {
         val action = intent?.action ?: return
         
         // 1. If service is active in memory, dispatch action immediately for instant zero-latency response
-        if (PomodoroService.isServiceRunning) {
+        if (PomodoroService.instance != null) {
             val handled = PomodoroService.handleActionDirectly(context, action, intent)
             if (handled) return
         }

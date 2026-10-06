@@ -532,9 +532,18 @@ fun TrueAodOverlayUi(
 
     // Dynamic Anti-Burn-In Orbital Pixel Shifter
     val shiftInterval = if (burnInShiftIntervalSeconds > 0) burnInShiftIntervalSeconds else 10
-    val burnInOffset = remember(serviceState.timeLeft, shiftInterval) {
+    var shiftTick by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(shiftInterval) {
+        while (true) {
+            delay((shiftInterval * 1000L).coerceAtLeast(1000L))
+            shiftTick = System.currentTimeMillis()
+        }
+    }
+    val burnInOffset = remember(shiftTick, serviceState.timeLeft, shiftInterval) {
         val orbitRadiusDp = 6.0
-        val step = (serviceState.timeLeft / shiftInterval)
+        val wallStep = (shiftTick / (shiftInterval * 1000L))
+        val timerStep = (serviceState.timeLeft / shiftInterval)
+        val step = wallStep + timerStep
         val angleRad = (step % 12) * (2.0 * Math.PI / 12.0)
         val x = (orbitRadiusDp * cos(angleRad)).toFloat().dp
         val y = (orbitRadiusDp * sin(angleRad)).toFloat().dp

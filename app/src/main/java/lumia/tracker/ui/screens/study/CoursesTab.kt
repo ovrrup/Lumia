@@ -74,9 +74,13 @@ fun CoursesTab(
     val totalAttended = remember(allAttendance) {
         allAttendance.count { it.status.equals("PRESENT", ignoreCase = true) || it.status.equals("LATE", ignoreCase = true) }
     }
-    val avgAttendancePct = remember(allAttendance) {
-        if (allAttendance.isNotEmpty()) {
-            ((totalAttended.toFloat() / allAttendance.size) * 100).toInt()
+    val totalCancelled = remember(allAttendance) {
+        allAttendance.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
+    }
+    val effectiveAttendanceCount = allAttendance.size - totalCancelled
+    val avgAttendancePct = remember(allAttendance, totalAttended, effectiveAttendanceCount) {
+        if (effectiveAttendanceCount > 0) {
+            ((totalAttended.toFloat() / effectiveAttendanceCount) * 100).toInt()
         } else null
     }
 

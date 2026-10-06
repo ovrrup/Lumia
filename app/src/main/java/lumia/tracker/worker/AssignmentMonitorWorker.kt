@@ -74,10 +74,12 @@ class AssignmentMonitorWorker(
 
                 val allCourses = database.scholarDao().exportAllCourses()
                 val todaysCourses = allCourses.filter { course ->
-                    course.scheduleDays.isNotBlank() && (
-                        course.scheduleDays.contains(todayFull, ignoreCase = true) ||
-                        course.scheduleDays.contains(todayShort, ignoreCase = true)
-                    )
+                    course.scheduleDays.isNotBlank() && course.scheduleDays.split(",").any { day ->
+                        val trimmed = day.trim()
+                        trimmed.equals(todayFull, ignoreCase = true) ||
+                        trimmed.equals(todayShort, ignoreCase = true) ||
+                        (trimmed.length >= 3 && trimmed.take(3).equals(todayShort, ignoreCase = true))
+                    }
                 }
 
                 for (course in todaysCourses) {

@@ -202,7 +202,6 @@ class PomodoroService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         instance = this
-        isServiceRunning = true
         val action = intent?.action
 
         // Always satisfy Android 8.0+ and 14+ contract immediately upon service start
@@ -324,6 +323,11 @@ class PomodoroService : Service() {
             }
 
             "ADJUST_TIME" -> {
+                if (isAlarmActive) {
+                    stopAlarmSound()
+                    isAlarmActive = false
+                    endedModeStr = ""
+                }
                 val delta = intent?.getIntExtra("deltaSeconds", 0) ?: 0
                 if (delta != 0) {
                     timeLeftSeconds = (timeLeftSeconds + delta).coerceAtLeast(10)
@@ -338,9 +342,17 @@ class PomodoroService : Service() {
             }
 
             "SWITCH_MODE" -> {
+                if (isAlarmActive) {
+                    stopAlarmSound()
+                    isAlarmActive = false
+                    endedModeStr = ""
+                }
                 val targetModeStr = intent?.getStringExtra("targetMode") ?: "WORK"
                 val targetMode = try { PomodoroMode.valueOf(targetModeStr) } catch (e: Exception) { PomodoroMode.WORK }
                 val wasRunning = isServiceRunning
+                if (currentMode == PomodoroMode.LONG_BREAK && targetMode == PomodoroMode.WORK && sessionsCompletedCount >= periodSessions) {
+                    sessionsCompletedCount = 0
+                }
                 currentMode = targetMode
                 hasSavedCurrentSession = false
 
@@ -407,6 +419,11 @@ class PomodoroService : Service() {
     }
 
     private fun togglePauseResume() {
+        if (isAlarmActive) {
+            stopAlarmSound()
+            isAlarmActive = false
+            endedModeStr = ""
+        }
         paused = !paused
         if (!paused) {
             targetEndTimeElapsedRealtime = SystemClock.elapsedRealtime() + (timeLeftSeconds * 1000L)
@@ -421,6 +438,11 @@ class PomodoroService : Service() {
     }
 
     private fun startCurrentMode(startPaused: Boolean = false) {
+        if (!startPaused && isAlarmActive) {
+            stopAlarmSound()
+            isAlarmActive = false
+            endedModeStr = ""
+        }
         isWork = currentMode == PomodoroMode.WORK
         originalDurationSeconds = when (currentMode) {
             PomodoroMode.WORK -> workDuration
@@ -520,12 +542,12 @@ class PomodoroService : Service() {
             sessionsCompletedCount++
             if (sessionsCompletedCount >= periodSessions) {
                 currentMode = PomodoroMode.LONG_BREAK
-                sessionsCompletedCount = 0
             } else {
                 currentMode = PomodoroMode.SHORT_BREAK
             }
         } else if (completedMode == PomodoroMode.LONG_BREAK) {
             periodsCompleted++
+            sessionsCompletedCount = 0
             if (maxPeriods > 0 && periodsCompleted >= maxPeriods) {
                 isServiceRunning = false
                 syncToState()

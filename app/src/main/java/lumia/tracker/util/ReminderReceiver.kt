@@ -23,6 +23,12 @@ class ReminderReceiver : BroadcastReceiver() {
         val assignmentId = intent.getIntExtra("assignment_id", -1)
         val typeExtra = intent.getStringExtra("type") ?: "assignment"
 
+        if (typeExtra == "streak_preservation") {
+            StreakNotifications.sendPreservationNotificationIfDue(context)
+            StreakNotifications.scheduleEveningPreservationReminder(context)
+            return
+        }
+
         val profMgr = ProfileManager(context)
         val prefs = profMgr.getProfilePrefs()
         val formalTone = prefs.getBoolean("notif_formal_tone", true)
@@ -242,6 +248,8 @@ class ReminderReceiver : BroadcastReceiver() {
             .setAutoCancel(true)
             .setGroup("assignments_group")
 
+        val finalNotifId = if (assignmentId != -1) assignmentId else (System.currentTimeMillis() % 100000).toInt()
+
         if (typeExtra == "assignment" || typeExtra == "task") {
             builder.addAction(
                 android.R.drawable.ic_menu_edit,
@@ -254,15 +262,14 @@ class ReminderReceiver : BroadcastReceiver() {
                 snoozePendingIntent
             )
         } else if (typeExtra == "class_end" && courseId != null) {
-            val notifId = if (assignmentId != -1) assignmentId else (System.currentTimeMillis() % 100000).toInt()
             val presentIntent = Intent(context, ReminderReceiver::class.java).apply {
                 this.action = "ACTION_MARK_PRESENT"
                 putExtra("courseId", courseId)
-                putExtra("notif_id", notifId)
+                putExtra("notif_id", finalNotifId)
             }
             val presentPending = PendingIntent.getBroadcast(
                 context,
-                notifId + 1,
+                finalNotifId + 1,
                 presentIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -270,11 +277,11 @@ class ReminderReceiver : BroadcastReceiver() {
             val absentIntent = Intent(context, ReminderReceiver::class.java).apply {
                 this.action = "ACTION_MARK_ABSENT"
                 putExtra("courseId", courseId)
-                putExtra("notif_id", notifId)
+                putExtra("notif_id", finalNotifId)
             }
             val absentPending = PendingIntent.getBroadcast(
                 context,
-                notifId + 2,
+                finalNotifId + 2,
                 absentIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -285,8 +292,7 @@ class ReminderReceiver : BroadcastReceiver() {
 
         try {
             val notification = builder.build()
-            val notifId = if (assignmentId != -1) assignmentId else (System.currentTimeMillis() % 100000).toInt()
-            notificationManager.notify(notifId, notification)
+            notificationManager.notify(finalNotifId, notification)
         } catch (e: SecurityException) {
             android.util.Log.e("ReminderReceiver", "Notification permission missing", e)
         } catch (e: Exception) {

@@ -86,6 +86,12 @@ class BootReceiver : BroadcastReceiver() {
                         Log.e("BootReceiver", "WorkManager enqueue failed on boot", e)
                     }
 
+                    // 4. Restore evening streak preservation reminder
+                    StreakNotifications.scheduleEveningPreservationReminder(context)
+
+                    // 5. Refresh home screen widgets
+                    WidgetUpdateHelper.updateAllWidgets(context)
+
                     Log.d("BootReceiver", "Restored $scheduledCount reminders on boot")
                 } catch (e: Exception) {
                     Log.e("BootReceiver", "Error restoring notifications on boot", e)

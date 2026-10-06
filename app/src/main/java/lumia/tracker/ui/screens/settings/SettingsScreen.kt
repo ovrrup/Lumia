@@ -58,27 +58,14 @@ import java.io.File
 import java.io.FileOutputStream
 
 /**
- * Searchable metadata item for live instant settings search index.
- */
-private data class SettingsSearchItem(
-    val title: String,
-    val subtitle: String,
-    val category: String,
-    val route: String,
-    val icon: ImageVector,
-    val iconBgColor: Color
-)
-
-/**
- * SettingsScreen - Improvised Academic Preferences & Configuration Hub.
- * Features an ambient Profile Hero card with live stats, instant Live Search,
- * 1-tap Quick Ambient Controls shelf (Theme Mode, Pure Black, Navigation Tabs),
- * organized settings groups with complete route linking, and streamlined profile sheets.
+ * SettingsScreen - Academic Preferences & Configuration Hub.
+ * Features an ambient Profile Hero card with live streak and profile switching,
+ * organized academic settings groups with complete route linking, and streamlined profile sheets.
  */
 @ValueScore(
     score = 98,
     importance = Importance.CRITICAL,
-    description = "Completely improvised settings hub with live search, ambient profile hero, quick controls shelf, and unified route groups",
+    description = "Streamlined settings hub with ambient profile hero, clean academic route groups, and profile management",
     category = "Settings"
 )
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -91,49 +78,10 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
     val streakCurrent by viewModel.streakCurrent.collectAsStateWithLifecycle()
 
-    // Quick Settings State Flows
-    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
-    val pureBlackMode by viewModel.pureBlackMode.collectAsStateWithLifecycle()
-    val featureSelfStudyEnabled by viewModel.featureSelfStudyEnabled.collectAsStateWithLifecycle()
-    val featureAnalyticsEnabled by viewModel.featureAnalyticsEnabled.collectAsStateWithLifecycle()
-
-    // Modals & Search State
-    var searchQuery by remember { mutableStateOf("") }
+    // Modals State
     var showEditProfileSheet by remember { mutableStateOf(false) }
     var showSwitchProfileSheet by remember { mutableStateOf(false) }
     var showCreateProfileDialog by remember { mutableStateOf(false) }
-
-    // Search index registry
-    val searchIndex = remember {
-        listOf(
-            SettingsSearchItem("Appearance & Themes", "Light/Dark mode, color palettes & AMOLED pure black", "Personalization", "settings/appearance", Icons.Rounded.Palette, Color(0xFF007AFF)),
-            SettingsSearchItem("Dark Mode & AMOLED", "Toggle Light, Dark, System or Pure Black OLED", "Personalization", "settings/appearance", Icons.Rounded.DarkMode, Color(0xFF1C1C1E)),
-            SettingsSearchItem("Custom Color Palette", "Create custom hex palettes & dynamic lighting presets", "Personalization", "settings/advanced_theme", Icons.Rounded.ColorLens, Color(0xFF5856D6)),
-            SettingsSearchItem("Streak Goals & Rules", "Daily study targets, grace days & multiplier", "Habits", "settings/streaks", Icons.Rounded.LocalFireDepartment, Color(0xFFFF9500)),
-            SettingsSearchItem("Academic Synergy & System", "Course-subject linking, auto-link & lecture tracking", "Academics", "settings/system", Icons.Rounded.Hub, Color(0xFF34C759)),
-            SettingsSearchItem("Pomodoro Auto-Logging", "Automatically log completed focus periods to academic history", "Academics", "settings/system", Icons.Rounded.Timer, Color(0xFFFF3B30)),
-            SettingsSearchItem("Notifications & Reminders", "Deadline alerts, class schedules & morning briefing", "Alerts", "settings/notifications", Icons.Rounded.Notifications, Color(0xFF34C759)),
-            SettingsSearchItem("Daily Digest Briefing", "Morning schedule summary and assignment deadlines", "Alerts", "settings/notifications", Icons.Rounded.Today, Color(0xFF5AC8FA)),
-            SettingsSearchItem("Safety Guard & OLED Protection", "AOD burn-in protection, lockscreen & safe PIN", "Safety", "settings/safety", Icons.Rounded.Security, Color(0xFFFF2D55)),
-            SettingsSearchItem("Burn-in Shift & Protection", "Periodic OLED pixel shift and safe auto-off", "Safety", "settings/safety", Icons.Rounded.Shield, Color(0xFFAF52DE)),
-            SettingsSearchItem("Data Management & Backups", "Export database, cloud sync & auto-backup", "Storage", "settings/data", Icons.Rounded.Storage, Color(0xFF8E8E93)),
-            SettingsSearchItem("Database Defragmentation", "Clean up SQLite cache and optimize performance", "Storage", "settings/data", Icons.Rounded.CleaningServices, Color(0xFF64D2FF)),
-            SettingsSearchItem("Experimental Sandbox (Beta)", "Early-access features, action logs & experimental headers", "Beta", "settings/beta", Icons.Rounded.Science, Color(0xFFFF9500)),
-            SettingsSearchItem("About Lumia Tracker", "Version 1.0.7 • Open source licenses, release notes & credits", "About", "settings/about", Icons.Rounded.Info, Color(0xFF636366))
-        )
-    }
-
-    val filteredSearchResults = remember(searchQuery) {
-        if (searchQuery.isBlank()) emptyList()
-        else {
-            val q = searchQuery.trim().lowercase()
-            searchIndex.filter {
-                it.title.lowercase().contains(q) ||
-                    it.subtitle.lowercase().contains(q) ||
-                    it.category.lowercase().contains(q)
-            }
-        }
-    }
 
     val cardBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                  else MaterialTheme.colorScheme.surfaceContainerLowest
@@ -174,135 +122,8 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // ==========================================
-            // 1. LIVE SEARCH SETTINGS BAR
+            // 1. HERO SCHOLAR PROFILE CARD
             // ==========================================
-            Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Surface(
-                    shape = CircleShape,
-                    color = cardBg,
-                    border = ScholarCardDefaults.border(),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Search,
-                            contentDescription = "Search",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        TextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            placeholder = {
-                                Text(
-                                    "Search settings, themes, backups...",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
-                                )
-                            },
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                disabledContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            ),
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        if (searchQuery.isNotBlank()) {
-                            BouncyIconButton(
-                                onClick = { searchQuery = "" },
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = "Clear",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // If searching: display instant search results
-            if (searchQuery.isNotBlank()) {
-                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    ScholarCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(22.dp),
-                        containerColor = cardBg,
-                        border = ScholarCardDefaults.border()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = "Search Results (${filteredSearchResults.size})",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-
-                            if (filteredSearchResults.isEmpty()) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 24.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.SearchOff,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(36.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = "No settings found for \"$searchQuery\"",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            } else {
-                                filteredSearchResults.forEachIndexed { index, item ->
-                                    SettingsActionItemInCard(
-                                        title = item.title,
-                                        subtitle = item.subtitle,
-                                        icon = item.icon,
-                                        iconBgColor = item.iconBgColor,
-                                        onClick = {
-                                            searchQuery = ""
-                                            navController.navigate(item.route)
-                                        }
-                                    )
-                                    if (index < filteredSearchResults.lastIndex) {
-                                        HorizontalDivider(
-                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
-                                            modifier = Modifier.padding(start = 48.dp, end = 8.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                // ==========================================
-                // 2. HERO SCHOLAR PROFILE CARD
-                // ==========================================
                 Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                     ScholarCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -540,142 +361,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }
 
                 // ==========================================
-                // 3. QUICK AMBIENT CONTROLS SHELF
-                // ==========================================
-                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    ScholarCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(22.dp),
-                        containerColor = cardBg,
-                        border = ScholarCardDefaults.border()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = "Quick Controls",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
-                            // Theme Mode 3-way Segmented Capsule
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
-                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(3.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    listOf("Light" to "☀️ Light", "Dark" to "🌙 Dark", "System" to "⚙️ Auto").forEach { (mode, label) ->
-                                        val isSelected = themeMode.equals(mode, ignoreCase = true)
-                                        val btnBg = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent
-                                        val btnBorder = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)) else null
-                                        val textColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = btnBg,
-                                            border = btnBorder,
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clip(CircleShape)
-                                                .bouncyClick { viewModel.updateThemeMode(mode) }
-                                        ) {
-                                            Box(
-                                                modifier = Modifier.padding(vertical = 7.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = label,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                    color = textColor
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Quick Toggles Strip
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                // AMOLED Pure Black
-                                val blackActive = pureBlackMode
-                                Surface(
-                                    shape = CircleShape,
-                                    color = if (blackActive) Color.Black else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
-                                    border = BorderStroke(
-                                        0.5.dp,
-                                        if (blackActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
-                                    ),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(CircleShape)
-                                        .bouncyClick { viewModel.updatePureBlackMode(!pureBlackMode) }
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        Text(
-                                            text = if (blackActive) "🖤 Pure Black ON" else "🖤 AMOLED Black",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = if (blackActive) FontWeight.Bold else FontWeight.Medium,
-                                            color = if (blackActive) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                // Tasks Tab Visibility Toggle
-                                val tasksActive = featureSelfStudyEnabled
-                                Surface(
-                                    shape = CircleShape,
-                                    color = if (tasksActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
-                                    border = BorderStroke(
-                                        0.5.dp,
-                                        if (tasksActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)
-                                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)
-                                    ),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(CircleShape)
-                                        .bouncyClick { viewModel.updateFeatureSelfStudyEnabled(!featureSelfStudyEnabled) }
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        Text(
-                                            text = if (tasksActive) "📖 Tasks Tab ON" else "📖 Tasks Hidden",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = if (tasksActive) FontWeight.Bold else FontWeight.Medium,
-                                            color = if (tasksActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // ==========================================
-                // 4. GROUP: PERSONALIZATION & THEMES
+                // 2. GROUP: PERSONALIZATION & THEMES
                 // ==========================================
                 SettingsGroupCard(
                     title = "Personalization & Themes",
@@ -851,7 +537,6 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-    }
 
     // ==========================================
     // MODAL BOTTOM SHEET: EDIT PROFILE
@@ -886,7 +571,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             onDismissRequest = { showEditProfileSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -971,7 +656,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            "Upload a custom photo or pick an emoji",
+                            "Upload a custom profile photo or use initials",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1010,35 +695,17 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     shape = RoundedCornerShape(14.dp)
                 )
 
-                // Emoji Presets
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "Emoji Avatars",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    val emojiList = listOf("🎓", "📚", "⚡", "🔬", "🚀", "💡", "🧠", "🎯", "💻", "✨", "🪐", "🔥")
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+                // Monogram reset or clear custom photo
+                val isCustomPhoto = editAvatar.startsWith("/") || editAvatar.startsWith("file://") || editAvatar.startsWith("content://")
+                if (isCustomPhoto) {
+                    BouncyOutlinedButton(
+                        onClick = { editAvatar = "" },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = CircleShape
                     ) {
-                        items(emojiList) { emoji ->
-                            val isSelected = editAvatar == emoji
-                            Surface(
-                                shape = CircleShape,
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                                border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clickable { editAvatar = emoji }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(emoji, fontSize = 18.sp)
-                                }
-                            }
-                        }
+                        Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Reset to Monogram Initials", style = MaterialTheme.typography.labelMedium)
                     }
                 }
 
@@ -1083,7 +750,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
             onDismissRequest = { showSwitchProfileSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -1228,7 +895,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
     if (showCreateProfileDialog) {
         var createName by remember { mutableStateOf("") }
         var createAlias by remember { mutableStateOf("") }
-        var createAvatar by remember { mutableStateOf("🎓") }
+        var createAvatar by remember { mutableStateOf("") }
 
         AlertDialog(
             onDismissRequest = { showCreateProfileDialog = false },
@@ -1264,36 +931,6 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp)
                     )
-
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            text = "Avatar Emoji",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        val emojiList = listOf("🎓", "📚", "⚡", "🔬", "🚀", "💡", "🧠", "🎯")
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(emojiList) { emoji ->
-                                val isSelected = createAvatar == emoji
-                                Surface(
-                                    shape = CircleShape,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clickable { createAvatar = emoji }
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(emoji, fontSize = 16.sp)
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             },
             confirmButton = {
@@ -1316,7 +953,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                     Text("Cancel")
                 }
             },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(32.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     }

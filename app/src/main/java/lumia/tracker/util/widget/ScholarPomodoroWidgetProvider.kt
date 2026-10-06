@@ -42,11 +42,16 @@ class ScholarPomodoroWidgetProvider : AppWidgetProvider() {
                 action = "PAUSE_RESUME"
             } else {
                 action = "START"
-                // Pass standard 25 / 5 / 15 durations
-                putExtra("workDuration", 25 * 60)
-                putExtra("shortBreakDuration", 5 * 60)
-                putExtra("longBreakDuration", 15 * 60)
-                putExtra("periodSessions", 4)
+                val profMgr = lumia.tracker.data.ProfileManager(context)
+                val prefs = profMgr.getProfilePrefs()
+                val workDuration = prefs.getInt("pomodoro_work_duration", 25) * 60
+                val shortBreakDuration = prefs.getInt("pomodoro_short_break_duration", 5) * 60
+                val longBreakDuration = prefs.getInt("pomodoro_long_break_duration", 15) * 60
+                val periodSessions = prefs.getInt("pomodoro_period_sessions", 4)
+                putExtra("workDuration", workDuration)
+                putExtra("shortBreakDuration", shortBreakDuration)
+                putExtra("longBreakDuration", longBreakDuration)
+                putExtra("periodSessions", periodSessions)
             }
         }
         val actionPendingIntent = PendingIntent.getBroadcast(

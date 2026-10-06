@@ -57,6 +57,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
 
     val coursesCount by viewModel.courses.collectAsStateWithLifecycle()
     val assignmentsCount by viewModel.assignments.collectAsStateWithLifecycle()
+    val tasksCount by viewModel.tasks.collectAsStateWithLifecycle()
     val subjectsCount by viewModel.subjects.collectAsStateWithLifecycle()
     val pomodoroSessionsCount by viewModel.pomodoroSessions.collectAsStateWithLifecycle()
 
@@ -193,7 +194,8 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                     }
 
                     // Storage distribution bar
-                    val totalRecords = coursesCount.size + subjectsCount.size + assignmentsCount.size + pomodoroSessionsCount.size
+                    val totalTasks = assignmentsCount.size + tasksCount.size
+                    val totalRecords = coursesCount.size + subjectsCount.size + totalTasks + pomodoroSessionsCount.size
                     if (totalRecords > 0) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(
@@ -222,7 +224,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             ) {
                                 val cWeight = (coursesCount.size.toFloat() / totalRecords).coerceAtLeast(0.02f)
                                 val sWeight = (subjectsCount.size.toFloat() / totalRecords).coerceAtLeast(0.02f)
-                                val aWeight = (assignmentsCount.size.toFloat() / totalRecords).coerceAtLeast(0.02f)
+                                val aWeight = (totalTasks.toFloat() / totalRecords).coerceAtLeast(0.02f)
                                 val pWeight = (pomodoroSessionsCount.size.toFloat() / totalRecords).coerceAtLeast(0.02f)
 
                                 Box(modifier = Modifier.weight(cWeight).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
@@ -251,7 +253,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                             modifier = Modifier.weight(1f)
                         )
                         MetricPill(
-                            count = assignmentsCount.size,
+                            count = totalTasks,
                             label = "Tasks",
                             accentColor = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.weight(1f)
@@ -417,7 +419,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     if (showExportDialog) {
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(32.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = { Icon(Icons.Rounded.SaveAlt, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             title = { Text("Save Backup Package", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
@@ -471,7 +473,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     if (showRestoreSnapshotDialog) {
         AlertDialog(
             onDismissRequest = { showRestoreSnapshotDialog = false },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(32.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = { Icon(Icons.Rounded.Restore, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             title = { Text("Restore Safety Snapshot", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
@@ -502,7 +504,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(32.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = { Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
             title = { Text("Delete All Data", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error) },

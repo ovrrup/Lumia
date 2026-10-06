@@ -174,14 +174,16 @@ fun PomodoroScreen(
             val handled = PomodoroService.handleActionDirectly(context, action, intent)
             if (handled) return
         }
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
+        if (action == "START" || pomodoroState.isRunning) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PomodoroScreen", "Error sending service action $action", e)
             }
-        } catch (e: Exception) {
-            android.util.Log.e("PomodoroScreen", "Error sending service action $action", e)
         }
     }
 
@@ -209,6 +211,8 @@ fun PomodoroScreen(
             ringColor = animatedRingColor,
             isRunning = pomodoroState.isRunning,
             isPaused = pomodoroState.isPaused,
+            sessionsCompleted = pomodoroState.sessionsCompleted,
+            periodSessions = periodSessions,
             onPauseResume = { sendServiceAction("PAUSE_RESUME") },
             onClose = { isZenModeActive = false }
         )
@@ -241,8 +245,8 @@ fun PomodoroScreen(
                     }
                 },
                 actions = {
-                    // Reset Cycle Button (Active if any sessions completed or idle)
-                    if (pomodoroState.sessionsCompleted > 0 || !pomodoroState.isRunning) {
+                    // Reset Cycle Button (Active if any sessions completed or paused)
+                    if (pomodoroState.sessionsCompleted > 0 || (pomodoroState.isRunning && pomodoroState.isPaused)) {
                         BouncyIconButton(onClick = { sendServiceAction("RESET") }) {
                             Icon(
                                 imageVector = Icons.Rounded.RestartAlt,
@@ -250,14 +254,6 @@ fun PomodoroScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    }
-                    // Zen Mode Quick Button
-                    BouncyIconButton(onClick = { isZenModeActive = true }) {
-                        Icon(
-                            imageVector = Icons.Rounded.Fullscreen,
-                            contentDescription = "Zen Immersion",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
                     // Keep Screen Awake Toggle
                     BouncyIconButton(onClick = { keepScreenAwake = !keepScreenAwake }) {
@@ -301,106 +297,30 @@ fun PomodoroScreen(
                     shortBreakDurationMin = shortBreakDurationMin,
                     longBreakDurationMin = longBreakDurationMin,
                     onSelectMode = { mode ->
+                        val defaultSec = when (mode) {
+                            PomodoroMode.WORK -> workDurationMin * 60
+                            PomodoroMode.SHORT_BREAK -> shortBreakDurationMin * 60
+                            PomodoroMode.LONG_BREAK -> longBreakDurationMin * 60
+                        }
                         if (pomodoroState.isRunning) {
                             sendServiceAction("SWITCH_MODE") { putExtra("targetMode", mode.name) }
                         } else {
-                            val defaultSec = when (mode) {
-                                PomodoroMode.WORK -> workDurationMin * 60
-                                PomodoroMode.SHORT_BREAK -> shortBreakDurationMin * 60
-                                PomodoroMode.LONG_BREAK -> longBreakDurationMin * 60
-                            }
-                            PomodoroService.updateState {
-                                it.copy(
-                                    modeString = mode.name,
-                                    timeLeft = defaultSec,
-                                    originalTime = defaultSec
-                                )
+                            if (PomodoroService.instance != null) {
+                                sendServiceAction("SWITCH_MODE") { putExtra("targetMode", mode.name) }
+                            } else {
+                                PomodoroService.updateState {
+                                    it.copy(
+                                        modeString = mode.name,
+                                        timeLeft = defaultSec,
+                                        originalTime = defaultSec
+                                    )
+                                }
                             }
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Quick Preset Switcher (Active when timer is idle)
-                if (!pomodoroState.isRunning) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        data class Preset(val name: String, val work: Int, val shortBreak: Int, val longBreak: Int)
-                        val presets = listOf(
-                            Preset("Standard", 25, 5, 15),
-                            Preset("Deep Work", 50, 10, 20),
-                            Preset("Sprint", 15, 3, 10)
-                        )
-                        presets.forEach { preset ->
-                            val isSelected = workDurationMin == preset.work && shortBreakDurationMin == preset.shortBreak
-                            val presetBg = if (isSelected) {
-                                animatedRingColor.copy(alpha = 0.12f)
-                            } else {
-                                if (isDark) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerLowest
-                            }
-                            val presetBorder = if (isSelected) {
-                                BorderStroke(1.dp, animatedRingColor.copy(alpha = 0.40f))
-                            } else {
-                                ScholarCardDefaults.border()
-                            }
-
-                            Surface(
-                                shape = CircleShape,
-                                color = presetBg,
-                                border = presetBorder,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(36.dp)
-                                    .bouncyClick {
-                                        viewModel.updatePomodoroWorkDuration(preset.work)
-                                        viewModel.updatePomodoroShortBreakDuration(preset.shortBreak)
-                                        viewModel.updatePomodoroLongBreakDuration(preset.longBreak)
-                                        if (!pomodoroState.isRunning) {
-                                            val newSec = when (currentMode) {
-                                                PomodoroMode.WORK -> preset.work * 60
-                                                PomodoroMode.SHORT_BREAK -> preset.shortBreak * 60
-                                                PomodoroMode.LONG_BREAK -> preset.longBreak * 60
-                                            }
-                                            PomodoroService.updateState {
-                                                it.copy(
-                                                    timeLeft = newSec,
-                                                    originalTime = newSec
-                                                )
-                                            }
-                                        }
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 8.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (isSelected) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(5.dp)
-                                                .clip(CircleShape)
-                                                .background(animatedRingColor)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                    }
-                                    Text(
-                                        text = "${preset.name} · ${preset.work}m",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                                        color = if (isSelected) animatedRingColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
 
                 // 2. Centered Sweeping Timer Arc Gauge
                 val defaultDurationSec = when (currentMode) {
@@ -586,6 +506,16 @@ fun FluidPillModeSelector(
         label = "pill_active_color"
     )
 
+    val onActiveColor by animateColorAsState(
+        targetValue = when (currentMode) {
+            PomodoroMode.WORK -> MaterialTheme.colorScheme.onPrimary
+            PomodoroMode.SHORT_BREAK -> MaterialTheme.colorScheme.onSecondary
+            PomodoroMode.LONG_BREAK -> MaterialTheme.colorScheme.onTertiary
+        },
+        animationSpec = tween(300),
+        label = "pill_on_active_color"
+    )
+
     val containerBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
                       else MaterialTheme.colorScheme.surfaceContainerLowest
 
@@ -602,7 +532,7 @@ fun FluidPillModeSelector(
         ) {
             val tabWidth = (maxWidth - 8.dp) / 3
             val animatedOffset by animateDpAsState(
-                targetValue = tabWidth * selectedIndex + (selectedIndex * 4).dp,
+                targetValue = (tabWidth + 4.dp) * selectedIndex,
                 animationSpec = spring(
                     dampingRatio = Spring.DampingRatioLowBouncy,
                     stiffness = Spring.StiffnessMediumLow
@@ -630,22 +560,25 @@ fun FluidPillModeSelector(
                     durationText = "${workDurationMin}m",
                     icon = Icons.Rounded.Psychology,
                     isSelected = currentMode == PomodoroMode.WORK,
+                    selectedTextColor = onActiveColor,
                     onClick = { onSelectMode(PomodoroMode.WORK) },
                     modifier = Modifier.weight(1f)
                 )
                 PillModeTabItem(
-                    title = "Short Break",
+                    title = "Short",
                     durationText = "${shortBreakDurationMin}m",
                     icon = Icons.Rounded.Coffee,
                     isSelected = currentMode == PomodoroMode.SHORT_BREAK,
+                    selectedTextColor = onActiveColor,
                     onClick = { onSelectMode(PomodoroMode.SHORT_BREAK) },
                     modifier = Modifier.weight(1f)
                 )
                 PillModeTabItem(
-                    title = "Long Break",
+                    title = "Long",
                     durationText = "${longBreakDurationMin}m",
                     icon = Icons.Rounded.SelfImprovement,
                     isSelected = currentMode == PomodoroMode.LONG_BREAK,
+                    selectedTextColor = onActiveColor,
                     onClick = { onSelectMode(PomodoroMode.LONG_BREAK) },
                     modifier = Modifier.weight(1f)
                 )
@@ -669,16 +602,17 @@ fun PillModeTabItem(
     durationText: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
+    selectedTextColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val contentColor by animateColorAsState(
-        targetValue = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+        targetValue = if (isSelected) selectedTextColor else MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = tween(250),
         label = "pill_tab_content_color"
     )
     val subtitleColor by animateColorAsState(
-        targetValue = if (isSelected) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+        targetValue = if (isSelected) selectedTextColor.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
         animationSpec = tween(250),
         label = "pill_tab_sub_color"
     )
@@ -692,7 +626,7 @@ fun PillModeTabItem(
                 indication = null,
                 onClick = onClick
             )
-            .padding(vertical = 5.dp, horizontal = 4.dp),
+            .padding(vertical = 4.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -708,7 +642,10 @@ fun PillModeTabItem(
             )
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 11.sp,
+                    lineHeight = 13.sp
+                ),
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                 color = contentColor,
                 maxLines = 1,
@@ -717,7 +654,10 @@ fun PillModeTabItem(
         }
         Text(
             text = durationText,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                lineHeight = 11.sp
+            ),
             fontWeight = FontWeight.Medium,
             color = subtitleColor
         )

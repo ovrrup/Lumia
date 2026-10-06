@@ -49,7 +49,7 @@ fun SafetyPinDialog(viewModel: ScholarViewModel) {
 
     safetyPinDialogData?.let { data ->
         AlertDialog(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(32.dp),
             tonalElevation = 0.dp,
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
             icon = {

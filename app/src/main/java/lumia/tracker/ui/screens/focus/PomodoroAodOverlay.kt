@@ -49,11 +49,13 @@ fun PomodoroAodOverlay(
     val context = LocalContext.current
     val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
     var currentTimeStr by remember { mutableStateOf(timeFormat.format(Date())) }
+    var burnInTick by remember { mutableIntStateOf(((System.currentTimeMillis() / 10000L) % 8).toInt()) }
 
-    // Tick clock every 10 seconds
+    // Tick clock and anti-burn-in shifter every 10 seconds based on continuous wall-clock time
     LaunchedEffect(Unit) {
         while (true) {
             currentTimeStr = timeFormat.format(Date())
+            burnInTick = ((System.currentTimeMillis() / 10000L) % 8).toInt()
             kotlinx.coroutines.delay(10000L)
         }
     }
@@ -77,14 +79,13 @@ fun PomodoroAodOverlay(
         }
     }
 
-    // Dynamic Anti-Burn-In Pixel Shifter (shifts every 10 seconds)
-    val burnInOffset = remember(timeLeftSeconds / 10) {
-        val tick = ((timeLeftSeconds / 10) % 8)
-        val x = when (tick) {
+    // Dynamic Anti-Burn-In Pixel Shifter (shifts every 10 seconds continuously)
+    val burnInOffset = remember(burnInTick) {
+        val x = when (burnInTick) {
             0 -> 0.dp; 1 -> 4.dp; 2 -> 0.dp; 3 -> (-4).dp
             4 -> 2.dp; 5 -> (-2).dp; 6 -> 3.dp; else -> (-3).dp
         }
-        val y = when (tick) {
+        val y = when (burnInTick) {
             0 -> 0.dp; 1 -> (-4).dp; 2 -> 4.dp; 3 -> 0.dp
             4 -> (-2).dp; 5 -> 2.dp; 6 -> (-3).dp; else -> 3.dp
         }

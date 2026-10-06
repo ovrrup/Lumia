@@ -79,7 +79,7 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
     val topFloatingPillHeight = 58.dp
     val extendedPadding = PaddingValues(
         start = 0.dp,
-        top = 0.dp,
+        top = statusBarsTop + topFloatingPillHeight + 8.dp,
         end = 0.dp,
         bottom = navBarsBottom + navBarHeight.dp + navBarPaddingBottom.dp + 20.dp
     )
@@ -94,7 +94,6 @@ fun DashboardScreen(navController: NavController, viewModel: ScholarViewModel) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = statusBarsTop + topFloatingPillHeight)
                     .clipToBounds()
             ) {
                 AnimatedContent(

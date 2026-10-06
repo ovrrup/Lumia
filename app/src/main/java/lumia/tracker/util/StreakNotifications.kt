@@ -152,7 +152,7 @@ object StreakNotifications {
             ReminderScheduler.scheduleReminderExact(
                 context = context,
                 assignmentId = 77777,
-                title = "Protect Your Streak! 🔥",
+                title = "Protect Your Streak!",
                 desc = "Don't lose your streak! Complete your goals tonight.",
                 interconnections = "",
                 triggerTime = triggerTime,
@@ -212,7 +212,7 @@ object StreakNotifications {
 
             val notification = NotificationCompat.Builder(context, "scholar_streak_channel")
                 .setSmallIcon(iconRes)
-                .setContentTitle("Protect Your Streak! 🔥")
+                .setContentTitle("Protect Your Streak!")
                 .setContentText(message)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(message))
                 .setColor(notifColor)

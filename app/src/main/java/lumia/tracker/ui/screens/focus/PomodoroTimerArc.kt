@@ -78,15 +78,17 @@ fun PomodoroTimerArc(
                     .padding(16.dp)
             ) {
                 val strokeWidthPx = 10.dp.toPx()
-                val arcSize = Size(size.width - strokeWidthPx, size.height - strokeWidthPx)
-                val topLeft = Offset(strokeWidthPx / 2f, strokeWidthPx / 2f)
-                val radius = (size.minDimension - strokeWidthPx) / 2f
+                val diameter = size.minDimension - strokeWidthPx
+                val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+                val arcSize = Size(diameter, diameter)
+                val radius = diameter / 2f
                 val sweepAngleDeg = animatedProgress * 360f
 
                 // Track Ring
                 drawCircle(
                     color = ringColor.copy(alpha = 0.12f),
                     radius = radius,
+                    center = center,
                     style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
                 )
 
@@ -107,7 +109,14 @@ fun PomodoroTimerArc(
             // Central Information Display
             val mins = timeLeftSeconds / 60
             val secs = timeLeftSeconds % 60
-            val timeString = String.format(Locale.US, "%02d:%02d", mins, secs)
+            val hours = mins / 60
+            val displayMins = if (hours > 0) mins % 60 else mins
+            val timeString = if (hours > 0) {
+                String.format(Locale.US, "%d:%02d:%02d", hours, displayMins, secs)
+            } else {
+                String.format(Locale.US, "%02d:%02d", mins, secs)
+            }
+            val digitFontSize = if (hours > 0) 38.sp else 50.sp
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -117,7 +126,7 @@ fun PomodoroTimerArc(
                 Text(
                     text = timeString,
                     style = MaterialTheme.typography.displayLarge.copy(
-                        fontSize = 52.sp,
+                        fontSize = digitFontSize,
                         fontWeight = FontWeight.Medium,
                         letterSpacing = (-1).sp,
                         fontFeatureSettings = "tnum"
@@ -162,8 +171,13 @@ fun PomodoroTimerArc(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val completedInCycle = sessionsCompleted % periodSessions
-                    for (i in 1..periodSessions) {
+                    val safePeriodSessions = maxOf(1, periodSessions)
+                    val completedInCycle = if (sessionsCompleted > 0 && sessionsCompleted % safePeriodSessions == 0) {
+                        safePeriodSessions
+                    } else {
+                        sessionsCompleted % safePeriodSessions
+                    }
+                    for (i in 1..safePeriodSessions) {
                         val isFilled = i <= completedInCycle
                         val isActive = isRunning && !isPaused && (i == completedInCycle + 1)
                         Box(

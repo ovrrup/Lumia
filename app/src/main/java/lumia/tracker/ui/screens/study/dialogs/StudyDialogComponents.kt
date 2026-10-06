@@ -219,7 +219,7 @@ fun StudyDialogTextField(
     singleLine: Boolean = true,
     maxLines: Int = if (singleLine) 1 else 4,
     minLines: Int = 1,
-    shape: Shape = if (singleLine) RoundedCornerShape(16.dp) else RoundedCornerShape(18.dp)
+    shape: Shape = if (singleLine) RoundedCornerShape(20.dp) else RoundedCornerShape(22.dp)
 ) {
     OutlinedTextField(
         value = value,
@@ -498,7 +498,7 @@ fun StudyDeleteConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         title = {
             Row(
@@ -593,7 +593,7 @@ fun StudyTimePickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         confirmButton = {
             StudyDialogConfirmButton(
@@ -603,7 +603,7 @@ fun StudyTimePickerDialog(
                     val minute = timePickerState.minute
                     val amPm = if (hour >= 12) "PM" else "AM"
                     val formatHour = if (hour % 12 == 0) 12 else hour % 12
-                    val formattedTime = String.format(Locale.getDefault(), "%02d:%02d %s", formatHour, minute, amPm)
+                    val formattedTime = String.format(Locale.US, "%02d:%02d %s", formatHour, minute, amPm)
                     onTimeSelected(formattedTime)
                     onDismiss()
                 }
@@ -743,7 +743,7 @@ fun AddEditAssignmentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         title = {
             StudyDialogHeader(
@@ -997,7 +997,7 @@ fun AddEditNoteDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         title = {
             StudyDialogHeader(
@@ -1082,7 +1082,7 @@ fun AiStudyGuideExportDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         title = {
             StudyDialogHeader(

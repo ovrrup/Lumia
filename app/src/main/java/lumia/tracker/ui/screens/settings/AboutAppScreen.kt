@@ -467,7 +467,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
     if (showLicense) {
         AlertDialog(
             onDismissRequest = { showLicense = false },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(32.dp),
             icon = {
                 Icon(
                     Icons.Rounded.Gavel,

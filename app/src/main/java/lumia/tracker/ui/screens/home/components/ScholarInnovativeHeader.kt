@@ -16,7 +16,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -66,106 +68,129 @@ fun DashboardTopFloatingPills(
         else -> Icons.Rounded.Home to "Home"
     }
 
-    Row(
+    val isDark = isSystemInDarkTheme()
+    val headerGlassBg = if (isDark) {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.76f)
+    }
+    val headerDividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.22f)
+    val pillBg = if (isDark) {
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.50f)
+    }
+    val pillBorder = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .background(headerGlassBg)
+            .drawBehind {
+                drawLine(
+                    color = headerDividerColor,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
     ) {
-        val isDark = isSystemInDarkTheme()
-        val pillBg = if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
-                     else MaterialTheme.colorScheme.surfaceContainerLowest
-        val pillBorder = ScholarCardDefaults.border()
-
-        // Left Floating Pill: Live Focus Timer (if running) OR Section Title Pill
-        if (pomodoroState.isRunning) {
-            ScholarFocusPill(
-                isRunning = true,
-                timeLeft = pomodoroState.timeLeft,
-                onClick = { navController.navigate("pomodoro") }
-            )
-        } else {
-            Surface(
-                shape = CircleShape,
-                color = pillBg,
-                border = pillBorder,
-                shadowElevation = 0.dp,
-                tonalElevation = 0.dp,
-                modifier = Modifier
-                    .height(42.dp)
-                    .clip(CircleShape)
-            ) {
-                Row(
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left Floating Pill: Live Focus Timer (if running) OR Section Title Pill
+            if (pomodoroState.isRunning) {
+                ScholarFocusPill(
+                    isRunning = true,
+                    timeLeft = pomodoroState.timeLeft,
+                    onClick = { navController.navigate("pomodoro") }
+                )
+            } else {
+                Surface(
+                    shape = CircleShape,
+                    color = pillBg,
+                    border = pillBorder,
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp,
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .height(42.dp)
+                        .clip(CircleShape)
                 ) {
-                    Icon(
-                        imageVector = tabIcon,
-                        contentDescription = tabTitle,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    AnimatedContent(
-                        targetState = tabTitle,
-                        transitionSpec = {
-                            (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
-                                .togetherWith(fadeOut(tween(140)) + slideOutVertically(tween(140)) { -it / 3 })
-                        },
-                        label = "top_pill_title"
-                    ) { title ->
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                    Row(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = tabIcon,
+                            contentDescription = tabTitle,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
                         )
+                        AnimatedContent(
+                            targetState = tabTitle,
+                            transitionSpec = {
+                                (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
+                                    .togetherWith(fadeOut(tween(140)) + slideOutVertically(tween(140)) { -it / 3 })
+                            },
+                            label = "top_pill_title"
+                        ) { title ->
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        // Right Action Pill Cluster: Streak + Search + Profile Avatar
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            StreakWidget(
-                viewModel = viewModel,
-                navController = navController
-            )
-
-            Surface(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(CircleShape)
-                    .bouncyClick(onClick = { navController.navigate("search") }),
-                shape = CircleShape,
-                color = pillBg,
-                border = pillBorder,
-                shadowElevation = 0.dp,
-                tonalElevation = 0.dp
+            // Right Action Pill Cluster: Streak + Search + Profile Avatar
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Rounded.Search,
-                        contentDescription = "Search",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
+                StreakWidget(
+                    viewModel = viewModel,
+                    navController = navController
+                )
 
-            ScholarProfileAvatar(
-                avatarEmoji = activeProfile.avatarEmoji,
-                displayName = activeProfile.name,
-                onClick = { navController.navigate("settings") },
-                modifier = Modifier.size(42.dp)
-            )
+                Surface(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .bouncyClick(onClick = { navController.navigate("search") }),
+                    shape = CircleShape,
+                    color = pillBg,
+                    border = pillBorder,
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                ScholarProfileAvatar(
+                    avatarEmoji = activeProfile.avatarEmoji,
+                    displayName = activeProfile.name,
+                    onClick = { navController.navigate("settings") },
+                    modifier = Modifier.size(42.dp)
+                )
+            }
         }
     }
 }

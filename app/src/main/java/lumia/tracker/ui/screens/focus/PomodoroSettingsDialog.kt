@@ -1,5 +1,8 @@
 package lumia.tracker.ui.screens.focus
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -7,6 +10,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,16 +26,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import lumia.tracker.service.AodAccessibilityService
 import lumia.tracker.service.PomodoroMode
 import lumia.tracker.service.PomodoroService
 import lumia.tracker.ui.components.BouncyButton
 import lumia.tracker.ui.components.BouncyTextButton
 import lumia.tracker.ui.components.ScholarCard
+import lumia.tracker.ui.components.ScholarCardDefaults
 import lumia.tracker.ui.meta.Importance
 import lumia.tracker.ui.meta.ValueScore
 import lumia.tracker.ui.theme.bouncyClick
@@ -53,12 +60,14 @@ fun PomodoroSettingsDialog(
     viewModel: ScholarViewModel,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     val workDuration by viewModel.pomodoroWorkDuration.collectAsStateWithLifecycle()
     val shortBreakDuration by viewModel.pomodoroShortBreakDuration.collectAsStateWithLifecycle()
     val longBreakDuration by viewModel.pomodoroLongBreakDuration.collectAsStateWithLifecycle()
     val periodSessions by viewModel.pomodoroPeriodSessions.collectAsStateWithLifecycle()
     val autoLog by viewModel.systemPomodoroAutoLog.collectAsStateWithLifecycle()
     val enablePeriodTarget by viewModel.pomodoroEnablePeriodTarget.collectAsStateWithLifecycle()
+    val aodTrueAodMode by viewModel.aodTrueAodMode.collectAsStateWithLifecycle()
 
     var tempWork by remember { mutableFloatStateOf(workDuration.toFloat()) }
     var tempShort by remember { mutableFloatStateOf(shortBreakDuration.toFloat()) }
@@ -66,12 +75,31 @@ fun PomodoroSettingsDialog(
     var tempSessions by remember { mutableFloatStateOf(periodSessions.toFloat()) }
     var tempAutoLog by remember { mutableStateOf(autoLog) }
     var tempPeriodTarget by remember { mutableStateOf(enablePeriodTarget) }
+    var tempAodMode by remember(aodTrueAodMode) { mutableStateOf(aodTrueAodMode) }
+
+    var hasOverlay by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
+    var hasAccessibility by remember { mutableStateOf(AodAccessibilityService.isServiceEnabled(context)) }
+
+    // Re-check permissions when returning to the window / on resume
+    DisposableEffect(Unit) {
+        val lifecycleObserver = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                hasOverlay = Settings.canDrawOverlays(context)
+                hasAccessibility = AodAccessibilityService.isServiceEnabled(context)
+            }
+        }
+        val lifecycle = (context as? androidx.lifecycle.LifecycleOwner)?.lifecycle
+        lifecycle?.addObserver(lifecycleObserver)
+        onDispose {
+            lifecycle?.removeObserver(lifecycleObserver)
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
     ) {
         Column(
             modifier = Modifier
@@ -120,6 +148,7 @@ fun PomodoroSettingsDialog(
                         tempShort = 5f
                         tempLong = 15f
                         tempSessions = 4f
+                        tempAodMode = "overlay"
                     }
                 ) {
                     Row(
@@ -294,6 +323,94 @@ fun PomodoroSettingsDialog(
                 }
             }
 
+            // 6. True AOD Permission & Display Engine Card
+            ScholarCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Header Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.BrightnessLow,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "True AOD Permission Mode",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Choose permission engine for OLED ambient display",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+
+                    // Option 1: Draw on screen / Window Overlay
+                    AodPermissionOptionRow(
+                        title = "Draw on screen",
+                        subtitle = "Display over other apps permission",
+                        icon = Icons.Rounded.Layers,
+                        isSelected = tempAodMode == "overlay",
+                        isGranted = hasOverlay,
+                        onSelect = { tempAodMode = "overlay" },
+                        onGrantPermission = {
+                            try {
+                                val intent = Intent(
+                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                    Uri.parse("package:${context.packageName}")
+                                )
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                    )
+
+                    // Option 2: Accessibility Service
+                    AodPermissionOptionRow(
+                        title = "Accessibility service",
+                        subtitle = "Hardware lock & deep dimming",
+                        icon = Icons.Rounded.Accessibility,
+                        isSelected = tempAodMode == "accessibility",
+                        isGranted = hasAccessibility,
+                        onSelect = { tempAodMode = "accessibility" },
+                        onGrantPermission = {
+                            try {
+                                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                    )
+                }
+            }
+
             // Bottom Action Buttons with CircleShape
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -310,19 +427,36 @@ fun PomodoroSettingsDialog(
 
                 BouncyButton(
                     onClick = {
+                        val newWork = tempWork.toInt() * 60
+                        val newShort = tempShort.toInt() * 60
+                        val newLong = tempLong.toInt() * 60
+                        val newSessions = tempSessions.toInt()
+
                         viewModel.updatePomodoroWorkDuration(tempWork.toInt())
                         viewModel.updatePomodoroShortBreakDuration(tempShort.toInt())
                         viewModel.updatePomodoroLongBreakDuration(tempLong.toInt())
-                        viewModel.updatePomodoroPeriodSessions(tempSessions.toInt())
+                        viewModel.updatePomodoroPeriodSessions(newSessions)
                         viewModel.updateSystemPomodoroAutoLog(tempAutoLog)
                         viewModel.updatePomodoroEnablePeriodTarget(tempPeriodTarget)
+                        viewModel.updateAodTrueAodMode(tempAodMode)
+
+                        if (PomodoroService.instance != null) {
+                            val updateIntent = Intent(context, PomodoroService::class.java).apply {
+                                action = "UPDATE_CONFIG"
+                                putExtra("workDuration", newWork)
+                                putExtra("shortBreakDuration", newShort)
+                                putExtra("longBreakDuration", newLong)
+                                putExtra("periodSessions", newSessions)
+                            }
+                            PomodoroService.handleActionDirectly(context, "UPDATE_CONFIG", updateIntent)
+                        }
 
                         if (!PomodoroService.isServiceRunning) {
                             val mode = try { PomodoroMode.valueOf(PomodoroService.state.value.modeString) } catch (_: Exception) { PomodoroMode.WORK }
                             val newDuration = when (mode) {
-                                PomodoroMode.WORK -> tempWork.toInt() * 60
-                                PomodoroMode.SHORT_BREAK -> tempShort.toInt() * 60
-                                PomodoroMode.LONG_BREAK -> tempLong.toInt() * 60
+                                PomodoroMode.WORK -> newWork
+                                PomodoroMode.SHORT_BREAK -> newShort
+                                PomodoroMode.LONG_BREAK -> newLong
                             }
                             PomodoroService.updateState {
                                 it.copy(
@@ -531,6 +665,143 @@ private fun DurationSettingCard(
                                 color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * AodPermissionOptionRow - Tactile option selector pill for True AOD permission engine.
+ */
+@Composable
+private fun AodPermissionOptionRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    isGranted: Boolean,
+    onSelect: () -> Unit,
+    onGrantPermission: () -> Unit
+) {
+    val isDark = isSystemInDarkTheme()
+    val rowBg = if (isSelected) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isDark) 0.35f else 0.45f)
+    } else {
+        if (isDark) MaterialTheme.colorScheme.surfaceContainerLow
+        else MaterialTheme.colorScheme.surfaceContainerLowest
+    }
+    val rowBorder = if (isSelected) {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+    } else {
+        ScholarCardDefaults.border()
+    }
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = rowBg,
+        border = rowBorder,
+        modifier = Modifier
+            .fillMaxWidth()
+            .bouncyClick(onClick = onSelect)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                            else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(19.dp)
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Permission status indicator / Grant action
+            if (isGranted) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFF34C759).copy(alpha = 0.15f),
+                    border = BorderStroke(0.5.dp, Color(0xFF34C759).copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .background(Color(0xFF34C759), CircleShape)
+                        )
+                        Text(
+                            text = "Granted",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF34C759)
+                        )
+                    }
+                }
+            } else {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
+                    modifier = Modifier.bouncyClick(onClick = onGrantPermission)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Grant",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(12.dp)
+                        )
                     }
                 }
             }

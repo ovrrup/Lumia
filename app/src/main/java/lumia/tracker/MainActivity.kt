@@ -130,6 +130,7 @@ class MainActivity : ComponentActivity() {
                         val analyzed = remember(currentCrash) { LogDog.analyzeCrash(currentCrash) }
                         val context = androidx.compose.ui.platform.LocalContext.current
                         AlertDialog(
+                            shape = RoundedCornerShape(32.dp),
                             onDismissRequest = { _crashData.value = null },
                             icon = {
                                 Icon(

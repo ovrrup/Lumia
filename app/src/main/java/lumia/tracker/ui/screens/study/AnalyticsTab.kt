@@ -42,13 +42,23 @@ import lumia.tracker.viewmodel.ScholarViewModel
 import java.util.*
 
 /**
- * Period options for the capsule selector pills.
+ * View options for the progress tab switcher (Week / Month / Lifetime).
  */
-enum class AnalyticsPeriod(val label: String, val icon: ImageVector) {
-    DAILY("Daily", Icons.Rounded.Today),
-    WEEKLY("Weekly", Icons.Rounded.DateRange),
-    MONTHLY("Monthly", Icons.Rounded.CalendarMonth)
+enum class AnalyticsView(val label: String, val icon: ImageVector) {
+    WEEK("Week", Icons.Rounded.DateRange),
+    MONTH("Month", Icons.Rounded.CalendarMonth),
+    LIFETIME("Lifetime", Icons.Rounded.AllInclusive)
 }
+
+/**
+ * Data item representing a single bar in the responsive analytics chart.
+ */
+data class AnalyticsBarItem(
+    val label: String,
+    val minutes: Int,
+    val isHighlighted: Boolean,
+    val displayValue: String
+)
 
 /**
  * Modernized soft ambient analytical metric hero card with rounded container,
@@ -133,13 +143,13 @@ fun MetricHeroCard(
 }
 
 /**
- * Capsule Period Selector Pills (Daily / Weekly / Monthly).
+ * View Selector Capsule (Week / Month / Lifetime).
  * Features clean CircleShape capsule container, tactile haptics, and soft indicator.
  */
 @Composable
-fun PeriodSelectorCapsule(
-    selectedPeriod: AnalyticsPeriod,
-    onPeriodSelected: (AnalyticsPeriod) -> Unit,
+fun ViewSelectorCapsule(
+    selectedView: AnalyticsView,
+    onViewSelected: (AnalyticsView) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isDark = isSystemInDarkTheme()
@@ -158,19 +168,19 @@ fun PeriodSelectorCapsule(
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            AnalyticsPeriod.entries.forEach { period ->
-                val isSelected = period == selectedPeriod
+            AnalyticsView.entries.forEach { view ->
+                val isSelected = view == selectedView
                 val animatedBg by animateColorAsState(
                     targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
                                   else Color.Transparent,
                     animationSpec = tween(durationMillis = 220),
-                    label = "period_bg_${period.name}"
+                    label = "view_bg_${view.name}"
                 )
                 val animatedTextColor by animateColorAsState(
                     targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
                                   else MaterialTheme.colorScheme.onSurfaceVariant,
                     animationSpec = tween(durationMillis = 220),
-                    label = "period_text_${period.name}"
+                    label = "view_text_${view.name}"
                 )
 
                 Box(
@@ -181,7 +191,7 @@ fun PeriodSelectorCapsule(
                         .clickable {
                             if (!isSelected) {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                onPeriodSelected(period)
+                                onViewSelected(view)
                             }
                         }
                         .padding(vertical = 8.dp),
@@ -192,13 +202,13 @@ fun PeriodSelectorCapsule(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
-                            imageVector = period.icon,
+                            imageVector = view.icon,
                             contentDescription = null,
                             tint = animatedTextColor,
                             modifier = Modifier.size(15.dp)
                         )
                         Text(
-                            text = period.label,
+                            text = view.label,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = animatedTextColor
@@ -238,43 +248,25 @@ fun AnalyticsTab(
     val streakCurrent by viewModel.streakCurrent.collectAsStateWithLifecycle()
     val showActionHistory by viewModel.showActionHistory.collectAsStateWithLifecycle()
 
-    var selectedPeriod by remember { mutableStateOf(AnalyticsPeriod.WEEKLY) }
+    var selectedView by remember { mutableStateOf(AnalyticsView.WEEK) }
     var selectedCourseId by remember { mutableStateOf(-1) }
 
     val isDark = isSystemInDarkTheme()
 
-    // Date boundaries
-    val now = remember { System.currentTimeMillis() }
-    val (todayStart, todayEnd) = remember(now) {
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        val start = cal.timeInMillis
-        val end = start + 24 * 60 * 60 * 1000L
-        start to end
-    }
-
-    val periodFocusMins = remember(pomodoroSessions, selectedPeriod, todayStart, todayEnd) {
-        when (selectedPeriod) {
-            AnalyticsPeriod.DAILY -> {
-                pomodoroSessions
-                    .filter { it.dateMillis in todayStart until todayEnd }
-                    .sumOf { it.durationMinutes }
+    // Dynamic Time & Range Calculations
+    val periodFocusMins = remember(pomodoroSessions, selectedView) {
+        val nowMillis = System.currentTimeMillis()
+        when (selectedView) {
+            AnalyticsView.WEEK -> {
+                val start = nowMillis - 7 * 24 * 60 * 60 * 1000L
+                pomodoroSessions.filter { it.dateMillis in start..nowMillis }.sumOf { it.durationMinutes }
             }
-            AnalyticsPeriod.WEEKLY -> {
-                val weekStart = todayStart - 6 * 24 * 60 * 60 * 1000L
-                pomodoroSessions
-                    .filter { it.dateMillis in weekStart until todayEnd }
-                    .sumOf { it.durationMinutes }
+            AnalyticsView.MONTH -> {
+                val start = nowMillis - 30 * 24 * 60 * 60 * 1000L
+                pomodoroSessions.filter { it.dateMillis in start..nowMillis }.sumOf { it.durationMinutes }
             }
-            AnalyticsPeriod.MONTHLY -> {
-                val monthStart = todayStart - 29 * 24 * 60 * 60 * 1000L
-                pomodoroSessions
-                    .filter { it.dateMillis in monthStart until todayEnd }
-                    .sumOf { it.durationMinutes }
+            AnalyticsView.LIFETIME -> {
+                pomodoroSessions.sumOf { it.durationMinutes }
             }
         }
     }
@@ -285,8 +277,38 @@ fun AnalyticsTab(
         if (h > 0) "${h}h ${m}m" else "${m}m"
     }
 
-    val periodTasksDone = remember(assignments, selectedPeriod) {
-        assignments.count { it.isCompleted }
+    val periodSessionsCount = remember(pomodoroSessions, selectedView) {
+        val nowMillis = System.currentTimeMillis()
+        when (selectedView) {
+            AnalyticsView.WEEK -> {
+                val start = nowMillis - 7 * 24 * 60 * 60 * 1000L
+                pomodoroSessions.count { it.dateMillis in start..nowMillis }
+            }
+            AnalyticsView.MONTH -> {
+                val start = nowMillis - 30 * 24 * 60 * 60 * 1000L
+                pomodoroSessions.count { it.dateMillis in start..nowMillis }
+            }
+            AnalyticsView.LIFETIME -> {
+                pomodoroSessions.size
+            }
+        }
+    }
+
+    val periodTasksDone = remember(assignments, selectedView) {
+        val nowMillis = System.currentTimeMillis()
+        when (selectedView) {
+            AnalyticsView.WEEK -> {
+                val start = nowMillis - 7 * 24 * 60 * 60 * 1000L
+                assignments.count { it.isCompleted && (it.dueDateMillis == 0L || it.dueDateMillis in start..nowMillis) }
+            }
+            AnalyticsView.MONTH -> {
+                val start = nowMillis - 30 * 24 * 60 * 60 * 1000L
+                assignments.count { it.isCompleted && (it.dueDateMillis == 0L || it.dueDateMillis in start..nowMillis) }
+            }
+            AnalyticsView.LIFETIME -> {
+                assignments.count { it.isCompleted }
+            }
+        }
     }
 
     val totalAssignments = assignments.size
@@ -294,14 +316,14 @@ fun AnalyticsTab(
     val assignmentRate = if (totalAssignments > 0) ((completedAssignments.toFloat() / totalAssignments) * 100).toInt() else 0
 
     val attendanceStats = remember(allAttendance) {
-        val total = allAttendance.size
         val present = allAttendance.count { it.status.equals("PRESENT", ignoreCase = true) }
         val late = allAttendance.count { it.status.equals("LATE", ignoreCase = true) }
         val absent = allAttendance.count { it.status.equals("ABSENT", ignoreCase = true) }
         val attended = present + late
-        val rateInt = if (total > 0) ((attended.toFloat() / total) * 100).toInt() else 0
+        val effectiveTotal = present + late + absent
+        val rateInt = if (effectiveTotal > 0) ((attended.toFloat() / effectiveTotal) * 100).toInt() else 0
         AttendanceSummary(
-            total = total,
+            total = effectiveTotal,
             present = present,
             late = late,
             absent = absent,
@@ -310,33 +332,93 @@ fun AnalyticsTab(
         )
     }
 
-    // 7-day focus activity data for the chart
-    val last7DaysData = remember(pomodoroSessions) {
-        val cal = Calendar.getInstance()
-        (6 downTo 0).map { daysAgo ->
-            cal.timeInMillis = System.currentTimeMillis()
-            cal.add(Calendar.DAY_OF_YEAR, -daysAgo)
-            val dayStart = cal.apply {
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
-            val dayEnd = dayStart + 24 * 60 * 60 * 1000L
-            val dayLabel = when (cal.get(Calendar.DAY_OF_WEEK)) {
-                Calendar.MONDAY -> "Mon"
-                Calendar.TUESDAY -> "Tue"
-                Calendar.WEDNESDAY -> "Wed"
-                Calendar.THURSDAY -> "Thu"
-                Calendar.FRIDAY -> "Fri"
-                Calendar.SATURDAY -> "Sat"
-                Calendar.SUNDAY -> "Sun"
-                else -> ""
+    // Dynamic Chart Data based on selected view (Week / Month / Lifetime)
+    val chartData = remember(pomodoroSessions, selectedView) {
+        when (selectedView) {
+            AnalyticsView.WEEK -> {
+                val cal = Calendar.getInstance()
+                (6 downTo 0).map { daysAgo ->
+                    cal.timeInMillis = System.currentTimeMillis()
+                    cal.add(Calendar.DAY_OF_YEAR, -daysAgo)
+                    val dayStart = cal.apply {
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                    val dayEnd = dayStart + 24 * 60 * 60 * 1000L
+                    val dayLabel = when (cal.get(Calendar.DAY_OF_WEEK)) {
+                        Calendar.MONDAY -> "Mon"
+                        Calendar.TUESDAY -> "Tue"
+                        Calendar.WEDNESDAY -> "Wed"
+                        Calendar.THURSDAY -> "Thu"
+                        Calendar.FRIDAY -> "Fri"
+                        Calendar.SATURDAY -> "Sat"
+                        Calendar.SUNDAY -> "Sun"
+                        else -> ""
+                    }
+                    val mins = pomodoroSessions
+                        .filter { it.dateMillis in dayStart until dayEnd }
+                        .sumOf { it.durationMinutes }
+                    val disp = if (mins >= 60) "${mins / 60}h" else "${mins}m"
+                    AnalyticsBarItem(dayLabel, mins, daysAgo == 0, disp)
+                }
             }
-            val mins = pomodoroSessions
-                .filter { it.dateMillis in dayStart until dayEnd }
-                .sumOf { it.durationMinutes }
-            Triple(dayLabel, mins, daysAgo == 0)
+            AnalyticsView.MONTH -> {
+                val nowMillis = System.currentTimeMillis()
+                (3 downTo 0).map { weekIndex ->
+                    val weekStart = nowMillis - (weekIndex + 1) * 7 * 24 * 60 * 60 * 1000L
+                    val weekEnd = nowMillis - weekIndex * 7 * 24 * 60 * 60 * 1000L
+                    val label = "W${4 - weekIndex}"
+                    val mins = pomodoroSessions
+                        .filter { it.dateMillis in weekStart until weekEnd }
+                        .sumOf { it.durationMinutes }
+                    val disp = if (mins >= 60) "${mins / 60}h" else "${mins}m"
+                    AnalyticsBarItem(label, mins, weekIndex == 0, disp)
+                }
+            }
+            AnalyticsView.LIFETIME -> {
+                val cal = Calendar.getInstance()
+                (5 downTo 0).map { monthsAgo ->
+                    cal.timeInMillis = System.currentTimeMillis()
+                    cal.add(Calendar.MONTH, -monthsAgo)
+                    cal.set(Calendar.DAY_OF_MONTH, 1)
+                    val monthStart = cal.apply {
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                    val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                    cal.set(Calendar.DAY_OF_MONTH, maxDay)
+                    val monthEnd = cal.apply {
+                        set(Calendar.HOUR_OF_DAY, 23)
+                        set(Calendar.MINUTE, 59)
+                        set(Calendar.SECOND, 59)
+                        set(Calendar.MILLISECOND, 999)
+                    }.timeInMillis
+                    val monthLabel = when (cal.get(Calendar.MONTH)) {
+                        Calendar.JANUARY -> "Jan"
+                        Calendar.FEBRUARY -> "Feb"
+                        Calendar.MARCH -> "Mar"
+                        Calendar.APRIL -> "Apr"
+                        Calendar.MAY -> "May"
+                        Calendar.JUNE -> "Jun"
+                        Calendar.JULY -> "Jul"
+                        Calendar.AUGUST -> "Aug"
+                        Calendar.SEPTEMBER -> "Sep"
+                        Calendar.OCTOBER -> "Oct"
+                        Calendar.NOVEMBER -> "Nov"
+                        Calendar.DECEMBER -> "Dec"
+                        else -> ""
+                    }
+                    val mins = pomodoroSessions
+                        .filter { it.dateMillis in monthStart..monthEnd }
+                        .sumOf { it.durationMinutes }
+                    val disp = if (mins >= 60) "${mins / 60}h" else "${mins}m"
+                    AnalyticsBarItem(monthLabel, mins, monthsAgo == 0, disp)
+                }
+            }
         }
     }
 
@@ -345,25 +427,25 @@ fun AnalyticsTab(
         contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
-            top = 16.dp,
+            top = paddingValues.calculateTopPadding(),
             bottom = paddingValues.calculateBottomPadding() + 28.dp
         ),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 1. Period Selector Capsule Bar
-        item(key = "period_selector_capsule") {
-            PeriodSelectorCapsule(
-                selectedPeriod = selectedPeriod,
-                onPeriodSelected = { selectedPeriod = it }
+        // 1. View Selector Capsule Bar (Week / Month / Lifetime)
+        item(key = "view_selector_capsule") {
+            ViewSelectorCapsule(
+                selectedView = selectedView,
+                onViewSelected = { selectedView = it }
             )
         }
 
         // 2. Ambient Study Pulse Hero Card
         item(key = "study_pulse_hero") {
-            val periodGoalMins = when (selectedPeriod) {
-                AnalyticsPeriod.DAILY -> 120
-                AnalyticsPeriod.WEEKLY -> 600
-                AnalyticsPeriod.MONTHLY -> 2400
+            val periodGoalMins = when (selectedView) {
+                AnalyticsView.WEEK -> 600
+                AnalyticsView.MONTH -> 2400
+                AnalyticsView.LIFETIME -> 6000
             }
             val goalProgress = (periodFocusMins.toFloat() / periodGoalMins.toFloat()).coerceIn(0f, 1f)
             val animatedGoalProgress by animateFloatAsState(
@@ -425,7 +507,7 @@ fun AnalyticsTab(
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "Focus time in this period",
+                                text = "Focus time in ${selectedView.label.lowercase()}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -487,7 +569,7 @@ fun AnalyticsTab(
                                 Icon(Icons.Rounded.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(5.dp))
                                 Text(
-                                    text = "${pomodoroSessions.size} Sessions",
+                                    text = "$periodSessionsCount Sessions",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.primary
@@ -543,11 +625,7 @@ fun AnalyticsTab(
 
         // 3. 2x2 Soft Bento Metric Grid
         item(key = "summary_metrics_grid") {
-            val periodBadgeText = when (selectedPeriod) {
-                AnalyticsPeriod.DAILY -> "Today"
-                AnalyticsPeriod.WEEKLY -> "7 Days"
-                AnalyticsPeriod.MONTHLY -> "30 Days"
-            }
+            val periodBadgeText = selectedView.label
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
@@ -598,8 +676,11 @@ fun AnalyticsTab(
 
         // 4. Ambient Focus Activity Bar Chart
         item(key = "focus_activity_chart") {
-            val weeklyTotalMins = last7DaysData.sumOf { it.second }
-            val weeklyFormatted = if (weeklyTotalMins >= 60) "${weeklyTotalMins / 60}h ${weeklyTotalMins % 60}m" else "${weeklyTotalMins}m"
+            val chartTitle = when (selectedView) {
+                AnalyticsView.WEEK -> "Weekly Activity"
+                AnalyticsView.MONTH -> "Monthly Activity"
+                AnalyticsView.LIFETIME -> "Lifetime Activity"
+            }
             val primaryColor = MaterialTheme.colorScheme.primary
 
             ScholarCard(
@@ -634,7 +715,7 @@ fun AnalyticsTab(
                                 )
                             }
                             Text(
-                                text = "Daily Focus",
+                                text = chartTitle,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -646,7 +727,7 @@ fun AnalyticsTab(
                             color = primaryColor.copy(alpha = 0.12f)
                         ) {
                             Text(
-                                text = weeklyFormatted,
+                                text = periodFocusFormatted,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = primaryColor,
@@ -657,7 +738,7 @@ fun AnalyticsTab(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    val maxMins = (last7DaysData.maxOfOrNull { it.second } ?: 60).coerceAtLeast(60).toFloat()
+                    val maxMins = (chartData.maxOfOrNull { it.minutes } ?: 60).coerceAtLeast(60).toFloat()
 
                     Row(
                         modifier = Modifier
@@ -666,12 +747,12 @@ fun AnalyticsTab(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.Bottom
                     ) {
-                        last7DaysData.forEach { (day, mins, isToday) ->
-                            val targetHeightFrac = (mins / maxMins).coerceIn(0.08f, 1f)
+                        chartData.forEach { item ->
+                            val targetHeightFrac = (item.minutes / maxMins).coerceIn(0.08f, 1f)
                             val animatedHeightFrac by animateFloatAsState(
                                 targetValue = targetHeightFrac,
                                 animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
-                                label = "barHeight_$day"
+                                label = "barHeight_${item.label}"
                             )
 
                             Column(
@@ -679,13 +760,13 @@ fun AnalyticsTab(
                                 verticalArrangement = Arrangement.Bottom,
                                 modifier = Modifier.weight(1f)
                             ) {
-                                if (mins > 0) {
+                                if (item.minutes > 0) {
                                     Text(
-                                        text = "${mins}m",
+                                        text = item.displayValue,
                                         style = MaterialTheme.typography.labelSmall,
                                         fontSize = 10.sp,
-                                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isToday) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant
+                                        fontWeight = if (item.isHighlighted) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (item.isHighlighted) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                 } else {
@@ -698,17 +779,17 @@ fun AnalyticsTab(
                                         .fillMaxHeight(animatedHeightFrac)
                                         .clip(CircleShape)
                                         .background(
-                                            if (isToday) primaryColor
-                                            else if (mins > 0) primaryColor.copy(alpha = 0.40f)
+                                            if (item.isHighlighted) primaryColor
+                                            else if (item.minutes > 0) primaryColor.copy(alpha = 0.40f)
                                             else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.50f)
                                         )
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = day,
+                                    text = item.label,
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isToday) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant
+                                    fontWeight = if (item.isHighlighted) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (item.isHighlighted) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
