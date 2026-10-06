@@ -70,9 +70,9 @@ fun DashboardTopFloatingPills(
 
     val isDark = isSystemInDarkTheme()
     val headerGlassBg = if (isDark) {
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.50f)
     } else {
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.76f)
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.52f)
     }
     val headerDividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.22f)
     val pillBg = if (isDark) {

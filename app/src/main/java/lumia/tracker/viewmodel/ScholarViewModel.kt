@@ -883,6 +883,22 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         prefs.edit().putBoolean("notif_enable_daily_digest", enabled).apply()
     }
 
+    private val _notifAlertType = MutableStateFlow(prefs.getString("notif_alert_type", "sound_and_vibrate") ?: "sound_and_vibrate")
+    val notifAlertType = _notifAlertType.asStateFlow()
+
+    private val _notifTone = MutableStateFlow(prefs.getString("notif_tone", "Default") ?: "Default")
+    val notifTone = _notifTone.asStateFlow()
+
+    fun updateNotifAlertType(type: String) {
+        _notifAlertType.value = type
+        prefs.edit().putString("notif_alert_type", type).apply()
+    }
+
+    fun updateNotifTone(tone: String) {
+        _notifTone.value = tone
+        prefs.edit().putString("notif_tone", tone).apply()
+    }
+
     private val _aodTrueBlackOled = MutableStateFlow(prefs.getBoolean("aod_true_black_oled", true))
     val aodTrueBlackOled = _aodTrueBlackOled.asStateFlow()
 

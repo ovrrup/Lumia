@@ -495,8 +495,14 @@ class PomodoroService : Service() {
                     syncToState()
                     sendTickBroadcast()
 
-                    // Throttle notification updates to prevent Chronometer re-anchor flicker
-                    if (lastNotifSecond - timeLeftSeconds >= 15 || timeLeftSeconds <= 10) {
+                    // Notification updates: updates once per minute when > 60s, but updates every second in the last 1 minute
+                    val shouldUpdateNotif = if (timeLeftSeconds <= 60) {
+                        true
+                    } else {
+                        (lastNotifSecond - timeLeftSeconds >= 60) || ((lastNotifSecond + 59) / 60 != (timeLeftSeconds + 59) / 60)
+                    }
+
+                    if (shouldUpdateNotif) {
                         lastNotifSecond = timeLeftSeconds
                         updateForegroundNotification(timeLeftSeconds)
                     }
@@ -774,10 +780,38 @@ class PomodoroService : Service() {
         val progressMax = originalDurationSeconds
         val progressNow = (originalDurationSeconds - time).coerceAtLeast(0)
 
+        val timeRemainingText = when (currentMode) {
+            PomodoroMode.WORK -> {
+                if (time <= 60) {
+                    "$time sec left (ongoing session)"
+                } else {
+                    val mins = (time + 59) / 60
+                    "$mins min left (ongoing session)"
+                }
+            }
+            PomodoroMode.SHORT_BREAK -> {
+                if (time <= 60) {
+                    "$time sec left (ongoing short break)"
+                } else {
+                    val mins = (time + 59) / 60
+                    "$mins min left (ongoing short break)"
+                }
+            }
+            PomodoroMode.LONG_BREAK -> {
+                if (time <= 60) {
+                    "$time sec left (ongoing long break)"
+                } else {
+                    val mins = (time + 59) / 60
+                    "$mins min left (ongoing long break)"
+                }
+            }
+        }
+        val contentText = if (paused) "$timeRemainingText (Paused)" else timeRemainingText
+
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(NotificationHelper.getSmallIcon())
             .setContentTitle(title)
-            .setContentText(if (paused) "Time remaining: $timeStr (PAUSED)" else "Time remaining: $timeStr")
+            .setContentText(contentText)
             .setProgress(progressMax, progressNow, false)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
@@ -785,16 +819,7 @@ class PomodoroService : Service() {
             .setContentIntent(mainPending)
             .setOngoing(true)
             .setColor(NotificationHelper.getColor(this))
-
-        if (!paused) {
-            builder.setUsesChronometer(true)
-            builder.setWhen(System.currentTimeMillis() + time * 1000L)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                builder.setChronometerCountDown(true)
-            }
-        } else {
-            builder.setUsesChronometer(false)
-        }
+            .setUsesChronometer(false)
 
         return builder
             .addAction(

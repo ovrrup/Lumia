@@ -354,7 +354,7 @@ fun AboutAppScreen(navController: NavController, viewModel: ScholarViewModel) {
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },

@@ -44,8 +44,9 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                 title = {
                     Text(
                         "System Configuration",
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.primary
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 navigationIcon = {
@@ -53,7 +54,7 @@ fun SystemSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },

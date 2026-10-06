@@ -102,9 +102,9 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                 title = {
                     Text(
                         "Data & Backups",
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 navigationIcon = {
@@ -112,7 +112,7 @@ fun DataManagementScreen(navController: NavController, viewModel: ScholarViewMod
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },

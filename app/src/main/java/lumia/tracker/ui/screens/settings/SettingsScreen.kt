@@ -111,7 +111,7 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -369,41 +369,20 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }
 
                 // ==========================================
-                // 2. GROUP: PERSONALIZATION & THEMES
+                // 1. GROUP: APPEARANCE & STREAKS
                 // ==========================================
                 SettingsGroupCard(
-                    title = "Personalization & Themes",
+                    title = "Appearance & Streaks",
                     icon = Icons.Rounded.Palette
                 ) {
                     SettingsActionItemInCard(
                         title = "Appearance & Themes",
-                        subtitle = "Light/Dark mode, color palettes & dock layout",
                         icon = Icons.Rounded.Palette,
                         iconBgColor = Color(0xFF007AFF),
                         onClick = { navController.navigate("settings/appearance") }
                     )
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
-                        modifier = Modifier.padding(start = 52.dp, end = 8.dp)
-                    )
-
                     SettingsActionItemInCard(
-                        title = "Custom Color Palette",
-                        subtitle = "Hex color generator & curated theme presets",
-                        icon = Icons.Rounded.ColorLens,
-                        iconBgColor = Color(0xFF5856D6),
-                        onClick = { navController.navigate("settings/advanced_theme") }
-                    )
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
-                        modifier = Modifier.padding(start = 52.dp, end = 8.dp)
-                    )
-
-                    SettingsActionItemInCard(
-                        title = "Streak Goals & Requirements",
-                        subtitle = "Daily study targets, grace days & multiplier",
+                        title = "Streak Goals",
                         icon = Icons.Rounded.LocalFireDepartment,
                         iconBgColor = Color(0xFFFF9500),
                         onClick = { navController.navigate("settings/streaks") }
@@ -411,28 +390,14 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }
 
                 // ==========================================
-                // 5. GROUP: ACADEMICS & WORKFLOW
+                // 2. GROUP: NOTIFICATIONS
                 // ==========================================
                 SettingsGroupCard(
-                    title = "Academics & Workflow",
-                    icon = Icons.AutoMirrored.Rounded.MenuBook
+                    title = "Notifications",
+                    icon = Icons.Rounded.Notifications
                 ) {
                     SettingsActionItemInCard(
-                        title = "Academic Synergy & System",
-                        subtitle = "Course-subject linking & lecture tracking",
-                        icon = Icons.Rounded.Hub,
-                        iconBgColor = Color(0xFF34C759),
-                        onClick = { navController.navigate("settings/system") }
-                    )
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
-                        modifier = Modifier.padding(start = 52.dp, end = 8.dp)
-                    )
-
-                    SettingsActionItemInCard(
-                        title = "Notifications & Reminders",
-                        subtitle = "Timetable alerts, deadline nudges & daily digests",
+                        title = "Notifications",
                         icon = Icons.Rounded.Notifications,
                         iconBgColor = Color(0xFF5AC8FA),
                         onClick = { navController.navigate("settings/notifications") }
@@ -440,28 +405,26 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }
 
                 // ==========================================
-                // 6. GROUP: SAFETY & OLED DISPLAY
+                // 3. GROUP: ACADEMIC & SAFETY
                 // ==========================================
                 SettingsGroupCard(
-                    title = "Safety & OLED Display",
-                    icon = Icons.Rounded.Security
+                    title = "Academic & Safety",
+                    icon = Icons.AutoMirrored.Rounded.MenuBook
                 ) {
                     SettingsActionItemInCard(
-                        title = "Safety & Burn-in Protection",
-                        subtitle = "AOD burn-in protection, lockscreen & safe PIN",
+                        title = "Academic System",
+                        icon = Icons.Rounded.Hub,
+                        iconBgColor = Color(0xFF34C759),
+                        onClick = { navController.navigate("settings/system") }
+                    )
+                    SettingsActionItemInCard(
+                        title = "Safety & Protection",
                         icon = Icons.Rounded.Security,
                         iconBgColor = Color(0xFFFF2D55),
                         onClick = { navController.navigate("settings/safety") }
                     )
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
-                        modifier = Modifier.padding(start = 52.dp, end = 8.dp)
-                    )
-
                     SettingsActionItemInCard(
-                        title = "Experimental Features (Beta)",
-                        subtitle = "Early-access sandboxes, action logs & diagnostics",
+                        title = "Experimental Features",
                         icon = Icons.Rounded.Science,
                         iconBgColor = Color(0xFFAF52DE),
                         onClick = { navController.navigate("settings/beta") }
@@ -469,31 +432,20 @@ fun SettingsScreen(navController: NavController, viewModel: ScholarViewModel) {
                 }
 
                 // ==========================================
-                // 7. GROUP: DATA & STORAGE
+                // 4. GROUP: DATA & ABOUT
                 // ==========================================
                 SettingsGroupCard(
-                    title = "Data & Storage",
+                    title = "Data & About",
                     icon = Icons.Rounded.Storage
                 ) {
                     SettingsActionItemInCard(
-                        title = "Data Management & Backups",
-                        subtitle = "Local database export, auto-backups & sync",
+                        title = "Data Management",
                         icon = Icons.Rounded.Storage,
                         iconBgColor = Color(0xFF8E8E93),
                         onClick = { navController.navigate("settings/data") }
                     )
-                }
-
-                // ==========================================
-                // 8. GROUP: ABOUT & SUPPORT
-                // ==========================================
-                SettingsGroupCard(
-                    title = "About",
-                    icon = Icons.Rounded.Info
-                ) {
                     SettingsActionItemInCard(
-                        title = "About Lumia Tracker",
-                        subtitle = "v$currentVersionName • GNU GPLv3 • Specs & Updates",
+                        title = "About Lumia",
                         icon = Icons.Rounded.Info,
                         iconBgColor = Color(0xFF636366),
                         onClick = { navController.navigate("settings/about") }

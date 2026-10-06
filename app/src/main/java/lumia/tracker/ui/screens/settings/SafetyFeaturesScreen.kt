@@ -94,9 +94,10 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Safety Guard & AOD",
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.primary
+                        "Safety & Protection",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 navigationIcon = {
@@ -104,7 +105,7 @@ fun SafetyFeaturesScreen(navController: NavController, viewModel: ScholarViewMod
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },

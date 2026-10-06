@@ -53,8 +53,9 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                 title = {
                     Text(
                         "Experimental Features",
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.primary
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 navigationIcon = {
@@ -62,7 +63,7 @@ fun BetaFeaturesScreen(navController: NavController, viewModel: ScholarViewModel
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },

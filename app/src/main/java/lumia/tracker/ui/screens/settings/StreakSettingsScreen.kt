@@ -93,9 +93,10 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Streak Goals & Visuals",
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.primary
+                        "Streak Goals",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 navigationIcon = {
@@ -103,7 +104,7 @@ fun StreakSettingsScreen(navController: NavController, viewModel: ScholarViewMod
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },

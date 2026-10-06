@@ -72,8 +72,9 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                 title = {
                     Text(
                         "Appearance & Themes",
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.primary
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 navigationIcon = {
@@ -81,7 +82,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -326,8 +327,7 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             "Gold" to Color(0xFFFFC646),
                             "Rose" to Color(0xFFE52F28),
                             "Sage" to Color(0xFFACBDAA),
-                            "Twilight" to Color(0xFF958CE8),
-                            "Custom" to Color(0xFF999999)
+                            "Twilight" to Color(0xFF958CE8)
                         )
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                             palettes.add(0, "Dynamic" to Color(0xFF909090))
@@ -343,17 +343,6 @@ fun AppearanceScreen(navController: NavController, viewModel: ScholarViewModel) 
                             )
                         }
                     }
-                }
-
-                if (themeColor == "Custom") {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                    SettingsActionItemInCard(
-                        title = "Fine-Tune Custom Palette",
-                        subtitle = "Custom hex color codes",
-                        icon = Icons.Rounded.Edit,
-                        onClick = { navController.navigate("settings/advanced_theme") }
-                    )
                 }
             }
 
