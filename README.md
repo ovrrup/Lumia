@@ -1,128 +1,73 @@
-# 🎓 Lumia 
+# 🎓 Adroit
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Kotlin-100%25-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin" />
-  <img src="https://img.shields.io/badge/Platform-Android_8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android" />
-  <img src="https://img.shields.io/badge/UI-Jetpack_Compose_/_M3-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose" />
-  <img src="https://img.shields.io/badge/Database-SQLite_/_Room-00599C?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite Room" />
+  <img src="https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" />
+  <img src="https://img.shields.io/badge/Language-Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart" />
+  <img src="https://img.shields.io/badge/State-Riverpod-blue?style=for-the-badge" alt="Riverpod" />
+  <img src="https://img.shields.io/badge/Database-Drift_SQLite-teal?style=for-the-badge" alt="Drift SQLite" />
   <img src="https://img.shields.io/badge/License-GNU_GPLv3-red?style=for-the-badge" alt="GPLv3 License" />
 </p>
 
-<p align="center">
-  <a href="https://github.com/ovrrup/Lumia/actions/workflows/build-apk.yml">
-    <img src="https://github.com/ovrrup/Lumia/actions/workflows/build-apk.yml/badge.svg" alt="Build APK" />
-  </a>
-  <a href="https://github.com/ovrrup/Lumia/releases/latest">
-    <img src="https://img.shields.io/github/v/release/ovrrup/Lumia?include_prereleases&style=flat-square&color=blue" alt="Latest Release" />
-  </a>
-</p>
-
-**Lumia** is an offline-first academic battle-station designed for students, self-learners, and those fighting the modern urge of checking notifications every 17 seconds. This application wraps course trackers, attendance calculators, task schedulers, statistical visualization charts, and a zero-compromise focus ecosystem into a single unified terminal.
-
-Powered by a customized **True AOD (Always-On Display) study-screen overlay**, Lumia turns your phone into a dedicated OLED focus timer. It overrides standard brightness limits, monitors accelerometers for physical movement, and defends your studies against the constant storm of lockscreen distractions.
+**Adroit** is a minimalist, local-first academic companion engineered strictly for tracking classes, timetables, attendance, and syllabus coverage. No telemetry, no background lockscreen overlays, and zero distraction.
 
 ---
 
-## 🏛️ Central Feature Architecture
+## 🏛️ Core Features
 
-### 1. The Dashboard Control Center
-Lumia launches straight into your central visual hub:
-- **At-a-glance status checks:** See your class schedule for the current date, pending coursework tasks, and active deadlines.
-- **The Judgmental Streak Flame (🔥):** Maintains active streak logs. Keep your studying trend rising; otherwise, the flame dies, and Lumia’s statistics look disappointingly empty.
-- **Fast Metrics:** Direct displays of average subjects completion indices, remaining files to read, and quick links to continue your last coursework node.
+### 1. 📅 Classes & Timetable
+- **Weekly Schedule & Today's Agenda:** Chronologically sorted class schedules with rooms, instructors, and start/end times.
+- **One-Tap Attendance Logging:** Quickly log attendance directly from the agenda (`Present`, `Absent`, `Cancelled`, or `Late`).
+- **Smart Attendance Intelligence:**
+  - Real-time attendance percentage vs your target threshold (e.g. 75%).
+  - **Safe Bunks Calculator:** Know exactly how many future classes you can safely skip.
+  - **Recovery Calculator:** Know exactly how many consecutive classes you must attend to restore low attendance.
 
-### 2. Deep Academic Trees (Courses & Subjects)
-Track organized courses (e.g., *Computer Science (B.Sc.)* or *Pre-Med*) down to the atomic study level:
-- **Structurable Entities:** Courses split into independent **Subjects**, which contain nested **Chapters**, containing tracked **Topics** and study milestones.
-- **Progress Tracking:** Interactive completed percentages rise dynamically as you check off topics, helping you study step-by-step.
-- **Attendance Registry:** Log class attendance records with fully visual percentage charts. No more manually guessing if you can afford to skip that 8:00 AM lecture.
+### 2. 📚 Syllabus & Curriculum Tracking
+- **Multi-Level Academic Trees:** Organize studies into **Subjects**, nested **Units/Chapters**, and atomic **Checklist Topics**.
+- **Interactive Checklists:** Tap to check off topics as you cover them during lectures or exam revision.
+- **Visual Progress:** Dynamic progress rings and percentage indicators per unit and across the entire subject curriculum.
+- **Filter & Search:** Filter by pending or completed topics, or search across your entire syllabus.
 
-### 3. Pomodoro Focus Engine & "True AOD"
-This isn't a simple aesthetic countdown timer. Lumia features a dual-mode system overlay that blocks standard Android lock-panel updates to turn your phone into a pure hardware focus clock:
-* **The True AOD Interface:** Shows simple time elements, focus progress rings, dynamic study ticks, and pure black OLED-safe background configurations.
-* **Dual Integration Profiles:**
-  * **System Overlay Mode:** Draws the study board over active applications and system interfaces for instantaneous access.
-  * **Accessibility Service Mode:** Installs a private accessibility engine that intercepts key handlers to safely lock the interface behind hardware controls under modern lockscreens (Android 12+).
-* **OLED Stealth Level:** Slide down hardware outputs with dimming levels up to **99% Highest Darkness** (perfect for studying in dimly lit library desks).
-* **Anti-Cheat Wake-up Sensitivities:** Pick how Lumia unlocks:
-  * *Tap/Motion:* Uses linear accelerometer deltas. Simply shake, tilt, or wave your hand above the device to wake up!
-  * *Double-tap:* Prevents accidental triggers inside deep backpack pockets.
-  * *Hold Secure:* Requires holding down on the OLED panel for 1 second to end focus. Excellent for preventing quick exit impulses when trying to focus.
+### 3. 📝 Tasks & Deadlines
+- **Coursework Management:** Track homework, lab reports, readings, and assignment due dates.
+- **Deadline Indicators:** Real-time countdowns (`Due today`, `Due tomorrow`, `Overdue`).
+- **Priority Tags:** High, Medium, and Low priority classification.
 
-### 4. Continuous Analytics Terminal
-Visualize your scholarly dedication using built-in, native vector bar graphs, charts, and distribution indicators:
-- Subject distribution maps explaining where your hours went.
-- Historical trend indicators showing Pomodoro focus efficiency over time.
-- Attendance ratios complete with Material 3 status tags showing safe vs critical attendance values.
+### 4. 🎨 Minimal Design & Theming
+- **Material 3 Aesthetics:** Clean, distraction-free cards, typography, and fluid microtransitions.
+- **Pure OLED Black Mode:** True `#000000` blacks for battery efficiency and night study sessions.
+- **Custom Accent Palettes:** Indigo, Emerald, Sapphire, Rose, Amber, Violet, Teal, and Coral.
 
-### 5. Quick Notes Storage
-A localized scratchpad to quickly log fleeting research items, ideas, formulas, or coffee orders. Everything stays private, offline, and ready to edit or delete at a moment's notice.
-
-### 6. Over-The-Air (OTA) Updates & App Internals
-- **In-App Updater:** Automatically checks for new versions of Lumia on startup by securely fetching metadata from the official GitHub Release channel. You can update straight from the Settings panel.
-- **LogDog (The Persistent Canine Diagnostic Agent 🐕):** If something breaks under the hood, Lumia integrates an internal crash handler that catches exceptions, formats stack traces, and compiles diagnostic files. View and manage local repair suggestions directly inside the Lumia Settings Panel.
+### 5. 🔒 100% Offline & Local-First
+- **Drift SQLite Engine:** All data is stored in a structured local SQLite database on your device.
+- **JSON Backup & Restore:** Export complete offline backups anytime. Backwards-compatible with legacy Lumia backup files.
 
 ---
 
-## 🔒 Privately Local & Factual
+## 🛠️ Building & Development
 
-Lumia believes that your study logs should never be a telemetry product:
-- **Zero Remote Calls:** No remote trackers, analytical frameworks, or advertising APIs.
-- **Local Databases:** SQLite Room database isolated inside highly secure local Android sandboxes.
-- **Offline Reliability:** Perfect for off-grid reading sessions, cellular-restricted campus basements, or flights. Network access is strictly restricted to occasionally checking for GitHub OTA app updates.
+### Requirements
+- **Flutter SDK** 3.19+ (or newer)
+- **Dart SDK** 3.3+
+- **JDK 17+**
 
-For formal clauses, view our dedicated **[Privacy Policy](PRIVACY.md)** and **[Terms and Conditions](TERMS.md)**.
-
----
-
-## 🛠️ Build & Development Guidelines
-
-Lumia has been heavily polished to utilize modern Android patterns (Jetpack Compose, Kotlin Coroutines, and Room Architecture).
-
-### Compilation Checklist
-1. Ensure you have **Android Studio Koala or newer** installed.
-2. Verify you have **JDK 17+** configured on your environmental path.
-3. Keep standard dependencies untouched to ensure version-locked compiler compatibility.
-
-### Building via Terminal
-To build, test, and package Lumia manually, run standard Gradle execution commands in the root directory:
-
+### Steps
 ```bash
-# Verify unit tests & Robolectric interfaces
-gradle :app:testDebugUnitTest
+# Fetch dependencies
+flutter pub get
 
-# Build the complete installable development APK
-gradle assembleDebug
+# Generate Drift database code
+dart run build_runner build --delete-conflicting-outputs
+
+# Run the app
+flutter run
+
+# Build release APK
+flutter build apk --release
 ```
 
-After compilation, your build artifacts will reside in:  
-`app/build/outputs/apk/debug/app-debug.apk`
-
 ---
 
-## 🚀 Downloading Lumia & Automatic Updates
+## ⚖️ License
 
-Lumia comes pre-configured with a continuous integration pipeline.
-
-### Setup Automated Releases
-Every time you push or trigger a Pull Request to your `main` / `master` repository branches:
-1. **GitHub Runner** launches an Ubuntu container.
-2. **Setup-Java** configures JDK 17 environments.
-3. Evaluates layout integrity, clean assets, and compiles Lumia.
-4. Saves the compiled application as a downloadable artifact.
-
-### How to Install the App
-1. Navigate to the **Releases** section on the right-hand sidebar of the GitHub repository page (or click [Releases](https://github.com/ovrrup/Lumia/releases)).
-2. Under the latest release (e.g., `v1.0.2`), expand the **Assets** section if collapsed.
-3. Click on the compiled `.apk` asset file to download it.
-4. Transfer the downloaded APK file to your Android device and install it! You will receive notification overlays in the app when future updates are released.
-
----
-
-## ⚖️ Open Source & GPLv3 Licensing
-
-This project is licensed under the **GNU General Public License v3.0**. 
-
-You are free to fork, hack, and deploy Lumia according to open-source safety rules. If you release your own modified variant of Lumia to the world, you **must** keep the source code public and license your modifications under the GPLv3.
-
-Let's maintain software freedom together! Read **[LICENSE](LICENSE)** for the full regulatory texts.
+Licensed under the **GNU General Public License v3.0** (GPLv3).

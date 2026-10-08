@@ -1,0 +1,36 @@
+name: adroit
+description: "Adroit - Minimalist Academic Classes & Syllabus Tracker."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Local Database
+  drift: ^2.24.0
+  drift_flutter: ^0.2.0
+
+  # Utilities
+  intl: ^0.19.0
+  shared_preferences: ^2.5.2
+  path_provider: ^2.1.5
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  drift_dev: ^2.24.0
+  build_runner: ^2.4.14
+
+flutter:
+  uses-material-design: true
