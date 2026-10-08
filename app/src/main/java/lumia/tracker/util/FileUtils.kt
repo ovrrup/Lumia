@@ -323,11 +323,21 @@ object FileUtils {
 
         // 2. OVERVIEW METRICS PANEL
         checkPageBreak(90f)
-        val cancelled = attendanceRecords.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
-        val effectiveTotal = attendanceRecords.size - cancelled
-        val presentCount = attendanceRecords.count { it.status.equals("Present", ignoreCase = true) }
-        val lateCount = attendanceRecords.count { it.status.equals("Late", ignoreCase = true) }
-        val absentCount = attendanceRecords.count { it.status.equals("Absent", ignoreCase = true) }
+        val distinctAttendance = attendanceRecords.distinctBy {
+            val cal = java.util.Calendar.getInstance().apply {
+                timeInMillis = it.dateMillis
+                set(java.util.Calendar.HOUR_OF_DAY, 0)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }
+            cal.timeInMillis
+        }
+        val cancelled = distinctAttendance.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
+        val effectiveTotal = distinctAttendance.size - cancelled
+        val presentCount = distinctAttendance.count { it.status.equals("Present", ignoreCase = true) }
+        val lateCount = distinctAttendance.count { it.status.equals("Late", ignoreCase = true) }
+        val absentCount = distinctAttendance.count { it.status.equals("Absent", ignoreCase = true) }
         val totalAttended = presentCount + lateCount
         val attendancePct = if (effectiveTotal > 0) ((totalAttended.toFloat() / effectiveTotal) * 100).roundToInt() else 100
 
@@ -379,7 +389,7 @@ object FileUtils {
         drawSectionHeader(canvas, paint, accentColor, "1. ATTENDANCE LOGS & PARTICIPATION", currentY)
         currentY += 24f
 
-        if (attendanceRecords.isEmpty()) {
+        if (distinctAttendance.isEmpty()) {
             paint.color = AndroidColor.parseColor("#64748B")
             paint.textSize = 10.5f
             paint.isFakeBoldText = false
@@ -425,7 +435,7 @@ object FileUtils {
             canvas.drawText("SESSION TYPE / REMARKS", MARGIN_LEFT + 310f, currentY + 13.5f, paint)
             currentY += 22f
 
-            val sortedAttendance = attendanceRecords.sortedByDescending { it.dateMillis }
+            val sortedAttendance = distinctAttendance.sortedByDescending { it.dateMillis }
             val dateFormat = SimpleDateFormat("EEE, MMM dd, yyyy", Locale.getDefault())
 
             for (rec in sortedAttendance.take(25)) {

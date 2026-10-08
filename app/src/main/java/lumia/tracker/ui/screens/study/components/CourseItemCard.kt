@@ -75,14 +75,28 @@ fun CourseItemCard(
         list.distinct()
     }
 
+    // Deduplicated attendance records by calendar day to ensure foolproof metrics
+    val distinctAttendanceList = remember(attendanceList) {
+        attendanceList.distinctBy {
+            val cal = Calendar.getInstance().apply {
+                timeInMillis = it.dateMillis
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            cal.timeInMillis
+        }
+    }
+
     // Attendance calculation with cancelled/holiday subtraction
-    val attendedCount = remember(attendanceList) {
-        attendanceList.count { it.status.equals("PRESENT", ignoreCase = true) || it.status.equals("LATE", ignoreCase = true) }
+    val attendedCount = remember(distinctAttendanceList) {
+        distinctAttendanceList.count { it.status.equals("PRESENT", ignoreCase = true) || it.status.equals("LATE", ignoreCase = true) }
     }
-    val cancelledCount = remember(attendanceList) {
-        attendanceList.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
+    val cancelledCount = remember(distinctAttendanceList) {
+        distinctAttendanceList.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
     }
-    val effectiveTotal = attendanceList.size - cancelledCount
+    val effectiveTotal = distinctAttendanceList.size - cancelledCount
     val finalAttended = if (effectiveTotal > 0) attendedCount else course.attendedClasses
     val finalTotal = if (effectiveTotal > 0) effectiveTotal else course.totalClasses
     val attendancePercentage = if (finalTotal > 0) {
@@ -106,11 +120,17 @@ fun CourseItemCard(
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
     }
-    val todayAttendance = remember(attendanceList, todayStartMillis) {
-        attendanceList.find { it.dateMillis == todayStartMillis }
+    val todayAttendance = remember(distinctAttendanceList, todayStartMillis) {
+        distinctAttendanceList.find { it.dateMillis == todayStartMillis }
     }
     val isPresentToday = remember(todayAttendance) {
         todayAttendance?.status.equals("Present", ignoreCase = true)
+    }
+    val isAbsentToday = remember(todayAttendance) {
+        todayAttendance?.status.equals("Absent", ignoreCase = true)
+    }
+    val isLateToday = remember(todayAttendance) {
+        todayAttendance?.status.equals("Late", ignoreCase = true)
     }
 
     // Course assignments
@@ -459,18 +479,36 @@ fun CourseItemCard(
             }
 
             // Quick 1-Tap Attendance Footer Action
-            val attBg = if (isPresentToday) {
-                Color(0xFF10B981).copy(alpha = 0.12f)
-            } else {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+            val attBg = when {
+                isPresentToday -> Color(0xFF10B981).copy(alpha = 0.12f)
+                isAbsentToday -> MaterialTheme.colorScheme.error.copy(alpha = 0.10f)
+                isLateToday -> Color(0xFFF59E0B).copy(alpha = 0.12f)
+                else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
             }
-            val attBorder = if (isPresentToday) {
-                BorderStroke(0.5.dp, Color(0xFF10B981).copy(alpha = 0.30f))
-            } else {
-                BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.22f))
+            val attBorder = when {
+                isPresentToday -> BorderStroke(0.5.dp, Color(0xFF10B981).copy(alpha = 0.35f))
+                isAbsentToday -> BorderStroke(0.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.30f))
+                isLateToday -> BorderStroke(0.5.dp, Color(0xFFF59E0B).copy(alpha = 0.35f))
+                else -> BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.22f))
             }
-            val attIconColor = if (isPresentToday) Color(0xFF10B981) else MaterialTheme.colorScheme.primary
-            val attText = if (isPresentToday) "Attended Today • Marked Present" else "Mark Today's Attendance"
+            val attIconColor = when {
+                isPresentToday -> Color(0xFF10B981)
+                isAbsentToday -> MaterialTheme.colorScheme.error
+                isLateToday -> Color(0xFFF59E0B)
+                else -> MaterialTheme.colorScheme.primary
+            }
+            val attIcon = when {
+                isPresentToday -> Icons.Rounded.CheckCircle
+                isAbsentToday -> Icons.Rounded.Cancel
+                isLateToday -> Icons.Rounded.Schedule
+                else -> Icons.Rounded.Check
+            }
+            val attText = when {
+                isPresentToday -> "Attended Today • Present"
+                isAbsentToday -> "Marked Absent Today"
+                isLateToday -> "Marked Late Today"
+                else -> "Mark Today's Attendance"
+            }
 
             Surface(
                 shape = CircleShape,
@@ -480,8 +518,7 @@ fun CourseItemCard(
                     .fillMaxWidth()
                     .clip(CircleShape)
                     .bouncyClick {
-                        val nextStatus = if (isPresentToday) "Absent" else "Present"
-                        viewModel.addAttendanceRecord(course.id, todayStartMillis, nextStatus)
+                        viewModel.toggleTodayAttendance(course.id, todayStartMillis)
                     }
             ) {
                 Row(
@@ -490,7 +527,7 @@ fun CourseItemCard(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Icon(
-                        imageVector = if (isPresentToday) Icons.Rounded.CheckCircle else Icons.Rounded.Check,
+                        imageVector = attIcon,
                         contentDescription = null,
                         tint = attIconColor,
                         modifier = Modifier.size(15.dp)

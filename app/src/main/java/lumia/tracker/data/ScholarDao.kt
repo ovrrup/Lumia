@@ -286,6 +286,15 @@ interface ScholarDao {
     @Delete
     suspend fun deleteAttendanceRecord(record: AttendanceRecord)
 
+    @Query("SELECT * FROM attendance_records WHERE courseId = :courseId AND dateMillis = :dateMillis LIMIT 1")
+    suspend fun getAttendanceForCourseAndDate(courseId: Int, dateMillis: Long): AttendanceRecord?
+
+    @Query("DELETE FROM attendance_records WHERE courseId = :courseId AND dateMillis = :dateMillis")
+    suspend fun deleteAttendanceForCourseAndDate(courseId: Int, dateMillis: Long)
+
+    @Query("DELETE FROM attendance_records WHERE id NOT IN (SELECT MAX(id) FROM attendance_records GROUP BY courseId, dateMillis)")
+    suspend fun deduplicateAttendanceRecords()
+
     // =========================================================================
     // ACTION LOGS
     // =========================================================================

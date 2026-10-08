@@ -88,6 +88,7 @@ class ReminderReceiver : BroadcastReceiver() {
                             set(java.util.Calendar.SECOND, 0)
                             set(java.util.Calendar.MILLISECOND, 0)
                         }
+                        db.scholarDao().deleteAttendanceForCourseAndDate(courseId, cal.timeInMillis)
                         val record = lumia.tracker.model.AttendanceRecord(
                             courseId = courseId,
                             dateMillis = cal.timeInMillis,

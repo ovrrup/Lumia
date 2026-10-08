@@ -558,8 +558,24 @@ fun CalendarTab(
                     }
 
                     val existingAttendance = remember(allAttendanceRecords, course.id, currentDayItem.dateMillis) {
+                        val targetCal = Calendar.getInstance().apply {
+                            timeInMillis = currentDayItem.dateMillis
+                            set(Calendar.HOUR_OF_DAY, 0)
+                            set(Calendar.MINUTE, 0)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }
+                        val targetTime = targetCal.timeInMillis
                         allAttendanceRecords.firstOrNull {
-                            it.courseId == course.id && it.dateMillis == currentDayItem.dateMillis
+                            if (it.courseId != course.id) return@firstOrNull false
+                            val recCal = Calendar.getInstance().apply {
+                                timeInMillis = it.dateMillis
+                                set(Calendar.HOUR_OF_DAY, 0)
+                                set(Calendar.MINUTE, 0)
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }
+                            recCal.timeInMillis == targetTime
                         }
                     }
 
@@ -843,15 +859,7 @@ fun CalendarTab(
                                                 icon = Icons.Rounded.Check,
                                                 contentDescription = "Present",
                                                 onClick = {
-                                                    if (currentStatus == "present") {
-                                                        existingAttendance?.let { viewModel.deleteAttendanceRecord(it) }
-                                                    } else {
-                                                        if (existingAttendance != null) {
-                                                            viewModel.updateAttendanceRecord(existingAttendance.copy(status = "Present"))
-                                                        } else {
-                                                            viewModel.addAttendanceRecord(course.id, currentDayItem.dateMillis, "Present")
-                                                        }
-                                                    }
+                                                    viewModel.recordAttendance(course.id, currentDayItem.dateMillis, "Present", toggleIfSame = true)
                                                 }
                                             )
 
@@ -861,15 +869,7 @@ fun CalendarTab(
                                                 icon = Icons.Rounded.Schedule,
                                                 contentDescription = "Late",
                                                 onClick = {
-                                                    if (currentStatus == "late") {
-                                                        existingAttendance?.let { viewModel.deleteAttendanceRecord(it) }
-                                                    } else {
-                                                        if (existingAttendance != null) {
-                                                            viewModel.updateAttendanceRecord(existingAttendance.copy(status = "Late"))
-                                                        } else {
-                                                            viewModel.addAttendanceRecord(course.id, currentDayItem.dateMillis, "Late")
-                                                        }
-                                                    }
+                                                    viewModel.recordAttendance(course.id, currentDayItem.dateMillis, "Late", toggleIfSame = true)
                                                 }
                                             )
 
@@ -879,15 +879,7 @@ fun CalendarTab(
                                                 icon = Icons.Rounded.Close,
                                                 contentDescription = "Absent",
                                                 onClick = {
-                                                    if (currentStatus == "absent") {
-                                                        existingAttendance?.let { viewModel.deleteAttendanceRecord(it) }
-                                                    } else {
-                                                        if (existingAttendance != null) {
-                                                            viewModel.updateAttendanceRecord(existingAttendance.copy(status = "Absent"))
-                                                        } else {
-                                                            viewModel.addAttendanceRecord(course.id, currentDayItem.dateMillis, "Absent")
-                                                        }
-                                                    }
+                                                    viewModel.recordAttendance(course.id, currentDayItem.dateMillis, "Absent", toggleIfSame = true)
                                                 }
                                             )
                                         }

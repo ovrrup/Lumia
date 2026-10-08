@@ -316,9 +316,19 @@ fun AnalyticsTab(
     val assignmentRate = if (totalAssignments > 0) ((completedAssignments.toFloat() / totalAssignments) * 100).toInt() else 0
 
     val attendanceStats = remember(allAttendance) {
-        val present = allAttendance.count { it.status.equals("PRESENT", ignoreCase = true) }
-        val late = allAttendance.count { it.status.equals("LATE", ignoreCase = true) }
-        val absent = allAttendance.count { it.status.equals("ABSENT", ignoreCase = true) }
+        val distinctAttendance = allAttendance.distinctBy {
+            val cal = Calendar.getInstance().apply {
+                timeInMillis = it.dateMillis
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            "${it.courseId}_${cal.timeInMillis}"
+        }
+        val present = distinctAttendance.count { it.status.equals("PRESENT", ignoreCase = true) }
+        val late = distinctAttendance.count { it.status.equals("LATE", ignoreCase = true) }
+        val absent = distinctAttendance.count { it.status.equals("ABSENT", ignoreCase = true) }
         val attended = present + late
         val effectiveTotal = present + late + absent
         val rateInt = if (effectiveTotal > 0) ((attended.toFloat() / effectiveTotal) * 100).toInt() else 0

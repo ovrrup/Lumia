@@ -844,8 +844,26 @@ fun HomeTab(
                                         set(Calendar.MILLISECOND, 0)
                                     }.timeInMillis
                                 }
-                                val existingAttendance = allAttendanceRecords.firstOrNull {
-                                    it.courseId == course.id && it.dateMillis == selectedDateStartMillis
+                                val existingAttendance = remember(allAttendanceRecords, course.id, selectedDateStartMillis) {
+                                    val targetCal = Calendar.getInstance().apply {
+                                        timeInMillis = selectedDateStartMillis
+                                        set(Calendar.HOUR_OF_DAY, 0)
+                                        set(Calendar.MINUTE, 0)
+                                        set(Calendar.SECOND, 0)
+                                        set(Calendar.MILLISECOND, 0)
+                                    }
+                                    val targetTime = targetCal.timeInMillis
+                                    allAttendanceRecords.firstOrNull {
+                                        if (it.courseId != course.id) return@firstOrNull false
+                                        val recCal = Calendar.getInstance().apply {
+                                            timeInMillis = it.dateMillis
+                                            set(Calendar.HOUR_OF_DAY, 0)
+                                            set(Calendar.MINUTE, 0)
+                                            set(Calendar.SECOND, 0)
+                                            set(Calendar.MILLISECOND, 0)
+                                        }
+                                        recCal.timeInMillis == targetTime
+                                    }
                                 }
 
                                 Surface(
@@ -948,12 +966,7 @@ fun HomeTab(
                                                     modifier = Modifier
                                                         .clip(CircleShape)
                                                         .clickable {
-                                                            val nextStatus = when (existingAttendance.status.lowercase()) {
-                                                                "present" -> "Absent"
-                                                                "absent" -> "Late"
-                                                                else -> "Present"
-                                                            }
-                                                            viewModel.addAttendanceRecord(course.id, selectedDateStartMillis, nextStatus)
+                                                            viewModel.toggleTodayAttendance(course.id, selectedDateStartMillis)
                                                         }
                                                 ) {
                                                     Row(
@@ -986,7 +999,7 @@ fun HomeTab(
                                                             .size(32.dp)
                                                             .clip(CircleShape)
                                                             .clickable {
-                                                                viewModel.addAttendanceRecord(course.id, selectedDateStartMillis, "Present")
+                                                                viewModel.recordAttendance(course.id, selectedDateStartMillis, "Present", toggleIfSame = true)
                                                             }
                                                     ) {
                                                         Box(contentAlignment = Alignment.Center) {
@@ -1008,7 +1021,7 @@ fun HomeTab(
                                                             .size(32.dp)
                                                             .clip(CircleShape)
                                                             .clickable {
-                                                                viewModel.addAttendanceRecord(course.id, selectedDateStartMillis, "Absent")
+                                                                viewModel.recordAttendance(course.id, selectedDateStartMillis, "Absent", toggleIfSame = true)
                                                             }
                                                     ) {
                                                         Box(contentAlignment = Alignment.Center) {

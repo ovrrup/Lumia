@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
@@ -87,6 +89,11 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
     init {
         application.getSharedPreferences("global_profiles", Context.MODE_PRIVATE)
             .registerOnSharedPreferenceChangeListener(prefListener)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.deduplicateAttendanceRecords()
+            } catch (_: Exception) {}
+        }
     }
 
     override fun onCleared() {
@@ -1279,16 +1286,108 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private val attendanceMutex = Mutex()
+
+    fun recordAttendance(courseId: Int, dateMillis: Long, status: String, toggleIfSame: Boolean = false) {
+        viewModelScope.launch(Dispatchers.IO) {
+            attendanceMutex.withLock {
+                val normalized = Calendar.getInstance().apply {
+                    timeInMillis = dateMillis
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+
+                val existing = repository.getAttendanceForCourseAndDate(courseId, normalized)
+                if (toggleIfSame && existing != null && existing.status.equals(status, ignoreCase = true)) {
+                    repository.deleteAttendanceForCourseAndDate(courseId, normalized)
+                    return@withLock
+                }
+
+                repository.deleteAttendanceForCourseAndDate(courseId, normalized)
+                val newId = existing?.id ?: 0
+                repository.insertAttendanceRecord(
+                    lumia.tracker.model.AttendanceRecord(
+                        id = newId,
+                        courseId = courseId,
+                        dateMillis = normalized,
+                        status = status
+                    )
+                )
+            }
+        }
+    }
+
+    fun toggleTodayAttendance(courseId: Int, dateMillis: Long = System.currentTimeMillis()) {
+        viewModelScope.launch(Dispatchers.IO) {
+            attendanceMutex.withLock {
+                val normalized = Calendar.getInstance().apply {
+                    timeInMillis = dateMillis
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+
+                val existing = repository.getAttendanceForCourseAndDate(courseId, normalized)
+                val nextStatus = when (existing?.status?.lowercase()) {
+                    "present" -> "Absent"
+                    "absent" -> null
+                    else -> "Present"
+                }
+
+                repository.deleteAttendanceForCourseAndDate(courseId, normalized)
+                if (nextStatus != null) {
+                    repository.insertAttendanceRecord(
+                        lumia.tracker.model.AttendanceRecord(
+                            id = existing?.id ?: 0,
+                            courseId = courseId,
+                            dateMillis = normalized,
+                            status = nextStatus
+                        )
+                    )
+                }
+            }
+        }
+    }
+
     fun addAttendanceRecord(courseId: Int, dateMillis: Long, status: String) {
-        viewModelScope.launch {
-            val normalized = Calendar.getInstance().apply {
-                timeInMillis = dateMillis
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
-            repository.insertAttendanceRecord(lumia.tracker.model.AttendanceRecord(courseId = courseId, dateMillis = normalized, status = status))
+        recordAttendance(courseId, dateMillis, status, toggleIfSame = false)
+    }
+
+    fun updateAttendanceRecord(record: lumia.tracker.model.AttendanceRecord) {
+        recordAttendance(record.courseId, record.dateMillis, record.status, toggleIfSame = false)
+    }
+
+    fun deleteAttendanceRecord(record: lumia.tracker.model.AttendanceRecord) {
+        viewModelScope.launch(Dispatchers.IO) {
+            attendanceMutex.withLock {
+                val normalized = Calendar.getInstance().apply {
+                    timeInMillis = record.dateMillis
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+                repository.deleteAttendanceForCourseAndDate(record.courseId, normalized)
+                repository.deleteAttendanceRecord(record)
+            }
+        }
+    }
+
+    fun deleteAttendanceForCourseAndDate(courseId: Int, dateMillis: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            attendanceMutex.withLock {
+                val normalized = Calendar.getInstance().apply {
+                    timeInMillis = dateMillis
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+                repository.deleteAttendanceForCourseAndDate(courseId, normalized)
+            }
         }
     }
 
@@ -1334,17 +1433,7 @@ class ScholarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun updateAttendanceRecord(record: lumia.tracker.model.AttendanceRecord) {
-        viewModelScope.launch {
-            repository.updateAttendanceRecord(record)
-        }
-    }
 
-    fun deleteAttendanceRecord(record: lumia.tracker.model.AttendanceRecord) {
-        viewModelScope.launch {
-            repository.deleteAttendanceRecord(record)
-        }
-    }
     
     // --- Test Records ---
     private val testRecordsFlowCache = ConcurrentHashMap<Int, StateFlow<List<lumia.tracker.model.TestRecord>>>()

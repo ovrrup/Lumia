@@ -145,6 +145,9 @@ class ScholarRepository(val dao: ScholarDao) {
     suspend fun insertAttendanceRecord(record: AttendanceRecord) = dao.insertAttendanceRecord(record)
     suspend fun updateAttendanceRecord(record: AttendanceRecord) = dao.updateAttendanceRecord(record)
     suspend fun deleteAttendanceRecord(record: AttendanceRecord) = dao.deleteAttendanceRecord(record)
+    suspend fun getAttendanceForCourseAndDate(courseId: Int, dateMillis: Long): AttendanceRecord? = dao.getAttendanceForCourseAndDate(courseId, dateMillis)
+    suspend fun deleteAttendanceForCourseAndDate(courseId: Int, dateMillis: Long) = dao.deleteAttendanceForCourseAndDate(courseId, dateMillis)
+    suspend fun deduplicateAttendanceRecords() = dao.deduplicateAttendanceRecords()
 
     suspend fun insertActionLog(log: ActionLog) = dao.insertActionLog(log)
     suspend fun clearActionLogs() = dao.clearActionLogs()

@@ -411,6 +411,18 @@ fun CourseDetailScreen(
     }
 
     val attendanceRecords by viewModel.getAttendanceForCourse(courseId).collectAsStateWithLifecycle()
+    val distinctAttendanceRecords = remember(attendanceRecords) {
+        attendanceRecords.distinctBy {
+            val cal = Calendar.getInstance().apply {
+                timeInMillis = it.dateMillis
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            cal.timeInMillis
+        }
+    }
 
     if (course == null) {
         LaunchedEffect(Unit) {
@@ -429,10 +441,10 @@ fun CourseDetailScreen(
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
-    val tabCounts = remember(topics, attendanceRecords, localAssignments, courseNotes, attachments) {
+    val tabCounts = remember(topics, distinctAttendanceRecords, localAssignments, courseNotes, attachments) {
         mapOf(
             CourseDetailTab.CURRICULUM to topics.size,
-            CourseDetailTab.ATTENDANCE to attendanceRecords.size,
+            CourseDetailTab.ATTENDANCE to distinctAttendanceRecords.size,
             CourseDetailTab.ASSIGNMENTS to localAssignments.size,
             CourseDetailTab.NOTES to courseNotes.size,
             CourseDetailTab.GUIDES to attachments.size
@@ -709,9 +721,9 @@ fun CourseDetailScreen(
                                 }
 
                                 // Attendance rate pairing
-                                val cancelledRecs = attendanceRecords.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
-                                val effectiveAtt = attendanceRecords.size - cancelledRecs
-                                val attendedCount = attendanceRecords.count { it.status.equals("Present", ignoreCase = true) || it.status.equals("Late", ignoreCase = true) }
+                                val cancelledRecs = distinctAttendanceRecords.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
+                                val effectiveAtt = distinctAttendanceRecords.size - cancelledRecs
+                                val attendedCount = distinctAttendanceRecords.count { it.status.equals("Present", ignoreCase = true) || it.status.equals("Late", ignoreCase = true) }
                                 val heroAttPct = if (effectiveAtt > 0) ((attendedCount.toFloat() / effectiveAtt) * 100).roundToInt() else 100
                                 val attColor = when {
                                     effectiveAtt == 0 -> courseColor
@@ -1250,8 +1262,8 @@ fun CourseDetailScreen(
 
                 CourseDetailTab.ATTENDANCE -> {
                     item {
-                        val attendanceByDay = remember(attendanceRecords) {
-                            attendanceRecords.associateBy { rec ->
+                        val attendanceByDay = remember(distinctAttendanceRecords) {
+                            distinctAttendanceRecords.associateBy { rec ->
                                 val cal = Calendar.getInstance().apply { timeInMillis = rec.dateMillis }
                                 val year = cal.get(Calendar.YEAR)
                                 val dayOfYear = cal.get(Calendar.DAY_OF_YEAR)
@@ -1263,11 +1275,11 @@ fun CourseDetailScreen(
                         var isMonthlyView by remember { mutableStateOf(false) }
                         var displayMonthOffset by remember { mutableIntStateOf(0) }
 
-                        val cancelled = attendanceRecords.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
-                        val effectiveTotal = attendanceRecords.size - cancelled
-                        val presentCount = attendanceRecords.count { it.status.equals("Present", ignoreCase = true) }
-                        val lateCount = attendanceRecords.count { it.status.equals("Late", ignoreCase = true) }
-                        val absentCount = attendanceRecords.count { it.status.equals("Absent", ignoreCase = true) }
+                        val cancelled = distinctAttendanceRecords.count { it.status.equals("Cancelled", ignoreCase = true) || it.status.equals("Holiday", ignoreCase = true) }
+                        val effectiveTotal = distinctAttendanceRecords.size - cancelled
+                        val presentCount = distinctAttendanceRecords.count { it.status.equals("Present", ignoreCase = true) }
+                        val lateCount = distinctAttendanceRecords.count { it.status.equals("Late", ignoreCase = true) }
+                        val absentCount = distinctAttendanceRecords.count { it.status.equals("Absent", ignoreCase = true) }
                         val totalAttended = presentCount + lateCount
                         val attendancePct = if (effectiveTotal > 0) ((totalAttended.toFloat() / effectiveTotal) * 100).roundToInt() else 100
 
@@ -1469,11 +1481,7 @@ fun CourseDetailScreen(
                                                     containerColor = if (isSelected) col else col.copy(alpha = 0.08f),
                                                     border = BorderStroke(if (isSelected) 1.2.dp else 0.8.dp, if (isSelected) col else col.copy(alpha = 0.25f)),
                                                     onClick = {
-                                                        if (todayRecord != null) {
-                                                            viewModel.updateAttendanceRecord(todayRecord.copy(status = statusOpt))
-                                                        } else {
-                                                            viewModel.addAttendanceRecord(courseId, todayCal.timeInMillis, statusOpt)
-                                                        }
+                                                        viewModel.recordAttendance(courseId, todayCal.timeInMillis, statusOpt, toggleIfSame = true)
                                                     }
                                                 ) {
                                                     Row(
@@ -1703,11 +1711,7 @@ fun CourseDetailScreen(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .bouncyClick {
-                                                        if (record != null) {
-                                                            viewModel.updateAttendanceRecord(record.copy(status = option))
-                                                        } else {
-                                                            viewModel.addAttendanceRecord(courseId, selectedDate, option)
-                                                        }
+                                                        viewModel.recordAttendance(courseId, selectedDate, option, toggleIfSame = false)
                                                         showAttendanceDialog = false
                                                     },
                                                 shape = RoundedCornerShape(10.dp),
@@ -1737,7 +1741,7 @@ fun CourseDetailScreen(
                                             Spacer(modifier = Modifier.height(4.dp))
                                             BouncyTextButton(
                                                 onClick = {
-                                                    viewModel.deleteAttendanceRecord(record)
+                                                    viewModel.deleteAttendanceForCourseAndDate(courseId, selectedDate)
                                                     showAttendanceDialog = false
                                                 },
                                                 modifier = Modifier.fillMaxWidth()
