@@ -9,6 +9,7 @@
 .history
 .svn/
 artifacts/
+build_artifacts/
 *.apk
 
 # IntelliJ related
