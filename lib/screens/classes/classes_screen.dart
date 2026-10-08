@@ -9,6 +9,7 @@ import '../../providers/courses_provider.dart';
 import '../../providers/database_provider.dart';
 import '../../widgets/adroit_card.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/radial_gauge.dart';
 import '../../widgets/status_badge.dart';
 import 'course_detail_screen.dart';
 import 'edit_course_dialog.dart';
@@ -21,7 +22,7 @@ class ClassesScreen extends ConsumerStatefulWidget {
 }
 
 class _ClassesScreenState extends ConsumerState<ClassesScreen> {
-  int _activeViewIndex = 0; // 0: Schedule, 1: All Courses
+  int _activeViewIndex = 0; // 0: Agenda, 1: Enrolled Courses
 
   @override
   Widget build(BuildContext context) {
@@ -33,73 +34,126 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
     final isToday = selectedDay == currentDayOfWeek;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Classes & Timetable'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            tooltip: 'Add Course',
-            onPressed: () => showDialog(
-              context: context,
-              builder: (ctx) => const EditCourseDialog(),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // View Switcher (Schedule vs All Courses)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(10),
-              ),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Top Executive Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: _ViewTab(
-                      label: 'Timetable',
-                      icon: Icons.calendar_view_day_rounded,
-                      isSelected: _activeViewIndex == 0,
-                      onTap: () => setState(() => _activeViewIndex = 0),
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'ACADEMIC',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            AdroitDateUtils.formatRelativeDate(
+                              AdroitDateUtils.toMidnightMillis(DateTime.now()),
+                            ),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface.withOpacity(0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Classes & Agenda',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.7,
+                        ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: _ViewTab(
-                      label: 'All Courses (${allCourses.length})',
-                      icon: Icons.school_outlined,
-                      isSelected: _activeViewIndex == 1,
-                      onTap: () => setState(() => _activeViewIndex = 1),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add Class', style: TextStyle(fontWeight: FontWeight.w700)),
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (ctx) => const EditCourseDialog(),
+                    ),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
 
-          Expanded(
-            child: _activeViewIndex == 0
-                ? _buildScheduleView(
-                    context,
-                    theme,
-                    selectedDay,
-                    currentDayOfWeek,
-                    isToday,
-                    scheduledClasses,
-                  )
-                : _buildCoursesListView(context, theme, allCourses),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => showDialog(
-          context: context,
-          builder: (ctx) => const EditCourseDialog(),
+            // Segmented View Switcher
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+              child: Container(
+                height: 44,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: theme.colorScheme.outline),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _SegmentTab(
+                        title: 'Timetable Agenda',
+                        icon: Icons.calendar_view_day_rounded,
+                        isSelected: _activeViewIndex == 0,
+                        onTap: () => setState(() => _activeViewIndex = 0),
+                      ),
+                    ),
+                    Expanded(
+                      child: _SegmentTab(
+                        title: 'All Courses (${allCourses.length})',
+                        icon: Icons.school_rounded,
+                        isSelected: _activeViewIndex == 1,
+                        onTap: () => setState(() => _activeViewIndex = 1),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            Expanded(
+              child: _activeViewIndex == 0
+                  ? _buildScheduleView(
+                      context,
+                      theme,
+                      selectedDay,
+                      currentDayOfWeek,
+                      isToday,
+                      scheduledClasses,
+                    )
+                  : _buildCoursesListView(context, theme, allCourses),
+            ),
+          ],
         ),
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -115,72 +169,106 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Days of week selector
+        // Days of week calendar strip
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: SingleChildScrollView(
+          height: 68,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            child: Row(
-              children: AppConstants.weekDays.map((day) {
-                final isSelected = selectedDay == day;
-                final isCurrentDay = currentDayOfWeek == day;
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: AppConstants.weekDays.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final day = AppConstants.weekDays[index];
+              final isSelected = selectedDay == day;
+              final isCurrentDay = currentDayOfWeek == day;
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ChoiceChip(
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(day),
-                        if (isCurrentDay) ...[
-                          const SizedBox(width: 4),
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? Colors.white
-                                  : theme.colorScheme.primary,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ],
-                      ],
+              return InkWell(
+                onTap: () {
+                  ref.read(selectedDayFilterProvider.notifier).state = day;
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 52,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : (isCurrentDay
+                            ? theme.colorScheme.primary.withOpacity(0.12)
+                            : theme.colorScheme.surface),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : (isCurrentDay
+                              ? theme.colorScheme.primary.withOpacity(0.4)
+                              : theme.colorScheme.outline),
+                      width: 1,
                     ),
-                    selected: isSelected,
-                    showCheckmark: false,
-                    onSelected: (val) {
-                      if (val) {
-                        ref.read(selectedDayFilterProvider.notifier).state = day;
-                      }
-                    },
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ]
+                        : null,
                   ),
-                );
-              }).toList(),
-            ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        day.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                          color: isSelected
+                              ? Colors.white
+                              : (isCurrentDay
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurface.withOpacity(0.6)),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected
+                              ? Colors.white
+                              : (isCurrentDay ? theme.colorScheme.primary : Colors.transparent),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
 
-        // Subheader showing full day name
+        // Subheader showing day info & class count
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${AppConstants.weekDayFullNames[selectedDay] ?? selectedDay}${isToday ? ' (Today)' : ''}',
+                '${AppConstants.weekDayFullNames[selectedDay] ?? selectedDay}${isToday ? ' • Today' : ''}',
                 style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
                 ),
               ),
-              Text(
-                '${scheduledClasses.length} ${scheduledClasses.length == 1 ? 'class' : 'classes'}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
-                ),
+              StatusBadge(
+                label: '${scheduledClasses.length} ${scheduledClasses.length == 1 ? 'LECTURE' : 'LECTURES'}',
+                color: theme.colorScheme.primary,
+                showDot: false,
               ),
             ],
           ),
@@ -191,11 +279,11 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
           child: scheduledClasses.isEmpty
               ? EmptyState(
                   icon: Icons.event_available_rounded,
-                  title: 'No classes on $selectedDay',
-                  subtitle: 'You have no scheduled lectures or labs for this day.',
+                  title: 'No lectures on $selectedDay',
+                  subtitle: 'You have no scheduled classes for this day. Enjoy your study time!',
                   action: OutlinedButton.icon(
                     icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Add Course'),
+                    label: const Text('Add Lecture to Schedule'),
                     onPressed: () => showDialog(
                       context: context,
                       builder: (ctx) => const EditCourseDialog(),
@@ -203,9 +291,9 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
                   ),
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
                   itemCount: scheduledClasses.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final item = scheduledClasses[index];
                     final course = item.course;
@@ -218,21 +306,51 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
                           builder: (_) => CourseDetailScreen(courseId: course.id),
                         ));
                       },
+                      padding: const EdgeInsets.all(18),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Left time indicator column
                               Container(
-                                width: 4,
-                                height: 40,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: courseColor,
-                                  borderRadius: BorderRadius.circular(2),
+                                  color: courseColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: courseColor.withOpacity(0.25)),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      course.startTime,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800,
+                                        color: courseColor,
+                                      ),
+                                    ),
+                                    Container(
+                                      height: 10,
+                                      width: 1.5,
+                                      color: courseColor.withOpacity(0.4),
+                                      margin: const EdgeInsets.symmetric(vertical: 2),
+                                    ),
+                                    Text(
+                                      course.endTime,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: courseColor.withOpacity(0.8),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 14),
+
+                              // Course Details
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,45 +362,69 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
                                             course.name,
                                             style: const TextStyle(
                                               fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                              letterSpacing: -0.3,
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: -0.4,
                                             ),
                                           ),
                                         ),
-                                        if (course.code.isNotEmpty)
-                                          Text(
-                                            course.code,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: courseColor,
+                                        if (course.code.isNotEmpty) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: courseColor.withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(6),
                                             ),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.access_time_rounded,
-                                            size: 14, color: Colors.grey),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${course.startTime} - ${course.endTime}',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        if (course.room.isNotEmpty) ...[
-                                          const SizedBox(width: 10),
-                                          const Icon(Icons.room_outlined,
-                                              size: 14, color: Colors.grey),
-                                          const SizedBox(width: 2),
-                                          Text(
-                                            course.room,
-                                            style: const TextStyle(fontSize: 12),
+                                            child: Text(
+                                              course.code,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                                color: courseColor,
+                                              ),
+                                            ),
                                           ),
                                         ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+
+                                    // Room and Instructor
+                                    Wrap(
+                                      spacing: 12,
+                                      children: [
+                                        if (course.room.isNotEmpty)
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.room_rounded, size: 14, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                course.room,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        if (course.instructor.isNotEmpty)
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.person_rounded, size: 14, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                course.instructor,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                       ],
                                     ),
                                   ],
@@ -291,28 +433,32 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
                             ],
                           ),
 
-                          // Quick attendance row (enabled when viewing today)
+                          // Quick attendance row for today
                           if (isToday) ...[
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                             const Divider(height: 1),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 12),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   todayRecord != null
-                                      ? 'Logged: ${todayRecord.status.toUpperCase()}'
-                                      : 'Quick Log Attendance:',
+                                      ? 'STATUS: ${todayRecord.status.toUpperCase()}'
+                                      : 'LOG ATTENDANCE',
                                   style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.6,
+                                    color: theme.colorScheme.onSurface.withOpacity(0.45),
                                   ),
                                 ),
+                                // Segmented action pills
                                 Row(
                                   children: [
-                                    _QuickAttendanceButton(
-                                      status: AttendanceStatus.present,
+                                    _AttendancePill(
+                                      label: 'Present',
+                                      icon: Icons.check_circle_rounded,
+                                      color: const Color(0xFF10B981),
                                       isSelected: todayRecord?.status.toLowerCase() == 'present',
                                       onTap: () {
                                         ref.read(databaseProvider).recordAttendance(
@@ -323,8 +469,10 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
                                       },
                                     ),
                                     const SizedBox(width: 6),
-                                    _QuickAttendanceButton(
-                                      status: AttendanceStatus.absent,
+                                    _AttendancePill(
+                                      label: 'Absent',
+                                      icon: Icons.cancel_rounded,
+                                      color: const Color(0xFFEF4444),
                                       isSelected: todayRecord?.status.toLowerCase() == 'absent',
                                       onTap: () {
                                         ref.read(databaseProvider).recordAttendance(
@@ -335,8 +483,10 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
                                       },
                                     ),
                                     const SizedBox(width: 6),
-                                    _QuickAttendanceButton(
-                                      status: AttendanceStatus.cancelled,
+                                    _AttendancePill(
+                                      label: 'Skip',
+                                      icon: Icons.pause_circle_rounded,
+                                      color: const Color(0xFF6B7280),
                                       isSelected: todayRecord?.status.toLowerCase() == 'cancelled',
                                       onTap: () {
                                         ref.read(databaseProvider).recordAttendance(
@@ -368,12 +518,12 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
   ) {
     if (courses.isEmpty) {
       return EmptyState(
-        icon: Icons.school_outlined,
+        icon: Icons.school_rounded,
         title: 'No courses registered',
-        subtitle: 'Add your classes and lectures to start tracking timetables and attendance.',
+        subtitle: 'Enroll your academic classes and lectures to start monitoring attendance and schedules.',
         action: FilledButton.icon(
           icon: const Icon(Icons.add),
-          label: const Text('Add First Course'),
+          label: const Text('Add Course'),
           onPressed: () => showDialog(
             context: context,
             builder: (ctx) => const EditCourseDialog(),
@@ -383,9 +533,9 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
       itemCount: courses.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final course = courses[index];
         final courseColor = AppConstants.parseHexColor(course.colorHex);
@@ -397,21 +547,28 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
               builder: (_) => CourseDetailScreen(courseId: course.id),
             ));
           },
+          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 4,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: courseColor,
-                      borderRadius: BorderRadius.circular(2),
+                  RadialProgressGauge(
+                    progress: analytics.percentage / 100.0,
+                    size: 56,
+                    strokeWidth: 5.5,
+                    color: analytics.health.color,
+                    centerChild: Text(
+                      '${analytics.percentage.round()}%',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: analytics.health.color,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,29 +579,37 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
                               child: Text(
                                 course.name,
                                 style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.3,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.4,
                                 ),
                               ),
                             ),
                             if (course.code.isNotEmpty)
-                              Text(
-                                course.code,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: courseColor,
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: courseColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  course.code,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: courseColor,
+                                  ),
                                 ),
                               ),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${course.scheduleDays.isEmpty ? "No days set" : course.scheduleDays} • ${course.startTime} - ${course.endTime}',
+                          '${course.scheduleDays.isEmpty ? "No days" : course.scheduleDays} • ${course.startTime} - ${course.endTime}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            fontWeight: FontWeight.w500,
+                            color: theme.colorScheme.onSurface.withOpacity(0.55),
                           ),
                         ),
                       ],
@@ -452,36 +617,30 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               const Divider(height: 1),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
 
-              // Attendance stats footer
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
                       Text(
-                        '${analytics.percentage.toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: analytics.health.color,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '(${analytics.attendedClasses}/${analytics.totalClasses} classes)',
+                        '${analytics.attendedClasses}/${analytics.totalClasses} ATTENDED',
                         style: TextStyle(
                           fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
                           color: theme.colorScheme.onSurface.withOpacity(0.5),
                         ),
                       ),
                     ],
                   ),
                   StatusBadge(
-                    label: analytics.health.label,
+                    label: analytics.health == AttendanceHealth.critical
+                        ? 'NEED ${analytics.classesToRecover} CLASSES'
+                        : '${analytics.safeBunksAllowed} SAFE BUNKS',
                     color: analytics.health.color,
                   ),
                 ],
@@ -494,14 +653,14 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> {
   }
 }
 
-class _ViewTab extends StatelessWidget {
-  final String label;
+class _SegmentTab extends StatelessWidget {
+  final String title;
   final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _ViewTab({
-    required this.label,
+  const _SegmentTab({
+    required this.title,
     required this.icon,
     required this.isSelected,
     required this.onTap,
@@ -520,7 +679,7 @@ class _ViewTab extends StatelessWidget {
           color: isSelected ? theme.colorScheme.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           boxShadow: isSelected
-              ? [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)]
+              ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: const Offset(0, 1))]
               : null,
         ),
         alignment: Alignment.center,
@@ -530,19 +689,15 @@ class _ViewTab extends StatelessWidget {
             Icon(
               icon,
               size: 15,
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withOpacity(0.6),
+              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface.withOpacity(0.5),
             ),
             const SizedBox(width: 6),
             Text(
-              label,
+              title,
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withOpacity(0.6),
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -552,13 +707,17 @@ class _ViewTab extends StatelessWidget {
   }
 }
 
-class _QuickAttendanceButton extends StatelessWidget {
-  final AttendanceStatus status;
+class _AttendancePill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _QuickAttendanceButton({
-    required this.status,
+  const _AttendancePill({
+    required this.label,
+    required this.icon,
+    required this.color,
     required this.isSelected,
     required this.onTap,
   });
@@ -567,32 +726,33 @@ class _QuickAttendanceButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? status.color : status.color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(6),
+          color: isSelected ? color : color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? status.color : status.color.withOpacity(0.3),
+            color: isSelected ? color : color.withOpacity(0.25),
             width: 1,
           ),
+          boxShadow: isSelected
+              ? [BoxShadow(color: color.withOpacity(0.35), blurRadius: 6, offset: const Offset(0, 2))]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              status.icon,
-              size: 12,
-              color: isSelected ? Colors.white : status.color,
-            ),
+            Icon(icon, size: 13, color: isSelected ? Colors.white : color),
             const SizedBox(width: 4),
             Text(
-              status.label,
+              label,
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: isSelected ? Colors.white : status.color,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: isSelected ? Colors.white : color,
+                letterSpacing: 0.2,
               ),
             ),
           ],

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart' as drift;
 import '../../data/database/database.dart';
 import '../../providers/database_provider.dart';
 
@@ -52,29 +51,86 @@ class _EditChapterDialogState extends ConsumerState<EditChapterDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isEditing = widget.initialChapter != null;
 
-    return AlertDialog(
-      title: Text(isEditing ? 'Edit Unit / Chapter' : 'Add Unit / Chapter'),
-      content: TextField(
-        controller: _titleController,
-        autofocus: true,
-        decoration: const InputDecoration(
-          labelText: 'Unit Title',
-          hintText: 'e.g. Unit 1: Memory Management',
-        ),
-        onSubmitted: (_) => _save(),
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.4), width: 1),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 420),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SYLLABUS MODULE',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isEditing ? 'Edit Unit / Module' : 'Add Unit / Module',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: _titleController,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Unit / Module Title',
+                hintText: 'e.g. Unit 1: Memory Architecture',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                prefixIcon: const Icon(Icons.folder_outlined, size: 20),
+              ),
+              onSubmitted: (_) => _save(),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _save,
+                    child: Text(isEditing ? 'Save' : 'Add Unit'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-        FilledButton(
-          onPressed: _save,
-          child: Text(isEditing ? 'Save' : 'Add'),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -127,29 +183,86 @@ class _EditTopicDialogState extends ConsumerState<EditTopicDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isEditing = widget.initialTopic != null;
 
-    return AlertDialog(
-      title: Text(isEditing ? 'Edit Topic' : 'Add Topic'),
-      content: TextField(
-        controller: _titleController,
-        autofocus: true,
-        decoration: const InputDecoration(
-          labelText: 'Topic Title',
-          hintText: 'e.g. Virtual Memory & Page Tables',
-        ),
-        onSubmitted: (_) => _save(),
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.4), width: 1),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 420),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SYLLABUS SUBTOPIC',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isEditing ? 'Edit Topic' : 'Add Topic Item',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: _titleController,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Topic Name',
+                hintText: 'e.g. Virtual Memory & TLB Caching',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                prefixIcon: const Icon(Icons.checklist_rounded, size: 20),
+              ),
+              onSubmitted: (_) => _save(),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _save,
+                    child: Text(isEditing ? 'Save' : 'Add Topic'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-        FilledButton(
-          onPressed: _save,
-          child: Text(isEditing ? 'Save' : 'Add'),
-        ),
-      ],
+      ),
     );
   }
 }

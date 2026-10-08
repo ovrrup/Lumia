@@ -6,6 +6,8 @@ class AdroitCard extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? color;
   final BorderSide? border;
+  final double borderRadius;
+  final Gradient? gradient;
 
   const AdroitCard({
     super.key,
@@ -14,6 +16,8 @@ class AdroitCard extends StatelessWidget {
     this.onTap,
     this.color,
     this.border,
+    this.borderRadius = 20,
+    this.gradient,
   });
 
   @override
@@ -21,18 +25,36 @@ class AdroitCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final cardBorder = border ??
+    final defaultBorder = border ??
         BorderSide(
-          color: isDark ? const Color(0xFF262626) : const Color(0xFFE5E7EB),
-          width: 1,
+          color: theme.colorScheme.outline,
+          width: 0.9,
         );
 
+    final cardBg = color ?? theme.colorScheme.surface;
+
     Widget content = Container(
-      padding: padding ?? const EdgeInsets.all(16),
+      padding: padding ?? const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: color ?? theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.fromBorderSide(cardBorder),
+        color: gradient == null ? cardBg : null,
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.fromBorderSide(defaultBorder),
+        boxShadow: isDark
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: child,
     );
@@ -40,9 +62,12 @@ class AdroitCard extends StatelessWidget {
     if (onTap != null) {
       return Material(
         color: Colors.transparent,
+        borderRadius: BorderRadius.circular(borderRadius),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(borderRadius),
+          splashColor: theme.colorScheme.primary.withOpacity(0.08),
+          highlightColor: theme.colorScheme.primary.withOpacity(0.04),
           child: content,
         ),
       );

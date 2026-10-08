@@ -8,6 +8,8 @@ import '../../providers/syllabus_provider.dart';
 import '../../widgets/adroit_card.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/progress_bar.dart';
+import '../../widgets/radial_gauge.dart';
+import '../../widgets/status_badge.dart';
 import 'edit_chapter_dialog.dart';
 import 'edit_subject_dialog.dart';
 
@@ -29,7 +31,7 @@ class _SubjectDetailScreenState extends ConsumerState<SubjectDetailScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Subject?'),
-        content: Text('Are you sure you want to delete "${subject.name}"? All units and checklist topics will be permanently removed.'),
+        content: Text('Delete "${subject.name}" and all associated units and topics?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -89,135 +91,110 @@ class _SubjectDetailScreenState extends ConsumerState<SubjectDetailScreen> {
             ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 60),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Top Progress Card
                 AdroitCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${subjectProgress.percentage}%',
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -1,
-                                  color: subjectColor,
-                                ),
-                              ),
-                              Text(
-                                'Syllabus Completion',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: subjectColor.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${subjectProgress.completedTopics} of ${subjectProgress.totalTopics} Topics',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: subjectColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      AdroitProgressBar(
+                      RadialProgressGauge(
                         progress: subjectProgress.progress,
+                        size: 80,
+                        strokeWidth: 8,
                         color: subjectColor,
-                        height: 8,
+                        centerChild: Text(
+                          '${subjectProgress.percentage}%',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: subjectColor,
+                          ),
+                        ),
                       ),
-                      if (subjectProgress.linkedCourse != null) ...[
-                        const SizedBox(height: 12),
-                        Row(
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.link_rounded, size: 14, color: Colors.grey),
-                            const SizedBox(width: 4),
                             Text(
-                              'Linked Course: ${subjectProgress.linkedCourse!.name}',
+                              subject.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${subjectProgress.completedTopics} of ${subjectProgress.totalTopics} topics mastered',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onSurface.withOpacity(0.55),
                               ),
+                            ),
+                            const SizedBox(height: 10),
+                            AdroitProgressBar(
+                              progress: subjectProgress.progress,
+                              color: subjectColor,
+                              height: 6,
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
 
-                // Search & Filter controls
+                // Search Bar
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Filter curriculum topics...',
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
+                ),
+                const SizedBox(height: 12),
+
+                // Filter Chips Row
                 Row(
                   children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search topics...',
-                          prefixIcon: const Icon(Icons.search, size: 18),
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
-                      ),
+                    _FilterTab(
+                      label: 'All Topics',
+                      isSelected: _filter == SyllabusFilter.all,
+                      onTap: () => setState(() => _filter = SyllabusFilter.all),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterTab(
+                      label: 'Pending',
+                      isSelected: _filter == SyllabusFilter.pending,
+                      onTap: () => setState(() => _filter = SyllabusFilter.pending),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterTab(
+                      label: 'Mastered',
+                      isSelected: _filter == SyllabusFilter.completed,
+                      onTap: () => setState(() => _filter = SyllabusFilter.completed),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
 
-                // Filter chips
-                Row(
-                  children: [
-                    FilterChip(
-                      label: const Text('All Topics'),
-                      selected: _filter == SyllabusFilter.all,
-                      onSelected: (_) => setState(() => _filter = SyllabusFilter.all),
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Pending Only'),
-                      selected: _filter == SyllabusFilter.pending,
-                      onSelected: (_) => setState(() => _filter = SyllabusFilter.pending),
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Completed'),
-                      selected: _filter == SyllabusFilter.completed,
-                      onSelected: (_) => setState(() => _filter = SyllabusFilter.completed),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Units & Chapters Header
+                // Units Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Curriculum Units (${chapters.length})',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: -0.3),
                     ),
-                    FilledButton.tonalIcon(
+                    FilledButton.icon(
                       icon: const Icon(Icons.add, size: 16),
                       label: const Text('Add Unit'),
                       onPressed: () => showDialog(
@@ -230,14 +207,14 @@ class _SubjectDetailScreenState extends ConsumerState<SubjectDetailScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 // Chapters list
                 if (chapters.isEmpty)
                   EmptyState(
                     icon: Icons.menu_book_rounded,
-                    title: 'No units added yet',
-                    subtitle: 'Create units or chapters to break down your syllabus into actionable topics.',
+                    title: 'No units added',
+                    subtitle: 'Divide this subject into units or chapters to create a syllabus study checklist.',
                     action: FilledButton(
                       onPressed: () => showDialog(
                         context: context,
@@ -251,14 +228,12 @@ class _SubjectDetailScreenState extends ConsumerState<SubjectDetailScreen> {
                     final chapter = chWithTopics.chapter;
                     var topics = chWithTopics.topics;
 
-                    // Apply search query
                     if (_searchQuery.isNotEmpty) {
                       topics = topics
                           .where((t) => t.title.toLowerCase().contains(_searchQuery))
                           .toList();
                     }
 
-                    // Apply filter
                     if (_filter == SyllabusFilter.pending) {
                       topics = topics.where((t) => !t.isCompleted).toList();
                     } else if (_filter == SyllabusFilter.completed) {
@@ -266,9 +241,9 @@ class _SubjectDetailScreenState extends ConsumerState<SubjectDetailScreen> {
                     }
 
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.only(bottom: 14),
                       child: AdroitCard(
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(18),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -282,15 +257,17 @@ class _SubjectDetailScreenState extends ConsumerState<SubjectDetailScreen> {
                                       Text(
                                         chapter.title,
                                         style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: -0.3,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        '${chWithTopics.completedCount}/${chWithTopics.totalCount} completed (${(chWithTopics.progress * 100).round()}%)',
+                                        '${chWithTopics.completedCount} of ${chWithTopics.totalCount} completed • ${(chWithTopics.progress * 100).round()}%',
                                         style: TextStyle(
                                           fontSize: 11,
+                                          fontWeight: FontWeight.w600,
                                           color: theme.colorScheme.onSurface.withOpacity(0.5),
                                         ),
                                       ),
@@ -300,8 +277,8 @@ class _SubjectDetailScreenState extends ConsumerState<SubjectDetailScreen> {
                                 Row(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.add_circle_outline, size: 18),
-                                      tooltip: 'Add Topic to Unit',
+                                      icon: const Icon(Icons.add_circle_outline, size: 19),
+                                      tooltip: 'Add Topic',
                                       onPressed: () => showDialog(
                                         context: context,
                                         builder: (ctx) => EditTopicDialog(chapterId: chapter.id),
@@ -315,7 +292,7 @@ class _SubjectDetailScreenState extends ConsumerState<SubjectDetailScreen> {
                                           context: context,
                                           builder: (ctx) => AlertDialog(
                                             title: const Text('Delete Unit?'),
-                                            content: Text('Delete "${chapter.title}" and its topics?'),
+                                            content: Text('Delete "${chapter.title}" and all topics inside?'),
                                             actions: [
                                               TextButton(
                                                 onPressed: () => Navigator.of(ctx).pop(false),
@@ -338,22 +315,22 @@ class _SubjectDetailScreenState extends ConsumerState<SubjectDetailScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 10),
                             AdroitProgressBar(
                               progress: chWithTopics.progress,
                               color: subjectColor,
                               height: 5,
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 14),
 
-                            // Topics Checklist
+                            // Topics list
                             if (topics.isEmpty)
                               Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.symmetric(vertical: 6),
                                 child: Text(
                                   _searchQuery.isNotEmpty || _filter != SyllabusFilter.all
                                       ? 'No topics match the filter.'
-                                      : 'No topics in this unit yet. Tap + to add topics.',
+                                      : 'No topics yet. Tap + to add topics.',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: theme.colorScheme.onSurface.withOpacity(0.4),
@@ -366,33 +343,34 @@ class _SubjectDetailScreenState extends ConsumerState<SubjectDetailScreen> {
                                   onTap: () {
                                     ref.read(databaseProvider).setTopicCompletion(t.id, !t.isCompleted);
                                   },
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(10),
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    padding: const EdgeInsets.symmetric(vertical: 5),
                                     child: Row(
                                       children: [
-                                        Checkbox(
-                                          value: t.isCompleted,
-                                          activeColor: subjectColor,
-                                          onChanged: (val) {
-                                            ref.read(databaseProvider).setTopicCompletion(t.id, val ?? false);
+                                        _AnimatedSquircleCheckbox(
+                                          isChecked: t.isCompleted,
+                                          color: subjectColor,
+                                          onTap: () {
+                                            ref.read(databaseProvider).setTopicCompletion(t.id, !t.isCompleted);
                                           },
                                         ),
+                                        const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
                                             t.title,
                                             style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: t.isCompleted ? FontWeight.w400 : FontWeight.w600,
+                                              fontSize: 14,
+                                              fontWeight: t.isCompleted ? FontWeight.w500 : FontWeight.w700,
                                               decoration: t.isCompleted ? TextDecoration.lineThrough : null,
                                               color: t.isCompleted
-                                                  ? theme.colorScheme.onSurface.withOpacity(0.4)
+                                                  ? theme.colorScheme.onSurface.withOpacity(0.35)
                                                   : null,
                                             ),
                                           ),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+                                          icon: const Icon(Icons.close_rounded, size: 16, color: Colors.grey),
                                           onPressed: () {
                                             ref.read(databaseProvider).deleteTopic(t.id);
                                           },
@@ -407,12 +385,93 @@ class _SubjectDetailScreenState extends ConsumerState<SubjectDetailScreen> {
                       ),
                     );
                   }),
-                const SizedBox(height: 32),
               ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _FilterTab extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _FilterTab({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? theme.colorScheme.primary
+              : theme.colorScheme.surfaceVariant,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimatedSquircleCheckbox extends StatelessWidget {
+  final bool isChecked;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _AnimatedSquircleCheckbox({
+    required this.isChecked,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: 22,
+        height: 22,
+        decoration: BoxDecoration(
+          color: isChecked ? color : Colors.transparent,
+          borderRadius: BorderRadius.circular(7),
+          border: Border.all(
+            color: isChecked ? color : Colors.grey.withOpacity(0.4),
+            width: 1.5,
+          ),
+          boxShadow: isChecked
+              ? [BoxShadow(color: color.withOpacity(0.35), blurRadius: 4, offset: const Offset(0, 1))]
+              : null,
+        ),
+        child: isChecked
+            ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+            : null,
+      ),
     );
   }
 }

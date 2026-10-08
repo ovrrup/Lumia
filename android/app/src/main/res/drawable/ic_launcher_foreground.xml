@@ -4,12 +4,22 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Single continuous-line Retro TV with bi-directional antennae -->
-    <!-- Scaled safely to ~48dp viewport to prevent clipping on circle, squircle, teardrop & pebble icon masks -->
-    <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="3.6"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M42.3,37.1 L54,47.5 L42.3,47.5 C40.16,47.5 38.4,49.26 38.4,51.4 L38.4,60.5 C38.4,62.65 40.16,64.4 42.3,64.4 L39.05,70.9 L45.55,64.4 L62.45,64.4 L68.95,70.9 L65.7,64.4 C67.85,64.4 69.6,62.65 69.6,60.5 L69.6,51.4 C69.6,49.26 67.85,47.5 65.7,47.5 L54,47.5 L65.7,37.1" />
+    <group>
+        <!-- Left geometric facet of Adroit Delta 'A' -->
+        <path
+            android:fillColor="#6366F1"
+            android:pathData="M54,28 L33,74 L44.5,74 L54,51 Z"/>
+        <!-- Right geometric facet of Adroit Delta 'A' -->
+        <path
+            android:fillColor="#818CF8"
+            android:pathData="M54,28 L54,51 L63.5,74 L75,74 Z"/>
+        <!-- Precision crossbar nexus -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M42,60.5 L66,60.5 L63.5,54.5 L44.5,54.5 Z"/>
+        <!-- Luminous cyber-cyan core diamond -->
+        <path
+            android:fillColor="#38BDF8"
+            android:pathData="M54,34 L58,41 L54,48 L50,41 Z"/>
+    </group>
 </vector>

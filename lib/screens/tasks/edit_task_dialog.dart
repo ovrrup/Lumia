@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
+import '../../core/constants/app_constants.dart';
 import '../../core/utils/date_utils.dart';
 import '../../data/database/database.dart';
 import '../../providers/courses_provider.dart';
@@ -102,14 +103,19 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final courses = ref.watch(allCoursesProvider).value ?? [];
     final subjects = ref.watch(allSubjectsProvider).value ?? [];
     final isEditing = widget.initialTask != null;
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.4), width: 1),
+      ),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 440),
+        constraints: const BoxConstraints(maxWidth: 460),
         padding: const EdgeInsets.all(24),
         child: SingleChildScrollView(
           child: Form(
@@ -118,37 +124,67 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      isEditing ? 'Edit Task' : 'New Task / Assignment',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isEditing ? 'MODIFY TASK' : 'LOG ACADEMIC TASK',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isEditing ? 'Edit Assignment' : 'New Assignment / Task',
+                          style: const TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                      ],
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, size: 20),
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      style: IconButton.styleFrom(
+                        backgroundColor: theme.colorScheme.onSurface.withOpacity(0.05),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
 
+                // Task title
                 TextFormField(
                   controller: _titleController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Task Title *',
-                    hintText: 'e.g. Complete Lab Report 3',
+                    hintText: 'e.g. Lab Report 3, Problem Set 4',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    prefixIcon: const Icon(Icons.assignment_rounded, size: 20),
                   ),
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? 'Title is required' : null,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
+                // Description
                 TextFormField(
                   controller: _descController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes / Description',
-                    hintText: 'Optional notes, formulas, or instructions',
+                  decoration: InputDecoration(
+                    labelText: 'Notes & Instructions',
+                    hintText: 'Optional instructions, rubric, or formulas',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    prefixIcon: const Icon(Icons.notes_rounded, size: 20),
                   ),
                   maxLines: 2,
                 ),
@@ -157,59 +193,108 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
                 // Link Course
                 DropdownButtonFormField<int?>(
                   value: _selectedCourseId,
-                  decoration: const InputDecoration(labelText: 'Course (Optional)'),
+                  decoration: InputDecoration(
+                    labelText: 'Linked Course (Optional)',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    prefixIcon: const Icon(Icons.book_rounded, size: 20),
+                  ),
+                  borderRadius: BorderRadius.circular(16),
                   items: [
                     const DropdownMenuItem<int?>(
                       value: null,
-                      child: Text('No Course'),
+                      child: Text('No Course Linked'),
                     ),
                     ...courses.map((c) => DropdownMenuItem<int?>(
                           value: c.id,
-                          child: Text('${c.name} (${c.code})'),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 10,
+                                height: 10,
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: AppConstants.parseHexColor(c.colorHex),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              Text(c.code.isNotEmpty ? '${c.name} (${c.code})' : c.name),
+                            ],
+                          ),
                         )),
                   ],
                   onChanged: (val) => setState(() => _selectedCourseId = val),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
                 // Link Subject
                 DropdownButtonFormField<int?>(
                   value: _selectedSubjectId,
-                  decoration: const InputDecoration(labelText: 'Subject (Optional)'),
+                  decoration: InputDecoration(
+                    labelText: 'Linked Syllabus Subject (Optional)',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    prefixIcon: const Icon(Icons.menu_book_rounded, size: 20),
+                  ),
+                  borderRadius: BorderRadius.circular(16),
                   items: [
                     const DropdownMenuItem<int?>(
                       value: null,
-                      child: Text('No Subject'),
+                      child: Text('No Subject Linked'),
                     ),
                     ...subjects.map((s) => DropdownMenuItem<int?>(
                           value: s.id,
-                          child: Text(s.name),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 10,
+                                height: 10,
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: AppConstants.parseHexColor(s.colorHex),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              Text(s.code.isNotEmpty ? '${s.name} (${s.code})' : s.name),
+                            ],
+                          ),
                         )),
                   ],
                   onChanged: (val) => setState(() => _selectedSubjectId = val),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
 
                 // Due Date & Time
-                const Text(
-                  'Due Date & Time',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Target Deadline',
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                    ),
+                    if (_selectedDueDate != null)
+                      InkWell(
+                        onTap: () => setState(() {
+                          _selectedDueDate = null;
+                          _selectedDueTime = null;
+                        }),
+                        child: Text(
+                          'Clear',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.calendar_today_rounded, size: 16),
-                        label: Text(
-                          _selectedDueDate == null
-                              ? 'Pick Date'
-                              : AdroitDateUtils.formatRelativeDate(
-                                  _selectedDueDate!.millisecondsSinceEpoch,
-                                ),
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        onPressed: () async {
+                      child: InkWell(
+                        onTap: () async {
                           final picked = await showDatePicker(
                             context: context,
                             initialDate: _selectedDueDate ?? DateTime.now(),
@@ -220,67 +305,123 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
                             setState(() => _selectedDueDate = picked);
                           }
                         },
-                      ),
-                    ),
-                    if (_selectedDueDate != null) ...[
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.access_time_rounded, size: 16),
-                          label: Text(
-                            _selectedDueTime == null
-                                ? '11:59 PM'
-                                : AdroitDateUtils.formatTime12(context, _selectedDueTime!),
-                            style: const TextStyle(fontSize: 12),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onSurface.withOpacity(0.04),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: theme.colorScheme.onSurface.withOpacity(0.12),
+                            ),
                           ),
-                          onPressed: () async {
-                            final picked = await showTimePicker(
-                              context: context,
-                              initialTime: _selectedDueTime ?? const TimeOfDay(hour: 23, minute: 59),
-                            );
-                            if (picked != null) {
-                              setState(() => _selectedDueTime = picked);
-                            }
-                          },
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today_rounded,
+                                size: 16,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _selectedDueDate == null
+                                      ? 'Pick Date'
+                                      : AdroitDateUtils.formatRelativeDate(
+                                          _selectedDueDate!.millisecondsSinceEpoch,
+                                        ),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: _selectedDueDate != null
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () => setState(() {
-                          _selectedDueDate = null;
-                          _selectedDueTime = null;
-                        }),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: _selectedDueTime ?? const TimeOfDay(hour: 23, minute: 59),
+                          );
+                          if (picked != null) {
+                            setState(() => _selectedDueTime = picked);
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onSurface.withOpacity(0.04),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: theme.colorScheme.onSurface.withOpacity(0.12),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.access_time_rounded,
+                                size: 16,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _selectedDueTime == null
+                                      ? '11:59 PM'
+                                      : AdroitDateUtils.formatTime12(context, _selectedDueTime!),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: _selectedDueTime != null
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
 
                 // Priority Selector
                 const Text(
-                  'Priority',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  'Urgency / Priority',
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     _PriorityChip(
                       label: 'Low',
-                      color: Colors.blueGrey,
+                      color: Colors.grey,
                       isSelected: _priority == 0,
                       onTap: () => setState(() => _priority = 0),
                     ),
                     const SizedBox(width: 8),
                     _PriorityChip(
                       label: 'Medium',
-                      color: Colors.amber.shade700,
+                      color: const Color(0xFFF59E0B),
                       isSelected: _priority == 1,
                       onTap: () => setState(() => _priority = 1),
                     ),
                     const SizedBox(width: 8),
                     _PriorityChip(
-                      label: 'High',
-                      color: Colors.redAccent,
+                      label: 'Urgent',
+                      color: const Color(0xFFEF4444),
                       isSelected: _priority == 2,
                       onTap: () => setState(() => _priority = 2),
                     ),
@@ -288,9 +429,17 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
                 ),
                 const SizedBox(height: 24),
 
+                // Save button
                 FilledButton(
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
                   onPressed: _save,
-                  child: Text(isEditing ? 'Save Changes' : 'Create Task'),
+                  child: Text(
+                    isEditing ? 'Update Task' : 'Create Task',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
                 ),
               ],
             ),
@@ -319,15 +468,16 @@ class _PriorityChip extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: isSelected ? color.withOpacity(0.18) : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? color : Colors.grey.withOpacity(0.3),
-              width: isSelected ? 1.5 : 1,
+              color: isSelected ? color : Colors.grey.withOpacity(0.25),
+              width: isSelected ? 1.6 : 1,
             ),
           ),
           alignment: Alignment.center,
@@ -335,7 +485,7 @@ class _PriorityChip extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
               color: isSelected ? color : null,
             ),
           ),

@@ -21,46 +21,62 @@ class EmptyState extends StatelessWidget {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 48),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF3F4F6),
-                shape: BoxShape.circle,
+                color: isDark ? const Color(0xFF18181B) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.08)
+                      : Colors.black.withOpacity(0.06),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(
-                icon,
-                size: 38,
-                color: theme.colorScheme.onSurface.withOpacity(0.4),
+              child: Center(
+                child: Icon(
+                  icon,
+                  size: 32,
+                  color: theme.colorScheme.onSurface.withOpacity(0.45),
+                ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               title,
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
                 color: theme.colorScheme.onSurface,
-                letterSpacing: -0.3,
+                letterSpacing: -0.4,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               subtitle,
               style: TextStyle(
                 fontSize: 13,
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-                height: 1.4,
+                color: theme.colorScheme.onSurface.withOpacity(0.55),
+                height: 1.45,
               ),
               textAlign: TextAlign.center,
             ),
             if (action != null) ...[
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               action!,
             ],
           ],

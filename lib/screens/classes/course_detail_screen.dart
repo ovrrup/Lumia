@@ -7,11 +7,11 @@ import '../../data/models/models.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/courses_provider.dart';
 import '../../providers/database_provider.dart';
-import '../../providers/syllabus_provider.dart';
 import '../../providers/tasks_provider.dart';
 import '../../widgets/adroit_card.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/progress_bar.dart';
+import '../../widgets/radial_gauge.dart';
 import '../../widgets/status_badge.dart';
 import 'edit_course_dialog.dart';
 import 'record_attendance_dialog.dart';
@@ -27,7 +27,7 @@ class CourseDetailScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Course?'),
-        content: Text('Are you sure you want to delete "${course.name}"? All associated attendance records and syllabus links will be removed.'),
+        content: Text('Delete "${course.name}" and all associated attendance records?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -97,12 +97,13 @@ class CourseDetailScreen extends ConsumerWidget {
             ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 60),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top Meta Card
+                // Hero Overview Card
                 AdroitCard(
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -110,14 +111,14 @@ class CourseDetailScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            width: 12,
+                            width: 14,
                             height: 48,
                             decoration: BoxDecoration(
                               color: courseColor,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,18 +126,18 @@ class CourseDetailScreen extends ConsumerWidget {
                                 Text(
                                   course.name,
                                   style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: -0.4,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
                                   ),
                                 ),
                                 if (course.code.isNotEmpty) ...[
-                                  const SizedBox(height: 2),
+                                  const SizedBox(height: 3),
                                   Text(
                                     course.code,
                                     style: TextStyle(
                                       fontSize: 13,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w800,
                                       color: courseColor,
                                     ),
                                   ),
@@ -146,19 +147,19 @@ class CourseDetailScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
 
-                      // Instructor & Room row
+                      // Location & Instructor
                       if (course.instructor.isNotEmpty || course.room.isNotEmpty) ...[
                         Row(
                           children: [
                             if (course.instructor.isNotEmpty) ...[
-                              const Icon(Icons.person_outline_rounded, size: 16, color: Colors.grey),
-                              const SizedBox(width: 4),
+                              Icon(Icons.person_rounded, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+                              const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   course.instructor,
-                                  style: const TextStyle(fontSize: 13),
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -166,41 +167,41 @@ class CourseDetailScreen extends ConsumerWidget {
                             ],
                             if (course.room.isNotEmpty) ...[
                               const SizedBox(width: 12),
-                              const Icon(Icons.room_outlined, size: 16, color: Colors.grey),
+                              Icon(Icons.room_rounded, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.4)),
                               const SizedBox(width: 4),
                               Text(
                                 course.room,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 12),
                       ],
 
-                      // Timings & Days
+                      // Timings & Lecture Days
                       Row(
                         children: [
-                          const Icon(Icons.access_time_rounded, size: 16, color: Colors.grey),
-                          const SizedBox(width: 4),
+                          Icon(Icons.access_time_rounded, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+                          const SizedBox(width: 6),
                           Text(
                             '${course.startTime} - ${course.endTime}',
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Wrap(
-                              spacing: 4,
+                              spacing: 5,
                               children: scheduleDaysList.map((d) {
                                 return Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: theme.colorScheme.surfaceVariant,
-                                    borderRadius: BorderRadius.circular(4),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
                                     d,
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
                                   ),
                                 );
                               }).toList(),
@@ -208,32 +209,20 @@ class CourseDetailScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      if (course.description.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        const Divider(height: 1),
-                        const SizedBox(height: 10),
-                        Text(
-                          course.description,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: theme.colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
 
-                // Attendance Section
+                // Attendance Command Center Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Attendance Tracker',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      'Attendance Intelligence',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: -0.3),
                     ),
-                    FilledButton.tonalIcon(
+                    FilledButton.icon(
                       icon: const Icon(Icons.add, size: 16),
                       label: const Text('Log Attendance'),
                       onPressed: () => showDialog(
@@ -251,82 +240,99 @@ class CourseDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
 
-                // Attendance Metrics Card
+                // Executive Attendance Card
                 AdroitCard(
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${analytics.percentage.toStringAsFixed(1)}%',
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -1,
-                                  color: analytics.health.color,
-                                ),
-                              ),
-                              Text(
-                                'Target: ${course.targetAttendance}%',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                ),
-                              ),
-                            ],
-                          ),
-                          StatusBadge(
-                            label: analytics.health.label,
+                          RadialProgressGauge(
+                            progress: analytics.percentage / 100.0,
+                            size: 82,
+                            strokeWidth: 8,
                             color: analytics.health.color,
-                            icon: Icons.shield_outlined,
-                            isFilled: true,
+                            centerChild: Text(
+                              '${analytics.percentage.round()}%',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: analytics.health.color,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                StatusBadge(
+                                  label: analytics.health.label.toUpperCase(),
+                                  color: analytics.health.color,
+                                  isFilled: true,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Threshold Target: ${course.targetAttendance}%',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.colorScheme.onSurface.withOpacity(0.55),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${analytics.attendedClasses} attended of ${analytics.totalClasses} total lectures',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
-                      AdroitProgressBar(
-                        progress: analytics.percentage / 100.0,
-                        color: analytics.health.color,
-                        height: 8,
+                      const SizedBox(height: 18),
+                      const Divider(height: 1),
+                      const SizedBox(height: 16),
+
+                      // 4-column metric grid
+                      Row(
+                        children: [
+                          _MetricStat(label: 'ATTENDED', value: '${analytics.attendedClasses}', color: const Color(0xFF10B981)),
+                          _MetricStat(label: 'MISSED', value: '${analytics.missedClasses}', color: const Color(0xFFEF4444)),
+                          _MetricStat(label: 'CANCELLED', value: '${analytics.cancelledClasses}', color: Colors.grey),
+                          _MetricStat(label: 'TOTAL', value: '${analytics.totalClasses}', color: theme.colorScheme.onSurface),
+                        ],
                       ),
                       const SizedBox(height: 16),
 
-                      // Breakdown grid
-                      Row(
-                        children: [
-                          _MetricStat(label: 'Attended', value: '${analytics.attendedClasses}', color: const Color(0xFF10B981)),
-                          _MetricStat(label: 'Missed', value: '${analytics.missedClasses}', color: const Color(0xFFEF4444)),
-                          _MetricStat(label: 'Cancelled', value: '${analytics.cancelledClasses}', color: Colors.grey),
-                          _MetricStat(label: 'Total', value: '${analytics.totalClasses}', color: theme.colorScheme.onSurface),
-                        ],
-                      ),
-
-                      // Smart Attendance Advice
-                      const SizedBox(height: 14),
+                      // Safe Bunks / Recovery Advice Card
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: analytics.health.color.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: analytics.health.color.withOpacity(0.2)),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: analytics.health.color.withOpacity(0.25)),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.info_outline_rounded, size: 18, color: analytics.health.color),
-                            const SizedBox(width: 10),
+                            Icon(
+                              analytics.health == AttendanceHealth.critical
+                                  ? Icons.warning_amber_rounded
+                                  : Icons.shield_rounded,
+                              size: 20,
+                              color: analytics.health.color,
+                            ),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 analytics.health == AttendanceHealth.critical
-                                    ? 'You must attend next ${analytics.classesToRecover} consecutive classes to reach ${course.targetAttendance}%.'
-                                    : 'You can safely miss ${analytics.safeBunksAllowed} more classes and stay at or above ${course.targetAttendance}%.',
+                                    ? 'You must attend the next ${analytics.classesToRecover} consecutive classes to recover to ${course.targetAttendance}%.'
+                                    : 'You can safely miss ${analytics.safeBunksAllowed} more classes without falling below ${course.targetAttendance}%.',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
                                   color: analytics.health.color,
+                                  height: 1.35,
                                 ),
                               ),
                             ),
@@ -336,15 +342,15 @@ class CourseDetailScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 22),
 
-                // Course Tasks / Deadlines
+                // Tasks & Deadlines Section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Tasks & Deadlines (${courseTasks.length})',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      'Coursework Tasks (${courseTasks.length})',
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: -0.3),
                     ),
                     IconButton(
                       icon: const Icon(Icons.add_circle_outline, size: 20),
@@ -373,7 +379,7 @@ class CourseDetailScreen extends ConsumerWidget {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: AdroitCard(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         child: Row(
                           children: [
                             Checkbox(
@@ -391,7 +397,7 @@ class CourseDetailScreen extends ConsumerWidget {
                                     t.title,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w700,
                                       decoration: t.isCompleted ? TextDecoration.lineThrough : null,
                                       color: t.isCompleted
                                           ? theme.colorScheme.onSurface.withOpacity(0.4)
@@ -404,7 +410,7 @@ class CourseDetailScreen extends ConsumerWidget {
                                       AdroitDateUtils.formatDeadline(t.dueDateMillis!),
                                       style: TextStyle(
                                         fontSize: 11,
-                                        fontWeight: FontWeight.w500,
+                                        fontWeight: FontWeight.w600,
                                         color: t.dueDateMillis! < DateTime.now().millisecondsSinceEpoch && !t.isCompleted
                                             ? Colors.redAccent
                                             : Colors.grey,
@@ -419,19 +425,19 @@ class CourseDetailScreen extends ConsumerWidget {
                       ),
                     );
                   }),
-                const SizedBox(height: 20),
+                const SizedBox(height: 22),
 
                 // Attendance Log History
                 const Text(
                   'Attendance History',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: -0.3),
                 ),
                 const SizedBox(height: 10),
                 if (attendanceRecords.isEmpty)
                   const EmptyState(
                     icon: Icons.history_rounded,
-                    title: 'No attendance records',
-                    subtitle: 'Use the button above to record your attendance for this class.',
+                    title: 'No attendance records yet',
+                    subtitle: 'Use the button above to log your class sessions.',
                   )
                 else
                   ...attendanceRecords.map((r) {
@@ -441,22 +447,22 @@ class CourseDetailScreen extends ConsumerWidget {
                     );
 
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.only(bottom: 8),
                       child: AdroitCard(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Row(
                               children: [
-                                Icon(status.icon, size: 20, color: status.color),
-                                const SizedBox(width: 10),
+                                Icon(status.icon, size: 22, color: status.color),
+                                const SizedBox(width: 12),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       AdroitDateUtils.formatRelativeDate(r.dateMillis),
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                                     ),
                                     Text(
                                       AdroitDateUtils.fromMillis(r.dateMillis).toString().split(' ')[0],
@@ -468,7 +474,7 @@ class CourseDetailScreen extends ConsumerWidget {
                             ),
                             Row(
                               children: [
-                                StatusBadge(label: status.label, color: status.color),
+                                StatusBadge(label: status.label.toUpperCase(), color: status.color),
                                 IconButton(
                                   icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
                                   onPressed: () {
@@ -482,7 +488,6 @@ class CourseDetailScreen extends ConsumerWidget {
                       ),
                     );
                   }),
-                const SizedBox(height: 32),
               ],
             ),
           ),
@@ -511,15 +516,16 @@ class _MetricStat extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
               color: color,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: Colors.grey),
+            style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.grey, letterSpacing: 0.5),
           ),
         ],
       ),

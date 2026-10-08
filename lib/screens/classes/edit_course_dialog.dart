@@ -110,6 +110,8 @@ class _EditCourseDialogState extends ConsumerState<EditCourseDialog> {
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      backgroundColor: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 480),
         padding: const EdgeInsets.all(24),
@@ -120,52 +122,70 @@ class _EditCourseDialogState extends ConsumerState<EditCourseDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      isEditing ? 'Edit Course' : 'New Course',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isEditing ? 'Edit Course' : 'Create Course',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Configure lecture details & schedule',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                        ),
+                      ],
                     ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded, size: 20),
                       onPressed: () => Navigator.of(context).pop(),
+                      style: IconButton.styleFrom(
+                        backgroundColor: theme.colorScheme.surfaceVariant,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
-                // Name & Code
+                // Name input
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
-                    labelText: 'Course Name *',
-                    hintText: 'e.g. Data Structures & Algorithms',
+                    labelText: 'Course Title *',
+                    hintText: 'e.g. Operating Systems',
                   ),
                   validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Course name is required' : null,
+                      v == null || v.trim().isEmpty ? 'Course title is required' : null,
                 ),
                 const SizedBox(height: 12),
 
+                // Code and Room
                 Row(
                   children: [
                     Expanded(
-                      flex: 2,
+                      flex: 3,
                       child: TextFormField(
                         controller: _codeController,
                         decoration: const InputDecoration(
-                          labelText: 'Course Code',
-                          hintText: 'CS201',
+                          labelText: 'Code',
+                          hintText: 'CS301',
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
-                      flex: 2,
+                      flex: 4,
                       child: TextFormField(
                         controller: _roomController,
                         decoration: const InputDecoration(
@@ -185,92 +205,157 @@ class _EditCourseDialogState extends ConsumerState<EditCourseDialog> {
                     hintText: 'Prof. Alan Turing',
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
 
                 // Schedule Days
                 const Text(
-                  'Class Schedule Days',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  'Lecture Days',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.2),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 6,
+                  runSpacing: 6,
                   children: AppConstants.weekDays.map((day) {
                     final isSelected = _selectedDays.contains(day);
-                    return FilterChip(
-                      label: Text(day),
-                      selected: isSelected,
-                      showCheckmark: false,
-                      onSelected: (val) {
+                    return InkWell(
+                      onTap: () {
                         setState(() {
-                          if (val) {
-                            _selectedDays.add(day);
+                          if (isSelected) {
+                            if (_selectedDays.length > 1) _selectedDays.remove(day);
                           } else {
-                            if (_selectedDays.length > 1) {
-                              _selectedDays.remove(day);
-                            }
+                            _selectedDays.add(day);
                           }
                         });
                       },
+                      borderRadius: BorderRadius.circular(10),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.surfaceVariant,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          day,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
 
                 // Timings
+                const Text(
+                  'Timings',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.2),
+                ),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.access_time_rounded, size: 16),
-                        label: Text(
-                          'Start: ${AdroitDateUtils.formatTime12(context, _startTime)}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        onPressed: () async {
+                      child: InkWell(
+                        onTap: () async {
                           final picked = await showTimePicker(
                             context: context,
                             initialTime: _startTime,
                           );
                           if (picked != null) setState(() => _startTime = picked);
                         },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceVariant,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: theme.colorScheme.outline),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.access_time_rounded, size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('START', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.grey)),
+                                  Text(AdroitDateUtils.formatTime12(context, _startTime), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.access_time_rounded, size: 16),
-                        label: Text(
-                          'End: ${AdroitDateUtils.formatTime12(context, _endTime)}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        onPressed: () async {
+                      child: InkWell(
+                        onTap: () async {
                           final picked = await showTimePicker(
                             context: context,
                             initialTime: _endTime,
                           );
                           if (picked != null) setState(() => _endTime = picked);
                         },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceVariant,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: theme.colorScheme.outline),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.access_time_rounded, size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('END', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.grey)),
+                                  Text(AdroitDateUtils.formatTime12(context, _endTime), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
 
                 // Target Attendance
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Target Attendance',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      'Attendance Target',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.2),
                     ),
-                    Text(
-                      '$_targetAttendance%',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.primary,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '$_targetAttendance%',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: theme.colorScheme.primary,
+                        ),
                       ),
                     ),
                   ],
@@ -280,15 +365,14 @@ class _EditCourseDialogState extends ConsumerState<EditCourseDialog> {
                   min: 50,
                   max: 100,
                   divisions: 10,
-                  onChanged: (val) =>
-                      setState(() => _targetAttendance = val.round()),
+                  onChanged: (val) => setState(() => _targetAttendance = val.round()),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
-                // Color accent picker
+                // Color Palette
                 const Text(
-                  'Accent Color',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  'Accent Tag',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.2),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -301,22 +385,22 @@ class _EditCourseDialogState extends ConsumerState<EditCourseDialog> {
 
                     return InkWell(
                       onTap: () => setState(() => _selectedColorHex = hex),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       child: Container(
-                        width: 32,
-                        height: 32,
+                        width: 30,
+                        height: 30,
                         decoration: BoxDecoration(
                           color: color,
                           shape: BoxShape.circle,
                           border: isSelected
-                              ? Border.all(color: Colors.white, width: 2.5)
+                              ? Border.all(color: Colors.white, width: 2.2)
                               : null,
                           boxShadow: isSelected
-                              ? [BoxShadow(color: color.withOpacity(0.5), blurRadius: 6)]
+                              ? [BoxShadow(color: color.withOpacity(0.55), blurRadius: 6)]
                               : null,
                         ),
                         child: isSelected
-                            ? const Icon(Icons.check, size: 18, color: Colors.white)
+                            ? const Icon(Icons.check, size: 16, color: Colors.white)
                             : null,
                       ),
                     );
@@ -324,18 +408,16 @@ class _EditCourseDialogState extends ConsumerState<EditCourseDialog> {
                 ),
                 const SizedBox(height: 24),
 
-                // Submit button
+                // Action Button
                 FilledButton(
                   onPressed: _saveCourse,
                   style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   child: Text(
-                    isEditing ? 'Save Changes' : 'Create Course',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    isEditing ? 'Save Changes' : 'Enroll Course',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
                   ),
                 ),
               ],

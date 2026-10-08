@@ -69,116 +69,163 @@ class _EditSubjectDialogState extends ConsumerState<EditSubjectDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final courses = ref.watch(allCoursesProvider).value ?? [];
     final isEditing = widget.initialSubject != null;
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.4), width: 1),
+      ),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 420),
+        constraints: const BoxConstraints(maxWidth: 440),
         padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    isEditing ? 'Edit Subject' : 'New Subject',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Subject / Module Name *',
-                  hintText: 'e.g. Operating Systems',
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isEditing ? 'MODIFY CURRICULUM' : 'NEW CURRICULUM',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isEditing ? 'Edit Subject' : 'Add Subject / Module',
+                          style: const TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      style: IconButton.styleFrom(
+                        backgroundColor: theme.colorScheme.onSurface.withOpacity(0.05),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
                 ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Subject name is required' : null,
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 18),
 
-              TextFormField(
-                controller: _codeController,
-                decoration: const InputDecoration(
-                  labelText: 'Subject Code',
-                  hintText: 'CS301',
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Link to Course dropdown
-              DropdownButtonFormField<int?>(
-                value: _selectedCourseId,
-                decoration: const InputDecoration(
-                  labelText: 'Linked Course (Optional)',
-                ),
-                items: [
-                  const DropdownMenuItem<int?>(
-                    value: null,
-                    child: Text('None (Independent Subject)'),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Subject Name *',
+                    hintText: 'e.g. Operating Systems, Thermodynamics',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    prefixIcon: const Icon(Icons.menu_book_rounded, size: 20),
                   ),
-                  ...courses.map((c) => DropdownMenuItem<int?>(
-                        value: c.id,
-                        child: Text('${c.name} (${c.code})'),
-                      )),
-                ],
-                onChanged: (val) => setState(() => _selectedCourseId = val),
-              ),
-              const SizedBox(height: 16),
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Subject name is required' : null,
+                ),
+                const SizedBox(height: 14),
 
-              // Color picker
-              const Text(
-                'Accent Color',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: AppConstants.presetColors.map((preset) {
-                  final hex = preset['hex'] as String;
-                  final color = preset['color'] as Color;
-                  final isSelected = _selectedColorHex.toLowerCase() == hex.toLowerCase();
+                TextFormField(
+                  controller: _codeController,
+                  decoration: InputDecoration(
+                    labelText: 'Subject Code (Optional)',
+                    hintText: 'CS301, ME204',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    prefixIcon: const Icon(Icons.tag_rounded, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 14),
 
-                  return InkWell(
-                    onTap: () => setState(() => _selectedColorHex = hex),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: isSelected
-                            ? Border.all(color: Colors.white, width: 2)
+                // Link to Course dropdown
+                DropdownButtonFormField<int?>(
+                  value: _selectedCourseId,
+                  decoration: InputDecoration(
+                    labelText: 'Linked Timetable Course (Optional)',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    prefixIcon: const Icon(Icons.link_rounded, size: 20),
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('Independent Subject'),
+                    ),
+                    ...courses.map((c) => DropdownMenuItem<int?>(
+                          value: c.id,
+                          child: Text('${c.name} (${c.code})'),
+                        )),
+                  ],
+                  onChanged: (val) => setState(() => _selectedCourseId = val),
+                ),
+                const SizedBox(height: 18),
+
+                // Color picker
+                const Text(
+                  'Subject Accent Palette',
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: AppConstants.presetColors.map((preset) {
+                    final hex = preset['hex'] as String;
+                    final color = preset['color'] as Color;
+                    final isSelected = _selectedColorHex.toLowerCase() == hex.toLowerCase();
+
+                    return InkWell(
+                      onTap: () => setState(() => _selectedColorHex = hex),
+                      borderRadius: BorderRadius.circular(18),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: isSelected
+                              ? Border.all(color: Colors.white, width: 2.5)
+                              : null,
+                          boxShadow: isSelected
+                              ? [BoxShadow(color: color.withOpacity(0.5), blurRadius: 6)]
+                              : null,
+                        ),
+                        child: isSelected
+                            ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
                             : null,
                       ),
-                      child: isSelected
-                          ? const Icon(Icons.check, size: 16, color: Colors.white)
-                          : null,
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
 
-              FilledButton(
-                onPressed: _save,
-                child: Text(isEditing ? 'Save Changes' : 'Create Subject'),
-              ),
-            ],
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: _save,
+                  child: Text(
+                    isEditing ? 'Save Changes' : 'Create Subject',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

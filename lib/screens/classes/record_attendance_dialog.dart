@@ -55,10 +55,14 @@ class _RecordAttendanceDialogState extends ConsumerState<RecordAttendanceDialog>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      backgroundColor: theme.colorScheme.surface,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 400),
+        constraints: const BoxConstraints(maxWidth: 420),
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -67,43 +71,40 @@ class _RecordAttendanceDialogState extends ConsumerState<RecordAttendanceDialog>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Log Attendance',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Log Class Attendance',
+                      style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -0.4),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.courseName,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        fontWeight: FontWeight.w500,
                       ),
-                      Text(
-                        widget.courseName,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded, size: 20),
                   onPressed: () => Navigator.of(context).pop(),
+                  style: IconButton.styleFrom(
+                    backgroundColor: theme.colorScheme.surfaceVariant,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 22),
 
-            // Date picker button
-            OutlinedButton.icon(
-              icon: const Icon(Icons.calendar_today_rounded, size: 16),
-              label: Text(
-                AdroitDateUtils.formatRelativeDate(
-                  AdroitDateUtils.toMidnightMillis(_selectedDate),
-                ),
-              ),
-              onPressed: () async {
+            // Date picker box
+            InkWell(
+              onTap: () async {
                 final picked = await showDatePicker(
                   context: context,
                   initialDate: _selectedDate,
@@ -112,13 +113,45 @@ class _RecordAttendanceDialogState extends ConsumerState<RecordAttendanceDialog>
                 );
                 if (picked != null) setState(() => _selectedDate = picked);
               },
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: theme.colorScheme.outline),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today_rounded, size: 18, color: theme.colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'SESSION DATE',
+                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.grey, letterSpacing: 0.5),
+                        ),
+                        Text(
+                          AdroitDateUtils.formatRelativeDate(
+                            AdroitDateUtils.toMidnightMillis(_selectedDate),
+                          ),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            // Status selection
+            // Status selection grid
             const Text(
-              'Status',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              'Select Status',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.2),
             ),
             const SizedBox(height: 10),
             Row(
@@ -129,29 +162,33 @@ class _RecordAttendanceDialogState extends ConsumerState<RecordAttendanceDialog>
                     padding: const EdgeInsets.symmetric(horizontal: 3),
                     child: InkWell(
                       onTap: () => setState(() => _selectedStatus = status),
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      borderRadius: BorderRadius.circular(14),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? status.color.withOpacity(0.2)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
+                              ? status.color.withOpacity(0.18)
+                              : theme.colorScheme.surfaceVariant,
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: isSelected ? status.color : Colors.grey.withOpacity(0.2),
-                            width: isSelected ? 1.5 : 1,
+                            color: isSelected ? status.color : theme.colorScheme.outline,
+                            width: isSelected ? 1.6 : 1,
                           ),
+                          boxShadow: isSelected
+                              ? [BoxShadow(color: status.color.withOpacity(0.25), blurRadius: 6)]
+                              : null,
                         ),
                         child: Column(
                           children: [
-                            Icon(status.icon, size: 20, color: status.color),
-                            const SizedBox(height: 4),
+                            Icon(status.icon, size: 22, color: status.color),
+                            const SizedBox(height: 6),
                             Text(
                               status.label,
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                color: isSelected ? status.color : null,
+                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                color: isSelected ? status.color : theme.colorScheme.onSurface,
                               ),
                             ),
                           ],
@@ -162,11 +199,15 @@ class _RecordAttendanceDialogState extends ConsumerState<RecordAttendanceDialog>
                 );
               }).toList(),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 26),
 
             FilledButton(
               onPressed: _save,
-              child: const Text('Save Record', style: TextStyle(fontWeight: FontWeight.w700)),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('Save Attendance Record', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
             ),
           ],
         ),
