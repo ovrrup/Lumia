@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/date_utils.dart';
+import '../../data/database/database.dart';
 import '../../data/models/models.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/courses_provider.dart';

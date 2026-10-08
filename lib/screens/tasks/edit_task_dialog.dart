@@ -90,9 +90,9 @@ class _EditTaskDialogState extends ConsumerState<EditTaskDialog> {
       await db.updateTaskData(widget.initialTask!.copyWith(
         title: _titleController.text.trim(),
         description: _descController.text.trim(),
-        courseId: _selectedCourseId,
-        subjectId: _selectedSubjectId,
-        dueDateMillis: dueMillis,
+        courseId: drift.Value(_selectedCourseId),
+        subjectId: drift.Value(_selectedSubjectId),
+        dueDateMillis: drift.Value(dueMillis),
         priority: _priority,
       ));
     }

@@ -36,7 +36,7 @@ class AppTheme {
         ),
         iconTheme: IconThemeData(color: colorScheme.onBackground),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: colorScheme.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -67,7 +67,7 @@ class AppTheme {
           borderSide: BorderSide(color: accentColor, width: 1.5),
         ),
       ),
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: colorScheme.surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
@@ -87,8 +87,8 @@ class AppTheme {
         backgroundColor: colorScheme.surface,
         indicatorColor: accentColor.withOpacity(0.18),
         elevation: 0,
-        labelTextStyle: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return TextStyle(color: accentColor, fontSize: 12, fontWeight: FontWeight.w600);
           }
           return TextStyle(color: colorScheme.onSurface.withOpacity(0.6), fontSize: 12);

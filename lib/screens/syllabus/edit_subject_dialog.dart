@@ -60,7 +60,7 @@ class _EditSubjectDialogState extends ConsumerState<EditSubjectDialog> {
         name: _nameController.text.trim(),
         code: _codeController.text.trim(),
         colorHex: _selectedColorHex,
-        courseId: _selectedCourseId,
+        courseId: drift.Value(_selectedCourseId),
       ));
     }
 
